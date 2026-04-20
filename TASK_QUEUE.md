@@ -1550,6 +1550,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-20-1** — Fix Optimized CI failure
   - **Status:** `todo`
+  - **Owner:** `Codex`
   - **Source:** `GitHub Actions`
   - **Automation:** `guarded_fix`
   - **Dispatch mode:** `branch_pr`
@@ -1562,6 +1563,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-04-20-2** — Fix Code Review failure
   - **Status:** `todo`
+  - **Owner:** `Codex`
   - **Source:** `GitHub Actions`
   - **Automation:** `guarded_fix`
   - **Dispatch mode:** `branch_pr`
