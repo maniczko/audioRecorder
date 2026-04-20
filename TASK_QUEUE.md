@@ -1544,4 +1544,32 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24331200048
   - **Created:** 2026-04-13T09:53:03.858Z
 
+<!-- Auto-generated on 2026-04-20T09:56:45.971Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-20-1** — Fix Optimized CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Optimized CI. Szczegoly: 2026-04-20T07:43:24.0430784Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-20T07:45:12.1985305Z ##[error]Error: expect(element).toHaveStyle() 2026-04-20T07:48:46.9336652Z FATAL ERROR: Reached heap limit Allocation fa...
+  - **Error:** 2026-04-20T07:43:24.0430784Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-20T07:45:12.1985305Z ##[error]Error: expect(element).toHaveStyle() 2026-04-20T07:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24654446531
+  - **Created:** 2026-04-20T09:56:45.971Z
+
+- **GH-AUTO-2026-04-20-2** — Fix Code Review failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-20T07:41:16.4166941Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-20T07:42:26.5330455Z ##[error]Error: expect(element).toHaveStyle() 2026-04-20T07:42:26.8596206Z ERROR: Coverage for lines (52.34%) does not m...
+  - **Error:** 2026-04-20T07:41:16.4166941Z FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory 2026-04-20T07:42:26.5330455Z ##[error]Error: expect(element).toHaveStyle() 2026-04-20T07:...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24654446605
+  - **Created:** 2026-04-20T09:56:45.971Z
+
 
