@@ -1,9 +1,4 @@
-# Test files (except lint-staged)
 coverage/
-**/*.test.tsx
-**/*.test.ts
-**/*.spec.tsx
-**/*.spec.ts
 
 # Build
 build/

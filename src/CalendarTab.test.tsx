@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by, testing-library/no-container, jest/no-conditional-expect */
 import { fireEvent, render, screen } from '@testing-library/react';
 import CalendarTab from './CalendarTab';
 import { vi } from 'vitest';

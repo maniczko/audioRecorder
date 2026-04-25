@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TasksTab from './TasksTab';

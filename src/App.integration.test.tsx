@@ -1,5 +1,3 @@
-/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act, testing-library/no-wait-for-multiple-assertions, testing-library/prefer-find-by, import/first, testing-library/no-debugging-utils */
-
 vi.mock('./services/config', () => ({
   __esModule: true,
   APP_DATA_PROVIDER: 'local',

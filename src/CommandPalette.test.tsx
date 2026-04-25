@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-node-access, testing-library/no-unnecessary-act */
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CommandPalette from './CommandPalette';

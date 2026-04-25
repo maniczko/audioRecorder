@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-unnecessary-act */
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';

@@ -1,7 +1,6 @@
 /**
  * @vitest-environment jsdom
  */
-/* eslint-disable testing-library/no-node-access, testing-library/no-wait-for-multiple-assertions, @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

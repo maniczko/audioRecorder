@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-node-access */
 import { render, screen, fireEvent } from '@testing-library/react';
 import PeopleTab from './PeopleTab';
 
