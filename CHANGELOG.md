@@ -1,3 +1,21 @@
+# 0.1.2 (2026-04-25)
+
+### Bug Fixes
+
+- make fatal backend errors exit through graceful shutdown
+- relax backend production smoke checks for frontend-only changes
+- bring test files back into lint quality gates
+
+### Tests
+
+- add real chunked audio upload/finalize integration coverage
+- cover upload resume, storage-error retry, and assembled temp cleanup
+
+### Maintenance
+
+- document fatal process lifecycle policy
+- keep backend smoke scope detection covered by workflow tests
+
 # 0.1.1 (2026-04-25)
 
 ### Bug Fixes
