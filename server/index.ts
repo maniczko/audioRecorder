@@ -14,29 +14,11 @@ import { resolveServerPort } from './runtime.ts';
 import { initSentry } from './sentry.ts';
 import { classifyDiskSpace, DISK_SPACE_BLOCK_UPLOAD_BYTES } from './lib/diskSpace.ts';
 import { handleServerListenError } from './lib/serverErrorHandling.ts';
+import { createGracefulShutdown, registerFatalProcessHandlers } from './lib/processLifecycle.ts';
 
 initSentry();
 
 const __filename = fileURLToPath(import.meta.url);
-
-let uncaughtCount = 0;
-process.on('uncaughtException', (error) => {
-  uncaughtCount += 1;
-  logger.error(`UNCAUGHT EXCEPTION (${uncaughtCount}):`, error);
-  // Only exit on repeated rapid crashes (3+ within first 30s means startup failure)
-  if (uncaughtCount >= 3 && process.uptime() < 30) {
-    logger.error('Multiple uncaught exceptions during startup — exiting.');
-    process.exit(1);
-  }
-  // Otherwise keep the server alive; the request will fail but other endpoints stay operational
-});
-
-process.on('unhandledRejection', (reason) => {
-  logger.error(
-    'UNHANDLED REJECTION:',
-    reason instanceof Error ? reason : new Error(String(reason))
-  );
-});
 
 const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || '0.0.0.0';
@@ -270,40 +252,16 @@ if (process.argv[1] === __filename || process.argv[1]?.endsWith('index.ts')) {
       cleanupTimer.unref(); // Don't prevent process exit
 
       // [PROD] Graceful shutdown handling
-      const shutdown = async (signal: string) => {
-        logger.info(`[Process] Received ${signal}. Starting graceful shutdown...`);
+      const shutdown = createGracefulShutdown({
+        server,
+        db,
+        cleanupTimer,
+        logger,
+      });
 
-        // Force exit after timeout if shutdown hangs
-        const forceExit = setTimeout(() => {
-          logger.error('[Process] Shutdown timed out. Force exiting.');
-          process.exit(1);
-        }, 20000);
-
-        try {
-          server.close(() => {
-            logger.info('[Process] HTTP server closed.');
-          });
-
-          if (server && typeof (server as any).closeAllConnections === 'function') {
-            (server as any).closeAllConnections();
-          }
-
-          if (db && typeof db.pool?.end === 'function') {
-            await db.pool.end();
-            logger.info('[Process] Database connections closed.');
-          }
-
-          clearTimeout(forceExit);
-          logger.info('[Process] Graceful shutdown complete.');
-          process.exit(0);
-        } catch (err) {
-          logger.error('[Process] Error during shutdown:', err);
-          process.exit(1);
-        }
-      };
-
-      process.on('SIGTERM', () => shutdown('SIGTERM'));
-      process.on('SIGINT', () => shutdown('SIGINT'));
+      registerFatalProcessHandlers(process, { logger, shutdown });
+      process.on('SIGTERM', () => void shutdown('SIGTERM', 0));
+      process.on('SIGINT', () => void shutdown('SIGINT', 0));
     })
     .catch((error) => {
       logger.error('FAILED TO START SERVER:', error);

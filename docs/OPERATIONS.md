@@ -32,3 +32,11 @@ Do not create duplicate issues for repeated occurrences of the same group. Updat
 ## Uncaught Exceptions
 
 Production policy: log context, stop accepting new work, let in-flight cleanup finish where possible, then exit so the process manager restarts a clean instance. Do not silently continue after unknown top-level failures.
+
+Implementation notes:
+
+- `uncaughtException` and `unhandledRejection` are treated as fatal.
+- Fatal handlers log the event type, process id, uptime, and original error.
+- Shutdown clears the periodic cleanup timer, closes the HTTP server, shuts down database resources, and exits with code `1`.
+- `SIGTERM` and `SIGINT` use the same graceful shutdown path and exit with code `0`.
+- A force-exit timeout protects against shutdown hangs.
