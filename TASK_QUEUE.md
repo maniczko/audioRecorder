@@ -1574,4 +1574,20 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24654446605
   - **Created:** 2026-04-20T09:56:45.971Z
 
+<!-- Auto-generated on 2026-04-25T05:47:00.614Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-25-1** — Fix Update Changelog failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Update Changelog. Szczegoly: Job "changelog" step "Generate changelog" failed
+  - **Error:** Job "changelog" step "Generate changelog" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24923058164
+  - **Created:** 2026-04-25T05:47:00.614Z
+
 
