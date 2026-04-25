@@ -54,3 +54,7 @@ Passed after release metadata update:
 ## Release Decision
 
 Release `v0.1.2` as a patch version. The scope is operational hardening and test coverage, with no intentional product behavior change outside fatal error shutdown and CI/smoke gate correctness.
+
+## Post-release Automation Note
+
+The tag workflow `Update Changelog` failed for the already-published `v0.1.2` tag because the changelog script referenced `conventional-changelog` without an installed CLI package. The GitHub Release was created manually from the stable tag. The workflow dependency gap is fixed on `main` in `fc7753e4` with a regression test in `scripts/validate-github-workflows.test.ts`.
