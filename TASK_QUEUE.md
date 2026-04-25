@@ -12,6 +12,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 - **RW-AUTO-2026-04-25-1** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
