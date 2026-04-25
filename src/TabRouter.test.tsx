@@ -151,7 +151,7 @@ describe('createLazyComponent', () => {
       const errorDiv = container.firstChild as HTMLElement;
       expect(errorDiv).toHaveStyle('padding: 2rem');
       expect(errorDiv).toHaveStyle('text-align: center');
-      expect(errorDiv).toHaveStyle('border-radius: 16px');
+      expect(errorDiv.style.borderRadius).toBe('16px');
     });
   });
 

@@ -12,6 +12,7 @@
 - remove generated logs/reports from versioned sources
 - document audioRecorder architecture, quality gates, operations, and next work
 - constrain auto-fix workflows to manual execution
+- pin patched transitive dependencies for high/critical audit gate
 
 # 0.1.0 (2026-03-25)
 

@@ -221,6 +221,13 @@
   "coverage": {
     "summary": "pnpm run test:coverage:server && node scripts/coverage-summary.cjs"
   },
+  "pnpm": {
+    "overrides": {
+      "lodash": "4.18.1",
+      "picomatch@4.0.3": "4.0.4",
+      "protobufjs": "7.5.5"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
