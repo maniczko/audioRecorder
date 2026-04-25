@@ -41,6 +41,15 @@ describe('GitHub workflows validation', () => {
     expect(suspiciousMojibakePattern.test(content)).toBe(false);
   });
 
+  it('keeps the CI security audit report while blocking only high and critical findings', () => {
+    const workflowPath = path.join(workflowDir, 'ci.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('pnpm audit --audit-level=high --json > audit-report.json || true');
+    expect(content).toContain('report.metadata?.vulnerabilities');
+    expect(content).toContain('high > 0 || critical > 0');
+  });
+
   it('gives optimized ci test job extra heap for the large Vitest suite', () => {
     const workflowPath = path.join(workflowDir, 'ci-optimized.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {

@@ -81,7 +81,22 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Block high and critical vulnerabilities
-        run: pnpm audit --audit-level=high --json > audit-report.json
+        run: |
+          pnpm audit --audit-level=high --json > audit-report.json || true
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
+          const vulnerabilities = report.metadata?.vulnerabilities ?? {};
+          const high = Number(vulnerabilities.high ?? 0);
+          const critical = Number(vulnerabilities.critical ?? 0);
+
+          if (high > 0 || critical > 0) {
+            console.error(`High/critical vulnerabilities found: high=${high}, critical=${critical}`);
+            process.exit(1);
+          }
+
+          console.log(`No high/critical vulnerabilities found. Moderate findings: ${Number(vulnerabilities.moderate ?? 0)}`);
+          NODE
 
       - name: Upload audit report
         if: always()
