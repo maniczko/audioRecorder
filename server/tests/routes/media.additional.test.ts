@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { createApp } from '../../app.ts';
-import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, rmSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
@@ -10,11 +10,33 @@ describe('Media Routes - Additional Coverage', () => {
   let mockTranscriptionService: Record<string, ReturnType<typeof vi.fn>>;
   let mockWorkspaceService: { getMembership: ReturnType<typeof vi.fn> };
   let testUploadDir: string;
+  let actualFs: typeof import('node:fs');
 
-  beforeEach(() => {
-    // Create a temporary upload directory for tests
-    testUploadDir = path.join(os.tmpdir(), `media-test-${Date.now()}`);
-    mkdirSync(testUploadDir, { recursive: true });
+  beforeEach(async () => {
+    actualFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+    const fsMock = (globalThis as any).__mockFs;
+    fsMock.existsSync.mockImplementation((filePath?: string) =>
+      typeof filePath === 'string' ? actualFs.existsSync(filePath) : false
+    );
+    fsMock.createReadStream.mockImplementation((...args: any[]) =>
+      actualFs.createReadStream(...(args as Parameters<typeof actualFs.createReadStream>))
+    );
+    fsMock.readFileSync.mockImplementation((...args: any[]) =>
+      actualFs.readFileSync(...(args as Parameters<typeof actualFs.readFileSync>))
+    );
+    fsMock.readdirSync.mockImplementation((...args: any[]) =>
+      actualFs.readdirSync(...(args as Parameters<typeof actualFs.readdirSync>))
+    );
+    fsMock.mkdirSync.mockImplementation((...args: any[]) =>
+      actualFs.mkdirSync(...(args as Parameters<typeof actualFs.mkdirSync>))
+    );
+    fsMock.rmSync.mockImplementation((...args: any[]) =>
+      actualFs.rmSync(...(args as Parameters<typeof actualFs.rmSync>))
+    );
+
+    // Create a unique temporary upload directory for tests
+    testUploadDir = actualFs.mkdtempSync(path.join(os.tmpdir(), 'media-test-'));
+    actualFs.mkdirSync(testUploadDir, { recursive: true });
 
     mockTranscriptionService = {
       upsertMediaAsset: vi.fn(),
@@ -62,7 +84,7 @@ describe('Media Routes - Additional Coverage', () => {
     vi.clearAllMocks();
     // Cleanup test upload directory
     try {
-      rmSync(testUploadDir, { recursive: true, force: true });
+      actualFs.rmSync(testUploadDir, { recursive: true, force: true });
     } catch (_) {}
   });
 
@@ -419,6 +441,88 @@ describe('Media Routes - Additional Coverage', () => {
   });
 
   describe('Chunked upload endpoints', () => {
+    type UpsertMediaAssetFromPathInput = {
+      recordingId: string;
+      workspaceId: string;
+      meetingId: string;
+      contentType: string;
+      filePath: string;
+      createdByUserId: string;
+    };
+
+    const safeRecordingId = (recordingId: string) =>
+      String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const chunkPathFor = (recordingId: string, index: number) =>
+      path.join(testUploadDir, 'chunks', `${safeRecordingId(recordingId)}_${index}.chunk`);
+
+    const listAssembledFiles = (recordingId: string) => {
+      const chunksDir = path.join(testUploadDir, 'chunks');
+      if (!existsSync(chunksDir)) return [];
+      return readdirSync(chunksDir).filter((fileName) =>
+        fileName.startsWith(`${safeRecordingId(recordingId)}_assembled_`)
+      );
+    };
+
+    const uploadChunk = async (recordingId: string, index: number, total: number, body: Buffer) => {
+      const res = await app.request(
+        `/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${total}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'X-Workspace-Id': 'ws_1',
+            'Content-Type': 'audio/webm',
+          },
+          body,
+        }
+      );
+      expect(res.status).toBe(200);
+      return res;
+    };
+
+    const finalizeUpload = (recordingId: string, total: number) =>
+      app.request(`/media/recordings/${recordingId}/audio/finalize`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer fake_token',
+          'Content-Type': 'application/json',
+          'X-Workspace-Id': 'ws_1',
+        },
+        body: JSON.stringify({
+          workspaceId: 'ws_1',
+          meetingId: 'meeting_1',
+          contentType: 'audio/webm',
+          total,
+        }),
+      });
+
+    const mockSuccessfulPathUpsert = () => {
+      let assembledContent = '';
+      let capturedInput: UpsertMediaAssetFromPathInput | null = null;
+
+      mockTranscriptionService.upsertMediaAssetFromPath.mockImplementation(
+        async (input: UpsertMediaAssetFromPathInput) => {
+          capturedInput = input;
+          assembledContent = readFileSync(input.filePath, 'utf8');
+
+          return {
+            id: input.recordingId,
+            workspace_id: input.workspaceId,
+            size_bytes: Buffer.byteLength(assembledContent),
+            file_path: input.filePath,
+            content_type: input.contentType,
+            transcription_status: 'uploaded',
+          };
+        }
+      );
+
+      return {
+        getCapturedInput: () => capturedInput,
+        getAssembledContent: () => assembledContent,
+      };
+    };
+
     describe('GET /media/recordings/:recordingId/audio/chunk-status', () => {
       it('returns 400 when workspaceId is missing', async () => {
         const res = await app.request(
@@ -444,17 +548,58 @@ describe('Media Routes - Additional Coverage', () => {
         expect(res.status).toBe(400);
       });
 
-      it.skip('returns status with nextIndex when no chunks exist', async () => {
-        // TODO: Fix test isolation issue with chunks directory.
-        // The chunk-status endpoint reads from shared chunks dir which gets
-        // polluted by other tests. Needs isolated temp dir per test.
-        expect(true).toBe(true);
+      it('starts chunk-status tests with an isolated chunks directory', async () => {
+        const chunksDir = path.join(testUploadDir, 'chunks');
+        // The route should not see chunks from earlier tests.
+        expect(existsSync(chunksDir)).toBe(false);
+      });
+    });
+
+    describe('GET /media/recordings/:recordingId/audio/chunk-status integration', () => {
+      it('returns isolated status with nextIndex when no chunks exist', async () => {
+        const res = await app.request(
+          '/media/recordings/rec_chunkstat_003/audio/chunk-status?total=5',
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+            },
+          }
+        );
+
+        expect(res.status).toBe(200);
+        await expect(res.json()).resolves.toEqual({
+          nextIndex: 0,
+          uploaded: 0,
+          total: 5,
+          resumable: false,
+        });
       });
 
-      it.skip('returns status with correct nextIndex when some chunks exist', async () => {
-        // TODO: Fix test isolation issue with chunks directory.
-        // Same as above — chunks dir shared across tests causes false positives.
-        expect(true).toBe(true);
+      it('returns isolated status with correct nextIndex when some chunks exist', async () => {
+        const recordingId = 'rec_chunkstat_004';
+        await uploadChunk(recordingId, 0, 4, Buffer.from('first'));
+        await uploadChunk(recordingId, 1, 4, Buffer.from('second'));
+
+        const res = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk-status?total=4`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+            },
+          }
+        );
+
+        expect(res.status).toBe(200);
+        await expect(res.json()).resolves.toEqual({
+          nextIndex: 2,
+          uploaded: 2,
+          total: 4,
+          resumable: true,
+        });
       });
     });
 
@@ -592,11 +737,64 @@ describe('Media Routes - Additional Coverage', () => {
         expect(data.message).toBeTruthy(); // Error varies by Node.js stream implementation
       });
 
-      it.skip('returns 200 and creates asset when all chunks are present', async () => {
-        // TODO: Create integration test for chunk assembly via real e2e flow.
-        // SKIP: Stream-based assembleChunksToTempFile doesn't work reliably in unit tests.
-        // The logic is covered by integration tests instead.
-        expect(true).toBe(true);
+      it('returns 200, creates asset, and cleans up chunk files when all chunks are present', async () => {
+        const recordingId = 'rec_finalize_success';
+        const total = 3;
+        const upsertCapture = mockSuccessfulPathUpsert();
+
+        await uploadChunk(recordingId, 0, total, Buffer.from('voice-'));
+        await uploadChunk(recordingId, 1, total, Buffer.from('log-'));
+        await uploadChunk(recordingId, 2, total, Buffer.from('payload'));
+
+        const res = await finalizeUpload(recordingId, total);
+
+        expect(res.status).toBe(200);
+        await expect(res.json()).resolves.toMatchObject({
+          id: recordingId,
+          workspaceId: 'ws_1',
+          sizeBytes: Buffer.byteLength('voice-log-payload'),
+          audioQuality: null,
+        });
+        expect(upsertCapture.getCapturedInput()).toMatchObject({
+          recordingId,
+          workspaceId: 'ws_1',
+          meetingId: 'meeting_1',
+          contentType: 'audio/webm',
+          createdByUserId: 'user_1',
+        });
+        expect(upsertCapture.getAssembledContent()).toBe('voice-log-payload');
+        expect(existsSync(chunkPathFor(recordingId, 0))).toBe(false);
+        expect(existsSync(chunkPathFor(recordingId, 1))).toBe(false);
+        expect(existsSync(chunkPathFor(recordingId, 2))).toBe(false);
+        expect(listAssembledFiles(recordingId)).toEqual([]);
+      });
+
+      it('keeps uploaded chunks retryable and removes assembled temp file after storage error', async () => {
+        const recordingId = 'rec_finalize_retry';
+        const total = 2;
+        const upsertCapture = mockSuccessfulPathUpsert();
+        const storageError = Object.assign(new Error('Brak miejsca na dysku'), {
+          code: 'ENOSPC',
+        });
+        mockTranscriptionService.upsertMediaAssetFromPath.mockRejectedValueOnce(storageError);
+
+        await uploadChunk(recordingId, 0, total, Buffer.from('retry-'));
+        await uploadChunk(recordingId, 1, total, Buffer.from('payload'));
+
+        const failedRes = await finalizeUpload(recordingId, total);
+
+        expect(failedRes.status).toBe(507);
+        expect(existsSync(chunkPathFor(recordingId, 0))).toBe(true);
+        expect(existsSync(chunkPathFor(recordingId, 1))).toBe(true);
+        expect(listAssembledFiles(recordingId)).toEqual([]);
+
+        const retryRes = await finalizeUpload(recordingId, total);
+
+        expect(retryRes.status).toBe(200);
+        expect(upsertCapture.getAssembledContent()).toBe('retry-payload');
+        expect(existsSync(chunkPathFor(recordingId, 0))).toBe(false);
+        expect(existsSync(chunkPathFor(recordingId, 1))).toBe(false);
+        expect(listAssembledFiles(recordingId)).toEqual([]);
       });
     });
   });
