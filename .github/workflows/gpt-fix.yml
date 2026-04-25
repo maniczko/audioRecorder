@@ -50,7 +50,7 @@ jobs:
 
       - name: Run AI to fix failing tests
         id: gemini
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_BODY: ${{ inputs.issue_body }}
