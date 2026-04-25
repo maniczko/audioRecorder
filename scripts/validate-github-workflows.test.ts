@@ -79,4 +79,22 @@ describe('GitHub workflows validation', () => {
     expect(content).toContain('scripts/detect-backend-smoke-scope.mjs');
     expect(content).not.toContain("grep -Eq '^(server/|Dockerfile|package\\.json");
   });
+
+  it('keeps the changelog CLI installed for tag release automation', () => {
+    const workflowPath = path.join(workflowDir, 'changelog.yml');
+    const workflowContent = readFileSync(workflowPath, 'utf8');
+    const packageJson = JSON.parse(readFileSync(path.resolve('package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      scripts?: Record<string, string>;
+    };
+    const installedPackages = {
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    };
+
+    expect(workflowContent).toContain('pnpm run changelog');
+    expect(packageJson.scripts?.changelog).toContain('conventional-changelog');
+    expect(installedPackages).toHaveProperty('conventional-changelog-cli');
+  });
 });
