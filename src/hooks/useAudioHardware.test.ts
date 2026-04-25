@@ -140,6 +140,68 @@ describe('useAudioHardware', () => {
     expect(message).toBeTruthy();
   });
 
+  test('calls onStartFailure and keeps idle state when recording start fails', async () => {
+    const onStartFailure = vi.fn();
+    const onMessageChange = vi.fn();
+    navigator.mediaDevices.getUserMedia = vi
+      .fn()
+      .mockRejectedValue(
+        Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' })
+      );
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange,
+        onStartFailure,
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(onStartFailure).toHaveBeenCalledTimes(1);
+    expect(result.current.isRecording).toBe(false);
+    expect(result.current.isPaused).toBe(false);
+    expect(result.current.recordPermission).toBe('denied');
+  });
+
+  test('retries microphone access with relaxed constraints after OverconstrainedError', async () => {
+    const relaxedStream = {
+      getTracks: () => [{ stop: vi.fn() }],
+    };
+    const getUserMediaMock = vi
+      .fn()
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Unsupported constraints'), { name: 'OverconstrainedError' })
+      )
+      .mockResolvedValueOnce(relaxedStream);
+    navigator.mediaDevices.getUserMedia = getUserMediaMock;
+
+    const { result } = renderHook(() =>
+      useAudioHardware({
+        mediaService: { createLiveController: () => null },
+        onRecordingStop: vi.fn(),
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onMessageChange: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording('m1');
+    });
+
+    expect(getUserMediaMock).toHaveBeenCalledTimes(2);
+    expect(getUserMediaMock).toHaveBeenNthCalledWith(2, { audio: true });
+    expect(result.current.isRecording).toBe(true);
+    expect(result.current.recordPermission).toBe('granted');
+  });
+
   test('shows error when getUserMedia is not available', async () => {
     navigator.mediaDevices = { getUserMedia: undefined } as any;
     const onMessageChange = vi.fn();

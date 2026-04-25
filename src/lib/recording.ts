@@ -38,16 +38,18 @@ export function recordingErrorMessage(error) {
   }
 
   switch (error?.name) {
+    case 'OverconstrainedError':
+      return 'Wybrane ustawienia mikrofonu nie sa obslugiwane przez to urzadzenie. Sprobuj ponownie bez wymuszonych ustawien audio.';
     case 'NotAllowedError':
     case 'SecurityError':
-      return '❌ Dostep do mikrofonu zablokowany. Aby odblokować: 1) Kliknij ikonę 🔒 obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.';
+      return 'Dostep do mikrofonu zablokowany. Aby odblokowac: 1) Kliknij ikone klodki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odswiez strone.';
     case 'NotFoundError':
-      return 'Nie znaleziono zadnego mikrofonu. Podłącz mikrofon i spróbuj ponownie.';
+      return 'Nie znaleziono zadnego mikrofonu. Podlacz mikrofon i sprobuj ponownie.';
     case 'NotReadableError':
       return 'Mikrofon jest teraz zajety przez inna aplikacje. Zamknij inne aplikacje uzywajace mikrofonu.';
     case 'AbortError':
       return 'Nagrywanie zostalo przerwane zanim zdazylo wystartowac.';
     default:
-      return 'Nie udalo sie wlaczyc nagrywania. Spróbuj ponownie.';
+      return 'Nie udalo sie wlaczyc nagrywania. Sprobuj ponownie.';
   }
 }

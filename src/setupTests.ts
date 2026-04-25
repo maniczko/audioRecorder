@@ -176,20 +176,27 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // ── react-virtuoso mock ──────────────────────────────────────────────
-vi.mock('react-virtuoso', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    Virtuoso: ({ data, itemContent, style }: any) => {
+vi.mock('react-virtuoso', () => {
+  const Virtuoso = React.forwardRef<any, any>(
+    ({ data = [], itemContent, style, className }, ref) => {
+      React.useImperativeHandle(ref, () => ({
+        scrollToIndex: vi.fn(),
+        scrollTo: vi.fn(),
+        scrollIntoView: vi.fn(),
+      }));
+
       return React.createElement(
         'div',
-        { style },
+        { style, className },
         (data as any[]).map((item, index) =>
-          React.createElement('div', { key: index }, itemContent(index, item))
+          React.createElement('div', { key: item?.id ?? index }, itemContent(index, item))
         )
       );
-    },
-  };
+    }
+  );
+  Virtuoso.displayName = 'MockVirtuoso';
+
+  return { Virtuoso };
 });
 
 // ── Global useToast mock ─────────────────────────────────────────────
@@ -443,41 +450,6 @@ vi.mock('idb-keyval', () => ({
   keys: vi.fn().mockResolvedValue([]),
   update: vi.fn().mockResolvedValue(undefined),
 }));
-
-// ── react-virtuoso mock ──────────────────────────────────────────────
-// Virtual list component used throughout the app
-vi.mock('react-virtuoso', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as object),
-    Virtuoso: ({ data, itemContent, style }: any) => {
-      return React.createElement(
-        'div',
-        { style },
-        (data as any[]).map((item, index) =>
-          React.createElement('div', { key: index }, itemContent(index, item))
-        )
-      );
-    },
-  };
-});
-
-// ── Global useToast mock ─────────────────────────────────────────────
-// Toast notifications used throughout the app
-vi.mock('./shared/Toast', async (importOriginal) => {
-  const actual = await importOriginal();
-  const noopToast = {
-    show: vi.fn(),
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warning: vi.fn(),
-  };
-  return {
-    ...(actual as object),
-    useToast: () => noopToast,
-  };
-});
 
 // ── Test Helper Utilities ────────────────────────────────────────────
 // These utilities help prevent common test issues:

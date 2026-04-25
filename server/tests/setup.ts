@@ -9,6 +9,33 @@ process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_KEY = 'test-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 
+const createSupabaseStorageBucketMock = () => ({
+  upload: vi.fn(async () => ({
+    data: null,
+    error: { message: 'Supabase network disabled in tests' },
+  })),
+  download: vi.fn(async () => ({
+    data: null,
+    error: { message: 'Supabase network disabled in tests' },
+  })),
+  createSignedUrl: vi.fn(async () => ({
+    data: null,
+    error: { message: 'Supabase network disabled in tests' },
+  })),
+  remove: vi.fn(async () => ({ data: [], error: null })),
+});
+
+// Keep the shared server suite offline. Tests that verify Supabase-specific
+// behavior call vi.unmock()/vi.doMock() and provide their own client.
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => ({
+    storage: {
+      createBucket: vi.fn(async () => ({ data: {}, error: null })),
+      from: vi.fn(() => createSupabaseStorageBucketMock()),
+    },
+  })),
+}));
+
 // Global state for controlling fs mocks
 global.__TEST_FS_STATE__ = {
   existsSync: true,

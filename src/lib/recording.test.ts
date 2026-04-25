@@ -158,6 +158,12 @@ describe('recording', () => {
       expect(result).toContain('zajety');
     });
 
+    it('returns OverconstrainedError message', () => {
+      const result = recordingErrorMessage({ name: 'OverconstrainedError' });
+      expect(result).toContain('ustawienia mikrofonu');
+      expect(result).toContain('nie sa obslugiwane');
+    });
+
     it('returns AbortError message', () => {
       const result = recordingErrorMessage({ name: 'AbortError' });
       expect(result).toContain('przerwane');

@@ -21,6 +21,15 @@ const TRANSCRIPTION_STATUS_RETRIES = 5;
 const PROGRESS_MAX_RECONNECT_ERRORS = 20;
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
 
+export function buildTranscriptionProgressRequest(recordingId: string, token = '') {
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+  return {
+    url: `${API_BASE_URL}/media/recordings/${encodeURIComponent(recordingId)}/progress`,
+    headers,
+  };
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -387,44 +396,84 @@ function createRemoteMediaService() {
     },
     subscribeToTranscriptionProgress(recordingId, onProgress) {
       const token = resolvePersistedSession()?.token || '';
-      const query = token ? `?token=${encodeURIComponent(token)}` : '';
-      const url = `${API_BASE_URL}/media/recordings/${recordingId}/progress${query}`;
+      const request = buildTranscriptionProgressRequest(recordingId, token);
       let closed = false;
       let errorCount = 0;
-      let es = new EventSource(url);
+      let abortController: AbortController | null = null;
 
-      function attachListeners(source: EventSource) {
-        source.addEventListener('progress', (e) => {
-          try {
-            const payload = JSON.parse(e.data);
-            errorCount = 0;
-            onProgress(payload);
-            if (payload?.progress >= 100) {
-              closed = true;
-              source.close();
+      const handleSseFrame = (frame: string) => {
+        const lines = frame.split(/\r?\n/);
+        const event = lines
+          .find((line) => line.startsWith('event:'))
+          ?.slice('event:'.length)
+          .trim();
+        const data = lines
+          .filter((line) => line.startsWith('data:'))
+          .map((line) => line.slice('data:'.length).trim())
+          .join('\n');
+
+        if (event !== 'progress' || !data) return;
+
+        try {
+          const payload = JSON.parse(data);
+          errorCount = 0;
+          onProgress(payload);
+          if (payload?.progress >= 100) {
+            closed = true;
+            abortController?.abort();
+          }
+        } catch {
+          // Ignore malformed keep-alive or partial frames.
+        }
+      };
+
+      const connect = async () => {
+        abortController = new AbortController();
+        try {
+          const response = await fetch(request.url, {
+            headers: request.headers,
+            signal: abortController.signal,
+          });
+          if (!response.ok || !response.body) {
+            throw new Error(`Progress stream failed with HTTP ${response.status}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (!closed) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            let boundary = buffer.search(/\r?\n\r?\n/);
+            while (boundary >= 0) {
+              const frame = buffer.slice(0, boundary);
+              buffer = buffer.slice(boundary + (buffer[boundary] === '\r' ? 4 : 2));
+              handleSseFrame(frame);
+              boundary = buffer.search(/\r?\n\r?\n/);
             }
-          } catch (err) {}
-        });
-        source.onerror = () => {
-          source.close();
+          }
+        } catch (error: any) {
+          if (closed || error?.name === 'AbortError') return;
           errorCount += 1;
-          if (closed || errorCount > PROGRESS_MAX_RECONNECT_ERRORS) return;
-          // Reconnect after a short delay on transient errors (e.g. 502)
+          if (errorCount > PROGRESS_MAX_RECONNECT_ERRORS) return;
           setTimeout(
             () => {
-              if (closed) return;
-              es = new EventSource(url);
-              attachListeners(es);
+              if (!closed) {
+                void connect();
+              }
             },
             2000 * Math.min(errorCount, 5)
           );
-        };
-      }
+        }
+      };
 
-      attachListeners(es);
+      void connect();
       return () => {
         closed = true;
-        es.close();
+        abortController?.abort();
       };
     },
     async extractVoiceProfileFromSpeaker(recordingId, speakerId, speakerName) {

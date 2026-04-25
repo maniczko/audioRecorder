@@ -1,11 +1,19 @@
 const DB_NAME = 'voicelog-audio';
 const STORE_NAME = 'recordings';
 const DB_VERSION = 1;
-const MAX_BLOB_BYTES = 500 * 1024 * 1024; // 500 MB hard cap
-const QUOTA_WARN_BYTES = 10 * 1024 * 1024; // warn if <10 MB free
+const MAX_BLOB_BYTES = 500 * 1024 * 1024;
+const QUOTA_WARN_BYTES = 10 * 1024 * 1024;
 const STORAGE_WARN_RATIO = 0.8;
 
-async function getStorageEstimate() {
+interface AudioStorageEstimate {
+  usageBytes: number;
+  quotaBytes: number;
+  freeBytes: number;
+  usageRatio: number;
+  isNearQuota: boolean;
+}
+
+async function getStorageEstimate(): Promise<AudioStorageEstimate | null> {
   if (typeof navigator === 'undefined' || !navigator.storage?.estimate) {
     return null;
   }
@@ -25,11 +33,8 @@ async function getStorageEstimate() {
   };
 }
 
-async function checkStorageQuota(blobSize) {
+async function checkStorageQuota(blobSize: number) {
   const estimate = await getStorageEstimate();
-  if (!estimate) {
-    return;
-  }
 
   if (blobSize > MAX_BLOB_BYTES) {
     throw new Error(
@@ -37,9 +42,13 @@ async function checkStorageQuota(blobSize) {
     );
   }
 
+  if (!estimate) {
+    return;
+  }
+
   if (estimate.freeBytes < QUOTA_WARN_BYTES) {
     throw new Error(
-      `Za mało miejsca w przeglądarce (zostało ${Math.round(estimate.freeBytes / 1024 / 1024)} MB). Zwolnij miejsce i spróbuj ponownie.`
+      `Za malo miejsca w przegladarce (zostalo ${Math.round(estimate.freeBytes / 1024 / 1024)} MB). Zwolnij miejsce i sprobuj ponownie.`
     );
   }
 }
@@ -91,7 +100,7 @@ async function withStore<T>(
   });
 }
 
-export async function saveAudioBlob(recordingId, blob) {
+export async function saveAudioBlob(recordingId: string, blob: Blob) {
   if (!recordingId || !blob) {
     return;
   }
@@ -103,7 +112,7 @@ export async function saveAudioBlob(recordingId, blob) {
   });
 }
 
-export async function getAudioBlob(recordingId) {
+export async function getAudioBlob(recordingId: string) {
   if (!recordingId) {
     return null;
   }
@@ -123,7 +132,7 @@ export async function getAudioBlob(recordingId) {
   });
 }
 
-export async function deleteAudioBlob(recordingId) {
+export async function deleteAudioBlob(recordingId: string) {
   if (!recordingId) {
     return;
   }
@@ -166,7 +175,7 @@ export async function listStoredAudioSizes() {
   );
 }
 
-export async function deleteRecordingBlob(recordingId) {
+export async function deleteRecordingBlob(recordingId: string) {
   return deleteAudioBlob(recordingId);
 }
 

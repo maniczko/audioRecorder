@@ -1,8 +1,7 @@
 name: Auto-merge Dependabot
 
 on:
-  pull_request_target:
-    branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   pull-requests: write

@@ -1,58 +1,43 @@
-## Description
+## Summary
 
-<!-- Describe your changes in detail -->
+<!-- What changed and why? -->
 
-## Type of Change
+## Linear
 
-<!-- Mark relevant options with an x -->
+<!-- Link Linear issues, e.g. VAT-123 -->
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring (no functionality changes)
-- [ ] Test update
-- [ ] Chore (maintenance, dependencies, etc.)
+## Change Type
 
-## Testing
+- [ ] Fix
+- [ ] Feature
+- [ ] Refactor
+- [ ] Test
+- [ ] Docs
+- [ ] CI/build
+- [ ] Chore
 
-<!-- Describe the tests you ran -->
+## Audio Recorder Checklist
 
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] E2E tests added/updated
-- [ ] Manual testing performed
+- [ ] Recording start/stop behavior is unchanged or explicitly tested.
+- [ ] Microphone denial, missing device, busy device, and unsupported constraints are handled.
+- [ ] Recorder cleanup stops active tracks on stop/error/unmount.
+- [ ] Queue statuses remain valid: `queued`, `uploading`, `processing`, `diarization`, `review`, `failed`, `failed_permanent`, `done`.
+- [ ] Failed queue items remain retryable or are intentionally permanent.
+- [ ] Large/long audio behavior is bounded or documented.
 
-## Test Results
+## Verification
 
-- [ ] All tests passing locally
-- [ ] Coverage thresholds met (80% lines, 80% functions, 70% branches)
-- [ ] No new linting errors
+- [ ] `pnpm run typecheck:all`
+- [ ] `pnpm run lint:all`
+- [ ] Focused Vitest files for changed code
+- [ ] `pnpm run test:server:retry` when backend changes
+- [ ] `pnpm run build`
+- [ ] Local frontend/backend smoke when runtime behavior changed
 
-## Checklist
+## Risk Notes
 
-<!-- Mark completed items with an x -->
+<!-- Known risks, intentionally deferred work, or rollout notes. -->
 
-- [ ] My code follows the project's code style
-- [ ] I have formatted the code (`npm run format`)
-- [ ] I have run lint (`npm run lint`)
-- [ ] I have updated the documentation accordingly
-- [ ] I have added/updated tests to cover my changes
-- [ ] All new and existing tests passed
-- [ ] I have updated the CHANGELOG if necessary
-- [ ] I have checked for bundle size impact
+## Screenshots / Recordings
 
-## Related Issues
-
-<!-- Link any related issues -->
-
-Fixes #
-
-## Screenshots
-
-<!-- Include screenshots if UI changes -->
-
-## Notes for Reviewers
-
-<!-- Any additional context or areas you'd like reviewers to focus on -->
+<!-- Required for visible UI changes. -->

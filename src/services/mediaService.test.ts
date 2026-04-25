@@ -52,7 +52,11 @@ vi.mock('../shared/contracts', () => ({
 }));
 
 // Import AFTER all mocks
-import { createMediaService, REMOTE_TRANSCRIPTION_PROVIDER } from './mediaService';
+import {
+  buildTranscriptionProgressRequest,
+  createMediaService,
+  REMOTE_TRANSCRIPTION_PROVIDER,
+} from './mediaService';
 
 describe('mediaService', () => {
   beforeEach(() => {
@@ -75,6 +79,14 @@ describe('mediaService', () => {
   it('exports REMOTE_TRANSCRIPTION_PROVIDER constant', () => {
     expect(REMOTE_TRANSCRIPTION_PROVIDER.id).toBe('remote-pipeline');
     expect(REMOTE_TRANSCRIPTION_PROVIDER.label).toContain('Remote');
+  });
+
+  it('builds transcription progress request without leaking token in URL', () => {
+    const request = buildTranscriptionProgressRequest('rec 1', 'session-token');
+
+    expect(request.url).toBe('http://test-api.local/media/recordings/rec%201/progress');
+    expect(request.url).not.toContain('session-token');
+    expect(request.headers).toEqual({ Authorization: 'Bearer session-token' });
   });
 
   // Skip mode-dependent tests until Vitest mock issue is resolved

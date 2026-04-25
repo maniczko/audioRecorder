@@ -13,12 +13,43 @@ const SILENCE_AMPLITUDE_THRESHOLD = 10;
 // How often to update the silence countdown display (every N frames)
 const SILENCE_CHECK_INTERVAL_FRAMES = 20;
 
+const PREFERRED_AUDIO_CONSTRAINTS = {
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: { ideal: 1 },
+    sampleRate: { ideal: 16000 },
+  },
+} satisfies MediaStreamConstraints;
+
+function isOverconstrainedError(error: unknown) {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'name' in error &&
+    String(error.name) === 'OverconstrainedError'
+  );
+}
+
+async function requestMicrophoneStream(mediaDevices: MediaDevices) {
+  try {
+    return await mediaDevices.getUserMedia(PREFERRED_AUDIO_CONSTRAINTS);
+  } catch (error) {
+    if (isOverconstrainedError(error)) {
+      return mediaDevices.getUserMedia({ audio: true });
+    }
+    throw error;
+  }
+}
+
 export default function useAudioHardware({
   mediaService,
   onRecordingStop,
   onSegmentsChange,
   onInterimChange,
   onMessageChange,
+  onStartFailure,
   silenceAutoStopMinutes = 3,
 }: {
   mediaService: any;
@@ -26,6 +57,7 @@ export default function useAudioHardware({
   onSegmentsChange: (segs: any[]) => void;
   onInterimChange: (text: string) => void;
   onMessageChange: (msg: string) => void;
+  onStartFailure?: () => void;
   silenceAutoStopMinutes?: number | 'off';
 }) {
   interface LiveController {
@@ -221,12 +253,14 @@ export default function useAudioHardware({
     // Check if browser supports getUserMedia
     if (!navigator.mediaDevices?.getUserMedia) {
       onMessageChange('Ta przeglądarka nie obsługuje dostępu do mikrofonu.');
+      onStartFailure?.();
       return;
     }
 
     // Check if browser supports MediaRecorder
     if (typeof window !== 'undefined' && typeof window.MediaRecorder === 'undefined') {
       onMessageChange('Ta przeglądarka nie obsługuje nagrywania audio przez MediaRecorder.');
+      onStartFailure?.();
       return;
     }
 
@@ -244,15 +278,7 @@ export default function useAudioHardware({
     signatureTimelineRef.current = [];
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: { ideal: 1 },
-          sampleRate: { ideal: 16000 },
-        },
-      });
+      const stream = await requestMicrophoneStream(navigator.mediaDevices);
       const browserWindow = window as typeof globalThis & {
         webkitAudioContext?: typeof AudioContext;
       };
@@ -392,12 +418,16 @@ export default function useAudioHardware({
       console.error('Recording start failed.', error);
       cleanupRecorder();
       setIsRecording(false);
+      setIsPaused(false);
+      setElapsed(0);
+      setSilenceCountdown(null);
       // Only mark as 'denied' for actual permission errors
       const errorName =
         error && typeof error === 'object' && 'name' in error ? String(error.name) : '';
       if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
         setRecordPermission('denied');
       }
+      onStartFailure?.();
       onMessageChange(recordingErrorMessage(error));
       setVisualBars(DEFAULT_BARS);
     }

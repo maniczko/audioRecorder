@@ -1,10 +1,7 @@
 name: Auto-Fix Test Failures
 
 on:
-  pull_request:
-    branches: [main, master]
-  push:
-    branches: [main, master]
+  workflow_dispatch:
 
 permissions:
   contents: write

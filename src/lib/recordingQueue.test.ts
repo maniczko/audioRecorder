@@ -11,6 +11,20 @@ import {
 } from './recordingQueue';
 
 describe('recordingQueue helpers', () => {
+  test('returns a stable zeroed summary for an empty queue', () => {
+    expect(buildRecordingQueueSummary([])).toEqual({
+      total: 0,
+      queued: 0,
+      uploading: 0,
+      processing: 0,
+      diarization: 0,
+      review: 0,
+      failed: 0,
+      failed_permanent: 0,
+      done: 0,
+    });
+  });
+
   test('normalizes completed to done', () => {
     expect(normalizeRecordingPipelineStatus('completed')).toBe('done');
     expect(normalizeRecordingPipelineStatus('processing')).toBe('processing');
@@ -107,5 +121,37 @@ describe('recordingQueue helpers', () => {
       getNextProcessableRecordingQueueItem(queue, (item) => item.meetingId === 'meeting_2')
         ?.recordingId
     ).toBe('recording_2');
+  });
+
+  test('counts every supported queue status without missing counters', () => {
+    const statuses = [
+      'queued',
+      'uploading',
+      'processing',
+      'diarization',
+      'review',
+      'failed',
+      'failed_permanent',
+      'done',
+    ] as const;
+
+    const queue = statuses.map((status, index) => ({
+      ...createRecordingQueueItem({
+        recordingId: `recording_${status}`,
+        meeting: {
+          id: `meeting_${index}`,
+          workspaceId: 'workspace_1',
+          title: `Meeting ${index}`,
+        },
+      }),
+      status,
+    }));
+
+    const summary = buildRecordingQueueSummary(queue);
+
+    expect(summary.total).toBe(statuses.length);
+    for (const status of statuses) {
+      expect(summary[status]).toBe(1);
+    }
   });
 });

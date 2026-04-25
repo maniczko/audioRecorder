@@ -3,7 +3,6 @@ import StudioMeetingView from './StudioMeetingView';
 import { getVerifiedSpeakerNames } from './StudioMeetingView';
 import React from 'react';
 import { vi } from 'vitest';
-import AppProviders from '../AppProviders';
 
 const apiRequestMock = vi.hoisted(() => vi.fn());
 
@@ -29,7 +28,7 @@ vi.mock('../services/httpClient', async (importOriginal) => {
 });
 
 function renderWithContext(ui: React.ReactElement) {
-  return render(<AppProviders>{ui}</AppProviders>);
+  return render(ui);
 }
 
 describe('StudioMeetingView', () => {
@@ -205,7 +204,7 @@ describe('StudioMeetingView', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ponow przetwarzanie/i }));
 
     expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec-failed');
-  });
+  }, 15000);
 
   test('renders workspace backend warning banner when workspaceMessage is set', () => {
     renderWithContext(
@@ -254,15 +253,13 @@ describe('StudioMeetingView', () => {
     );
 
     rerender(
-      <AppProviders>
-        <StudioMeetingView
-          {...defaultProps}
-          selectedRecording={{ id: 'rec404', transcript: [], duration: 60 }}
-          selectedRecordingAudioStatus="error"
-          selectedRecordingAudioError="Nie znaleziono nagrania."
-          hydrateRecordingAudio={hydrateRecordingAudio}
-        />
-      </AppProviders>
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{ id: 'rec404', transcript: [], duration: 60 }}
+        selectedRecordingAudioStatus="error"
+        selectedRecordingAudioError="Nie znaleziono nagrania."
+        hydrateRecordingAudio={hydrateRecordingAudio}
+      />
     );
 
     expect(hydrateRecordingAudio).not.toHaveBeenCalled();

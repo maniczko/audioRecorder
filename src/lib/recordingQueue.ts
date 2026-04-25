@@ -144,6 +144,18 @@ export interface RecordingQueueItem {
   processingStartedAt?: string;
 }
 
+export interface RecordingQueueSummary {
+  total: number;
+  queued: number;
+  uploading: number;
+  processing: number;
+  diarization: number;
+  review: number;
+  failed: number;
+  failed_permanent: number;
+  done: number;
+}
+
 interface CreateRecordingQueueItemInput {
   recordingId: string;
   meeting?: RecordingQueueMeetingLike;
@@ -318,7 +330,7 @@ export function getNextProcessableRecordingQueueItem(
   );
 }
 
-export function buildRecordingQueueSummary(queue: unknown[]) {
+export function buildRecordingQueueSummary(queue: unknown[]): RecordingQueueSummary {
   return normalizeRecordingQueue(queue).reduce(
     (summary, item) => {
       summary.total += 1;
@@ -330,7 +342,10 @@ export function buildRecordingQueueSummary(queue: unknown[]) {
       queued: 0,
       uploading: 0,
       processing: 0,
+      diarization: 0,
+      review: 0,
       failed: 0,
+      failed_permanent: 0,
       done: 0,
     }
   );

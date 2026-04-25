@@ -7,6 +7,7 @@ const {
   pipelineState,
   hydrationState,
   hardwareState,
+  hardwareOptions,
   liveTranscriptValue,
   saveAudioBlobMock,
   deleteRecordingBlobMock,
@@ -46,6 +47,7 @@ const {
     stopRecording: vi.fn(),
     canRecord: true,
   },
+  hardwareOptions: { current: null as any },
   liveTranscriptValue: { current: '' },
   saveAudioBlobMock: vi.fn(),
   deleteRecordingBlobMock: vi.fn(),
@@ -77,7 +79,10 @@ vi.mock('./useAudioHydration', () => ({
 }));
 
 vi.mock('./useAudioHardware', () => ({
-  default: (_options: any) => hardwareState,
+  default: (options: any) => {
+    hardwareOptions.current = options;
+    return hardwareState;
+  },
 }));
 
 vi.mock('./useLiveTranscript', () => ({
@@ -113,6 +118,7 @@ describe('useRecorder', () => {
     hardwareState.startRecording.mockReset();
     hardwareState.cleanupRecorder.mockReset();
     hardwareState.isRecording = false;
+    hardwareOptions.current = null;
     getAudioStorageEstimateMock.mockResolvedValue({
       usageBytes: 50 * 1024 * 1024,
       quotaBytes: 100 * 1024 * 1024,
@@ -309,6 +315,34 @@ describe('useRecorder', () => {
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
     // startRecording on hardware should not be called when no meeting was created
     expect(hardwareState.startRecording).not.toHaveBeenCalled();
+  });
+
+  test('Regression: clears recordingMeetingId when hardware start fails', async () => {
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc' }));
+    const selectMeeting = vi.fn();
+    hardwareState.startRecording.mockImplementation(() => {
+      hardwareOptions.current?.onStartFailure?.();
+      return Promise.resolve();
+    });
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+        selectMeeting,
+      })
+    );
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
+    expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
+    expect(result.current.recordingMeetingId).toBeNull();
   });
 
   // -----------------------------------------------------------------

@@ -1,3 +1,18 @@
+# 0.1.1 (2026-04-25)
+
+### Bug Fixes
+
+- stabilize recorder queue processing and failed-start cleanup
+- handle `OverconstrainedError` with relaxed microphone constraints
+- prevent transcription progress token leakage in URLs
+- keep frontend and backend CI suites offline, sharded, and reproducible
+
+### Maintenance
+
+- remove generated logs/reports from versioned sources
+- document audioRecorder architecture, quality gates, operations, and next work
+- constrain auto-fix workflows to manual execution
+
 # 0.1.0 (2026-03-25)
 
 ### Bug Fixes

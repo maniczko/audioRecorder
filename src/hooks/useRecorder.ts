@@ -161,6 +161,9 @@ export default function useRecorder({
     onSegmentsChange: setCurrentSegments,
     onInterimChange: setLiveText,
     onMessageChange: pipeline.setRecordingMessage,
+    onStartFailure: () => {
+      setRecordingMeetingId(null);
+    },
   });
 
   // 4. Live Transcription Bridge
@@ -193,7 +196,7 @@ export default function useRecorder({
     }
     setRecordingMeetingId(active.id);
     selectMeeting?.(active);
-    hardware.startRecording(active.id);
+    return hardware.startRecording(active.id);
   };
 
   const selectedMeetingQueue = useMemo(

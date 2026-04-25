@@ -1,4 +1,3 @@
-
 # Project Coding Standards — audioRecorder (VoiceLog)
 
 > **Canonical source of truth.** All AI agents (Copilot, Qwen, Cursor, etc.)
@@ -9,14 +8,14 @@
 
 ## 1. Stack
 
-| Layer           | Tech                                                                 |
-| --------------- | -------------------------------------------------------------------- |
-| Frontend        | React 19, TypeScript 5.9, Vite, Zustand 5, TailwindCSS, shadcn/ui    |
+| Layer           | Tech                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Frontend        | React 19, TypeScript 5.9, Vite, Zustand 5, TailwindCSS, shadcn/ui                    |
 | Backend         | Hono (Node.js 22), LangChain/LangGraph, Supabase, SQLite (local) / PostgreSQL (prod) |
-| Testing         | Vitest 4 + @testing-library/react 16, Playwright (e2e)               |
-| Package manager | pnpm 9 (monorepo: root = frontend, `server/` = backend)              |
-| Formatting      | Prettier + ESLint (react-app), Stylelint for CSS                     |
-| Commits         | Conventional Commits, max 72 chars subject, English, imperative mood |
+| Testing         | Vitest 4 + @testing-library/react 16, Playwright (e2e)                               |
+| Package manager | pnpm 9 (monorepo: root = frontend, `server/` = backend)                              |
+| Formatting      | Prettier + ESLint (react-app), Stylelint for CSS                                     |
+| Commits         | Conventional Commits, max 72 chars subject, English, imperative mood                 |
 
 ---
 
@@ -335,3 +334,63 @@ Use `#0` and a descriptive title. Example:
 1. If the server (`pnpm start` / `vite` / `node`) crashes or stops during the implementation, the agent must detect this via terminal checks.
 2. The agent MUST explicitly restart the server with the correct port (e.g., `pnpm start` or forcing `--port 3000`).
 3. The agent MUST NOT notify the user that "changes are ready" if `localhost:3000` is throwing `ERR_CONNECTION_REFUSED`. Wait for the `VITE ready` signal.
+
+---
+
+## 11. audioRecorder Operational Workflow
+
+### 11.1 Start Commands
+
+Use pnpm from the repository root:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run start:server:watch
+pnpm start
+```
+
+Default ports:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://127.0.0.1:4000`
+
+### 11.2 Audio Pipeline Ownership
+
+Critical audio files:
+
+- `src/hooks/useAudioHardware.ts` — microphone access, MediaRecorder lifecycle, cleanup
+- `src/hooks/useRecorder.ts` — recording orchestration and meeting selection
+- `src/lib/recordingQueue.ts` — queue status normalization and summaries
+- `src/store/recorderStore.ts` — persisted queue store and orchestration
+- `src/store/recorderQueueProcessor.ts` — upload, transcription polling, retry, final attachment
+- `server/routes/media.ts`, `server/transcription.ts`, `server/pipeline.ts` — backend media and transcription processing
+
+Do not perform broad refactors across these files without a focused test plan and a release note.
+
+### 11.3 Required Audio Tests
+
+For recorder changes, run at minimum:
+
+```bash
+pnpm exec vitest run src/hooks/useAudioHardware.test.ts src/hooks/useRecorder.test.tsx src/lib/recordingQueue.test.ts src/store/recorderStore.test.ts src/store/recorderQueueProcessor.test.ts --coverage.enabled=false
+```
+
+For full frontend CI parity on Windows, use:
+
+```powershell
+$env:NODE_OPTIONS='--max-old-space-size=8192'; pnpm run test:frontend:ci
+```
+
+### 11.4 Change Report
+
+Every completed change must report:
+
+- Linear issue IDs covered
+- files changed
+- tests run and results
+- known weaknesses or deferred risks
+- whether local frontend/backend runtime was verified
+
+### 11.5 Refactor Control
+
+Refactor only the smallest boundary needed to complete the task. Do not rewrite unrelated UI, workflow, storage, or server modules in the same change.

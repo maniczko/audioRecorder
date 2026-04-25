@@ -1,8 +1,7 @@
 name: Issue to PR Auto-Fix
 
 on:
-  issues:
-    types: [labeled]
+  workflow_dispatch:
 
 jobs:
   auto-fix-issue:

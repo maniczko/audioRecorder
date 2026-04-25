@@ -1,9 +1,7 @@
 name: Auto Security Patches
 
 on:
-  schedule:
-    - cron: '0 0 * * *' # Daily at midnight
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 jobs:
   security-patch:

@@ -81,10 +81,13 @@ describe('recording (browser)', () => {
     (window as any).MediaRecorder = (window as any).MediaRecorder || function Dummy() {};
 
     expect(recordingErrorMessage({ name: 'NotAllowedError' })).toBe(
-      '❌ Dostep do mikrofonu zablokowany. Aby odblokować: 1) Kliknij ikonę 🔒 obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odśwież stronę.'
+      'Dostep do mikrofonu zablokowany. Aby odblokowac: 1) Kliknij ikone klodki obok adresu strony, 2) Wybierz "Zezwalaj" przy mikrofonie, 3) Odswiez strone.'
+    );
+    expect(recordingErrorMessage({ name: 'OverconstrainedError' })).toBe(
+      'Wybrane ustawienia mikrofonu nie sa obslugiwane przez to urzadzenie. Sprobuj ponownie bez wymuszonych ustawien audio.'
     );
     expect(recordingErrorMessage({ name: 'NotFoundError' })).toBe(
-      'Nie znaleziono zadnego mikrofonu. Podłącz mikrofon i spróbuj ponownie.'
+      'Nie znaleziono zadnego mikrofonu. Podlacz mikrofon i sprobuj ponownie.'
     );
     expect(recordingErrorMessage({ name: 'NotReadableError' })).toBe(
       'Mikrofon jest teraz zajety przez inna aplikacje. Zamknij inne aplikacje uzywajace mikrofonu.'
@@ -93,7 +96,7 @@ describe('recording (browser)', () => {
       'Nagrywanie zostalo przerwane zanim zdazylo wystartowac.'
     );
     expect(recordingErrorMessage({ name: 'OtherError' })).toBe(
-      'Nie udalo sie wlaczyc nagrywania. Spróbuj ponownie.'
+      'Nie udalo sie wlaczyc nagrywania. Sprobuj ponownie.'
     );
   });
 });

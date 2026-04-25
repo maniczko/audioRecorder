@@ -2,9 +2,9 @@ name: Bundle Size Monitor
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [main]
   pull_request_target:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   bundle-size:

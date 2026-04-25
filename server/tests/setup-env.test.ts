@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------
@@ -14,5 +15,15 @@ describe('Regression: Issue #0 - server test setup provides Supabase service rol
     expect(process.env.SUPABASE_URL).toBe('https://test.supabase.co');
     expect(process.env.SUPABASE_KEY).toBe('test-key');
     expect(process.env.SUPABASE_SERVICE_ROLE_KEY).toBe('test-key');
+  });
+
+  it('keeps default Supabase storage calls offline and fast', async () => {
+    const client = createClient('https://test.supabase.co', 'test-key');
+
+    const result = await client.storage
+      .from('recordings')
+      .upload('rec1.webm', Buffer.from('audio'), { contentType: 'audio/webm' });
+
+    expect(result.error?.message).toBe('Supabase network disabled in tests');
   });
 });

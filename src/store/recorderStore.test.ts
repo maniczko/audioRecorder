@@ -1,8 +1,10 @@
 /**
- * NOTE: Skipped due to Zustand 5 removing setState from public API.
- * TODO: Re-enable after Zustand 5 migration.
+ * recorderStore tests run against the real Zustand store.
+ * setupTests mocks this module globally, so this file explicitly un-mocks it.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+
+vi.unmock('./recorderStore');
 
 // Hoisted mocks - these survive vi.resetModules()
 const mocks = vi.hoisted(() => ({
@@ -44,7 +46,7 @@ vi.mock('../lib/audioEnhancer', () => ({
 }));
 
 // Increase timeout for processQueue tests (complex async operations)
-describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 }, () => {
+describe('recorderStore', { timeout: 30000 }, () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -152,14 +154,14 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
     expect(useRecorderStore.getState().analysisStatus).toBe('error');
   });
 
-  // ─────────────────────────────────────────────────────────────────
-  // Issue #0 — Queue item immediately fails with "Nie znaleziono spotkania"
+  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
+  // Issue #0 Ă˘â‚¬â€ť Queue item immediately fails with "Nie znaleziono spotkania"
   // Date: 2026-04-03
   // Bug: processQueue marked items as failed on first attempt if meeting wasn't
   //      yet in userMeetingsRef (race condition after import/page reload)
   // Fix: retry 3 times before permanently failing, giving hydration time
-  // ─────────────────────────────────────────────────────────────────
-  describe('Regression: #0 — processQueue race condition with meeting resolution', () => {
+  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
+  describe('Regression: #0 Ă˘â‚¬â€ť processQueue race condition with meeting resolution', () => {
     test('does not immediately fail queue item when meeting is temporarily unavailable', async () => {
       const { useRecorderStore } = await import('./recorderStore');
       useRecorderStore.setState({
@@ -197,12 +199,12 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
         ],
       });
 
-      // Meeting now available — resolver returns it
+      // Meeting now available Ă˘â‚¬â€ť resolver returns it
       const resolver = (item: any) =>
         item.meetingId === 'm_new' ? { id: 'm_new', workspaceId: 'ws1' } : null;
 
       // processQueue should find the item now (canProcess returns true)
-      // It will proceed to processing — we just verify it doesn't fail
+      // It will proceed to processing Ă˘â‚¬â€ť we just verify it doesn't fail
 
       mocks.getAudioBlob.mockResolvedValueOnce(null);
 
@@ -211,7 +213,7 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
       await useRecorderStore.getState().processQueue(resolver, vi.fn(), vi.fn());
 
       const item = useRecorderStore.getState().recordingQueue[0];
-      // It should NOT be 'failed' with meeting error — it proceeds into the normal flow
+      // It should NOT be 'failed' with meeting error Ă˘â‚¬â€ť it proceeds into the normal flow
       expect(item.errorMessage).not.toBe('Nie znaleziono spotkania.');
     });
   });
@@ -483,7 +485,7 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
       startTranscriptionJob: vi
         .fn()
         .mockRejectedValue(
-          new Error('Serwer chwilowo przeciążony pamięciowo — spróbuj ponownie za minutę.')
+          new Error('Serwer chwilowo przeciazony pamieciowo - sprobuj ponownie za minute.')
         ),
       subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
     });
@@ -626,15 +628,15 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
     ).toBeUndefined();
   });
 
-  // ─────────────────────────────────────────────────────────────────
-  // Issue #0 — processQueue removes queue item even when meeting not found
+  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
+  // Issue #0 Ă˘â‚¬â€ť processQueue removes queue item even when meeting not found
   // Date: 2026-04-04
   // Bug: attachCompletedRecording silently failed when meeting was missing from
   //      state (e.g. after bootstrap overwrite). Queue item was removed anyway,
   //      permanently losing the recording data.
   // Fix: check return value; if false, mark queue item as failed instead of removing.
-  // ─────────────────────────────────────────────────────────────────
-  describe('Regression: #0 — processQueue preserves queue item when attachment fails', () => {
+  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
+  describe('Regression: #0 Ă˘â‚¬â€ť processQueue preserves queue item when attachment fails', () => {
     test('marks item as failed when attachCompletedRecording returns false (normal transcript)', async () => {
       mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
@@ -671,11 +673,14 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
 
       const attachMock = vi.fn().mockReturnValue(false);
 
-      await useRecorderStore
+      const processPromise = useRecorderStore
         .getState()
         .processQueue(() => ({ id: 'meeting_missing', workspaceId: 'ws1' }), attachMock, vi.fn());
 
-      expect(attachMock).toHaveBeenCalledTimes(1);
+      await vi.runAllTimersAsync();
+      await processPromise;
+
+      expect(attachMock).toHaveBeenCalledTimes(8);
       const queueItem = useRecorderStore
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan');
@@ -716,11 +721,14 @@ describe.skip('recorderStore — Zustand 5 migration pending', { timeout: 30000 
 
       const attachMock = vi.fn().mockReturnValue(false);
 
-      await useRecorderStore
+      const processPromise = useRecorderStore
         .getState()
         .processQueue(() => ({ id: 'meeting_gone', workspaceId: 'ws1' }), attachMock, vi.fn());
 
-      expect(attachMock).toHaveBeenCalledTimes(1);
+      await vi.runAllTimersAsync();
+      await processPromise;
+
+      expect(attachMock).toHaveBeenCalledTimes(8);
       const queueItem = useRecorderStore
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan_empty');
