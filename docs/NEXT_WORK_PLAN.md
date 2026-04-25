@@ -5,12 +5,12 @@ Last updated: 2026-04-25 after `v0.1.2`.
 Completed after `v0.1.2`:
 
 - `VAT-178` - local Node 22 runtime is pinned with `.nvmrc` and `.node-version`.
+- `VAT-179` - workflow dashboard tests are hermetic and use tracked fixtures instead of generated local snapshots.
 
 ## P0 - Post-release Follow-up
 
 - Run one real microphone recording smoke in Chrome with the deployed or local backend.
 - Keep `v0.1.2` stable; the tag is published and should not be moved.
-- `VAT-179` - make workflow dashboard tests hermetic so `pnpm run test:workflows` can become a reliable gate.
 
 ## P1 - Audio Pipeline Hardening
 

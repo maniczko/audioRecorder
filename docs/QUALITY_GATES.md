@@ -29,6 +29,16 @@ pnpm run typecheck:server
 pnpm run test:server:retry
 ```
 
+## Workflow Dashboard Gate
+
+Workflow and monitoring-dashboard changes must run the hermetic workflow gate:
+
+```bash
+pnpm run test:workflows
+```
+
+This gate uses tracked fixtures for dashboard service data. Live snapshots remain opt-in via `pnpm run test:generate` or `node scripts/monitor-external-services.js` and must not be required by unit tests.
+
 ## E2E And Manual Gates
 
 Playwright is release-blocking for UI flows that change navigation, recording UX, auth, or workspace bootstrapping:

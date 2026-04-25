@@ -2,6 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
+import { externalServicesFixture } from './fixtures/dashboard-fixtures';
+
+function cloneFixture<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 function loadDashboardServices() {
   const scriptPath = path.resolve(process.cwd(), 'scripts', 'dashboard-services.js');
   const source = fs.readFileSync(scriptPath, 'utf8');
@@ -30,11 +36,7 @@ describe('dashboard-services', () => {
       github: {
         status: 'connected',
         actions: {
-          recent_runs: [
-            { status: 'success' },
-            { status: 'failure' },
-            { status: 'skipped' },
-          ],
+          recent_runs: [{ status: 'success' }, { status: 'failure' }, { status: 'skipped' }],
           latest_by_workflow: [{ name: 'Optimized CI' }],
           total_runs: 42,
           success_rate: 67,
@@ -104,17 +106,8 @@ describe('dashboard-services', () => {
     expect(normalized.vercel.failedDeployments).toEqual([]);
   });
 
-  it('regression: current external-services snapshot always exposes failure arrays', () => {
-    const rawScript = fs.readFileSync(
-      path.resolve(process.cwd(), 'scripts', 'external-services.js'),
-      'utf8'
-    );
-    const payload = rawScript
-      .replace(/^\/\/.*\r?\n\/\/.*\r?\nwindow\.EXTERNAL_SERVICES_DATA = /, '')
-      .replace(/;\s*$/, '');
-    const fixture = JSON.parse(payload);
-
-    const normalized = servicesApi.normalizeServicesData(fixture);
+  it('regression: hermetic external-services fixture exposes failure arrays', () => {
+    const normalized = servicesApi.normalizeServicesData(cloneFixture(externalServicesFixture));
 
     expect(Array.isArray(normalized.railway.failedDeployments)).toBe(true);
     expect(Array.isArray(normalized.vercel.failedDeployments)).toBe(true);
