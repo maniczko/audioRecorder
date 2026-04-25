@@ -1,5 +1,6 @@
 import type {
   AudioQualityDiagnostics,
+  DiarizationResult,
   MeetingAsset,
   TranscriptionQualityMetrics,
   TranscriptSegment,
@@ -44,6 +45,7 @@ export interface WorkspaceStateResponse extends WorkspaceStatePayload {
 }
 
 export interface MediaTranscriptionResponse {
+  recordingId?: string;
   diarization?: unknown;
   segments?: TranscriptSegment[];
   providerId?: string;
@@ -62,6 +64,7 @@ export interface MediaTranscriptionResponse {
   qualityMetrics?: TranscriptionQualityMetrics | null;
   reviewSummary?: string | null;
   errorMessage?: string;
+  updatedAt?: string;
 }
 
 // ─── AI proxy endpoint contracts ─────────────────────────────────────────────
@@ -133,16 +136,87 @@ export interface AiPersonProfileResponse {
   generatedAt?: string;
 }
 
-export function normalizeWorkspaceState(input: any = {}): WorkspaceState {
+type UnknownRecord = Record<string, unknown>;
+type IdentifiedItem = { id?: unknown };
+type DiarizationPayload = Partial<DiarizationResult> & UnknownRecord;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function asRecord(value: unknown): UnknownRecord {
+  return isRecord(value) ? value : {};
+}
+
+function itemId(item: unknown) {
+  return String((isRecord(item) ? (item as IdentifiedItem).id : '') || '');
+}
+
+function parseJsonRecord(value: unknown): DiarizationPayload {
+  try {
+    const parsed = JSON.parse(String(value || '{}'));
+    return isRecord(parsed) ? (parsed as DiarizationPayload) : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function parseJsonArray<T>(value: unknown): T[] {
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function stringValue(value: unknown) {
+  return typeof value === 'string' ? value : '';
+}
+
+function normalizePostprocessStage(value: unknown): TranscriptionStatusPayload['postprocessStage'] {
+  if (value === 'queued' || value === 'running' || value === 'done' || value === 'failed') {
+    return value;
+  }
+  return '';
+}
+
+function normalizeTranscriptOutcome(
+  value: unknown
+): TranscriptionStatusPayload['transcriptOutcome'] {
+  return value === 'empty' ? 'empty' : 'normal';
+}
+
+function normalizeEmptyReason(value: unknown): TranscriptionStatusPayload['emptyReason'] {
+  if (
+    value === 'no_segments_from_stt' ||
+    value === 'segments_removed_by_vad' ||
+    value === 'segments_removed_as_hallucinations' ||
+    value === 'all_chunks_discarded_as_too_small'
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
+function optionalObject<T extends object>(value: unknown): T | undefined {
+  return value && typeof value === 'object' ? (value as T) : undefined;
+}
+
+function nullableObject<T extends object>(value: unknown): T | null {
+  return value && typeof value === 'object' ? (value as T) : null;
+}
+
+export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
+  const source = asRecord(input);
   const payload: WorkspaceState = {
-    meetings: Array.isArray(input.meetings) ? input.meetings : [],
-    manualTasks: Array.isArray(input.manualTasks) ? input.manualTasks : [],
-    taskState: input.taskState && typeof input.taskState === 'object' ? input.taskState : {},
-    taskBoards: input.taskBoards && typeof input.taskBoards === 'object' ? input.taskBoards : {},
-    calendarMeta:
-      input.calendarMeta && typeof input.calendarMeta === 'object' ? input.calendarMeta : {},
-    vocabulary: Array.isArray(input.vocabulary) ? input.vocabulary : [],
-    updatedAt: String(input.updatedAt || ''),
+    meetings: Array.isArray(source.meetings) ? source.meetings : [],
+    manualTasks: Array.isArray(source.manualTasks) ? source.manualTasks : [],
+    taskState: isRecord(source.taskState) ? source.taskState : {},
+    taskBoards: isRecord(source.taskBoards) ? source.taskBoards : {},
+    calendarMeta: isRecord(source.calendarMeta) ? source.calendarMeta : {},
+    vocabulary: Array.isArray(source.vocabulary) ? source.vocabulary : [],
+    updatedAt: String(source.updatedAt || ''),
   };
 
   return payload;
@@ -163,15 +237,15 @@ function buildCollectionDelta(
   const previousById = new Map<string, unknown>();
   const nextById = new Map<string, unknown>();
 
-  previous.forEach((item: any) => {
-    const id = String(item?.id || '');
+  previous.forEach((item) => {
+    const id = itemId(item);
     if (id) {
       previousById.set(id, item);
     }
   });
 
-  next.forEach((item: any) => {
-    const id = String(item?.id || '');
+  next.forEach((item) => {
+    const id = itemId(item);
     if (id) {
       nextById.set(id, item);
     }
@@ -280,8 +354,8 @@ function applyCollectionDelta(
 
   const current = [...previous];
   const byId = new Map<string, number>();
-  current.forEach((item: any, index) => {
-    const id = String(item?.id || '');
+  current.forEach((item, index) => {
+    const id = itemId(item);
     if (id) {
       byId.set(id, index);
     }
@@ -291,15 +365,15 @@ function applyCollectionDelta(
   if (removeIds.length) {
     const removeSet = new Set(removeIds.map((id) => String(id)));
     for (let i = current.length - 1; i >= 0; i -= 1) {
-      const id = String((current[i] as any)?.id || '');
+      const id = itemId(current[i]);
       if (id && removeSet.has(id)) {
         current.splice(i, 1);
       }
     }
   }
 
-  (Array.isArray(delta.upsert) ? delta.upsert : []).forEach((item: any) => {
-    const id = String(item?.id || '');
+  (Array.isArray(delta.upsert) ? delta.upsert : []).forEach((item) => {
+    const id = itemId(item);
     if (!id) {
       current.push(item);
       return;
@@ -378,49 +452,34 @@ export function normalizePipelineStatus(
 export function normalizeTranscriptionStatusPayload(
   asset: Partial<MeetingAsset> | null | undefined
 ): TranscriptionStatusPayload {
-  let diarization: any = {};
-  let segments: TranscriptSegment[] = [];
-
-  try {
-    diarization = JSON.parse(String(asset?.diarization_json || '{}'));
-  } catch (_) {}
-  try {
-    segments = JSON.parse(String(asset?.transcript_json || '[]'));
-  } catch (_) {}
+  const diarization = parseJsonRecord(asset?.diarization_json);
+  const segments = parseJsonArray<TranscriptSegment>(asset?.transcript_json);
 
   return {
     recordingId: String(asset?.id || ''),
     pipelineStatus: normalizePipelineStatus(String(asset?.transcription_status || '')),
     enhancementsPending: Boolean(diarization?.enhancementsPending),
-    postprocessStage: String(
-      diarization?.postprocessStage || ''
-    ) as TranscriptionStatusPayload['postprocessStage'],
-    transcriptOutcome: diarization?.transcriptOutcome || 'normal',
-    emptyReason: diarization?.emptyReason || '',
-    userMessage: diarization?.userMessage || '',
-    pipelineVersion: diarization?.pipelineVersion || '',
-    pipelineGitSha: diarization?.pipelineGitSha || '',
-    pipelineBuildTime: diarization?.pipelineBuildTime || '',
-    audioQuality:
-      diarization?.audioQuality && typeof diarization.audioQuality === 'object'
-        ? diarization.audioQuality
-        : null,
-    transcriptionDiagnostics:
-      diarization?.transcriptionDiagnostics &&
-      typeof diarization.transcriptionDiagnostics === 'object'
-        ? diarization.transcriptionDiagnostics
-        : null,
-    qualityMetrics:
-      diarization?.qualityMetrics && typeof diarization.qualityMetrics === 'object'
-        ? diarization.qualityMetrics
-        : null,
+    postprocessStage: normalizePostprocessStage(diarization.postprocessStage),
+    transcriptOutcome: normalizeTranscriptOutcome(diarization.transcriptOutcome),
+    emptyReason: normalizeEmptyReason(diarization.emptyReason),
+    userMessage: stringValue(diarization.userMessage),
+    pipelineVersion: stringValue(diarization.pipelineVersion),
+    pipelineGitSha: stringValue(diarization.pipelineGitSha),
+    pipelineBuildTime: stringValue(diarization.pipelineBuildTime),
+    audioQuality: nullableObject<AudioQualityDiagnostics>(diarization.audioQuality),
+    transcriptionDiagnostics: optionalObject<TranscriptionDiagnostics>(
+      diarization.transcriptionDiagnostics
+    ),
+    qualityMetrics: nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics),
     segments: Array.isArray(segments) ? segments : [],
-    diarization: diarization && typeof diarization === 'object' ? diarization : {},
-    speakerNames: diarization?.speakerNames || {},
-    speakerCount: diarization?.speakerCount || 0,
-    confidence: diarization?.confidence || 0,
-    reviewSummary: diarization?.reviewSummary || null,
-    errorMessage: diarization?.errorMessage || '',
+    diarization,
+    speakerNames: isRecord(diarization.speakerNames)
+      ? (diarization.speakerNames as Record<string, string>)
+      : {},
+    speakerCount: Number(diarization.speakerCount || 0),
+    confidence: Number(diarization.confidence || 0),
+    reviewSummary: typeof diarization.reviewSummary === 'string' ? diarization.reviewSummary : null,
+    errorMessage: stringValue(diarization.errorMessage),
     updatedAt: String(asset?.updated_at || ''),
   };
 }
@@ -428,47 +487,50 @@ export function normalizeTranscriptionStatusPayload(
 export function normalizeMediaTranscriptionResponse(
   response: MediaTranscriptionResponse | null | undefined
 ): TranscriptionStatusPayload {
-  const diarization =
-    response?.diarization && typeof response.diarization === 'object' ? response.diarization : {};
+  const diarization = isRecord(response?.diarization)
+    ? (response.diarization as DiarizationPayload)
+    : {};
   const segments = Array.isArray(response?.segments) ? response.segments : [];
 
   return {
-    recordingId: String((response as any)?.recordingId || ''),
+    recordingId: String(response?.recordingId || ''),
     pipelineStatus: normalizePipelineStatus(String(response?.pipelineStatus || 'queued')),
-    enhancementsPending: Boolean(
-      (diarization as any)?.enhancementsPending ?? response?.enhancementsPending
+    enhancementsPending: Boolean(diarization.enhancementsPending ?? response?.enhancementsPending),
+    postprocessStage: normalizePostprocessStage(
+      diarization.postprocessStage || response?.postprocessStage
     ),
-    postprocessStage: String(
-      (diarization as any)?.postprocessStage || response?.postprocessStage || ''
-    ) as TranscriptionStatusPayload['postprocessStage'],
-    transcriptOutcome:
-      (diarization as any)?.transcriptOutcome || response?.transcriptOutcome || 'normal',
-    emptyReason: (diarization as any)?.emptyReason || response?.emptyReason || '',
-    userMessage: (diarization as any)?.userMessage || response?.userMessage || '',
-    pipelineVersion: (diarization as any)?.pipelineVersion || response?.pipelineVersion || '',
-    pipelineGitSha: (diarization as any)?.pipelineGitSha || response?.pipelineGitSha || '',
-    pipelineBuildTime: (diarization as any)?.pipelineBuildTime || response?.pipelineBuildTime || '',
+    transcriptOutcome: normalizeTranscriptOutcome(
+      diarization.transcriptOutcome || response?.transcriptOutcome
+    ),
+    emptyReason: normalizeEmptyReason(diarization.emptyReason || response?.emptyReason),
+    userMessage: stringValue(diarization.userMessage || response?.userMessage),
+    pipelineVersion: stringValue(diarization.pipelineVersion || response?.pipelineVersion),
+    pipelineGitSha: stringValue(diarization.pipelineGitSha || response?.pipelineGitSha),
+    pipelineBuildTime: stringValue(diarization.pipelineBuildTime || response?.pipelineBuildTime),
     audioQuality:
-      (diarization as any)?.audioQuality && typeof (diarization as any).audioQuality === 'object'
-        ? (diarization as any).audioQuality
-        : response?.audioQuality || null,
+      nullableObject<AudioQualityDiagnostics>(diarization.audioQuality) ||
+      response?.audioQuality ||
+      null,
     transcriptionDiagnostics:
-      (diarization as any)?.transcriptionDiagnostics &&
-      typeof (diarization as any).transcriptionDiagnostics === 'object'
-        ? (diarization as any).transcriptionDiagnostics
-        : response?.transcriptionDiagnostics || null,
+      optionalObject<TranscriptionDiagnostics>(diarization.transcriptionDiagnostics) ||
+      response?.transcriptionDiagnostics ||
+      undefined,
     qualityMetrics:
-      (diarization as any)?.qualityMetrics &&
-      typeof (diarization as any).qualityMetrics === 'object'
-        ? (diarization as any).qualityMetrics
-        : response?.qualityMetrics || null,
+      nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics) ||
+      response?.qualityMetrics ||
+      null,
     segments,
     diarization,
-    speakerNames: (diarization as any)?.speakerNames || {},
-    speakerCount: (diarization as any)?.speakerCount || 0,
-    confidence: (diarization as any)?.confidence || 0,
-    reviewSummary: (diarization as any)?.reviewSummary || response?.reviewSummary || null,
-    errorMessage: (diarization as any)?.errorMessage || response?.errorMessage || '',
-    updatedAt: String((response as any)?.updatedAt || ''),
+    speakerNames: isRecord(diarization.speakerNames)
+      ? (diarization.speakerNames as Record<string, string>)
+      : {},
+    speakerCount: Number(diarization.speakerCount || 0),
+    confidence: Number(diarization.confidence || 0),
+    reviewSummary:
+      typeof diarization.reviewSummary === 'string'
+        ? diarization.reviewSummary
+        : response?.reviewSummary || null,
+    errorMessage: stringValue(diarization.errorMessage || response?.errorMessage),
+    updatedAt: String(response?.updatedAt || ''),
   };
 }

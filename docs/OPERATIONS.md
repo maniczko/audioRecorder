@@ -27,7 +27,16 @@ Use a stable grouping key:
 - status code
 - runtime mode
 
-Do not create duplicate issues for repeated occurrences of the same group. Update the existing issue or monitoring report.
+Automated monitors use `scripts/monitoring-error-groups.mjs` to normalize volatile data like timestamps, run IDs, URLs, request IDs, and line numbers before hashing the group. GitHub issues created by monitoring include a `monitoring-group-<hash>` label and an HTML body marker with the group key.
+
+Do not create duplicate issues for repeated occurrences of the same group. Update the existing issue or monitoring report. If a new report has the same `monitoring-group-<hash>` label, treat it as the same incident until the root cause changes.
+
+Review active monitoring groups weekly:
+
+- confirm that each open monitoring issue still represents an active failure
+- close resolved groups after a green report or successful deploy confirms recovery
+- split a group only when the normalized message hides two distinct root causes
+- convert recurring high-impact groups into Linear work items with the group key in the description
 
 ## Uncaught Exceptions
 

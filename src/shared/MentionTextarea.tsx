@@ -3,11 +3,23 @@ import { createPortal } from 'react-dom';
 import { getTagColor } from './TagBadge';
 import './MentionTextareaStyles.css';
 
+export type MentionTextareaChangeEvent =
+  | ChangeEvent<HTMLTextAreaElement>
+  | { target: { value: string } };
+
 interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   value?: string;
-  onChange?: (e: any) => void;
+  onChange?: (event: MentionTextareaChangeEvent) => void;
   suggestions?: string[];
 }
+
+interface MentionState {
+  query: string;
+  start: number;
+  end: number;
+}
+
+const mentionQueryPattern = /@([\p{L}\p{N}_\s]*)$/u;
 
 export default function MentionTextarea({
   value = '',
@@ -19,11 +31,7 @@ export default function MentionTextarea({
   style,
   ...props
 }: MentionTextareaProps) {
-  const [mentionState, setMentionState] = useState<{
-    query: string;
-    start: number;
-    end: number;
-  } | null>(null);
+  const [mentionState, setMentionState] = useState<MentionState | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 240, maxHeight: 220 });
   const [isFocused, setIsFocused] = useState(false);
@@ -87,24 +95,26 @@ export default function MentionTextarea({
     }
   }
 
+  function syncMentionState(val: string, cursor: number) {
+    const textBeforeCursor = val.slice(0, cursor);
+    const match = textBeforeCursor.match(mentionQueryPattern);
+
+    if (match) {
+      setMentionState({
+        query: match[1],
+        start: match.index ?? 0,
+        end: cursor,
+      });
+      return;
+    }
+
+    setMentionState(null);
+  }
+
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value;
     onChange?.(e);
-
-    const cursor = e.target.selectionStart;
-    const textBeforeCursor = val.slice(0, cursor);
-    const match = textBeforeCursor.match(/@([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]*)$/);
-
-    if (match) {
-      const query = match[1];
-      setMentionState({
-        query,
-        start: match.index as number,
-        end: cursor,
-      });
-    } else {
-      setMentionState(null);
-    }
+    syncMentionState(val, e.target.selectionStart);
   }
 
   function insertMention(suggestion: string) {
@@ -114,7 +124,7 @@ export default function MentionTextarea({
     const after = value.slice(mentionState.end);
     const newValue = `${before}@${suggestion} ${after}`;
 
-    onChange?.({ target: { value: newValue } } as any);
+    onChange?.({ target: { value: newValue } });
     setMentionState(null);
 
     setTimeout(() => {
@@ -148,18 +158,17 @@ export default function MentionTextarea({
 
   function renderHighlights(text: string) {
     if (!highlightRegex || !text) return text;
-    // ensure trailing space to scroll appropriately
     const textToRender = text.endsWith('\n') ? text + ' ' : text;
     const parts = textToRender.split(highlightRegex);
-    return parts.map((part, i) => {
-      if (i % 2 !== 0) {
+    return parts.map((part, index) => {
+      if (index % 2 !== 0) {
         return (
-          <mark key={i} className="mention-highlight">
+          <mark key={index} className="mention-highlight">
             @{part}
           </mark>
         );
       }
-      return <span key={i}>{part}</span>;
+      return <span key={index}>{part}</span>;
     });
   }
 
@@ -184,8 +193,10 @@ export default function MentionTextarea({
         }}
         placeholder={placeholder}
         rows={rows}
-        onSelect={(e) => {
-          if (mentionState) handleChange(e as any);
+        onSelect={(event) => {
+          if (mentionState) {
+            syncMentionState(event.currentTarget.value, event.currentTarget.selectionStart);
+          }
         }}
         {...props}
       />
@@ -206,35 +217,35 @@ export default function MentionTextarea({
             }}
             onMouseDown={(e) => e.preventDefault()}
           >
-            {filteredSuggestions.map((s, idx) => (
+            {filteredSuggestions.map((suggestion, index) => (
               <button
-                key={s}
+                key={suggestion}
                 type="button"
                 className="todo-mention-option"
                 style={{
-                  backgroundColor: idx === activeIndex ? 'rgba(117, 214, 196, 0.1)' : undefined,
-                  color: idx === activeIndex ? 'var(--accent)' : undefined,
+                  backgroundColor: index === activeIndex ? 'rgba(117, 214, 196, 0.1)' : undefined,
+                  color: index === activeIndex ? 'var(--accent)' : undefined,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                 }}
-                onMouseEnter={() => setActiveIndex(idx)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  insertMention(s);
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  insertMention(suggestion);
                 }}
               >
                 <span
                   className="tag-badge-dot"
                   style={{
-                    backgroundColor: getTagColor(s),
+                    backgroundColor: getTagColor(suggestion),
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
                     display: 'inline-block',
                   }}
                 />
-                <span style={{ fontWeight: 600 }}>{s}</span>
+                <span style={{ fontWeight: 600 }}>{suggestion}</span>
               </button>
             ))}
           </div>,

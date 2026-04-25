@@ -1,17 +1,24 @@
 # Next Work Plan
 
-Last updated: 2026-04-25 after `v0.1.2`.
+Last updated: 2026-04-25 after `v0.1.3` preparation.
 
 Completed after `v0.1.2`:
 
 - `VAT-178` - local Node 22 runtime is pinned with `.nvmrc` and `.node-version`.
 - `VAT-179` - workflow dashboard tests are hermetic and use tracked fixtures instead of generated local snapshots.
 - `VAT-152` - large audio preprocessing boundary is documented and long or large recordings skip browser-side VAD/enhancement.
+- `VAT-160` - monitoring reports are grouped by stable fingerprints before creating or updating GitHub issues.
+- `VAT-117` - server bootstrap is split into startup maintenance, periodic cleanup, and runtime lifecycle modules.
+- `VAT-116` - `AppShellModern` is a smaller orchestrator with app-shell components and focused tests.
+- `VAT-115` - `AuthScreen` is a smaller orchestrator with auth components and focused tests.
+- `VAT-120` - shared frontend contracts and mention textarea typing no longer rely on broad `any` usage.
+- `VAT-118` - root documentation clutter is archived into structured `docs/` sections.
 
 ## P0 - Post-release Follow-up
 
 - Run one real microphone recording smoke in Chrome with the deployed or local backend.
-- Keep `v0.1.2` stable; the tag is published and should not be moved.
+- Monitor the `v0.1.3` tag workflow, GitHub Release creation, and production deploy signal.
+- Watch the first scheduled monitoring runs to confirm stable issue grouping reduces duplicates.
 
 ## P1 - Audio Pipeline Hardening
 
@@ -21,13 +28,12 @@ Completed after `v0.1.2`:
 
 ## P2 - Maintainability
 
-- `VAT-117` - refactor server bootstrap into startup checks, service composition, cleanup, server startup, and shutdown modules.
-- `VAT-116` - split `AppShellModern` into smaller layout, navigation, workspace, and command modules.
-- `VAT-115` - split `AuthScreen` into focused auth, onboarding, reset, and social-login modules.
-- `VAT-120` - tighten shared typing and reduce unjustified broad `any` usage in frontend foundations.
+- Continue decomposing `server/database.ts` and `server/pipeline.ts` around persistence, upload assembly, and transcription orchestration boundaries.
+- Split the largest shared test setup concerns out of `src/setupTests.ts` so frontend tests stay easier to reason about.
+- Keep refactors behavior-preserving and tied to focused tests.
 
 ## P3 - Operations And Repo Hygiene
 
-- `VAT-160` - group monitoring errors by stable keys and reduce duplicate Linear/GitHub issue creation.
-- `VAT-118` - centralize operational docs and archive root-level historical reports/logs.
-- Keep only README, AGENTS, ARCHITECTURE, CHANGELOG, package metadata, and entry-point config at repository root where practical.
+- Consolidate overlapping GitHub Actions once the new monitoring grouping has run cleanly for a few cycles.
+- Move or retire stale generated reports if they are not used by current verification or release workflows.
+- Keep only README, AGENTS, ARCHITECTURE, CHANGELOG, package metadata, and entry-point config at repository root.

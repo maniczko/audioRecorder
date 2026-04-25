@@ -39,7 +39,7 @@ describe('Node runtime pinning', () => {
   });
 
   it('keeps Windows setup guidance aligned with the pinned runtime', () => {
-    const guide = readFileSync(path.join(rootDir, 'INSTALL_NODEJS_22.md'), 'utf8');
+    const guide = readFileSync(path.join(rootDir, 'docs/ops/INSTALL_NODEJS_22.md'), 'utf8');
 
     expect(guide).toContain('Node.js 22.x');
     expect(guide).toContain('.nvmrc');

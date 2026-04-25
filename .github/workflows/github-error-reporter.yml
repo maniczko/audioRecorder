@@ -11,7 +11,7 @@ on:
         default: '7'
         type: number
       create_issue:
-        description: 'Create GitHub issue for failures'
+        description: 'Create or update GitHub issues for active failure groups'
         required: false
         default: 'true'
         type: boolean
@@ -27,16 +27,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+
       - run: corepack enable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Fetch GitHub Errors
+      - name: Fetch GitHub errors
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_OWNER: ${{ github.repository_owner }}
@@ -52,87 +54,10 @@ jobs:
           path: github-errors/
           retention-days: 30
 
-      - name: Create Issue for Failures
+      - name: Upsert grouped issues for failures
         if: ${{ github.event.inputs.create_issue != 'false' }}
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            // Find the latest report payload
-            const reportsDir = path.join(process.cwd(), 'github-errors');
-            let mdFile = null;
-            let jsonReport = null;
-
-            if (fs.existsSync(reportsDir)) {
-              const files = fs.readdirSync(reportsDir)
-                .filter(f => f.endsWith('.md'))
-                .sort()
-                .reverse();
-              const jsonFiles = fs.readdirSync(reportsDir)
-                .filter(f => f.endsWith('.json'))
-                .sort()
-                .reverse();
-
-              if (files.length > 0) {
-                mdFile = fs.readFileSync(path.join(reportsDir, files[0]), 'utf8');
-              }
-
-              if (jsonFiles.length > 0) {
-                jsonReport = JSON.parse(fs.readFileSync(path.join(reportsDir, jsonFiles[0]), 'utf8'));
-              }
-            }
-
-            const activeFailures = Number(jsonReport?.summary?.activeFailedRuns || 0);
-            const resolvedFailures = Number(jsonReport?.summary?.resolvedFailedRuns || 0);
-            const hasFailures = activeFailures > 0;
-
-            if (hasFailures) {
-              // Fetch repository contributors for suggestions
-              const { data: contributors } = await github.rest.repos.listContributors({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                per_page: 10,
-              });
-
-              // Build assignees suggestion hint
-              const assigneesHint = contributors.length > 0
-                ? '\n\n---\n💡 **Sugerowane osoby do przypisania:** ' +
-                  contributors.map(c => '@' + c.login).join(', ')
-                : '';
-
-              // Find existing open issue
-              const { data: issues } = await github.rest.issues.listForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                labels: 'automated-error-report',
-              });
-
-              if (issues.length > 0) {
-                // Update existing issue
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issues[0].number,
-                  body: mdFile + assigneesHint,
-                });
-
-                console.log('✅ Updated existing error report issue #' + issues[0].number);
-              } else {
-                // Create new issue
-                const { data: issue } = await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: '🚨 GitHub Actions Error Report - ' + new Date().toISOString().split('T')[0],
-                  body: mdFile + assigneesHint,
-                  labels: ['automated-error-report', 'ci/cd'],
-                });
-
-                console.log('✅ Created new error report issue #' + issue.number);
-              }
-            } else {
-              console.log('✅ No failures found, no issue needed');
-            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+        run: node scripts/upsert-monitoring-issues.mjs --provider github-actions --reports-dir github-errors

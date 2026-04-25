@@ -112,6 +112,7 @@ pnpm run build
 See:
 
 - `AGENTS.md` for the canonical agent workflow.
+- `docs/README.md` for the documentation map.
 - `docs/QUALITY_GATES.md` for merge and release gates.
 - `docs/AUTOMATION_POLICY.md` for auto-fix and auto-PR rules.
 - `ARCHITECTURE.md` for system boundaries and major flows.

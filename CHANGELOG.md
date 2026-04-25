@@ -1,3 +1,21 @@
+# 0.1.3 (2026-04-25)
+
+### Features
+
+- group monitoring reports by stable fingerprints before creating GitHub issues
+- extract server startup maintenance, periodic cleanup, and runtime lifecycle modules
+- split app shell and auth screens into focused, testable components
+
+### Maintenance
+
+- tighten shared frontend contracts and mention textarea typing
+- archive root documentation into structured docs sections
+- update release, solution audit, and next-work planning docs
+
+### Tests
+
+- cover monitoring grouping, server runtime cleanup, app shell, auth, shared typing, and docs structure
+
 # 0.1.2 (2026-04-25)
 
 ### Bug Fixes

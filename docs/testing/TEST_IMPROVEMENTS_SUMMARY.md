@@ -344,7 +344,7 @@ pnpm run test:regression
 
 - [AGENTS.md](./AGENTS.md) — Project coding standards (§2 Testing)
 - [tests/load/README.md](./tests/load/README.md) — Load testing guide
-- [APM_INTEGRATION.md](./APM_INTEGRATION.md) — Application Performance Monitoring
+- [APM_INTEGRATION.md](../ops/APM_INTEGRATION.md) — Application Performance Monitoring
 
 ---
 

@@ -31,3 +31,5 @@ Security automation may generate an audit report. Applying package updates requi
 ## Triage Cadence
 
 Review monitoring and auto-fix candidates once per week. Group similar failures by stable fingerprint before creating Linear or GitHub issues.
+
+The scheduled GitHub Actions and Railway reporters upsert monitoring issues by the `monitoring-group-<hash>` label. Repeated occurrences update the same issue body and status section instead of creating date-based duplicates.
