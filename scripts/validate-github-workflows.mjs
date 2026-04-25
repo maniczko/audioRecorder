@@ -4,16 +4,15 @@ import path from 'node:path';
 import { parse } from 'yaml';
 
 const workflowDir = path.resolve('.github/workflows');
-const suspiciousMojibakePattern = /Ă|â€|â”|ď¸|Ë|Äą|�/u;
+const suspiciousMojibakePattern =
+  /[\u0102\u00c4]\S*|\u00e2[\u20ac\u2022\u2020\u201d\u2122]?|\u0111\u017a|\ufffd/u;
 
 function validateWorkflowFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
   const relativePath = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
 
   if (suspiciousMojibakePattern.test(content)) {
-    throw new Error(
-      `Workflow validation failed for ${relativePath}: suspicious mojibake detected`
-    );
+    throw new Error(`Workflow validation failed for ${relativePath}: suspicious mojibake detected`);
   }
 
   const parsed = parse(content);

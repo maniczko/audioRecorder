@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 const workflowDir = path.resolve('.github/workflows');
-const suspiciousMojibakePattern = /Ă|â€|â”|ď¸|Ë|Äą|�/u;
+const suspiciousMojibakePattern =
+  /[\u0102\u00c4]\S*|\u00e2[\u20ac\u2022\u2020\u201d\u2122]?|\u0111\u017a|\ufffd/u;
 
 describe('GitHub workflows validation', () => {
   it('parses every workflow file and keeps required top-level keys', async () => {
@@ -29,7 +30,7 @@ describe('GitHub workflows validation', () => {
 
   it('rejects the mojibake pattern that broke workflow loading before', () => {
     const brokenSample =
-      "name: Broken\non:\n  push:\n    branches: [main]\njobs:\n  bad:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo 'Ă„â€ÄąĹź broken'\n";
+      "name: Broken\non:\n  push:\n    branches: [main]\njobs:\n  bad:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo 'Ä‚â€žĂ˘â‚¬ÂĂ„Ä…ÄąĹş broken'\n";
 
     expect(suspiciousMojibakePattern.test(brokenSample)).toBe(true);
   });
@@ -69,5 +70,13 @@ describe('GitHub workflows validation', () => {
 
     expect(content).toContain('REQUIRE_EXACT_GIT_SHA');
     expect(content).toContain('require_exact_git_sha');
+  });
+
+  it('uses the backend smoke scope helper instead of treating every package.json edit as a backend deploy', () => {
+    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('scripts/detect-backend-smoke-scope.mjs');
+    expect(content).not.toContain("grep -Eq '^(server/|Dockerfile|package\\.json");
   });
 });

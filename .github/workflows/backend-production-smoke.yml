@@ -21,6 +21,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: corepack enable
       - name: Detect backend deploy-relevant changes
         id: scope
         shell: bash
@@ -28,39 +32,40 @@ jobs:
           BEFORE_SHA="${{ github.event.before }}"
           HEAD_SHA="${{ github.sha }}"
           ZERO_SHA="0000000000000000000000000000000000000000"
+          CHANGED_FILES_PATH="$(mktemp)"
+          BEFORE_PACKAGE_JSON_PATH="$(mktemp)"
 
           if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "$ZERO_SHA" ]]; then
             CHANGED_FILES="$(git show --pretty='' --name-only "$HEAD_SHA")"
           else
             CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$HEAD_SHA")"
+            if git cat-file -e "$BEFORE_SHA:package.json" 2>/dev/null; then
+              git show "$BEFORE_SHA:package.json" > "$BEFORE_PACKAGE_JSON_PATH"
+            fi
           fi
+
+          printf '%s\n' "$CHANGED_FILES" > "$CHANGED_FILES_PATH"
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          if echo "$CHANGED_FILES" | grep -Eq '^(server/|Dockerfile|package\.json|pnpm-lock\.yaml|railway\.toml|tsconfig\.json)'; then
-            echo "require_exact_git_sha=true" >> "$GITHUB_OUTPUT"
-            echo "Backend deploy should change on Railway for this push."
-          else
-            echo "require_exact_git_sha=false" >> "$GITHUB_OUTPUT"
-            echo "Frontend-only or non-backend push; Railway SHA drift stays informational."
-          fi
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-      - run: corepack enable
+          node scripts/detect-backend-smoke-scope.mjs \
+            --changed-files "$CHANGED_FILES_PATH" \
+            --before-package-json "$BEFORE_PACKAGE_JSON_PATH" \
+            --after-package-json package.json
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
       - name: Smoke-check deployed backend health
         id: smoke
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  🚬 Starting Backend Production Smoke Test                ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "============================================================"
+          echo "Starting Backend Production Smoke Test"
+          echo "============================================================"
           echo ""
           echo "Configuration:"
           echo "  - URL: $SMOKE_TEST_URL"
           echo "  - Expected Git SHA: $EXPECTED_GIT_SHA"
+          echo "  - Exact Git SHA Required: $REQUIRE_EXACT_GIT_SHA"
           echo "  - Max Retries: $SMOKE_MAX_RETRIES"
           echo "  - Wait Between Retries: ${SMOKE_WAIT_MS}ms"
           echo "  - Total Max Wait: ~$((SMOKE_MAX_RETRIES * SMOKE_WAIT_MS / 1000))s"
@@ -71,7 +76,7 @@ jobs:
           SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
           EXPECTED_GIT_SHA: ${{ github.sha }}
           REQUIRE_EXACT_GIT_SHA: ${{ steps.scope.outputs.require_exact_git_sha }}
-          SMOKE_MAX_RETRIES: '10'
+          SMOKE_MAX_RETRIES: ${{ steps.scope.outputs.require_exact_git_sha == 'true' && '30' || '10' }}
           SMOKE_WAIT_MS: '10000'
 
       - name: Debug - Log Railway deployment status
@@ -120,12 +125,12 @@ jobs:
 
             const issue = await github.rest.issues.create({
               owner, repo,
-              title: `🚨 Production crash: backend unhealthy after deploy ${sha}`,
+              title: `Production crash: backend unhealthy after deploy ${sha}`,
               labels: ['crash', 'production'],
               body: [
                 `## Backend production crash detected`,
                 ``,
-                `The smoke test failed — Railway did not respond with a healthy status after deploying commit [\`${sha}\`](${commitUrl}).`,
+                `The smoke test failed - Railway did not respond with a healthy status after deploying commit [\`${sha}\`](${commitUrl}).`,
                 ``,
                 `| | |`,
                 `|---|---|`,
@@ -135,7 +140,7 @@ jobs:
                 `| **Railway** | [Dashboard](${railwayUrl}) |`,
                 ``,
                 `### Immediate checklist`,
-                `- [ ] Open Railway dashboard → Deploy Logs for this service`,
+                `- [ ] Open Railway dashboard -> Deploy Logs for this service`,
                 `- [ ] Identify the crash in the stack trace`,
                 `- [ ] Roll back to the previous Railway deployment if users are affected`,
                 `- [ ] Fix the root cause, push a new commit`,
@@ -146,5 +151,5 @@ jobs:
             });
 
             console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
-            core.summary.addRaw(`## 🚨 Production crash issue created\n[#${issue.data.number}](${issue.data.html_url})`);
+            core.summary.addRaw(`## Production crash issue created\n[#${issue.data.number}](${issue.data.html_url})`);
             await core.summary.write();
