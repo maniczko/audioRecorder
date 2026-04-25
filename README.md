@@ -11,7 +11,19 @@ VoiceLog OS is an AI-first meeting recorder and analysis workspace. The app reco
 
 ## Quick Start
 
-Use pnpm from the repository root.
+Use Node.js 22.x and pnpm from the repository root.
+
+If you use `nvm`:
+
+```bash
+nvm use
+```
+
+If you use `fnm`:
+
+```bash
+fnm use
+```
 
 ```bash
 pnpm install --frozen-lockfile
@@ -67,6 +79,8 @@ Important queue statuses:
 - `done`
 
 ## Required Verification
+
+All gates should run on Node.js 22.x. If pnpm reports an unsupported engine warning, switch to the pinned version from `.nvmrc` / `.node-version` before treating the result as release-ready.
 
 For focused frontend changes:
 

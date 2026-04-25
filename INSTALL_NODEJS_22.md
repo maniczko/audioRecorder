@@ -1,5 +1,34 @@
 # 📥 Instalacja Node.js 22.x
 
+## Projektowy pin runtime
+
+Ten projekt jest przypiety do Node.js 22.x:
+
+- `package.json` deklaruje `engines.node = 22.x`
+- `.nvmrc` wskazuje `22`
+- `.node-version` wskazuje `22`
+
+Jesli uzywasz menedzera wersji:
+
+```bash
+nvm use
+```
+
+albo:
+
+```bash
+fnm use
+```
+
+Po przelaczeniu wersji sprawdz:
+
+```bash
+node --version
+# Oczekiwane: v22.x
+```
+
+---
+
 ## Automatyczna instalacja (PowerShell)
 
 ### Krok 1: Pobierz i zainstaluj Node.js 22.x
