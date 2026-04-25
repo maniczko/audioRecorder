@@ -89,7 +89,7 @@ jobs:
 
       - name: Create GitHub issue on production crash
         if: failure() && steps.smoke.outcome == 'failure'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const sha = context.sha.slice(0, 8);
