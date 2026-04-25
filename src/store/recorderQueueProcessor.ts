@@ -77,6 +77,59 @@ function defaultSleep(ms: number) {
   });
 }
 
+export const CLIENT_AUDIO_PREPROCESSING_LIMITS = {
+  maxDurationSeconds: 15 * 60,
+  maxBlobBytes: 24 * 1024 * 1024,
+} as const;
+
+export type AudioPreprocessingPlan = {
+  shouldPreprocess: boolean;
+  mode: 'client' | 'server';
+  reason: 'within_limits' | 'duration' | 'size' | 'duration_and_size';
+  stageLabel: string;
+  recordingMessage: string;
+};
+
+export function buildAudioPreprocessingPlan({
+  blob,
+  durationSeconds,
+}: {
+  blob?: Pick<Blob, 'size'> | null;
+  durationSeconds?: number | null;
+}): AudioPreprocessingPlan {
+  const duration = Math.max(0, Number(durationSeconds) || 0);
+  const blobSize = Math.max(0, Number(blob?.size) || 0);
+  const overDurationLimit =
+    duration > 0 && duration > CLIENT_AUDIO_PREPROCESSING_LIMITS.maxDurationSeconds;
+  const overSizeLimit = blobSize > CLIENT_AUDIO_PREPROCESSING_LIMITS.maxBlobBytes;
+
+  if (!overDurationLimit && !overSizeLimit) {
+    return {
+      shouldPreprocess: true,
+      mode: 'client',
+      reason: 'within_limits',
+      stageLabel: 'Optymalizacja audio w przeglądarce...',
+      recordingMessage: 'Przygotowanie nagrania...',
+    };
+  }
+
+  const reason =
+    overDurationLimit && overSizeLimit
+      ? 'duration_and_size'
+      : overDurationLimit
+        ? 'duration'
+        : 'size';
+
+  return {
+    shouldPreprocess: false,
+    mode: 'server',
+    reason,
+    stageLabel: 'Przygotowanie do serwerowego przetwarzania audio...',
+    recordingMessage:
+      'Długie nagranie - pomijam lokalne ulepszanie audio, żeby UI pozostał responsywny.',
+  };
+}
+
 export async function attachRecordingWithRetry({
   attachCompletedRecording,
   meetingId,
@@ -280,27 +333,38 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     if (!nextItem.uploaded) {
       let uploadBlob: Blob | null = localBlob as Blob;
       let vadRemovedS = 0;
+      const preprocessingPlan = buildAudioPreprocessingPlan({
+        blob: uploadBlob,
+        durationSeconds: nextItem.duration,
+      });
 
-      try {
-        setState({ pipelineStageLabel: 'Optymalizacja audio (VAD)…' });
-        const vadResult = await filterSilence(localBlob as Blob);
-        if (vadResult.removedS >= 2) {
-          uploadBlob = vadResult.blob;
-          vadRemovedS = vadResult.removedS;
+      if (preprocessingPlan.shouldPreprocess) {
+        try {
+          setState({ pipelineStageLabel: 'Optymalizacja audio (VAD)…' });
+          const vadResult = await filterSilence(localBlob as Blob);
+          if (vadResult.removedS >= 2) {
+            uploadBlob = vadResult.blob;
+            vadRemovedS = vadResult.removedS;
+          }
+        } catch {
+          // Fallback to original blob.
         }
-      } catch {
-        // Fallback to original blob.
-      }
 
-      try {
-        setState({ pipelineStageLabel: 'Poprawa jakości audio…' });
-        uploadBlob = await enhanceAndReencode(uploadBlob as Blob, {
-          removeNoise: true,
-          normalizeVolume: true,
-          targetBitrate: 64000,
+        try {
+          setState({ pipelineStageLabel: 'Poprawa jakości audio…' });
+          uploadBlob = await enhanceAndReencode(uploadBlob as Blob, {
+            removeNoise: true,
+            normalizeVolume: true,
+            targetBitrate: 64000,
+          });
+        } catch {
+          // Fallback to pre-enhancement blob.
+        }
+      } else {
+        setState({
+          pipelineStageLabel: preprocessingPlan.stageLabel,
+          recordingMessage: preprocessingPlan.recordingMessage,
         });
-      } catch {
-        // Fallback to pre-enhancement blob.
       }
 
       const uploadSnapshot = getPipelineSnapshot('uploading', 12, 'Wgrywanie audio na serwer');
@@ -309,11 +373,15 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         pipelineStageLabel:
           vadRemovedS > 0
             ? `Wgrywanie audio (wycięto ${Math.round(vadRemovedS)}s ciszy)…`
-            : uploadSnapshot.stageLabel,
+            : preprocessingPlan.shouldPreprocess
+              ? uploadSnapshot.stageLabel
+              : 'Wgrywanie audio bez lokalnego ulepszania...',
         recordingMessage:
           vadRemovedS > 0
             ? `Wgrywanie nagrania (wycięto ${Math.round(vadRemovedS)}s ciszy)…`
-            : 'Wgrywanie nagrania na serwer...',
+            : preprocessingPlan.shouldPreprocess
+              ? 'Wgrywanie nagrania na serwer...'
+              : preprocessingPlan.recordingMessage,
       });
       updateQueueItem(nextItem.recordingId, {
         status: 'uploading',

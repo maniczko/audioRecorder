@@ -14,6 +14,12 @@ This audit covers the current application, backend, workflow, documentation, and
 - The original tag workflow failed because `pnpm run changelog` referenced `conventional-changelog` without an installed CLI package.
 - The release was created manually from the existing tag, and the workflow dependency gap is now covered by a regression test.
 
+Post-audit updates on 2026-04-25:
+
+- `VAT-178` pinned local Node 22 runtime with `.nvmrc` and `.node-version`.
+- `VAT-179` made `pnpm run test:workflows` hermetic for dashboard/workflow tests.
+- `VAT-152` added a large-audio preprocessing boundary: long or large recordings skip browser-side VAD/enhancement and move directly to upload/server processing with a visible status.
+
 ## Validation Snapshot
 
 Green locally:
@@ -37,7 +43,6 @@ Release guard summary:
 Known validation caveats:
 
 - Local runtime is Node `24.14.0`, while the project declares Node `22.x`.
-- `pnpm run test:workflows` is not yet a dependable offline release gate.
 - Tag workflow `Update Changelog` failed for the already-published `v0.1.2` tag; the underlying issue is fixed on `main`, but the historic failed run remains in Actions.
 
 ## Architecture Snapshot
@@ -69,7 +74,8 @@ Type and maintainability signal:
 
 2. Audio upload and processing are better covered, but heavy processing still needs product-level hardening.
    - `VAT-150` closed the backend chunked upload coverage gap.
-   - `VAT-152` remains the next audio-specific risk: long recordings should not make the UI feel stuck or opaque.
+   - `VAT-152` now prevents the browser from doing full local VAD/enhancement for long or large recordings.
+   - Remaining work is shared file-size/duration copy, measurable timing, and stuck-job cleanup metrics.
 
 3. Runtime lifecycle is safer, but backend bootstrap still has too many responsibilities.
    - Fatal process errors now exit through graceful shutdown.
@@ -93,9 +99,6 @@ Type and maintainability signal:
 Open backlog items for `audioRecorder`:
 
 - `VAT-160` - monitoring issue grouping and triage process.
-- `VAT-152` - evaluate moving heavy audio processing away from UI.
-- `VAT-179` - make workflow dashboard tests hermetic.
-- `VAT-178` - pin local Node 22 runtime.
 - `VAT-117` - refactor server bootstrap/startup responsibilities.
 - `VAT-116` - split `AppShellModern`.
 - `VAT-115` - split `AuthScreen`.
@@ -109,13 +112,11 @@ Open backlog items for `audioRecorder`:
    - Keep the published `v0.1.2` tag stable; do not move it.
 
 2. Stabilize the operating loop.
-   - `VAT-179`: make workflow tests hermetic.
-   - `VAT-178`: pin Node 22 locally.
    - `VAT-160`: reduce duplicate monitoring tasks.
 
 3. Improve audio UX under load.
-   - `VAT-152`: decide worker/server offload strategy for long recordings.
-   - Add measurable status, cancellation/retry behavior, and smoke coverage.
+   - Extend the `VAT-152` preprocessing boundary with shared file-size/duration copy.
+   - Add measurable timing, cancellation/retry behavior, and smoke coverage.
 
 4. Continue maintainability refactors.
    - `VAT-117` first, because recent lifecycle work already created a natural boundary.

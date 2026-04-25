@@ -12,7 +12,7 @@ The frontend owns capture UX, local queue state, lightweight client-side audio p
 - `src/hooks/useRecorder.ts` coordinates meeting selection, recording state, hydration boundaries, and queue entry creation.
 - `src/lib/recordingQueue.ts` defines queue item normalization, status handling, next-item selection, and summary counters.
 - `src/store/recorderStore.ts` persists queue state and exposes store actions.
-- `src/store/recorderQueueProcessor.ts` processes a single queued recording: upload, transcription start/retry, progress polling, final attachment, error mapping, and backoff.
+- `src/store/recorderQueueProcessor.ts` processes a single queued recording: bounded client-side audio preparation, upload, transcription start/retry, progress polling, final attachment, error mapping, and backoff.
 
 ## Backend
 
@@ -27,8 +27,9 @@ The frontend owns capture UX, local queue state, lightweight client-side audio p
 2. `useAudioHardware` requests microphone access and falls back to relaxed constraints when strict constraints are unsupported.
 3. Recorded chunks are stored and queued.
 4. `recorderStore.processQueue` selects a processable queue item.
-5. `recorderQueueProcessor` uploads audio, starts or resumes transcription, subscribes/polls progress, attaches the finished recording, and removes the queue item.
-6. Failed transient work is requeued with backoff; permanent failures remain visible for user/manual action.
+5. `recorderQueueProcessor` applies client-side VAD/enhancement only for short, small recordings; long or large recordings skip local preprocessing and move directly to upload.
+6. `recorderQueueProcessor` uploads audio, starts or resumes transcription, subscribes/polls progress, attaches the finished recording, and removes the queue item.
+7. Failed transient work is requeued with backoff; permanent failures remain visible for user/manual action.
 
 ## Runtime Modes
 

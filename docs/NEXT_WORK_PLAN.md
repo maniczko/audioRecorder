@@ -6,6 +6,7 @@ Completed after `v0.1.2`:
 
 - `VAT-178` - local Node 22 runtime is pinned with `.nvmrc` and `.node-version`.
 - `VAT-179` - workflow dashboard tests are hermetic and use tracked fixtures instead of generated local snapshots.
+- `VAT-152` - large audio preprocessing boundary is documented and long or large recordings skip browser-side VAD/enhancement.
 
 ## P0 - Post-release Follow-up
 
@@ -14,7 +15,6 @@ Completed after `v0.1.2`:
 
 ## P1 - Audio Pipeline Hardening
 
-- `VAT-152` - decide how to move or isolate heavy audio processing away from the UI for long recordings.
 - Add explicit file-size and duration guardrails shared between frontend copy and backend enforcement.
 - Move expensive audio enhancement work behind a user-visible status and measurable timing.
 - Add stuck-job detection and cleanup metrics for long-running transcription jobs.

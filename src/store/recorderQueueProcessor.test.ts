@@ -3,6 +3,8 @@ import { createRecordingQueueItem, type RecordingQueueItem } from '../lib/record
 import type { MeetingAnalysis, TranscriptionStatusPayload } from '../shared/types';
 import {
   attachRecordingWithRetry,
+  buildAudioPreprocessingPlan,
+  CLIENT_AUDIO_PREPROCESSING_LIMITS,
   processRecordingQueueItem,
   waitForCompletedTranscription,
   type QueueProcessorContext,
@@ -151,6 +153,63 @@ function buildContext(overrides: Partial<QueueProcessorContext> = {}) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe('buildAudioPreprocessingPlan', () => {
+  it('uses client preprocessing for short and small recordings', () => {
+    const plan = buildAudioPreprocessingPlan({
+      blob: new Blob(['audio']),
+      durationSeconds: 60,
+    });
+
+    expect(plan.shouldPreprocess).toBe(true);
+    expect(plan.mode).toBe('client');
+    expect(plan.reason).toBe('within_limits');
+  });
+
+  it('skips client preprocessing for recordings above the duration limit', () => {
+    const plan = buildAudioPreprocessingPlan({
+      blob: new Blob(['audio']),
+      durationSeconds: CLIENT_AUDIO_PREPROCESSING_LIMITS.maxDurationSeconds + 1,
+    });
+
+    expect(plan.shouldPreprocess).toBe(false);
+    expect(plan.mode).toBe('server');
+    expect(plan.reason).toBe('duration');
+    expect(plan.recordingMessage).toContain('Długie nagranie');
+  });
+
+  it('skips client preprocessing for blobs above the size limit', () => {
+    const plan = buildAudioPreprocessingPlan({
+      blob: { size: CLIENT_AUDIO_PREPROCESSING_LIMITS.maxBlobBytes + 1 },
+      durationSeconds: 60,
+    });
+
+    expect(plan.shouldPreprocess).toBe(false);
+    expect(plan.mode).toBe('server');
+    expect(plan.reason).toBe('size');
+  });
+
+  it('reports combined reason when duration and size are both above limits', () => {
+    const plan = buildAudioPreprocessingPlan({
+      blob: { size: CLIENT_AUDIO_PREPROCESSING_LIMITS.maxBlobBytes + 1 },
+      durationSeconds: CLIENT_AUDIO_PREPROCESSING_LIMITS.maxDurationSeconds + 1,
+    });
+
+    expect(plan.shouldPreprocess).toBe(false);
+    expect(plan.mode).toBe('server');
+    expect(plan.reason).toBe('duration_and_size');
+  });
+
+  it('keeps preprocessing enabled when metadata is missing but blob is small', () => {
+    const plan = buildAudioPreprocessingPlan({
+      blob: new Blob(['audio']),
+      durationSeconds: undefined,
+    });
+
+    expect(plan.shouldPreprocess).toBe(true);
+    expect(plan.mode).toBe('client');
+  });
 });
 
 describe('attachRecordingWithRetry', () => {
@@ -360,6 +419,35 @@ describe('processRecordingQueueItem', () => {
       expect.objectContaining({
         analysisStatus: 'done',
         pipelineProgressPercent: 100,
+      })
+    );
+  });
+
+  it('skips local VAD and enhancement for long recordings before upload', async () => {
+    const originalBlob = new Blob(['long-recording'], { type: 'audio/webm' });
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        duration: CLIENT_AUDIO_PREPROCESSING_LIMITS.maxDurationSeconds + 30,
+      }),
+      getAudioBlob: vi.fn(async () => originalBlob),
+    });
+
+    await processRecordingQueueItem(context);
+
+    expect(context.filterSilence).not.toHaveBeenCalled();
+    expect(context.enhanceAndReencode).not.toHaveBeenCalled();
+    expect(context.mediaService.persistRecordingAudio).toHaveBeenCalledWith(
+      'recording-1',
+      originalBlob,
+      expect.objectContaining({
+        workspaceId: meeting.workspaceId,
+        meetingId: meeting.id,
+      })
+    );
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordingMessage: expect.stringContaining('Długie nagranie'),
+        pipelineStageLabel: expect.stringContaining('serwerowego przetwarzania'),
       })
     );
   });
