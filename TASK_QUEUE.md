@@ -6,6 +6,35 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 ### 🔴 Wysoki priorytet
 
+<!-- Auto-generated on 2026-04-26T20:35:53.839Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-26-1** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-26T19:04:34.6788535Z Error: Server answered with HTTP 502 when performing the request to https://registry.npmjs.org/pnpm/9.12.1; for troubleshooting help, see https://github.com/nodejs/corepack#troubleshooting
+  - **Error:** 2026-04-26T19:04:34.6788535Z Error: Server answered with HTTP 502 when performing the request to https://registry.npmjs.org/pnpm/9.12.1; for troubleshooting help, see https://github.com/nodejs/corepac...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24964592399
+  - **Created:** 2026-04-26T20:35:53.839Z
+
+- **GH-AUTO-2026-04-26-2** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `auto_fix`
+  - **Dispatch mode:** `direct_patch`
+  - **Priority:** `P2`
+  - **Routing reason:** deterministic lint or formatting issue
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-26T19:05:22.0326716Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Error:** 2026-04-26T19:05:22.0326716Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24964592399
+  - **Created:** 2026-04-26T20:35:53.839Z
+
+
 <!-- Auto-generated on 2026-04-26T18:49:29.829Z -->
 
 ### GitHub Actions Errors (1 found)
