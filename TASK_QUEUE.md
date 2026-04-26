@@ -12,6 +12,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 - **GH-AUTO-2026-04-26-1** — Fix CI failure
   - **Status:** `todo`
+  - **Owner:** `Codex`
   - **Source:** `GitHub Actions`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
@@ -24,6 +25,7 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 - **GH-AUTO-2026-04-26-2** — Fix CI failure
   - **Status:** `todo`
+  - **Owner:** `Codex`
   - **Source:** `GitHub Actions`
   - **Automation:** `auto_fix`
   - **Dispatch mode:** `direct_patch`
