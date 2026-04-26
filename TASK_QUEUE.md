@@ -6,6 +6,23 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 ### 🔴 Wysoki priorytet
 
+<!-- Auto-generated on 2026-04-26T22:35:52.839Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-04-26-1** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `auto_fix`
+  - **Dispatch mode:** `direct_patch`
+  - **Priority:** `P2`
+  - **Routing reason:** deterministic lint or formatting issue
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-26T20:49:08.9865538Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Error:** 2026-04-26T20:49:08.9865538Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24966675651
+  - **Created:** 2026-04-26T22:35:52.839Z
+
+
 <!-- Auto-generated on 2026-04-26T20:35:53.839Z -->
 
 ### GitHub Actions Errors (2 found)
