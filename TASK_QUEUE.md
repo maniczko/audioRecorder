@@ -6,6 +6,35 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 ### 🔴 Wysoki priorytet
 
+<!-- Auto-generated on 2026-04-27T10:12:28.698Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-27-1** — Fix Code Review failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `auto_fix`
+  - **Dispatch mode:** `direct_patch`
+  - **Priority:** `P2`
+  - **Routing reason:** deterministic lint or formatting issue
+  - **Opis zadania:** GitHub Actions: Code Review. Szczegoly: 2026-04-27T07:57:37.8870530Z [22m[39mRecording queue item failed. Error: Conflict 2026-04-27T07:59:02.4581142Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Error:** 2026-04-27T07:57:37.8870530Z [22m[39mRecording queue item failed. Error: Conflict 2026-04-27T07:59:02.4581142Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.pre...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24983285664
+  - **Created:** 2026-04-27T10:12:28.698Z
+
+- **GH-AUTO-2026-04-27-2** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `auto_fix`
+  - **Dispatch mode:** `direct_patch`
+  - **Priority:** `P2`
+  - **Routing reason:** deterministic lint or formatting issue
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-27T07:58:53.2175794Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Error:** 2026-04-27T07:58:53.2175794Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24983285635
+  - **Created:** 2026-04-27T10:12:28.698Z
+
+
 <!-- Auto-generated on 2026-04-27T06:26:24.107Z -->
 
 ### GitHub Actions Errors (1 found)
