@@ -6,6 +6,35 @@ Legenda statusow: `todo`, `in_progress`, `done`, `blocked`
 
 ### 🔴 Wysoki priorytet
 
+<!-- Auto-generated on 2026-04-30T19:16:36.569Z -->
+
+### GitHub Actions Errors (2 found)
+
+- **GH-AUTO-2026-04-30-1** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-30T17:27:56.6014155Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-30T17:27:56.6292632Z [22m[39membedTextChunks failed: Error: Embeddings API error 2026-04-30T17:28:00.7388146Z [22m[39membedTextChunks failed: Error: embed failed 202...
+  - **Error:** 2026-04-30T17:27:56.6014155Z [22m[39membedTextChunks failed: Error: embed failed 2026-04-30T17:27:56.6292632Z [22m[39membedTextChunks failed: Error: Embeddings API error 2026-04-30T17:28:00.738814...
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/25179613015
+  - **Created:** 2026-04-30T19:16:36.569Z
+
+- **GH-AUTO-2026-04-30-2** — Fix CI failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `auto_fix`
+  - **Dispatch mode:** `direct_patch`
+  - **Priority:** `P2`
+  - **Routing reason:** deterministic lint or formatting issue
+  - **Opis zadania:** GitHub Actions: CI. Szczegoly: 2026-04-30T17:28:23.7064121Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Error:** 2026-04-30T17:28:23.7064121Z ##[error]AssertionError: expected [ '.prettier-docs.md', …(5) ] to deeply equal [ '.prettier-docs.md', …(4) ]
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/25179613015
+  - **Created:** 2026-04-30T19:16:36.569Z
+
+
 <!-- Auto-generated on 2026-04-30T17:18:04.018Z -->
 
 ### GitHub Actions Errors (1 found)
