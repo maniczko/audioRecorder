@@ -83,6 +83,23 @@ describe('Auth Routes', () => {
     );
   });
 
+  it('POST /auth/login - hides database DNS failures from clients', async () => {
+    mockAuthService.loginUser.mockRejectedValue(
+      new Error('(ENOTFOUND) tenant/user postgres.jfvlwcjmsfewlugdhghq not found')
+    );
+
+    const res = await app.request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+    });
+
+    expect(res.status).toBe(503);
+    const data = await res.json();
+    expect(data.message).toBe('Serwer jest chwilowo niedostępny. Spróbuj ponownie za chwilę.');
+    expect(JSON.stringify(data)).not.toMatch(/ENOTFOUND|postgres|tenant\/user/i);
+  });
+
   it('OPTIONS /auth/login - returns CORS headers for vercel preview origins', async () => {
     const previewOrigin = 'https://audiorecorder-rggk30uoj-iwoczajka-2703s-projects.vercel.app';
     const res = await app.request('/auth/login', {

@@ -49,12 +49,12 @@ export default function PasswordResetForm({
       {resetPreviewCode ? (
         <div className="inline-alert info mb-6">
           Twój lokalny kod resetu: <strong>{resetPreviewCode}</strong>
-          {resetExpiresAt ? ` (wazny do ${formatDateTime(resetExpiresAt)})` : ''}
+          {resetExpiresAt ? ` (ważny do ${formatDateTime(resetExpiresAt)})` : ''}
         </div>
       ) : null}
 
       <div className="auth-input-group">
-        <label htmlFor="reset-code">Kod z emaila (Lokalnie: podaj z góry)</label>
+        <label htmlFor="reset-code">Kod z emaila (lokalnie: podaj z góry)</label>
         <div className="auth-input-wrapper">
           <KeyRound />
           <input
@@ -85,7 +85,7 @@ export default function PasswordResetForm({
                 newPassword: value,
               }));
             }}
-            placeholder="Minimum 6 znakĂłw"
+            placeholder="Minimum 6 znaków"
           />
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function PasswordResetForm({
                 confirmPassword: value,
               }));
             }}
-            placeholder="PowtĂłrz hasĹ‚o"
+            placeholder="Powtórz hasło"
           />
         </div>
       </div>

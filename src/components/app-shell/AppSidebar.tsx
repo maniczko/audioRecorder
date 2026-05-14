@@ -111,12 +111,12 @@ export default function AppSidebar({
             openHome();
           }
         }}
-        title="Strona gĹ‚Ăłwna"
+        title="Strona główna"
       >
         <div className="modern-brand-logo" style={{ color: 'var(--inline-color-accent-strong)' }}>
           <VoiceLogMark />
         </div>
-        <h1>VoiceBĂłbr</h1>
+        <h1>VoiceBóbr</h1>
       </div>
 
       <nav className="modern-nav">

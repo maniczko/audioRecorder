@@ -8,6 +8,41 @@ function buildCorsHeaders(origin: string | undefined, allowedOrigins: string) {
   return corsHeaders(origin || '', allowedOrigins);
 }
 
+const SERVER_INFRASTRUCTURE_ERROR_PATTERNS = [
+  'enotfound',
+  'econnrefused',
+  'econnreset',
+  'etimedout',
+  'getaddrinfo',
+  'tenant/user',
+  'postgres.',
+  'database connection',
+  'supabase',
+];
+
+function isInfrastructureErrorMessage(message: unknown) {
+  const normalized = String(message || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return SERVER_INFRASTRUCTURE_ERROR_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
+function normalizeAppError(err: any, statusCode: number) {
+  if (statusCode >= 500 && isInfrastructureErrorMessage(err?.message)) {
+    return {
+      message: 'Serwer jest chwilowo niedostępny. Spróbuj ponownie za chwilę.',
+      statusCode: 503,
+    };
+  }
+
+  return {
+    message: err?.message || 'Unexpected server error.',
+    statusCode,
+  };
+}
+
 export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use('*', async (c, next) => {
     const requestOrigin = c.req.header('origin') || '';
@@ -165,6 +200,7 @@ export function registerAppErrorHandler(app: Hono<any>) {
     if (statusCode === 429 && err?.retryAfter) {
       c.header('Retry-After', String(err.retryAfter));
     }
-    return c.json({ message: err.message || 'Unexpected server error.' }, statusCode as any);
+    const safeError = normalizeAppError(err, statusCode);
+    return c.json({ message: safeError.message }, safeError.statusCode as any);
   });
 }

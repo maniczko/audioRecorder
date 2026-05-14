@@ -729,6 +729,27 @@ describe('Regression: Issue #0 - timeout exceeded when trying to connect is trea
     expect((error as Error & { status: number }).status).toBe(500);
   });
 
+  it('normalizes Supabase DNS failure responses to backend unavailable', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () =>
+        Promise.resolve({
+          message: '(ENOTFOUND) tenant/user postgres.jfvlwcjmsfewlugdhghq not found',
+        }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    }) as any;
+
+    const error = await apiRequest('/auth/login', { retries: 0 }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
+      'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'
+    );
+    expect((error as Error).message).not.toMatch(/ENOTFOUND|postgres|tenant\/user/i);
+  });
+
   it('retries health probe when Vercel reports timeout exceeded when trying to connect', async () => {
     const fetchMock = vi
       .fn()

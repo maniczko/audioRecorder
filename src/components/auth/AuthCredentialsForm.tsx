@@ -112,7 +112,7 @@ export default function AuthCredentialsForm({
           <input
             id="auth-password"
             type="password"
-            placeholder="Minimum 6 znakĂłw"
+            placeholder="Minimum 6 znaków"
             value={authValues.password}
             onChange={(event) => {
               const { value } = event.target;
@@ -186,7 +186,7 @@ export default function AuthCredentialsForm({
       ) : null}
 
       <button type="submit" className="auth-submit-btn">
-        {isRegister ? 'Wejdz do aplikacji' : 'Zaloguj się'}
+        {isRegister ? 'Wejdź do aplikacji' : 'Zaloguj się'}
         <ArrowRight size={18} />
       </button>
 

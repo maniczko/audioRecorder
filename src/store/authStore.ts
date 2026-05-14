@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createAuthService } from '../services/authService';
 import { useWorkspaceStore } from './workspaceStore';
 import { buildProfileDraft } from '../lib/appState';
+import { normalizeAuthErrorMessage } from '../lib/authErrorMessages';
 
 const EMPTY_AUTH_DRAFT = {
   name: '',
@@ -98,7 +99,7 @@ export const useAuthStore = create<any>((set, get) => ({
         token: result.token || '',
       });
     } catch (error: any) {
-      set({ authError: error.message });
+      set({ authError: normalizeAuthErrorMessage(error) });
     }
   },
 
@@ -115,7 +116,7 @@ export const useAuthStore = create<any>((set, get) => ({
         resetMessage: 'Kod resetu jest gotowy. Ustaw nowe haslo ponizej.',
       });
     } catch (error: any) {
-      set({ authError: error.message });
+      set({ authError: normalizeAuthErrorMessage(error) });
     }
   },
 
@@ -136,7 +137,7 @@ export const useAuthStore = create<any>((set, get) => ({
         authMode: 'login',
       });
     } catch (error: any) {
-      set({ authError: error.message });
+      set({ authError: normalizeAuthErrorMessage(error) });
     }
   },
 
@@ -154,7 +155,7 @@ export const useAuthStore = create<any>((set, get) => ({
       });
       set({ googleAuthMessage: `Zalogowano przez Google jako ${profile.email}.`, authError: '' });
     } catch (error: any) {
-      set({ googleAuthMessage: error.message });
+      set({ googleAuthMessage: normalizeAuthErrorMessage(error) });
     }
   },
 

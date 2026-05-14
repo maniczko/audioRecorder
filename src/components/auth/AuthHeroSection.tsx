@@ -46,12 +46,12 @@ export default function AuthHeroSection() {
       <div className="auth-hero-content">
         <div className="auth-hero-branding">
           <AuthLogoMark />
-          VoiceBĂłbr
+          VoiceBóbr
         </div>
-        <h1>WiÄ™cej niĹĽ bĂłbr.</h1>
+        <h1>Więcej niż bóbr.</h1>
         <p className="auth-hero-copy">
-          Pracuj szybciej i inteligentniej. VoiceBĂłbr automatycznie grupuje wypowiedzi i dostarcza
-          potrzebnych Ci kontekstĂłw ze spotkaĹ„ w czasie rzeczywistym.
+          Pracuj szybciej i inteligentniej. VoiceBóbr automatycznie grupuje wypowiedzi i dostarcza
+          potrzebnych Ci kontekstów ze spotkań w czasie rzeczywistym.
         </p>
 
         <div className="auth-features-grid">
@@ -62,8 +62,8 @@ export default function AuthHeroSection() {
             <div>
               <h3>Precyzyjna Diaryzacja</h3>
               <p>
-                Nigdy wiÄ™cej pomyĹ‚ek. Segmenty grupujemy precyzyjnie po sygnaturze gĹ‚osu, a nie
-                po samej ciszy w tle.
+                Nigdy więcej pomyłek. Segmenty grupujemy precyzyjnie po sygnaturze głosu, a nie po
+                samej ciszy w tle.
               </p>
             </div>
           </article>
@@ -72,10 +72,10 @@ export default function AuthHeroSection() {
               <CalendarDays size={24} />
             </div>
             <div>
-              <h3>Centrum SpotkaĹ„</h3>
+              <h3>Centrum spotkań</h3>
               <p>
-                MiesiÄ™czny widok zdarzeĹ„ wprost poĹ‚Ä…czony ze spotkaniami Google. Bez
-                przeĹ‚Ä…czania miÄ™dzy systemami.
+                Miesięczny widok zdarzeń wprost połączony ze spotkaniami Google. Bez przełączania
+                między systemami.
               </p>
             </div>
           </article>
@@ -86,8 +86,8 @@ export default function AuthHeroSection() {
             <div>
               <h3>Insight Driven Analytics</h3>
               <p>
-                Ustalasz cel przed wejĹ›ciem, a silnik LLM samodzielnie wyciÄ…gnie z rozmowy to,
-                czego naprawdÄ™ szukaĹ‚eĹ›.
+                Ustalasz cel przed wejściem, a silnik LLM samodzielnie wyciągnie z rozmowy to, czego
+                naprawdę szukałeś.
               </p>
             </div>
           </article>

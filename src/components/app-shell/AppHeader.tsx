@@ -67,7 +67,7 @@ export default function AppHeader({
           type="button"
           className="modern-hamburger-btn"
           onClick={() => setSidebarOpen((prev) => !prev)}
-          aria-label={sidebarOpen ? 'Zamknij menu' : 'OtwĂłrz menu'}
+          aria-label={sidebarOpen ? 'Zamknij menu' : 'Otwórz menu'}
         >
           {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -77,7 +77,7 @@ export default function AppHeader({
         <button className="modern-search-btn" onClick={() => setCommandPaletteOpen(true)}>
           <span className="modern-search-btn-left">
             <Search size={16} />
-            <span className="modern-search-text">Szukaj wszÄ™dzie...</span>
+            <span className="modern-search-text">Szukaj wszędzie...</span>
           </span>
           <span className="modern-search-shortcut">
             <kbd>Ctrl</kbd> + <kbd>K</kbd>
