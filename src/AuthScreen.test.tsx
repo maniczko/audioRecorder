@@ -134,7 +134,7 @@ describe('AuthScreen', () => {
       target: { value: 'anna@example.com' },
     });
     fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'secret-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do aplikacji' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdź do aplikacji' }));
 
     expect(screen.getByDisplayValue('Anna Nowak')).toBeInTheDocument();
     expect(screen.getByDisplayValue('AB12CD')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('AuthScreen', () => {
     fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: '123' } });
 
     // Click submit with short password - should not submit
-    fireEvent.click(screen.getByRole('button', { name: 'Wejdz do aplikacji' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Wejdź do aplikacji' }));
 
     // Password is too short, form should not submit
     await waitFor(() => {
@@ -174,7 +174,7 @@ describe('AuthScreen', () => {
       target: { value: 'anna@example.com' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Wyślij kod resetu' }));
-    fireEvent.change(screen.getByLabelText('Kod z emaila (Lokalnie: podaj z góry)'), {
+    fireEvent.change(screen.getByLabelText('Kod z emaila (lokalnie: podaj z góry)'), {
       target: { value: '123456' },
     });
     fireEvent.change(screen.getByLabelText('Nowe hasło'), {
