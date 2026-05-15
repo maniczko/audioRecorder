@@ -20,17 +20,15 @@ jobs:
 
       - name: Check disk space
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  💾 Checking Disk Space                                   ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "Checking disk space"
           df -h
           echo ""
           AVAILABLE=$(df / | tail -1 | awk '{print $4}')
           echo "Available space: ${AVAILABLE}K"
           if [ "$AVAILABLE" -lt "10000000" ]; then
-            echo "⚠️  Warning: Less than 10GB available!"
+            echo "Warning: Less than 10GB available."
           else
-            echo "✅ Disk space OK"
+            echo "Disk space OK."
           fi
 
       - name: Set up Docker Buildx
@@ -47,7 +45,7 @@ jobs:
           push: false
           platforms: linux/amd64
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
           tags: voicelog:test
           load: true
           provenance: false
@@ -57,28 +55,24 @@ jobs:
 
       - name: Verify Docker image size
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  📦 Docker Image Size                                     ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "Docker image size"
           docker images voicelog:test
           SIZE=$(docker images voicelog:test --format "{{.Size}}")
           echo "Image size: $SIZE"
 
       - name: Verify binaries present in image
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  🔧 Verifying Binaries                                    ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
+          echo "Verifying binaries"
 
           # Check Node.js (required) - use shell entrypoint to run command
           echo "Checking Node.js..."
-          docker run --rm --entrypoint /bin/sh voicelog:test -c "node --version" || (echo "❌ Node.js not found" && exit 1)
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "node --version" || (echo "Node.js not found" && exit 1)
 
           # Note: pnpm is only in the build stage, not in runtime (multi-stage Docker build)
 
           # Optional: Check ffmpeg if available
           echo "Checking ffmpeg (optional)..."
-          docker run --rm --entrypoint /bin/sh voicelog:test -c "ffmpeg -version 2>/dev/null | head -1" || echo "⚠️  ffmpeg not found (optional)"
+          docker run --rm --entrypoint /bin/sh voicelog:test -c "ffmpeg -version 2>/dev/null | head -1" || echo "ffmpeg not found (optional)"
 
           echo ""
-          echo "✅ Core binaries verified!"
+          echo "Core binaries verified."

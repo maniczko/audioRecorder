@@ -42,6 +42,14 @@ describe('GitHub workflows validation', () => {
     expect(suspiciousMojibakePattern.test(content)).toBe(false);
   });
 
+  it('keeps Docker cache export non-blocking and workflow logs UTF-8 clean', () => {
+    const workflowPath = path.join(workflowDir, 'docker-build.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('cache-to: type=gha,mode=max,ignore-error=true');
+    expect(suspiciousMojibakePattern.test(content)).toBe(false);
+  });
+
   it('keeps the CI security audit report while blocking only high and critical findings', () => {
     const workflowPath = path.join(workflowDir, 'ci.yml');
     const content = readFileSync(workflowPath, 'utf8');
