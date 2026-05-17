@@ -37,9 +37,35 @@ jobs:
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
           VOICELOG_DATABASE_URL: ${{ secrets.VOICELOG_DATABASE_URL }}
         run: |
-          railway link "$RAILWAY_PROJECT_ID" || true
+          railway link \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            || true
           printf '%s' "$VOICELOG_DATABASE_URL" | railway variable set \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
             --stdin \
             VOICELOG_DATABASE_URL
+          printf '%s' "$VOICELOG_DATABASE_URL" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            DATABASE_URL
+
+      - name: Verify Railway variable names
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway variable list \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --json \
+            | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{const parsed=JSON.parse(data);const keys=Array.isArray(parsed)?parsed.map(v=>v.name||v.key):Object.keys(parsed);for (const key of keys.sort()) console.log(key);if(!keys.includes('VOICELOG_DATABASE_URL')) process.exit(1);if(!keys.includes('DATABASE_URL')) process.exit(1);});"
+
+      - name: Redeploy Railway service
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: railway redeploy --service "$RAILWAY_SERVICE_ID" --yes
