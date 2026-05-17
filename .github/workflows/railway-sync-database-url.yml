@@ -74,5 +74,16 @@ jobs:
             --project "$RAILWAY_PROJECT_ID" \
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
-            --detach \
             --message "Sync database URL from GitHub secret"
+
+      - name: Print Railway deployment status
+        if: always()
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway deployment list \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --limit 5 \
+            --json
