@@ -1,0 +1,45 @@
+name: Railway Sync Database URL
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-database-url:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate required secrets
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          VOICELOG_DATABASE_URL: ${{ secrets.VOICELOG_DATABASE_URL }}
+        run: |
+          test -n "$RAILWAY_TOKEN"
+          test -n "$RAILWAY_SERVICE_ID"
+          test -n "$VOICELOG_DATABASE_URL"
+          case "$VOICELOG_DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *) echo "VOICELOG_DATABASE_URL must be a postgres URL" >&2; exit 1 ;;
+          esac
+
+      - name: Set Railway VOICELOG_DATABASE_URL
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          VOICELOG_DATABASE_URL: ${{ secrets.VOICELOG_DATABASE_URL }}
+        run: |
+          railway link "$RAILWAY_PROJECT_ID" || true
+          printf '%s' "$VOICELOG_DATABASE_URL" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            VOICELOG_DATABASE_URL
