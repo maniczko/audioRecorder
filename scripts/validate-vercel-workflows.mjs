@@ -24,6 +24,7 @@ const vercelConfigPath = 'vercel.json';
 const productionWorkflow = readFile(productionWorkflowPath);
 const previewWorkflow = readFile(previewWorkflowPath);
 const vercelConfig = readFile(vercelConfigPath);
+const vercelCli = '(?:vercel|pnpm dlx vercel@latest)';
 
 // Production workflow fires after CI passes (workflow_run) — not directly on push.
 // Either a legacy push trigger or the newer workflow_run trigger is acceptable.
@@ -77,38 +78,38 @@ assertMatch(
   productionWorkflow,
   productionWorkflowPath,
   'production vercel pull',
-  /vercel pull --yes --environment=production --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} pull --yes --environment=production --token="\\$VERCEL_TOKEN"`, 'm')
 );
 assertMatch(
   productionWorkflow,
   productionWorkflowPath,
   'production vercel build',
-  /vercel build --prod --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} build --prod --token="\\$VERCEL_TOKEN"`, 'm')
 );
 assertMatch(
   productionWorkflow,
   productionWorkflowPath,
   'production vercel deploy',
-  /vercel deploy --prebuilt --prod --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} deploy --prebuilt --prod --token="\\$VERCEL_TOKEN"`, 'm')
 );
 
 assertMatch(
   previewWorkflow,
   previewWorkflowPath,
   'preview vercel pull',
-  /vercel pull --yes --environment=preview --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} pull --yes --environment=preview --token="\\$VERCEL_TOKEN"`, 'm')
 );
 assertMatch(
   previewWorkflow,
   previewWorkflowPath,
   'preview vercel build',
-  /vercel build --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} build --token="\\$VERCEL_TOKEN"`, 'm')
 );
 assertMatch(
   previewWorkflow,
   previewWorkflowPath,
   'preview vercel deploy',
-  /vercel deploy --prebuilt --token="\$VERCEL_TOKEN"/m
+  new RegExp(`${vercelCli} deploy --prebuilt --token="\\$VERCEL_TOKEN"`, 'm')
 );
 
 assertMatch(

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * VoiceLog OS - API Configuration Validator
  *
