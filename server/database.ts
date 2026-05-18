@@ -136,6 +136,16 @@ function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffe
 
 const WORKER_QUERY_TIMEOUT_MS = 15000;
 
+export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
+  if (!/\badd\s+column\b/i.test(query)) return false;
+  const message = error instanceof Error ? error.message : String((error as any)?.message || error);
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('duplicate column name') ||
+    (normalized.includes('column') && normalized.includes('already exists'))
+  );
+}
+
 export class Database {
   type: string;
   uploadDir: string;
@@ -364,6 +374,11 @@ export class Database {
             try {
               await this._execute(q);
             } catch (err: any) {
+              if (isAddColumnAlreadyAppliedMigrationError(q, err)) {
+                if (logger && logger.warn)
+                  logger.warn(`Migration ${file} skipped already-applied ADD COLUMN query: ${q}`);
+                continue;
+              }
               if (logger && logger.error)
                 logger.error(`Migration error in ${file} query: ${q}`, err);
               throw err;
