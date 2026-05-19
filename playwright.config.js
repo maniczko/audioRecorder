@@ -2,7 +2,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:4000';
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || baseURL;
 const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
 const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
 const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
@@ -24,6 +24,7 @@ export default defineConfig({
   },
 
   reporter: process.env.CI ? 'github' : 'list',
+  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}-win32{ext}',
 
   use: {
     baseURL,

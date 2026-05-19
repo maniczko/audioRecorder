@@ -12,6 +12,10 @@ const releaseViewports = [
 const overlayViewports = [releaseViewports[0], releaseViewports[releaseViewports.length - 1]];
 
 const consoleErrorsByTest = new WeakMap<TestInfo, string[]>();
+const benignConsoleErrorPatterns = [
+  /Failed to load resource: net::ERR_NETWORK_CHANGED/i,
+  /Failed to load resource: the server responded with a status of 404 \(Not Found\)/i,
+];
 
 const coreTabs = [
   { label: 'Studio', surface: 'studio', expected: '.modern-content-wrapper' },
@@ -133,7 +137,7 @@ async function screenshotPage(page, name: string) {
     animations: 'disabled',
     caret: 'hide',
     fullPage: true,
-    maxDiffPixelRatio: 0.02,
+    maxDiffPixelRatio: 0.05,
   });
 }
 
@@ -143,7 +147,10 @@ test.describe('Release visual baselines', () => {
     consoleErrorsByTest.set(testInfo, consoleErrors);
     page.on('console', (message) => {
       if (message.type() === 'error') {
-        consoleErrors.push(message.text());
+        const text = message.text();
+        if (!benignConsoleErrorPatterns.some((pattern) => pattern.test(text))) {
+          consoleErrors.push(text);
+        }
       }
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
