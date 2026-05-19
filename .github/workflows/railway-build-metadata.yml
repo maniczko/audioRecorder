@@ -58,6 +58,7 @@ jobs:
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
           railway up \
+            --ci \
             --project "$RAILWAY_PROJECT_ID" \
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
