@@ -1,0 +1,77 @@
+name: Railway Build Metadata
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-build-metadata:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate required secrets
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          test -n "$RAILWAY_TOKEN"
+          test -n "$RAILWAY_SERVICE_ID"
+
+      - name: Set Railway build metadata variables
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          BUILD_SHA: ${{ github.sha }}
+        run: |
+          railway link \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            || true
+          printf '%s' "$BUILD_SHA" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            RAILWAY_GIT_COMMIT_SHA
+          printf '%s' "$BUILD_SHA" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            GITHUB_SHA
+          date -u +%Y-%m-%dT%H:%M:%SZ | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            APP_BUILD_TIME
+
+      - name: Deploy Railway service
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway up \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            --message "Sync build metadata from GitHub Actions"
+
+      - name: Verify production health git SHA
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          for attempt in $(seq 1 36); do
+            echo "Health check attempt $attempt"
+            payload="$(curl -fsS https://audiorecorder-production.up.railway.app/health || true)"
+            echo "$payload" | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{try{const json=JSON.parse(data);console.log(JSON.stringify({ok:json.ok,gitSha:json.gitSha,runtime:json.runtime,supabaseRemote:json.supabaseRemote}));process.exit(json.gitSha===process.env.EXPECTED_SHA?0:2)}catch{process.exit(2)}});" && exit 0
+            sleep 10
+          done
+          echo "Railway health did not expose expected git SHA" >&2
+          exit 1
