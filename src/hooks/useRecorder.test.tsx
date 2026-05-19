@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import useRecorder from './useRecorder';
+import { RECORDING_WORKSPACE_REQUIRED_MESSAGE } from '../lib/recordingQueue';
 
 const {
   mediaServiceMode,
@@ -130,7 +131,7 @@ describe('useRecorder', () => {
   });
 
   test('creates ad hoc meeting when no meeting is selected and starts recording', () => {
-    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc' }));
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
     const selectMeeting = vi.fn();
 
     const { result } = renderHook(() =>
@@ -149,7 +150,7 @@ describe('useRecorder', () => {
     });
 
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
-    expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc' });
+    expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc', workspaceId: 'ws1' });
     expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
   });
 
@@ -318,7 +319,7 @@ describe('useRecorder', () => {
   });
 
   test('Regression: clears recordingMeetingId when hardware start fails', async () => {
-    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc' }));
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
     const selectMeeting = vi.fn();
     hardwareState.startRecording.mockImplementation(() => {
       hardwareOptions.current?.onStartFailure?.();
@@ -343,6 +344,30 @@ describe('useRecorder', () => {
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
     expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
     expect(result.current.recordingMeetingId).toBeNull();
+  });
+
+  test('blocks remote recording when workspace context is missing', () => {
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-without-workspace' }));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    act(() => {
+      result.current.startRecording();
+    });
+
+    expect(hardwareState.startRecording).not.toHaveBeenCalled();
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
   });
 
   // -----------------------------------------------------------------
@@ -420,6 +445,63 @@ describe('useRecorder', () => {
     const result_queue = updater([]);
     expect(result_queue[0].meetingSnapshot).toEqual(meetingHint);
     expect(result_queue[0].meetingId).toBe('new_m');
+  });
+
+  test('blocks remote file import before saving audio when workspace context is missing', async () => {
+    saveAudioBlobMock.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(['audio'], 'test.webm', { type: 'audio/webm' });
+
+    await act(async () => {
+      await result.current.queueRecording('new_m', file, { id: 'new_m', title: 'Import' });
+    });
+
+    expect(saveAudioBlobMock).not.toHaveBeenCalled();
+    expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
+  });
+
+  test('does not enqueue stopped remote recording when workspace context is missing', async () => {
+    saveAudioBlobMock.mockResolvedValue(undefined);
+
+    renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'No workspace meeting' },
+        userMeetings: [{ id: 'm1', title: 'No workspace meeting' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    await act(async () => {
+      await hardwareOptions.current.onRecordingStop({
+        meetingId: 'm1',
+        chunks: [new Blob(['audio'], { type: 'audio/webm' })],
+        mimeType: 'audio/webm',
+        rawSegments: [],
+        duration: 5,
+      });
+    });
+
+    expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
   });
 
   // -----------------------------------------------------------------

@@ -42,7 +42,7 @@ function tabItem(id, title, subtitle) {
     type: 'tab',
     title,
     subtitle,
-    group: 'Zakladki',
+    group: 'Zakładki',
     keywords: normalizeKeywords([title, subtitle, id]),
     payload: { tabId: id },
     weight: 10,
@@ -56,9 +56,10 @@ export function buildCommandPaletteItems({
 }) {
   const tabs = [
     tabItem('studio', 'Studio', 'Spotkania, nagrania i analiza'),
-    tabItem('calendar', 'Kalendarz', 'Planer spotkan i terminow'),
-    tabItem('tasks', 'Zadania', 'Lista zadan i kanban'),
-    tabItem('people', 'Osoby', 'Profile osob i historia wspolpracy'),
+    tabItem('calendar', 'Kalendarz', 'Planer spotkań i terminów'),
+    tabItem('tasks', 'Zadania', 'Lista zadań i kanban'),
+    tabItem('people', 'Osoby', 'Profile osób i historia współpracy'),
+    tabItem('notes', 'Notatki', 'Wiedza, decyzje i wnioski ze spotkań'),
     tabItem('profile', 'Profil', 'Ustawienia konta i integracje'),
   ];
 
@@ -84,7 +85,7 @@ export function buildCommandPaletteItems({
     type: 'task',
     title: task.title || 'Zadanie',
     subtitle:
-      [task.owner, task.group, task.sourceMeetingTitle].filter(Boolean).join(' • ') || 'Zadanie',
+      [task.owner, task.group, task.sourceMeetingTitle].filter(Boolean).join(' - ') || 'Zadanie',
     group: 'Zadania',
     keywords: normalizeKeywords([
       task.title,

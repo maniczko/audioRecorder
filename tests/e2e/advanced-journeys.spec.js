@@ -10,7 +10,55 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { seedLoggedInUser } from './helpers/seed';
+import { seedLoggedInUser, seedMeeting } from './helpers/seed';
+
+test.describe('Advanced release journeys', () => {
+  test('navigates core workspace surfaces from a hydrated workspace', async ({ page }) => {
+    await seedLoggedInUser(page);
+    await seedMeeting(page, {
+      id: 'meeting_advanced_release',
+      title: 'Advanced release meeting',
+      recordings: [],
+    });
+
+    await page.goto('/');
+    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
+
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
+    await expect(page.getByText('Advanced release meeting')).toBeVisible();
+
+    await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
+    await expect(page.getByPlaceholder('Dodaj zadanie (N)')).toBeVisible();
+  });
+
+  test('keeps recording import blocked when workspace state is not hydrated', async ({ page }) => {
+    let audioUploadSeen = false;
+    await page.route('**/media/recordings/*/audio', async (route, request) => {
+      if (request.method() === 'PUT') {
+        audioUploadSeen = true;
+      }
+      await route.fulfill({ status: 500, body: 'unexpected upload' });
+    });
+
+    await seedLoggedInUser(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('voicelog.e2e.forceMissingImportWorkspace', 'true');
+    });
+
+    await page.goto('/');
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
+    await page.getByTestId('recordings-file-input').setInputFiles({
+      name: 'missing-workspace.webm',
+      mimeType: 'audio/webm',
+      buffer: Buffer.from('e2e-audio'),
+    });
+
+    await expect(
+      page.getByRole('alert').getByText(/robocza nie jest jeszcze gotowa/i)
+    ).toBeVisible();
+    expect(audioUploadSeen).toBe(false);
+  });
+});
 
 // TODO: These tests require data-testid attributes not yet implemented in the UI.
 // Skip until UI components have the required data-testid attributes.

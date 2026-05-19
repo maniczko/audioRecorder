@@ -34,6 +34,7 @@ describe('Media Routes', () => {
       getSpeakerAcousticFeatures: vi.fn(),
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
+      isTranscriptionJobActive: vi.fn(() => false),
       diarizeFromTranscript: vi.fn(),
       on: vi.fn(),
       removeListener: vi.fn(),
@@ -306,6 +307,30 @@ describe('Media Routes', () => {
         meetingId: 'm_1',
       })
     );
+  });
+
+  it('POST /media/recordings/:recordingId/retry-transcribe - protects completed non-empty transcript from accidental retry', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_done_retry',
+      workspace_id: 'ws_1',
+      meeting_id: 'm_1',
+      file_path: '/tmp/done.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'completed',
+      diarization_json: JSON.stringify({ transcriptOutcome: 'normal' }),
+      transcript_json: JSON.stringify([{ text: 'Gotowy transcript', timestamp: 0 }]),
+    });
+
+    const res = await app.request('/media/recordings/rec_done_retry/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(409);
+    const payload = await res.json();
+    expect(payload.pipelineStatus).toBe('done');
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.ensureTranscriptionJob).not.toHaveBeenCalled();
   });
 
   // ---------------------------------------------------------------
@@ -855,8 +880,8 @@ describe('Media Routes', () => {
 
     const res = await app.request('/media/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ meeting: {}, segments: [] }),
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1', meeting: {}, segments: [] }),
     });
 
     expect(res.status).toBe(200);
@@ -942,14 +967,15 @@ describe('Media Routes', () => {
 
   // ─────────────────────────────────────────────────────────────────
   // Issue #0 — GET /transcribe stuck-processing detection
-  // Date: 2026-03-30 (updated 2026-03-31: threshold reduced 15→5 min)
+  // Date: 2026-03-30 (updated 2026-05-18: inactive orphan threshold raised to 30 min)
   // Bug: Pipeline stuck in 'processing' with empty segments, frontend polls forever
-  // Fix: GET handler detects stuck state (>5 min) and marks as failed.
+  // Fix: GET handler detects inactive orphaned state and marks as failed.
   //      Also added resetOrphanedJobs on bootstrap for crash recovery.
   // ─────────────────────────────────────────────────────────────────
   describe('Regression: #0 — stuck processing detection in GET /transcribe', () => {
-    it('marks asset as failed when stuck in processing for >5 min with empty segments', async () => {
-      const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+    it('marks inactive asset as failed when stuck in processing for >30 min with empty segments', async () => {
+      const staleDate = new Date(Date.now() - 40 * 60 * 1000).toISOString();
+      mockTranscriptionService.isTranscriptionJobActive.mockReturnValue(false);
       mockTranscriptionService.getMediaAsset
         .mockResolvedValueOnce({
           id: 'rec_stuck',
@@ -985,6 +1011,29 @@ describe('Media Routes', () => {
         null,
         null
       );
+    });
+
+    it('does not mark active long-running processing job as failed', async () => {
+      const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      mockTranscriptionService.isTranscriptionJobActive.mockReturnValue(true);
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_active_long',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: staleDate,
+      });
+
+      const res = await app.request('/media/recordings/rec_active_long/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.pipelineStatus).toBe('processing');
+      expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
     });
 
     it('does not mark as failed when processing for <5 min', async () => {

@@ -23,6 +23,7 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
 
     const hasSupabase =
       Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const hasDiarizationToken = Boolean(process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN);
 
     const memory = process.memoryUsage();
     const status = dbStatus.ok ? 'ok' : 'degraded';
@@ -37,6 +38,11 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
         gitSha: build.gitSha,
         buildTime: build.buildTime,
         appVersion: build.appVersion,
+        diarization: {
+          enabled: hasDiarizationToken,
+          provider: hasDiarizationToken ? 'pyannote' : 'disabled',
+          status: hasDiarizationToken ? 'available' : 'degraded',
+        },
         runtime: build.runtime,
         platform: process.platform,
         memory: {

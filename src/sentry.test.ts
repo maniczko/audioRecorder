@@ -27,9 +27,7 @@ describe('initSentry', () => {
     const { initSentry } = await import('./sentry');
     initSentry();
 
-    expect(infoSpy).toHaveBeenCalledWith(
-      '[Sentry] No DSN provided, skipping frontend initialization.'
-    );
+    expect(infoSpy).not.toHaveBeenCalled();
     expect(sentryMocks.init).not.toHaveBeenCalled();
   });
 

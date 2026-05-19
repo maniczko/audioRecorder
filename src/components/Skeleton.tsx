@@ -51,23 +51,29 @@ export function EmptyState({
   actionTooltip,
   className = '',
 }: any) {
+  const actionNode =
+    typeof action === 'function' ? (
+      actionTooltip ? (
+        <Tooltip content={actionTooltip} placement="top">
+          <button type="button" className="ff-state-action primary-button" onClick={action}>
+            {actionText}
+          </button>
+        </Tooltip>
+      ) : (
+        <button type="button" className="ff-state-action primary-button" onClick={action}>
+          {actionText}
+        </button>
+      )
+    ) : action ? (
+      <div className="ff-state-action-slot">{action}</div>
+    ) : null;
+
   return (
     <div className={`ff-state-box empty-state ${className}`}>
       <div className="ff-state-icon">{icon}</div>
       <div className="ff-state-title">{title}</div>
       {message && <p className="ff-state-desc">{message}</p>}
-      {action &&
-        (actionTooltip ? (
-          <Tooltip content={actionTooltip} placement="top">
-            <button type="button" className="ff-state-action primary-button" onClick={action}>
-              {actionText}
-            </button>
-          </Tooltip>
-        ) : (
-          <button type="button" className="ff-state-action primary-button" onClick={action}>
-            {actionText}
-          </button>
-        ))}
+      {actionNode}
     </div>
   );
 }

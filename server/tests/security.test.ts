@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import http from 'node:http';
+import { readdirSync } from 'node:fs';
 
 describe('API Security Regression Tests', () => {
   let server: any, authService: any;
@@ -119,6 +120,26 @@ describe('API Security Regression Tests', () => {
     expect(json.dbPath).toBeUndefined();
     expect(json.uploadPath).toBeUndefined();
     expect(json.uploadDir).toBeUndefined();
+  });
+
+  test('[H-05] admin and metrics endpoints reject anonymous requests', async () => {
+    const heapFilesBefore = new Set(
+      readdirSync(process.cwd()).filter((entry) => entry.endsWith('.heapsnapshot'))
+    );
+
+    const metricsRes: any = await makeRequest('GET', '/metrics');
+    const adminMetricsRes: any = await makeRequest('GET', '/api/admin/metrics');
+    const heapdumpRes: any = await makeRequest('GET', '/api/admin/heapdump');
+
+    expect([401, 403]).toContain(metricsRes.statusCode);
+    expect([401, 403]).toContain(adminMetricsRes.statusCode);
+    expect([401, 403, 404]).toContain(heapdumpRes.statusCode);
+
+    const heapFilesAfter = readdirSync(process.cwd()).filter((entry) =>
+      entry.endsWith('.heapsnapshot')
+    );
+    expect(heapFilesAfter).toEqual([...heapFilesBefore]);
+    expect(heapdumpRes.body).not.toContain(process.cwd());
   });
 
   test('[M-03] GET /media/recordings/:id/audio - Should fallback Content-Type if invalid (Stored XSS)', async () => {

@@ -364,33 +364,81 @@ export default function useRecordingActions({
   function attachCompletedRecording(recordingMeetingId, recording) {
     let resolvedMeetingId = '';
     let attached = false;
+    const requestedMeeting =
+      recordingMeetingId && typeof recordingMeetingId === 'object' ? recordingMeetingId : null;
+
+    function withRecordingActivity(meeting) {
+      return {
+        ...meeting,
+        tags: meeting.tags || [],
+        activity: [
+          ...(meeting.activity || []),
+          {
+            id: createId('meeting_activity'),
+            type: 'recording',
+            actorId: currentUser?.id || '',
+            actorName: currentUser?.name || currentUser?.email || 'Ty',
+            message: 'Dodano nowe nagranie do spotkania.',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+    }
+
     setMeetings((prev) => {
       const resolvedMeeting =
         findLiveMeetingForQueueItem(prev, recordingMeetingId) ||
         prev.find((meeting) => meeting.id === recordingMeetingId) ||
         null;
 
-      return prev.map((m) => {
-        if (m.id !== resolvedMeeting?.id) return m;
-        attached = true;
-        resolvedMeetingId = m.id;
-        const base = attachRecording(m, recording);
-        return {
-          ...base,
-          tags: m.tags || [],
-          activity: [
-            ...(m.activity || []),
-            {
-              id: createId('meeting_activity'),
-              type: 'recording',
-              actorId: currentUser?.id || '',
-              actorName: currentUser?.name || currentUser?.email || 'Ty',
-              message: 'Dodano nowe nagranie do spotkania.',
-              createdAt: new Date().toISOString(),
-            },
-          ],
+      if (resolvedMeeting) {
+        return prev.map((m) => {
+          if (m.id !== resolvedMeeting.id) return m;
+          attached = true;
+          resolvedMeetingId = m.id;
+          return withRecordingActivity(attachRecording(m, recording));
+        });
+      }
+
+      if (requestedMeeting?.id) {
+        const now = new Date().toISOString();
+        const recoveredMeeting = {
+          id: requestedMeeting.id,
+          userId: requestedMeeting.userId || currentUser?.id || '',
+          workspaceId: requestedMeeting.workspaceId || selectedMeeting?.workspaceId || '',
+          createdByUserId: requestedMeeting.createdByUserId || currentUser?.id || '',
+          title: requestedMeeting.title || 'Odzyskane nagranie',
+          context: requestedMeeting.context || '',
+          startsAt: requestedMeeting.startsAt || recording.createdAt || now,
+          durationMinutes:
+            Number(requestedMeeting.durationMinutes) ||
+            Math.max(1, Math.round(Number(recording.duration || 0) / 60)) ||
+            45,
+          attendees: Array.isArray(requestedMeeting.attendees) ? requestedMeeting.attendees : [],
+          tags: Array.isArray(requestedMeeting.tags) ? requestedMeeting.tags : [],
+          needs: Array.isArray(requestedMeeting.needs) ? requestedMeeting.needs : [],
+          concerns: Array.isArray(requestedMeeting.concerns) ? requestedMeeting.concerns : [],
+          desiredOutputs: Array.isArray(requestedMeeting.desiredOutputs)
+            ? requestedMeeting.desiredOutputs
+            : [],
+          location: requestedMeeting.location || '',
+          recordings: [],
+          latestRecordingId: null,
+          analysis: null,
+          aiDebrief: null,
+          speakerNames: {},
+          speakerCount: 0,
+          activity: Array.isArray(requestedMeeting.activity) ? requestedMeeting.activity : [],
+          createdAt: requestedMeeting.createdAt || recording.createdAt || now,
+          updatedAt: now,
         };
-      });
+
+        attached = true;
+        resolvedMeetingId = recoveredMeeting.id;
+        return [withRecordingActivity(attachRecording(recoveredMeeting, recording)), ...prev];
+      }
+
+      return prev;
     });
     if (!attached) return false;
     setSelectedMeetingId(resolvedMeetingId);

@@ -16,9 +16,9 @@ test.describe('Smoke product flows', () => {
     await page.getByRole('button', { name: 'Rejestracja' }).click();
     await page.getByPlaceholder('np. Anna Nowak').fill('Smoke Tester');
     await page.getByPlaceholder('name@company.com').fill(`smoke.${Date.now()}@example.com`);
-    await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
-    await page.getByPlaceholder('np. Zespół Sprzedaży').fill('Smoke Workspace');
-    await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
+    await page.getByLabel(/Has/).fill('haslo123');
+    await page.getByLabel(/Nazwa nowej przestrzeni/).fill('Smoke Workspace');
+    await page.getByRole('button', { name: 'Wejdź do aplikacji' }).click();
 
     // Wait for Studio tab to be visible with retry
     await expect(

@@ -28,6 +28,11 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const FLUSH_DELAY_MS = 5000; // batch & send every 5s
 let isFlushing = false;
 
+function errorLogDebugEnabled() {
+  const env = (import.meta as any).env;
+  return env?.DEV === true || env?.VITE_VOICELOG_DEBUG === 'true';
+}
+
 async function sendErrorsToServer(errors: ErrorLogEntry[]): Promise<boolean> {
   if (!apiBaseUrlConfigured() || errors.length === 0) {
     if (errors.length > 0) {
@@ -130,17 +135,20 @@ if (typeof window !== 'undefined') {
   (window as any).__voicelogFlush = async () => {
     const store = useErrorLogStore.getState();
     await store.flushToServer();
-    console.info(
-      `[VoiceLog] flushed. pending=${pendingErrors.length}, stored=${store.errors.length}`
-    );
+    if (errorLogDebugEnabled()) {
+      console.info(
+        `[VoiceLog] flushed. pending=${pendingErrors.length}, stored=${store.errors.length}`
+      );
+    }
   };
-  console.info('[VoiceLog] error auto-send active, API_BASE_URL =', API_BASE_URL);
 
   // On startup, queue any existing errors from localStorage that haven't been sent yet
   setTimeout(() => {
     const stored = useErrorLogStore.getState().errors;
     if (stored.length > 0 && pendingErrors.length === 0) {
-      console.info(`[VoiceLog] queueing ${stored.length} existing errors from localStorage`);
+      if (errorLogDebugEnabled()) {
+        console.info(`[VoiceLog] queueing ${stored.length} existing errors from localStorage`);
+      }
       pendingErrors.push(...stored);
       scheduleFlush();
     }

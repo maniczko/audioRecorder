@@ -133,6 +133,14 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.markTranscriptionProcessing(recordingId);
   }
 
+  isTranscriptionJobActive(recordingId: string) {
+    if (!recordingId) return false;
+    return (
+      this.transcriptionJobs.has(recordingId) ||
+      this._pendingQueue.some((item) => item.recordingId === recordingId)
+    );
+  }
+
   async saveTranscriptionResult(recordingId: string, result: any) {
     return await this.db.saveTranscriptionResult(recordingId, result);
   }

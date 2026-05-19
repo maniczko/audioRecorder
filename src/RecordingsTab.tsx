@@ -13,7 +13,11 @@ import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
 import TagBadge from './shared/TagBadge';
 import { Search, Filter, Upload, Clock, Mic2, Users, Brain } from 'lucide-react';
-import type { RecordingQueueItem, RecordingQueueMeetingLike } from './lib/recordingQueue';
+import {
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+  type RecordingQueueItem,
+  type RecordingQueueMeetingLike,
+} from './lib/recordingQueue';
 
 interface RecordingsTabRecording {
   id?: string;
@@ -306,6 +310,7 @@ function UnifiedLibrary({
   isUploading,
   uploadingFileName,
   uploadProgress,
+  uploadErrorMessage,
   fileInputRef,
   handleFileUpload,
 }) {
@@ -779,6 +784,24 @@ function UnifiedLibrary({
       <RecordingsStatsBar
         meetings={mergeMeetingsWithPendingImports(userMeetings, recordingQueue)}
       />
+      {uploadErrorMessage ? (
+        <div
+          role="alert"
+          className="recordings-upload-alert"
+          style={{
+            margin: '12px 0',
+            padding: '12px 14px',
+            borderRadius: 10,
+            border: '1px solid rgba(248, 113, 113, 0.32)',
+            background: 'rgba(127, 29, 29, 0.18)',
+            color: '#fecaca',
+            fontSize: '0.88rem',
+            lineHeight: 1.5,
+          }}
+        >
+          {uploadErrorMessage}
+        </div>
+      ) : null}
       <div className="studio-recordings-table-wrap">
         {sortedAndFiltered.length ? (
           <table className="studio-recordings-table">
@@ -1024,6 +1047,7 @@ export default function RecordingsTab(props) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadingFileName, setUploadingFileName] = React.useState('');
   const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [uploadErrorMessage, setUploadErrorMessage] = React.useState('');
   const mainFileInputRef = React.useRef<HTMLInputElement>(null);
   const showPipelineStatus =
     Boolean(recordingMessage) ||
@@ -1089,14 +1113,17 @@ export default function RecordingsTab(props) {
       return;
     }
 
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
+
     try {
       if (onCreateMeeting && queueRecording) {
         setIsUploading(true);
         setUploadingFileName(file.name);
         setUploadProgress(5);
+        setUploadErrorMessage('');
 
         let progress = 5;
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           progress += Math.floor(Math.random() * 15) + 5;
           if (progress > 90) progress = 90;
           setUploadProgress(progress);
@@ -1108,15 +1135,37 @@ export default function RecordingsTab(props) {
           startsAt: new Date().toISOString(),
         });
 
+        if (!newMeeting?.id) {
+          throw new Error('Nie udało się utworzyć spotkania dla importu.');
+        }
+
+        if (!String(newMeeting.workspaceId || '').trim()) {
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
+          setIsUploading(false);
+          setUploadingFileName('');
+          setUploadProgress(0);
+          setUploadErrorMessage(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+          toast.error(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+          if (e.target) e.target.value = '';
+          return;
+        }
+
         const queuedId = await queueRecording(newMeeting.id, file, newMeeting);
 
-        clearInterval(progressInterval);
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
         setUploadProgress(queuedId ? 100 : 0);
         setTimeout(
           () => {
             setIsUploading(false);
             setUploadingFileName('');
             setUploadProgress(0);
+            setUploadErrorMessage('');
             if (queuedId) {
               selectMeeting(newMeeting);
               toast.success(
@@ -1128,9 +1177,14 @@ export default function RecordingsTab(props) {
         );
       }
     } catch (_) {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
       setIsUploading(false);
       setUploadProgress(0);
+      setUploadErrorMessage('Wystąpił błąd przy wgrywaniu pliku.');
       toast.error('Wystąpił błąd przy wgrywaniu pliku.');
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -1270,6 +1324,7 @@ export default function RecordingsTab(props) {
           isUploading={isUploading}
           uploadingFileName={uploadingFileName}
           uploadProgress={uploadProgress}
+          uploadErrorMessage={uploadErrorMessage}
           fileInputRef={mainFileInputRef}
           handleFileUpload={handleMainFileUpload}
         />

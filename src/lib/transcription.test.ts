@@ -164,6 +164,8 @@ describe('createBrowserTranscriptionController', () => {
     it('maps network error to Polish message', () => {
       mockSpeechRecognitionClass = createMockSpeechRecognition();
       const onError = vi.fn();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       const controller = createBrowserTranscriptionController({
         startTimeRef: { current: 0 },
         transcriptRef: { current: [] },
@@ -174,7 +176,15 @@ describe('createBrowserTranscriptionController', () => {
       });
 
       controller!.recognition.onerror({ error: 'network' });
-      expect(onError).toHaveBeenCalledWith(expect.stringContaining('połączenie'));
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('polaczenie'));
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[SpeechRecognition] Live transcription degraded:',
+        'network'
+      );
+
+      errorSpy.mockRestore();
+      warnSpy.mockRestore();
     });
 
     it('maps not-allowed error to permissions message', () => {

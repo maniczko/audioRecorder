@@ -1,0 +1,18 @@
+# Project-scoped Codex defaults for VoiceLog OS.
+# Keep this conservative: do not grant full filesystem access from repo config.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "cached"
+
+[features]
+shell_snapshot = true
+
+[sandbox_workspace_write]
+writable_roots = []
+network_access = false
+
+[shell_environment_policy]
+inherit = "all"
+ignore_default_excludes = false
+exclude = ["*TOKEN*", "*SECRET*", "*KEY*", "*PASSWORD*"]

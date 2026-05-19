@@ -19,6 +19,7 @@ function setWindowOrigin(origin: string) {
 describe('services/config resolveApiBaseUrl', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     process.env.VITE_API_BASE_URL = ORIGINAL_ENV.VITE_API_BASE_URL;
     process.env.REACT_APP_API_BASE_URL = ORIGINAL_ENV.REACT_APP_API_BASE_URL;
     vi.resetModules();
@@ -35,8 +36,8 @@ describe('services/config resolveApiBaseUrl', () => {
   });
 
   it('falls back to local default when API URL is not configured in non-hosted runtime', async () => {
-    delete process.env.VITE_API_BASE_URL;
-    delete process.env.REACT_APP_API_BASE_URL;
+    vi.stubEnv('VITE_API_BASE_URL', '');
+    vi.stubEnv('REACT_APP_API_BASE_URL', '');
     setWindowOrigin('http://127.0.0.1:3000');
 
     const config = await import('./config');

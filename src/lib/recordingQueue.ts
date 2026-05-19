@@ -16,6 +16,15 @@ export interface RecordingQueueMeetingLike {
   title?: string;
 }
 
+export const RECORDING_WORKSPACE_REQUIRED_MESSAGE =
+  'Nie można rozpocząć uploadu, bo przestrzeń robocza nie jest jeszcze gotowa. Odśwież lub wybierz workspace.';
+
+export function hasRecordingWorkspaceContext(
+  value: Pick<RecordingQueueItem, 'workspaceId'> | RecordingQueueMeetingLike | null | undefined
+) {
+  return String(value?.workspaceId || '').trim().length > 0;
+}
+
 function normalizeMeetingResolverValue(value: unknown) {
   return String(value || '')
     .trim()
@@ -141,6 +150,7 @@ export interface RecordingQueueItem {
   audioQuality?: unknown;
   transcriptionDiagnostics?: unknown;
   /** Timestamp (ISO string) when processing started — used to compute elapsed processing time */
+  lastReconciledAt?: number;
   processingStartedAt?: string;
 }
 
@@ -160,6 +170,7 @@ interface CreateRecordingQueueItemInput {
   recordingId: string;
   meeting?: RecordingQueueMeetingLike;
   meetingId?: string;
+  workspaceId?: string;
   mimeType?: string;
   rawSegments?: TranscriptSegment[];
   duration?: number;
@@ -191,18 +202,24 @@ export function createRecordingQueueItem({
   recordingId,
   meeting,
   meetingId,
+  workspaceId,
   mimeType,
   rawSegments = [],
   duration = 0,
   createdAt = new Date().toISOString(),
 }: CreateRecordingQueueItemInput): RecordingQueueItem {
+  const resolvedWorkspaceId = String(meeting?.workspaceId || workspaceId || '').trim();
+
   return {
     id: recordingId,
     recordingId,
     meetingId: meetingId || meeting?.id || '',
-    workspaceId: meeting?.workspaceId || '',
+    workspaceId: resolvedWorkspaceId,
     meetingTitle: meeting?.title || 'Spotkanie',
-    meetingSnapshot: meeting || null,
+    meetingSnapshot:
+      meeting && resolvedWorkspaceId && meeting.workspaceId !== resolvedWorkspaceId
+        ? { ...meeting, workspaceId: resolvedWorkspaceId }
+        : meeting || null,
     mimeType: mimeType || 'audio/webm',
     rawSegments: Array.isArray(rawSegments) ? rawSegments : [],
     duration: Number(duration) || 0,
@@ -250,6 +267,7 @@ export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueIt
         pipelineBuildTime: current.pipelineBuildTime || '',
         audioQuality: current.audioQuality || null,
         transcriptionDiagnostics: current.transcriptionDiagnostics || null,
+        lastReconciledAt: Math.max(0, Number(current.lastReconciledAt) || 0),
       };
     })
     .filter((item): item is RecordingQueueItem => Boolean(item))

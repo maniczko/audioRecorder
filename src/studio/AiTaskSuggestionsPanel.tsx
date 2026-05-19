@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
+import { remoteApiEnabled } from '../services/config';
 import { createId } from '../lib/storage';
 import './AiTaskSuggestionsPanelStyles.css';
 import TagBadge from '../shared/TagBadge';
@@ -63,7 +64,11 @@ function AiTaskSuggestionsPanel({
     return Array.from(names).sort();
   }, [peopleProfiles]);
 
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  const canUseAiSuggestions = Boolean(
+    remoteApiEnabled() ||
+    (import.meta.env.VITE_ALLOW_BROWSER_AI_KEYS === 'true' &&
+      import.meta.env.VITE_ANTHROPIC_API_KEY)
+  );
   const autoTriggeredRef = useRef<string | null>(null);
 
   // Auto-generate suggestions when a recording with transcript becomes available
@@ -71,7 +76,7 @@ function AiTaskSuggestionsPanel({
     const recId = selectedRecording?.id;
     const hasTranscript = (selectedRecording?.transcript?.length ?? 0) > 0;
     if (
-      apiKey &&
+      canUseAiSuggestions &&
       recId &&
       hasTranscript &&
       status === 'idle' &&
@@ -81,9 +86,9 @@ function AiTaskSuggestionsPanel({
       handleGenerate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRecording?.id, selectedRecording?.transcript?.length, apiKey, status]);
+  }, [selectedRecording?.id, selectedRecording?.transcript?.length, canUseAiSuggestions, status]);
 
-  if (!apiKey) {
+  if (!canUseAiSuggestions) {
     return null;
   }
 

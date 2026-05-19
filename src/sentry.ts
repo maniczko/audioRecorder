@@ -4,7 +4,6 @@ const dsn = import.meta.env.VITE_SENTRY_DSN;
 
 export function initSentry() {
   if (!dsn) {
-    console.info('[Sentry] No DSN provided, skipping frontend initialization.');
     return;
   }
 

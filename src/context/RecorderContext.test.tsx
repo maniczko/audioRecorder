@@ -84,6 +84,7 @@ describe('RecorderContext', () => {
         attachCompletedRecording: expect.any(Function),
         isHydratingRemoteState: false,
         selectMeeting: expect.any(Function),
+        currentWorkspaceId: '',
       });
     });
 

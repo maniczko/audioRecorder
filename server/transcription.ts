@@ -68,7 +68,7 @@ if (STT_PROVIDER_CHAIN.length === 0) {
   );
   STT_PROVIDER_CHAIN.forEach((p) =>
     console.log(
-      `[stt]   ${p.id}: model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? p.apiKey.slice(0, 8) + '...' : 'MISSING'}`
+      `[stt]   ${p.id}: model=${p.defaultModel} url=${p.baseUrl}/audio/transcriptions key=${p.apiKey ? 'present' : 'missing'}`
     )
   );
 }

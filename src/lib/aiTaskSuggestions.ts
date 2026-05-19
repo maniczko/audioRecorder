@@ -2,6 +2,10 @@ import { API_BASE_URL } from '../services/config';
 import type { AiSuggestedTask } from '../shared/contracts';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
+function browserAiKeysAllowed() {
+  return import.meta.env.VITE_ALLOW_BROWSER_AI_KEYS === 'true';
+}
+
 // Import lazily to avoid circular deps
 let _apiRequest: ((path: string, opts?: any) => Promise<any>) | null = null;
 async function getApiRequest() {
@@ -31,7 +35,11 @@ export async function suggestTasksFromTranscript(
     }
   }
 
-  // Local demo mode fallback: call Anthropic directly if env key is present
+  // Local demo mode fallback: call Anthropic directly only behind an explicit opt-in.
+  if (!browserAiKeysAllowed()) {
+    return [];
+  }
+
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
     return [];

@@ -192,6 +192,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       : config.VOICELOG_PROCESSING_MODE_DEFAULT || 'fast';
   }
 
+  function hasTranscriptSegments(asset: any) {
+    try {
+      const segments = JSON.parse(String(asset?.transcript_json || '[]'));
+      return Array.isArray(segments) && segments.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  function isTranscriptionJobActive(recordingId: string) {
+    return Boolean(
+      typeof transcriptionService.isTranscriptionJobActive === 'function' &&
+      transcriptionService.isTranscriptionJobActive(recordingId)
+    );
+  }
+
   function scheduleAudioQuality(recordingId: string, asset: MediaAsset) {
     Promise.resolve()
       .then(async () => {
@@ -486,6 +502,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
+    if (
+      asset.transcription_status === 'completed' &&
+      hasTranscriptSegments(asset) &&
+      body.force !== true
+    ) {
+      return c.json(
+        {
+          message: 'Transkrypcja jest juz gotowa. Wymus ponowne przetwarzanie tylko swiadomie.',
+          recordingId,
+          pipelineStatus: 'done',
+        },
+        409
+      );
+    }
+
     if (!asset.file_path) {
       return c.json({ message: 'Brak ścieżki pliku do ponownego przetworzenia.' }, 409);
     }
@@ -537,22 +568,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
 
-      // Detect stuck processing: if status is 'processing' or 'queued' for >5 min
-      // with no transcript data, mark as failed so the frontend can retry.
-      const STUCK_THRESHOLD_MS = 5 * 60 * 1000;
+      // Detect true orphaned processing. Active long-audio jobs can run well
+      // past five minutes, so only inactive stale assets are marked failed.
+      const STUCK_THRESHOLD_MS = 30 * 60 * 1000;
       if (
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
-        Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS
+        Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
+        !isTranscriptionJobActive(recordingId)
       ) {
-        const segments = (() => {
-          try {
-            return JSON.parse(String(asset.transcript_json || '[]'));
-          } catch {
-            return [];
-          }
-        })();
-        if (!Array.isArray(segments) || segments.length === 0) {
+        if (!hasTranscriptSegments(asset)) {
           console.warn(
             `[transcribe-status] Recording ${recordingId} stuck in '${asset.transcription_status}' since ${asset.updated_at}. Marking as failed.`
           );
@@ -934,9 +959,15 @@ Important:
     }
   });
 
-  router.post('/analyze', applyRateLimit('analyze'), async (c) => {
+  router.post('/analyze', authMiddleware, applyRateLimit('analyze', 10), async (c) => {
     const body = await c.req.json().catch(() => ({}));
-    const result = await transcriptionService.analyzeMeetingWithOpenAI(body);
+    const workspaceId = String(body.workspaceId || c.req.header('X-Workspace-Id') || '').trim();
+    if (!workspaceId) {
+      return c.json({ message: 'Brakuje workspaceId.' }, 400);
+    }
+    await ensureWorkspaceAccess(c, workspaceId);
+
+    const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
     return c.json(result || { mode: 'no-key' }, 200);
   });
 

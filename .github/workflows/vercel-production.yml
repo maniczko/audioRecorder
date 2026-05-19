@@ -1,9 +1,9 @@
 name: Production Deployment (Vercel)
 
-# Trigger ONLY after CI Pipeline passes — never deploy broken code.
+# Trigger only after CI passes; never deploy broken code.
 on:
   workflow_run:
-    workflows: ['CI/CD Pipeline']
+    workflows: ['CI']
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -35,7 +35,7 @@ jobs:
           node-version: 22
       - run: corepack enable
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -70,6 +70,22 @@ jobs:
         run: |
           DEPLOY_URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "production_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+
+      - name: Production smoke
+        env:
+          PRODUCTION_FRONTEND_URL: ${{ steps.vercel_deploy.outputs.production_url }}
+          PRODUCTION_API_BASE_URL: ${{ steps.vercel_deploy.outputs.production_url }}
+          PRODUCTION_REQUIRE_SUPABASE_REMOTE: 'true'
+          PRODUCTION_REQUIRE_KNOWN_GIT_SHA: 'true'
+          PRODUCTION_REQUIRE_SENTRY_DSN: 'true'
+          PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE: 'true'
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          PRODUCTION_SMOKE_AUTH_TOKEN: ${{ secrets.PRODUCTION_SMOKE_AUTH_TOKEN }}
+          PRODUCTION_SMOKE_WORKSPACE_ID: ${{ secrets.PRODUCTION_SMOKE_WORKSPACE_ID }}
+          PRODUCTION_SMOKE_MEETING_ID: ${{ secrets.PRODUCTION_SMOKE_MEETING_ID }}
+          PRODUCTION_PERSISTENCE_EVIDENCE_URL: ${{ secrets.PRODUCTION_PERSISTENCE_EVIDENCE_URL }}
+        run: pnpm run release:prod-smoke
 
       - name: Publish deployment summary
         run: |

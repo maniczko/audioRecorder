@@ -35,6 +35,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
     { key: '3', ctrlKey: true, handler: () => ui.setActiveTab('calendar') },
     { key: '4', ctrlKey: true, handler: () => ui.setActiveTab('tasks') },
     { key: '5', ctrlKey: true, handler: () => ui.setActiveTab('people') },
+    { key: '6', ctrlKey: true, handler: () => ui.setActiveTab('notes') },
     { key: 'k', ctrlKey: true, handler: () => ui.setCommandPaletteOpen(true) },
     {
       key: 'r',

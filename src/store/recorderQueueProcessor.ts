@@ -1,5 +1,9 @@
-import { normalizeRecordingPipelineStatus, type RecordingQueueItem } from '../lib/recordingQueue';
-import type { RecordingPipelineStatus } from '../lib/recordingQueue';
+import {
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+  normalizeRecordingPipelineStatus,
+  type RecordingPipelineStatus,
+  type RecordingQueueItem,
+} from '../lib/recordingQueue';
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { MeetingAnalysis, TranscriptSegment } from '../shared/types';
 
@@ -154,6 +158,14 @@ export async function attachRecordingWithRetry({
   }
 
   return attached !== false;
+}
+
+function getAttachTarget(target: any) {
+  return Array.isArray(target?.recordings) ? target.id : target;
+}
+
+function resolveWorkspaceId(target: any, nextItem: RecordingQueueItem) {
+  return String(target?.workspaceId || nextItem.workspaceId || '').trim();
 }
 
 export async function waitForCompletedTranscription({
@@ -314,6 +326,25 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     }
 
     const mediaService = createMediaService();
+    const workspaceId = resolveWorkspaceId(target, nextItem);
+    const targetWithWorkspace =
+      workspaceId && target.workspaceId !== workspaceId ? { ...target, workspaceId } : target;
+
+    if (mediaService.mode === 'remote' && !workspaceId) {
+      updateQueueItem(nextItem.recordingId, {
+        status: 'failed',
+        errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+      });
+      const snapshot = getPipelineSnapshot('failed', 0, RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+      setState({
+        analysisStatus: 'error',
+        pipelineProgressPercent: snapshot.progressPercent,
+        pipelineStageLabel: snapshot.stageLabel,
+        recordingMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+      });
+      return;
+    }
+
     const canReuseRemoteUpload = mediaService.mode === 'remote' && nextItem.uploaded;
     const localBlob = canReuseRemoteUpload ? null : await getAudioBlob(nextItem.recordingId);
 
@@ -393,8 +424,8 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         nextItem.recordingId,
         uploadBlob,
         {
-          workspaceId: target.workspaceId || nextItem.workspaceId || '',
-          meetingId: target.id,
+          workspaceId,
+          meetingId: targetWithWorkspace.id,
           onProgress: (pct: number) => {
             const mapped = 12 + Math.round((pct / 100) * 10);
             setState({
@@ -428,19 +459,25 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       recordingMessage: 'Audio przeslane. Oczekiwanie na przetwarzanie...',
     });
 
-    const startedRaw =
-      nextItem.uploaded && nextItem.status === 'processing'
-        ? await mediaService.getTranscriptionJobStatus(nextItem.recordingId)
-        : canReuseRemoteUpload &&
-            nextItem.status !== 'processing' &&
-            mediaService.retryTranscriptionJob
-          ? await mediaService.retryTranscriptionJob(nextItem.recordingId)
-          : await mediaService.startTranscriptionJob({
-              recordingId: nextItem.recordingId,
-              blob: localBlob,
-              meeting: target,
-              rawSegments: nextItem.rawSegments,
-            });
+    let startedRaw: unknown;
+    if (canReuseRemoteUpload) {
+      const currentRaw = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+      const current = normalizeTranscriptionResponse(currentRaw) as StartedTranscription;
+      const currentStatus = normalizeRecordingPipelineStatus(current?.pipelineStatus);
+      startedRaw =
+        currentStatus === 'done' ||
+        nextItem.status === 'processing' ||
+        !mediaService.retryTranscriptionJob
+          ? currentRaw
+          : await mediaService.retryTranscriptionJob(nextItem.recordingId);
+    } else {
+      startedRaw = await mediaService.startTranscriptionJob({
+        recordingId: nextItem.recordingId,
+        blob: localBlob,
+        meeting: targetWithWorkspace,
+        rawSegments: nextItem.rawSegments,
+      });
+    }
 
     const started = normalizeTranscriptionResponse(startedRaw) as StartedTranscription;
     const transcriptionProviderId = started.providerId || '';
@@ -553,7 +590,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
       const attached = await attachRecordingWithRetry({
         attachCompletedRecording,
-        meetingId: target.id,
+        meetingId: getAttachTarget(targetWithWorkspace),
         recording,
         sleep,
       });
@@ -562,7 +599,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         console.warn(
           '[queue] Meeting not found when attaching empty-transcript recording after retries',
           nextItem.recordingId,
-          target.id
+          targetWithWorkspace.id
         );
         updateQueueItem(nextItem.recordingId, {
           status: 'failed',
@@ -598,7 +635,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     let analysis;
     try {
       analysis = await analyzeMeeting({
-        meeting: target,
+        meeting: targetWithWorkspace,
         segments: verifiedSegments,
         speakerNames: transcription.speakerNames || {},
         diarization: transcription.diarization || {},
@@ -642,7 +679,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     const attached = await attachRecordingWithRetry({
       attachCompletedRecording,
-      meetingId: target.id,
+      meetingId: getAttachTarget(targetWithWorkspace),
       recording,
       sleep,
     });
@@ -651,7 +688,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       console.warn(
         '[queue] Meeting not found when attaching recording after retries',
         nextItem.recordingId,
-        target.id
+        targetWithWorkspace.id
       );
       updateQueueItem(nextItem.recordingId, {
         status: 'failed',

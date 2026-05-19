@@ -1023,10 +1023,10 @@ describe('Regression: #0 — retry-transcribe Supabase fallback for missing loca
 // Bug: After container restart, jobs left in 'processing'/'queued' state
 //      in DB were never recovered. Frontend polled forever (~15 min).
 // Fix: Added resetOrphanedJobs() to Database, called on bootstrap.
-//      Reduced STUCK_THRESHOLD_MS from 15 to 5 minutes.
+//      Keeps orphan cleanup conservative for long-running audio jobs.
 // ─────────────────────────────────────────────────────────────────
 describe('Regression: Issue #0 — resetOrphanedJobs recovers stuck transcriptions', () => {
-  test('resetOrphanedJobs marks processing jobs older than 5 min as failed', async () => {
+  test('resetOrphanedJobs marks processing jobs older than 30 min as failed', async () => {
     const mockDb = {
       _query: vi.fn().mockResolvedValue([{ id: 'rec_orphan_1' }, { id: 'rec_orphan_2' }]),
       _execute: vi.fn().mockResolvedValue(undefined),
@@ -1035,7 +1035,7 @@ describe('Regression: Issue #0 — resetOrphanedJobs recovers stuck transcriptio
     };
 
     // Simulate the resetOrphanedJobs logic
-    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const ORPHAN_THRESHOLD_MS = 30 * 60 * 1000;
     const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
     const orphans = await mockDb._query(
       "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",
@@ -1073,7 +1073,7 @@ describe('Regression: Issue #0 — resetOrphanedJobs recovers stuck transcriptio
       _execute: vi.fn(),
     };
 
-    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const ORPHAN_THRESHOLD_MS = 30 * 60 * 1000;
     const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
     const orphans = await mockDb._query(
       "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",

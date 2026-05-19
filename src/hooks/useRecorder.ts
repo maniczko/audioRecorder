@@ -8,7 +8,9 @@ import {
 } from '../lib/audioStore';
 import { createId } from '../lib/storage';
 import {
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   createRecordingQueueItem,
+  hasRecordingWorkspaceContext,
   upsertRecordingQueueItem,
   getNextPendingRecordingQueueItem,
 } from '../lib/recordingQueue';
@@ -35,6 +37,7 @@ interface UseRecorderParams {
   attachCompletedRecording: (recordingMeetingId: any, recording: any) => void;
   isHydratingRemoteState: boolean;
   selectMeeting?: (meeting: any) => void;
+  currentWorkspaceId?: string | null;
 }
 
 interface StartRecordingOptions {
@@ -48,6 +51,7 @@ export default function useRecorder({
   attachCompletedRecording,
   isHydratingRemoteState,
   selectMeeting,
+  currentWorkspaceId,
 }: UseRecorderParams) {
   const mediaService = useMemo(() => createMediaService(), []);
   const [liveText, setLiveText] = useState('');
@@ -67,6 +71,23 @@ export default function useRecorder({
   useEffect(() => {
     userMeetingsRef.current = userMeetings;
   }, [userMeetings]);
+
+  function withWorkspaceFallback(meeting: any) {
+    if (!meeting || typeof meeting !== 'object') return meeting;
+    const workspaceId = String(meeting.workspaceId || currentWorkspaceId || '').trim();
+    if (!workspaceId || meeting.workspaceId === workspaceId) return meeting;
+    return { ...meeting, workspaceId };
+  }
+
+  function remoteWorkspaceReady(meeting: any) {
+    return mediaService.mode !== 'remote' || hasRecordingWorkspaceContext(meeting);
+  }
+
+  function blockMissingWorkspace() {
+    pipeline.setAnalysisStatus('error');
+    pipeline.setPipelineProgress(0, 'Brak kontekstu workspace');
+    pipeline.setRecordingMessage(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+  }
 
   async function refreshAudioStorageState(): Promise<AudioStorageState> {
     const [estimate, itemsResult] = await Promise.all([
@@ -137,13 +158,23 @@ export default function useRecorder({
         hydration.registerAudioUrl(rid, blob);
         await saveAudioBlob(rid, blob);
         refreshAudioStorageState().catch(() => undefined);
+        const meeting = withWorkspaceFallback(
+          userMeetingsRef.current.find((m) => m.id === meetingId) || selectedMeeting
+        );
+
+        if (!remoteWorkspaceReady(meeting)) {
+          blockMissingWorkspace();
+          return;
+        }
+
         pipeline.setRecordingQueue((prev) =>
           upsertRecordingQueueItem(
             prev,
             createRecordingQueueItem({
               recordingId: rid,
               meetingId,
-              meeting: userMeetingsRef.current.find((m) => m.id === meetingId) || selectedMeeting,
+              workspaceId: currentWorkspaceId || '',
+              meeting,
               mimeType,
               rawSegments,
               duration,
@@ -189,9 +220,15 @@ export default function useRecorder({
   }, [serverCaption, mediaService.mode, liveTranscriptEnabled]);
 
   const startRecordingWrapper = (options: StartRecordingOptions = {}) => {
-    const active = options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting;
+    const active = withWorkspaceFallback(
+      options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting
+    );
     if (!active) {
       pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');
+      return;
+    }
+    if (!remoteWorkspaceReady(active)) {
+      blockMissingWorkspace();
       return;
     }
     setRecordingMeetingId(active.id);
@@ -216,11 +253,17 @@ export default function useRecorder({
 
     const rid = createId('recording');
     const blob = file instanceof Blob ? file : new Blob([file]);
-    const meeting =
+    const meeting = withWorkspaceFallback(
       userMeetingsRef.current.find((item) => item.id === meetingId) ||
-      (selectedMeeting?.id === meetingId ? selectedMeeting : null) ||
-      meetingHint ||
-      null;
+        (selectedMeeting?.id === meetingId ? selectedMeeting : null) ||
+        meetingHint ||
+        null
+    );
+
+    if (!remoteWorkspaceReady(meeting)) {
+      blockMissingWorkspace();
+      return null;
+    }
 
     try {
       hydration.registerAudioUrl(rid, blob);
@@ -232,6 +275,7 @@ export default function useRecorder({
           createRecordingQueueItem({
             recordingId: rid,
             meetingId,
+            workspaceId: currentWorkspaceId || '',
             meeting,
             mimeType: file.type || 'audio/webm',
             rawSegments: [],

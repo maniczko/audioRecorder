@@ -5,6 +5,7 @@ import {
   getNextPendingRecordingQueueItem,
   getNextProcessableRecordingQueueItem,
   getRecordingQueueForMeeting,
+  hasRecordingWorkspaceContext,
   normalizeRecordingPipelineStatus,
   resolveQueueMeetingContext,
   updateRecordingQueueItem,
@@ -87,6 +88,22 @@ describe('recordingQueue helpers', () => {
     expect(item.workspaceId).toBe('');
     expect(item.meetingTitle).toBe('Spotkanie');
     expect(item.meetingSnapshot).toBeNull();
+  });
+
+  test('does not consider remote queue item processable without workspace context', () => {
+    const item = createRecordingQueueItem({
+      recordingId: 'recording_missing_workspace',
+      meetingId: 'meeting_1',
+      meeting: { id: 'meeting_1', title: 'Missing workspace' },
+    });
+
+    expect(item.workspaceId).toBe('');
+    expect(hasRecordingWorkspaceContext(item)).toBe(false);
+    expect(
+      getNextProcessableRecordingQueueItem([item], (candidate) =>
+        hasRecordingWorkspaceContext(candidate)
+      )
+    ).toBeUndefined();
   });
 
   test('finds a live meeting by workspace and title when the snapshot id changed after sync', () => {

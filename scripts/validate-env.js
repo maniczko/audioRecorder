@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * VoiceLog OS - API Configuration Validator
  *
@@ -72,12 +71,68 @@ function evaluateVariable(name, description, value, pattern, severity = 'error')
   return { name, description, severity, status: STATUS_OK };
 }
 
+function sanitizeDatabaseUrlPreview(value) {
+  try {
+    const url = new URL(value);
+    if (url.username) url.username = '***';
+    if (url.password) url.password = '***';
+    return url.toString();
+  } catch {
+    return '<invalid database url>';
+  }
+}
+
+function hasIncompleteSupabasePostgresHost(value) {
+  try {
+    const { hostname } = new URL(value);
+    const labels = hostname.split('.').filter(Boolean);
+    return labels.length === 2 && ['db', 'postgres'].includes(labels[0]);
+  } catch {
+    return false;
+  }
+}
+
+function evaluateDatabaseUrl(value, productionDeployment) {
+  const baseCheck = evaluateVariable(
+    'DATABASE_URL',
+    'Postgres database URL',
+    value,
+    /^postgres(ql)?:\/\//,
+    'warning'
+  );
+
+  if (baseCheck.status !== STATUS_OK || !value) {
+    return baseCheck;
+  }
+
+  if (hasIncompleteSupabasePostgresHost(value)) {
+    return {
+      name: 'DATABASE_URL',
+      description: 'Postgres database URL must include a complete resolvable host',
+      severity: productionDeployment ? 'error' : 'warning',
+      status: STATUS_INVALID,
+      preview: sanitizeDatabaseUrlPreview(value),
+    };
+  }
+
+  return baseCheck;
+}
+
 function canUseLocalWhisper(env) {
   return env.USE_LOCAL_WHISPER === 'true' && Boolean(env.WHISPER_CPP_PATH);
 }
 
+function isProductionDeployment(env) {
+  return (
+    env.NODE_ENV === 'production' ||
+    Boolean(env.RAILWAY_ENVIRONMENT_NAME) ||
+    Boolean(env.RAILWAY_PROJECT_ID)
+  );
+}
+
 export function validateEnvironmentSnapshot(env = process.env) {
   const checks = [];
+  const productionDeployment = isProductionDeployment(env);
 
   checks.push(
     evaluateVariable(
@@ -99,6 +154,24 @@ export function validateEnvironmentSnapshot(env = process.env) {
     evaluateVariable('VITE_API_BASE_URL', 'Backend API URL', env.VITE_API_BASE_URL, /^https?:\/\//)
   );
   checks.push(evaluateVariable('VOICELOG_API_PORT', 'Port API', env.VOICELOG_API_PORT, /^\d+$/));
+  checks.push(
+    evaluateVariable(
+      'VOICELOG_ALLOWED_ORIGINS',
+      'Allowed frontend origins',
+      env.VOICELOG_ALLOWED_ORIGINS,
+      /^https?:\/\/[^,\s]+(,https?:\/\/[^,\s]+)*$/,
+      productionDeployment ? 'error' : 'warning'
+    )
+  );
+  checks.push(
+    evaluateVariable(
+      'VOICELOG_ADMIN_TOKEN',
+      'Ops token for metrics/admin endpoints',
+      env.VOICELOG_ADMIN_TOKEN,
+      /^.{24,}$/,
+      'warning'
+    )
+  );
 
   checks.push(
     evaluateVariable(
@@ -141,13 +214,7 @@ export function validateEnvironmentSnapshot(env = process.env) {
   }
 
   checks.push(
-    evaluateVariable(
-      'DATABASE_URL',
-      'Postgres database URL',
-      env.DATABASE_URL || env.VOICELOG_DATABASE_URL,
-      /^postgres(ql)?:\/\//,
-      'warning'
-    )
+    evaluateDatabaseUrl(env.DATABASE_URL || env.VOICELOG_DATABASE_URL, productionDeployment)
   );
   checks.push(
     evaluateVariable(
@@ -155,7 +222,7 @@ export function validateEnvironmentSnapshot(env = process.env) {
       'Supabase URL',
       env.SUPABASE_URL,
       /^https:\/\/.*\.supabase\.co$/,
-      'warning'
+      productionDeployment ? 'error' : 'warning'
     )
   );
   checks.push(
@@ -164,7 +231,7 @@ export function validateEnvironmentSnapshot(env = process.env) {
       'Supabase service role key',
       env.SUPABASE_SERVICE_ROLE_KEY,
       /^eyJ/,
-      'warning'
+      productionDeployment ? 'error' : 'warning'
     )
   );
   checks.push(

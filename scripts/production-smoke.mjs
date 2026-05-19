@@ -1,0 +1,245 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const MOJIBAKE_PATTERN =
+  /[\u00c4\u00c5\u0102\u00c2\ufffd]|\u00e2[\u0080-\u00bf\u20ac\u201a-\u201e]/;
+
+function normalizeBaseUrl(value, name) {
+  const normalized = String(value || '')
+    .trim()
+    .replace(/\/+$/, '');
+  if (!normalized) {
+    throw new Error(`${name} is required.`);
+  }
+  return normalized;
+}
+
+async function fetchText(url) {
+  const response = await fetch(url, { redirect: 'follow' });
+  const text = await response.text();
+  return { response, text };
+}
+
+export function findMojibake(text) {
+  const value = String(text || '');
+  const index = value.search(MOJIBAKE_PATTERN);
+  if (index < 0) return null;
+
+  return {
+    index,
+    sample: value.slice(Math.max(0, index - 80), index + 160),
+  };
+}
+
+export function collectFrontendAssetUrls(html, frontendUrl) {
+  const frontend = new URL(frontendUrl);
+  const urls = new Set();
+  const assetPattern =
+    /<(?:script|link)\b[^>]+(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/gi;
+
+  for (const match of html.matchAll(assetPattern)) {
+    const assetUrl = new URL(match[1], frontend);
+    if (assetUrl.origin === frontend.origin) {
+      urls.add(assetUrl.href);
+    }
+  }
+
+  return [...urls];
+}
+
+async function assertNoFrontendMojibake(frontend, html) {
+  const htmlIssue = findMojibake(html);
+  if (htmlIssue) {
+    throw new Error(
+      `Frontend mojibake smoke failed in HTML near index ${htmlIssue.index}: ${htmlIssue.sample}`
+    );
+  }
+
+  for (const assetUrl of collectFrontendAssetUrls(html, frontend)) {
+    const assetResult = await fetchText(assetUrl);
+    if (!assetResult.response.ok) {
+      throw new Error(`Frontend asset smoke failed: ${assetResult.response.status} ${assetUrl}`);
+    }
+
+    const assetIssue = findMojibake(assetResult.text);
+    if (assetIssue) {
+      throw new Error(
+        `Frontend mojibake smoke failed in ${assetUrl} near index ${assetIssue.index}: ${assetIssue.sample}`
+      );
+    }
+  }
+}
+
+async function runAudioUploadSmoke({
+  api,
+  authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
+  workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
+  meetingId = process.env.PRODUCTION_SMOKE_MEETING_ID || 'production-smoke-meeting',
+} = {}) {
+  const token = String(authToken || '').trim();
+  const workspace = String(workspaceId || '').trim();
+  if (!token || !workspace) {
+    return false;
+  }
+
+  const recordingId = `production_smoke_${Date.now()}`;
+  const uploadUrl = `${api}/media/recordings/${recordingId}/audio`;
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'audio/webm',
+      'X-Workspace-Id': workspace,
+      'X-Meeting-Id': meetingId,
+    },
+    body: new Blob(['production-smoke-audio'], { type: 'audio/webm' }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Audio upload smoke failed: ${response.status} ${await response.text()}`);
+  }
+
+  await fetch(`${api}/media/recordings/${recordingId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-Workspace-Id': workspace,
+    },
+  }).catch(() => undefined);
+
+  return true;
+}
+
+export function evaluateHealthPayload(
+  payload,
+  { requireSupabaseRemote = true, requireKnownGitSha = false } = {}
+) {
+  const failures = [];
+
+  if (!payload || typeof payload !== 'object') {
+    failures.push('health payload is not JSON object');
+    return failures;
+  }
+
+  if (payload.ok !== true) {
+    failures.push(`health ok must be true, received ${payload.ok}`);
+  }
+
+  if (requireSupabaseRemote && payload.supabaseRemote !== true) {
+    failures.push('health supabaseRemote must be true in production');
+  }
+
+  if (payload.status && !['ok', 'healthy'].includes(String(payload.status))) {
+    failures.push(`health status must be ok/healthy, received ${payload.status}`);
+  }
+
+  const gitSha = String(payload.gitSha || '').trim().toLowerCase();
+  if (requireKnownGitSha && (!gitSha || gitSha === 'unknown')) {
+    failures.push('health gitSha must be configured and cannot be unknown in production');
+  }
+
+  return failures;
+}
+
+export async function runProductionSmoke({
+  frontendUrl = process.env.PRODUCTION_FRONTEND_URL,
+  apiBaseUrl = process.env.PRODUCTION_API_BASE_URL || frontendUrl,
+  requireSupabaseRemote = process.env.PRODUCTION_REQUIRE_SUPABASE_REMOTE !== 'false',
+  requireKnownGitSha = process.env.PRODUCTION_REQUIRE_KNOWN_GIT_SHA === 'true',
+  requireSentryDsn = process.env.PRODUCTION_REQUIRE_SENTRY_DSN === 'true',
+  requireAudioUploadSmoke = process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE === 'true',
+  persistenceEvidenceUrl = process.env.PRODUCTION_PERSISTENCE_EVIDENCE_URL,
+} = {}) {
+  const frontend = normalizeBaseUrl(frontendUrl, 'PRODUCTION_FRONTEND_URL');
+  const api = normalizeBaseUrl(apiBaseUrl, 'PRODUCTION_API_BASE_URL');
+
+  const frontendResult = await fetchText(frontend);
+  if (!frontendResult.response.ok) {
+    throw new Error(`Frontend smoke failed: ${frontendResult.response.status} ${frontend}`);
+  }
+  if (!/id=["']root["']|VoiceLog/i.test(frontendResult.text)) {
+    throw new Error('Frontend smoke failed: app shell marker not found.');
+  }
+  await assertNoFrontendMojibake(frontend, frontendResult.text);
+
+  if (
+    requireSentryDsn &&
+    !String(process.env.VITE_SENTRY_DSN || process.env.SENTRY_DSN || '').trim()
+  ) {
+    throw new Error('Sentry smoke failed: VITE_SENTRY_DSN/SENTRY_DSN is required for production.');
+  }
+
+  const healthResult = await fetchText(`${api}/health`);
+  if (!healthResult.response.ok) {
+    throw new Error(`Health smoke failed: ${healthResult.response.status} ${api}/health`);
+  }
+
+  let healthPayload;
+  try {
+    healthPayload = JSON.parse(healthResult.text);
+  } catch (error) {
+    throw new Error(`Health smoke failed: response is not JSON (${error.message}).`);
+  }
+
+  const healthFailures = evaluateHealthPayload(healthPayload, {
+    requireSupabaseRemote,
+    requireKnownGitSha,
+  });
+  if (healthFailures.length > 0) {
+    throw new Error(`Health smoke failed:\n- ${healthFailures.join('\n- ')}`);
+  }
+
+  if (persistenceEvidenceUrl) {
+    const evidenceResult = await fetchText(persistenceEvidenceUrl);
+    if (!evidenceResult.response.ok) {
+      throw new Error(
+        `Persistence evidence URL failed: ${evidenceResult.response.status} ${persistenceEvidenceUrl}`
+      );
+    }
+  }
+
+  const audioUploadChecked = await runAudioUploadSmoke({ api });
+  if (requireAudioUploadSmoke && !audioUploadChecked) {
+    throw new Error(
+      'Audio upload smoke requires PRODUCTION_SMOKE_AUTH_TOKEN and PRODUCTION_SMOKE_WORKSPACE_ID.'
+    );
+  }
+
+  return {
+    frontend,
+    api,
+    supabaseRemote: Boolean(healthPayload.supabaseRemote),
+    gitSha: String(healthPayload.gitSha || ''),
+    audioUploadChecked,
+    persistenceEvidenceChecked: Boolean(persistenceEvidenceUrl),
+  };
+}
+
+const entrypointPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+const isMainModule = entrypointPath === path.resolve(rootDir, 'scripts/production-smoke.mjs');
+
+if (isMainModule) {
+  runProductionSmoke()
+    .then((result) => {
+      console.log('Production smoke passed.');
+      console.log(
+        JSON.stringify(
+          {
+            frontend: result.frontend,
+            api: result.api,
+            supabaseRemote: result.supabaseRemote,
+            gitSha: result.gitSha,
+            audioUploadChecked: result.audioUploadChecked,
+            persistenceEvidenceChecked: result.persistenceEvidenceChecked,
+          },
+          null,
+          2
+        )
+      );
+    })
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
+    });
+}

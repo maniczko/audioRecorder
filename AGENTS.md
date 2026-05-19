@@ -4,6 +4,10 @@
 > MUST follow these rules. Agent-specific config files should reference this file
 > rather than duplicate its content.
 
+> **Release audit note (2026-05-13).** Do not rely on stale historical frontend
+> failure counts in this file. For current status, run `pnpm run test:frontend:ci`,
+> `pnpm run test:server:retry`, and the configured Playwright release smoke.
+
 ---
 
 ## 1. Stack
@@ -123,6 +127,9 @@ pnpm run test:coverage:all                        # runs backend + frontend cove
 - CSS modules (`.module.css`) for complex component-specific styles
 - Inline `style={{}}` is acceptable for dynamic values (colors, positions, animations)
 - Theme via CSS variables: `var(--color-xxx)`
+- UI/layout work must also follow `docs/DESIGN_SYSTEM_RULES.md`.
+- Release-critical UI/config surfaces must stay UTF-8 clean; run `pnpm run audit:mojibake`
+  when touching copy, workflows, agent config, or visual baseline tests.
 
 ### 3.4 Error handling
 

@@ -90,10 +90,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast-${t.type}`}>
             <span className="toast-icon">
-              {t.type === 'success' && '✓'}
-              {t.type === 'error' && '✕'}
-              {t.type === 'info' && 'ℹ'}
-              {t.type === 'warning' && '⚠'}
+              {t.type === 'success' && 'OK'}
+              {t.type === 'error' && '!'}
+              {t.type === 'info' && 'i'}
+              {t.type === 'warning' && '!'}
             </span>
             <span className="toast-message">{t.message}</span>
             {t.action && t.actionLabel && (
@@ -114,7 +114,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               onClick={() => dismiss(t.id)}
               aria-label="Zamknij"
             >
-              ×
+              x
             </button>
           </div>
         ))}

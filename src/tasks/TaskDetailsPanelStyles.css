@@ -899,7 +899,6 @@
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
-  color: #eef4fb; /* Fallback for var(--task-text) */
   color: var(--task-text, #eef4fb);
   font-size: 0.9rem;
   transition: all 0.2s ease;

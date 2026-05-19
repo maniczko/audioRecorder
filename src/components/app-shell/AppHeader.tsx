@@ -60,6 +60,8 @@ export default function AppHeader({
     setActiveTab('studio');
   };
 
+  const recordingLabel = recorder.isRecording ? 'Zatrzymaj nagrywanie' : 'Rozpocznij nagrywanie';
+
   return (
     <header className="modern-header">
       <div className="modern-header-left">
@@ -74,7 +76,12 @@ export default function AppHeader({
       </div>
 
       <div className="modern-header-right">
-        <button className="modern-search-btn" onClick={() => setCommandPaletteOpen(true)}>
+        <button
+          type="button"
+          className="modern-search-btn"
+          aria-label="Szukaj wszędzie"
+          onClick={() => setCommandPaletteOpen(true)}
+        >
           <span className="modern-search-btn-left">
             <Search size={16} />
             <span className="modern-search-text">Szukaj wszędzie...</span>
@@ -103,19 +110,22 @@ export default function AppHeader({
               ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20'
               : 'modern-record-btn bg-gradient-to-br from-teal-400 to-sky-400 text-slate-900 shadow-[0_4px_14px_rgba(116,208,191,0.25)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(116,208,191,0.4)]'
           }
+          type="button"
           onClick={toggleRecording}
           disabled={!canRecordAudio}
+          aria-label={recordingLabel}
+          title={recordingLabel}
         >
           <div className="flex items-center gap-2 px-2 py-1">
             {recorder.isRecording ? (
               <>
                 <Square size={16} className="fill-current text-red-500" />
-                <span className="modern-record-label">Zatrzymaj nagrywanie</span>
+                <span className="modern-record-label">{recordingLabel}</span>
               </>
             ) : (
               <>
                 <Play size={16} className="fill-current text-slate-900" />
-                <span className="modern-record-label">Rozpocznij nagrywanie</span>
+                <span className="modern-record-label">{recordingLabel}</span>
               </>
             )}
           </div>
@@ -125,6 +135,7 @@ export default function AppHeader({
           type="button"
           className="ml-2 p-0 border-none bg-transparent rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)] hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
           onClick={() => setActiveTab('profile')}
+          aria-label="Otwórz profil"
           title="Ustawienia profilu"
         >
           {currentUser.avatarUrl ? (

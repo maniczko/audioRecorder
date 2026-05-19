@@ -1,9 +1,17 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { AudioLines, Brain, CalendarDays, Layers, ListTodo, UsersRound } from 'lucide-react';
+import {
+  AudioLines,
+  BookOpenText,
+  Brain,
+  CalendarDays,
+  Layers,
+  ListTodo,
+  UsersRound,
+} from 'lucide-react';
 import AskAIPopover from '../../shared/AskAIPopover';
 
-type AppShellTab = 'studio' | 'recordings' | 'calendar' | 'tasks' | 'people' | 'profile';
+type AppShellTab = 'studio' | 'recordings' | 'calendar' | 'tasks' | 'people' | 'notes' | 'profile';
 
 interface WorkspaceOption {
   id: string;
@@ -40,6 +48,7 @@ const navigationItems: NavigationItem[] = [
   { id: 'calendar', label: 'Kalendarz', icon: CalendarDays },
   { id: 'tasks', label: 'Zadania', icon: ListTodo },
   { id: 'people', label: 'Osoby', icon: UsersRound },
+  { id: 'notes', label: 'Notatki', icon: BookOpenText },
 ];
 
 function VoiceLogMark() {

@@ -170,6 +170,25 @@ describe('EmptyState', () => {
     expect(btn).toBeInTheDocument();
   });
 
+  test('renders a custom action node without passing it as a click handler', () => {
+    const action = vi.fn();
+    render(
+      <EmptyState
+        title="Custom action"
+        action={
+          <button type="button" onClick={action}>
+            Generate
+          </button>
+        }
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Generate' });
+    fireEvent.click(button);
+
+    expect(action).toHaveBeenCalledOnce();
+  });
+
   test('applies custom className', () => {
     const { container } = render(<EmptyState className="my-empty" />);
     expect(container.firstChild).toHaveClass('my-empty');

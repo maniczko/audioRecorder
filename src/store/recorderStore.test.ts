@@ -154,14 +154,14 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('error');
   });
 
-  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
-  // Issue #0 Ă˘â‚¬â€ť Queue item immediately fails with "Nie znaleziono spotkania"
+  // -----------------------------------------------------------------
+  // Issue #0 - Queue item immediately fails with "Nie znaleziono spotkania"
   // Date: 2026-04-03
   // Bug: processQueue marked items as failed on first attempt if meeting wasn't
   //      yet in userMeetingsRef (race condition after import/page reload)
   // Fix: retry 3 times before permanently failing, giving hydration time
-  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
-  describe('Regression: #0 Ă˘â‚¬â€ť processQueue race condition with meeting resolution', () => {
+  // -----------------------------------------------------------------
+  describe('Regression: #0 - processQueue race condition with meeting resolution', () => {
     test('does not immediately fail queue item when meeting is temporarily unavailable', async () => {
       const { useRecorderStore } = await import('./recorderStore');
       useRecorderStore.setState({
@@ -199,12 +199,12 @@ describe('recorderStore', { timeout: 30000 }, () => {
         ],
       });
 
-      // Meeting now available Ă˘â‚¬â€ť resolver returns it
+      // Meeting now available - resolver returns it
       const resolver = (item: any) =>
         item.meetingId === 'm_new' ? { id: 'm_new', workspaceId: 'ws1' } : null;
 
       // processQueue should find the item now (canProcess returns true)
-      // It will proceed to processing Ă˘â‚¬â€ť we just verify it doesn't fail
+      // processQueue should proceed; verify it does not fail with the meeting-resolution error.
 
       mocks.getAudioBlob.mockResolvedValueOnce(null);
 
@@ -213,7 +213,7 @@ describe('recorderStore', { timeout: 30000 }, () => {
       await useRecorderStore.getState().processQueue(resolver, vi.fn(), vi.fn());
 
       const item = useRecorderStore.getState().recordingQueue[0];
-      // It should NOT be 'failed' with meeting error Ă˘â‚¬â€ť it proceeds into the normal flow
+      // It should not fail with the meeting-resolution error.
       expect(item.errorMessage).not.toBe('Nie znaleziono spotkania.');
     });
   });
@@ -277,6 +277,85 @@ describe('recorderStore', { timeout: 30000 }, () => {
     const recording = attachMock.mock.calls[0][1];
     expect(recording.analysis.summary).toContain('Analiza AI nie powiodla sie');
     expect(recording.transcript).toHaveLength(1);
+    expect(useRecorderStore.getState().analysisStatus).toBe('done');
+  });
+
+  test('reconciles uploaded failed queue item when backend transcript is already done', async () => {
+    vi.setSystemTime(new Date('2026-05-18T17:00:00.000Z'));
+    const getTranscriptionJobStatus = vi.fn().mockResolvedValue({
+      pipelineStatus: 'done',
+      segments: [{ text: 'odzyskany transcript', speakerId: 1, verificationStatus: 'verified' }],
+      diarization: { speakerNames: { 1: 'Alice' }, speakerCount: 1, confidence: 0.9 },
+      providerId: 'remote-pipeline',
+    });
+    const retryTranscriptionJob = vi.fn();
+    mocks.createMediaService.mockReturnValue({
+      mode: 'remote',
+      getTranscriptionJobStatus,
+      retryTranscriptionJob,
+      subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+    });
+    mocks.analyzeMeeting.mockResolvedValueOnce({
+      summary: 'Recovered summary',
+      decisions: [],
+      actionItems: [],
+      tasks: [],
+      followUps: [],
+      answersToNeeds: [],
+      suggestedTags: [],
+      meetingType: 'sync',
+      energyLevel: 'steady',
+      risks: [],
+      blockers: [],
+      participantInsights: [],
+      tensions: [],
+      keyQuotes: [],
+      suggestedAgenda: [],
+      speakerLabels: { 1: 'Alice' },
+      speakerCount: 1,
+    });
+
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: 'rec_recovered',
+          meetingId: 'meeting_recovered',
+          workspaceId: 'ws1',
+          meetingTitle: 'Recovered import',
+          meetingSnapshot: {
+            id: 'meeting_recovered',
+            workspaceId: 'ws1',
+            title: 'Recovered import',
+          },
+          status: 'failed',
+          uploaded: true,
+          errorMessage: 'Pipeline utknal w przetwarzaniu.',
+          lastReconciledAt: -120_000,
+          createdAt: '2026-05-18T16:42:10.000Z',
+          duration: 60,
+        },
+      ],
+    });
+
+    const attachMock = vi.fn();
+    await useRecorderStore
+      .getState()
+      .processQueue((item) => item.meetingSnapshot, attachMock, vi.fn());
+
+    expect(getTranscriptionJobStatus).toHaveBeenCalledWith('rec_recovered');
+    expect(retryTranscriptionJob).not.toHaveBeenCalled();
+    expect(attachMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'meeting_recovered' }),
+      expect.objectContaining({
+        id: 'rec_recovered',
+        pipelineStatus: 'done',
+        transcript: expect.arrayContaining([
+          expect.objectContaining({ text: 'odzyskany transcript' }),
+        ]),
+      })
+    );
+    expect(useRecorderStore.getState().recordingQueue).toEqual([]);
     expect(useRecorderStore.getState().analysisStatus).toBe('done');
   });
 
@@ -628,15 +707,15 @@ describe('recorderStore', { timeout: 30000 }, () => {
     ).toBeUndefined();
   });
 
-  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
-  // Issue #0 Ă˘â‚¬â€ť processQueue removes queue item even when meeting not found
+  // -----------------------------------------------------------------
+  // Issue #0 - processQueue removes queue item even when meeting not found
   // Date: 2026-04-04
   // Bug: attachCompletedRecording silently failed when meeting was missing from
   //      state (e.g. after bootstrap overwrite). Queue item was removed anyway,
   //      permanently losing the recording data.
   // Fix: check return value; if false, mark queue item as failed instead of removing.
-  // Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬Ă˘â€ťâ‚¬
-  describe('Regression: #0 Ă˘â‚¬â€ť processQueue preserves queue item when attachment fails', () => {
+  // -----------------------------------------------------------------
+  describe('Regression: #0 - processQueue preserves queue item when attachment fails', () => {
     test('marks item as failed when attachCompletedRecording returns false (normal transcript)', async () => {
       mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 

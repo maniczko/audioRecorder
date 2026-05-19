@@ -107,6 +107,13 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+.ff-state-action-slot {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  width: 100%;
+}
+
 .ff-state-spinner {
   width: 32px;
   height: 32px;

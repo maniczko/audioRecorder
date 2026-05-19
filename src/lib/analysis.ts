@@ -16,7 +16,8 @@ import {
 } from './aiResponseValidator';
 import { buildFallbackRichFields } from './fallbackAnalysis';
 
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const ALLOW_BROWSER_AI_KEYS = import.meta.env.VITE_ALLOW_BROWSER_AI_KEYS === 'true';
+const API_KEY = ALLOW_BROWSER_AI_KEYS ? import.meta.env.VITE_ANTHROPIC_API_KEY : '';
 const MODEL = import.meta.env.VITE_ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
 
 // Import lazily to avoid circular deps — apiRequest reads from localStorage for the session token
@@ -237,12 +238,12 @@ export async function analyzePersonProfile({ personName, meetings, allSegments }
         };
       }
     } catch (error) {
-      console.error('Server person-profile failed, trying direct fallback.', error);
+      console.error('Server person-profile failed, using local fallback.', error);
     }
     return { ...fallback, meetingsAnalyzed: meetings.length };
   }
 
-  // Local demo mode: call Anthropic directly if key is available in env
+  // Local demo mode: call Anthropic directly only when explicitly enabled.
   if (!API_KEY) {
     return { ...fallback, meetingsAnalyzed: meetings.length };
   }
@@ -328,9 +329,12 @@ async function analyzeMeetingViaServer({
   speakerNames: Record<string, string>;
 }): Promise<AiAnalysisResponse> {
   const apiRequest = await getApiRequest();
+  const workspaceId = String(
+    meeting?.workspaceId || meeting?.workspace_id || meeting?.workspace?.id || ''
+  ).trim();
   return apiRequest('/media/analyze', {
     method: 'POST',
-    body: { meeting, segments, speakerNames },
+    body: { workspaceId, meeting, segments, speakerNames },
   });
 }
 
@@ -364,7 +368,7 @@ export async function analyzeMeeting({
     return fallback;
   }
 
-  // Try direct Anthropic API
+  // Try direct Anthropic API only for explicit local demo builds.
   if (!API_KEY) {
     return fallback;
   }

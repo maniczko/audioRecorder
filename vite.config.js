@@ -85,7 +85,16 @@ export default defineConfig(async () => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('react')) return 'vendor-react';
+              const normalizedId = id.replace(/\\/g, '/');
+              if (
+                /node_modules\/(react|react-dom|scheduler)\//.test(normalizedId) ||
+                /node_modules\/\.pnpm\/(react|react-dom|scheduler)@/.test(normalizedId)
+              )
+                return 'vendor-react-core';
+              if (normalizedId.includes('react-virtuoso') || normalizedId.includes('react-window'))
+                return 'vendor-virtualized';
+              if (normalizedId.includes('@base-ui')) return 'vendor-base-ui';
+              if (normalizedId.includes('@sentry')) return 'vendor-observability';
               if (id.includes('langchain')) return 'vendor-langchain';
               if (
                 id.includes('lucide') ||

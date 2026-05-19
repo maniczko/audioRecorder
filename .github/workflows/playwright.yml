@@ -1,4 +1,5 @@
 name: E2E Playwright Tests
+
 on:
   push:
     branches: [main]
@@ -26,45 +27,33 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-      
+
       - name: Enable pnpm via Corepack
         run: corepack enable
 
       - name: Install dependencies
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Browsers
-        run: |
-          echo "🌐 Installing Playwright browsers..."
-          pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run Playwright tests
+      - name: Run release E2E and visual checks
         id: tests
-        continue-on-error: true
         run: |
-          echo "╔═══════════════════════════════════════════════════════════╗"
-          echo "║  🎭 Running E2E Playwright Tests                          ║"
-          echo "╚═══════════════════════════════════════════════════════════╝"
           pnpm exec playwright test \
-            --reporter=list \
-            --reporter=html \
-            --reporter=junit \
+            tests/e2e/smoke.spec.js \
+            tests/e2e/advanced-journeys.spec.js \
+            tests/e2e/command-palette.spec.js \
+            tests/e2e/visual-regression.spec.ts \
+            --reporter=list,html,junit \
             --retries=2 \
             --workers=2
         env:
           PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
           PLAYWRIGHT_HTML_OUTPUT: playwright-report
 
-      - name: Check test results
-        if: always()
-        run: |
-          if [ ${{ steps.tests.outcome }} == 'success' ]; then
-            echo "✅ All E2E tests passed!"
-          else
-            echo "⚠️ Some E2E tests failed. Check artifacts for details."
-          fi
+      - name: Run remote API workspace contract
+        run: pnpm run test:e2e:remote-api
 
       - name: Upload Playwright Report
         if: always()
@@ -83,4 +72,3 @@ jobs:
             test-results/
             results.xml
           retention-days: 7
-

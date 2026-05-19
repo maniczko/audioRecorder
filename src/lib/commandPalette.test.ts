@@ -12,18 +12,18 @@ describe('commandPalette', () => {
     it('returns tab items when no data provided', () => {
       const items = buildCommandPaletteItems({});
 
-      expect(items).toHaveLength(5);
+      expect(items).toHaveLength(6);
     });
 
     it('returns tab items by default', () => {
       const items = buildCommandPaletteItems({});
 
-      expect(items).toHaveLength(5);
+      expect(items).toHaveLength(6);
       expect(items[0]).toMatchObject({
         id: 'tab:studio',
         type: 'tab',
         title: 'Studio',
-        group: 'Zakladki',
+        group: 'Zakładki',
       });
     });
 
@@ -35,6 +35,7 @@ describe('commandPalette', () => {
       expect(tabIds).toContain('tab:calendar');
       expect(tabIds).toContain('tab:tasks');
       expect(tabIds).toContain('tab:people');
+      expect(tabIds).toContain('tab:notes');
       expect(tabIds).toContain('tab:profile');
     });
 
@@ -98,7 +99,7 @@ describe('commandPalette', () => {
 
       const items = buildCommandPaletteItems(data);
 
-      expect(items).toHaveLength(8); // 5 tabs + 1 meeting + 1 task + 1 person
+      expect(items).toHaveLength(9); // 6 tabs + 1 meeting + 1 task + 1 person
     });
 
     it('handles empty arrays gracefully', () => {
@@ -108,7 +109,7 @@ describe('commandPalette', () => {
         people: [],
       });
 
-      expect(items).toHaveLength(5); // Only tabs
+      expect(items).toHaveLength(6); // Only tabs
     });
 
     it('handles null/undefined data gracefully', () => {
@@ -118,7 +119,7 @@ describe('commandPalette', () => {
         people: undefined as any,
       });
 
-      expect(items).toHaveLength(5);
+      expect(items).toHaveLength(6);
     });
   });
 

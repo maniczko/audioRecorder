@@ -27,6 +27,7 @@ const SEED_WORKSPACE = {
 const SEED_SESSION = {
   userId: 'user_e2e',
   workspaceId: 'ws_e2e',
+  token: 'e2e-token',
 };
 
 /**

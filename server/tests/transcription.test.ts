@@ -91,6 +91,26 @@ describe('TranscriptionService', () => {
   //      background fast->full postprocess had triggered.
   // Fix: explicitly force fast mode and poll for the second pipeline call.
   // ─────────────────────────────────────────────────────────────────
+  it('reports active transcription jobs from running and pending queues', () => {
+    const service = new TranscriptionService(
+      mockDb,
+      mockWorkspaceService,
+      mockAudioPipeline,
+      mockSpeakerEmbedder
+    );
+
+    service.transcriptionJobs.set('rec_running', new Promise<void>(() => {}));
+    (service as any)._pendingQueue.push({
+      recordingId: 'rec_pending',
+      asset: { workspace_id: 'ws_1' },
+      options: {},
+    });
+
+    expect(service.isTranscriptionJobActive('rec_running')).toBe(true);
+    expect(service.isTranscriptionJobActive('rec_pending')).toBe(true);
+    expect(service.isTranscriptionJobActive('rec_missing')).toBe(false);
+  });
+
   // TODO: Re-enable when pipeline deduplication is stabilized
   it.skip('deduplicates in-flight transcription jobs and persists successful results', async () => {
     const service = new TranscriptionService(

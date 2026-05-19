@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import RecordingsTab from './RecordingsTab';
 import { ToastProvider } from './shared/Toast';
+import { RECORDING_WORKSPACE_REQUIRED_MESSAGE } from './lib/recordingQueue';
 
 describe('RecordingsTab', () => {
   const mockMeetings = [
@@ -228,5 +229,36 @@ describe('RecordingsTab', () => {
     fireEvent.change(searchInput, { target: { value: 'Import bez metadanych' } });
 
     expect(screen.getAllByText('Import bez metadanych').length).toBeGreaterThan(0);
+  });
+
+  test('Regression: import without workspace does not call queueRecording', async () => {
+    const onCreateMeeting = vi.fn(async (draft) => ({
+      id: 'meeting_without_workspace',
+      title: draft.title,
+      startsAt: draft.startsAt,
+      recordings: [],
+    }));
+    const queueRecording = vi.fn(async () => 'rec_import');
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          onCreateMeeting={onCreateMeeting}
+          queueRecording={queueRecording}
+        />
+      </ToastProvider>
+    );
+
+    const file = new File(['audio'], 'broken-import.webm', { type: 'audio/webm' });
+    fireEvent.change(screen.getByTestId('recordings-file-input'), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => {
+      expect(onCreateMeeting).toHaveBeenCalledTimes(1);
+    });
+    expect(queueRecording).not.toHaveBeenCalled();
+    expect(await screen.findByText(RECORDING_WORKSPACE_REQUIRED_MESSAGE)).toBeInTheDocument();
   });
 });

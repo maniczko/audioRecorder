@@ -27,15 +27,15 @@ export function createBrowserTranscriptionController({
   recognition.lang = lang;
 
   recognition.onerror = (event) => {
-    // "no-speech" is benign (silence); "aborted" happens on programmatic stop — both are expected
+    // "no-speech" is benign (silence); "aborted" happens on programmatic stop; both are expected.
     if (event.error !== 'no-speech' && event.error !== 'aborted') {
-      console.error('Speech recognition error:', event.error);
+      console.warn('[SpeechRecognition] Live transcription degraded:', event.error);
       if (typeof onError === 'function') {
         const messages = {
-          network: 'Transkrypcja live niedostępna — sprawdź połączenie z internetem.',
-          'not-allowed': 'Mikrofon zablokowany — sprawdź uprawnienia przeglądarki.',
-          'service-not-allowed': 'Usługa rozpoznawania mowy niedostępna w tej przeglądarce.',
-          'language-not-supported': 'Język pl-PL nie jest obsługiwany przez tę przeglądarkę.',
+          network: 'Transkrypcja live niedostepna - sprawdz polaczenie z internetem.',
+          'not-allowed': 'Mikrofon zablokowany - sprawdz uprawnienia przegladarki.',
+          'service-not-allowed': 'Usluga rozpoznawania mowy niedostepna w tej przegladarce.',
+          'language-not-supported': 'Jezyk pl-PL nie jest obslugiwany przez te przegladarke.',
           aborted: null,
         };
         const msg = messages[event.error];

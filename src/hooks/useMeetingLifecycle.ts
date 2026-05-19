@@ -41,6 +41,15 @@ function areMeetingDraftsEqual(left, right) {
   );
 }
 
+function shouldForceMissingImportWorkspaceForE2E() {
+  const env = (import.meta as any).env;
+  const isAutomatedTest = env?.VITE_E2E_TEST === 'true' || env?.MODE === 'test';
+  if (!isAutomatedTest || typeof window === 'undefined') {
+    return false;
+  }
+  return window.localStorage.getItem('voicelog.e2e.forceMissingImportWorkspace') === 'true';
+}
+
 export default function useMeetingLifecycle({
   currentUser,
   currentUserId,
@@ -389,9 +398,10 @@ export default function useMeetingLifecycle({
   }
 
   function createMeetingDirect(draft) {
-    if (!currentUser || !currentWorkspaceId) return null;
+    const forceMissingWorkspace = shouldForceMissingImportWorkspaceForE2E();
+    if (!currentUser || (!currentWorkspaceId && !forceMissingWorkspace)) return null;
     const meeting = createMeeting(currentUser.id, draft, {
-      workspaceId: currentWorkspaceId,
+      workspaceId: forceMissingWorkspace ? '' : currentWorkspaceId,
       createdByUserId: currentUser.id,
       createdByUserName: currentUser.name || currentUser.email || 'Ty',
     });

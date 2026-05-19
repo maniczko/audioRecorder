@@ -1,6 +1,12 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://localhost:4000';
+const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
+const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
+const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -20,7 +26,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'retain-on-failure', // Keep trace for debugging
     screenshot: 'only-on-failure',
     video: 'retain-on-failure', // Keep video for debugging
@@ -36,19 +42,27 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
       },
     },
+    {
+      name: 'remote-api',
+      testMatch: /remote-api\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+      },
+    },
   ],
 
   webServer: {
-    command: 'pnpm start',
-    url: 'http://localhost:3000',
+    command: webCommand,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000, // 3 minutes for server startup
     stdout: 'ignore',
     stderr: 'pipe',
     env: {
-      VITE_DATA_PROVIDER: 'local',
-      VITE_MEDIA_PROVIDER: 'local',
-      VITE_API_BASE_URL: 'http://localhost:4000',
+      VITE_DATA_PROVIDER: dataProvider,
+      VITE_MEDIA_PROVIDER: mediaProvider,
+      VITE_API_BASE_URL: apiBaseURL,
       VITE_E2E_TEST: 'true',
     },
   },

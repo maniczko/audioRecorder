@@ -89,18 +89,47 @@ If upload dir is not writable:
 After deployment, check:
 
 ```
-https://audiorecorder-production.up.railway.app/api/health
+https://audiorecorder-production.up.railway.app/health
 ```
 
 Expected response:
 
 ```json
 {
+  "ok": true,
   "status": "ok",
-  "database": "connected",
-  "diskSpace": "OK"
+  "db": "connected",
+  "supabaseRemote": true
 }
 ```
+
+### 4. Persistence Release Check
+
+Before public launch, verify this sequence on Railway:
+
+1. Upload a short audio recording.
+2. Confirm `/health` reports `"supabaseRemote": true`.
+3. Transcribe the recording and open the generated transcript.
+4. Restart or redeploy the backend.
+5. Reopen the same recording and confirm audio plus transcript are still available.
+
+Do not launch a public environment when `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` is missing.
+Do not launch when `/health` returns `503` or `status: "degraded"`.
+
+### 5. Supabase Postgres URL Preflight
+
+If `/health` returns an error like `ENOTFOUND ... postgres.<project-ref> not found`, the Railway
+Postgres connection string is incomplete.
+
+Use a complete Supabase direct host or pooler host, for example:
+
+```text
+postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
+```
+
+Do not use a host shaped only like `postgres.<project-ref>` or `db.<project-ref>`.
+`scripts/validate-env.js` blocks that pattern for production deployments.
 
 ---
 

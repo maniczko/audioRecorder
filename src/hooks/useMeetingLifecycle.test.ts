@@ -94,6 +94,27 @@ describe('useMeetingLifecycle', () => {
       m2 = result.current.createMeetingDirect(createEmptyMeetingDraft());
     });
     expect(m2).toBeDefined();
+    expect(m2.workspaceId).toBe('w1');
+  });
+
+  test('E2E import guard can simulate a meeting without workspace', () => {
+    const previousFlag = (import.meta as any).env.VITE_E2E_TEST;
+    (import.meta as any).env.VITE_E2E_TEST = 'true';
+    localStorage.setItem('voicelog.e2e.forceMissingImportWorkspace', 'true');
+
+    try {
+      const { result } = renderHook(() => useMeetingLifecycle(baseProps as any));
+
+      let meeting;
+      act(() => {
+        meeting = result.current.createMeetingDirect(createEmptyMeetingDraft());
+      });
+
+      expect(meeting).toBeDefined();
+      expect(meeting.workspaceId).toBe('');
+    } finally {
+      (import.meta as any).env.VITE_E2E_TEST = previousFlag;
+    }
   });
 
   test('syncing selected meeting to draft', () => {

@@ -380,5 +380,40 @@ describe('useRecordingActions', () => {
       expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_remote');
       expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_synced');
     });
+
+    test('recreates missing optimistic import meeting from queue snapshot', () => {
+      let nextMeetings: any[] = [];
+      mockSetMeetings.mockImplementation((updater) => {
+        if (typeof updater === 'function') nextMeetings = updater([]);
+      });
+
+      const { result } = setupHook();
+      let returnValue: any;
+      act(() => {
+        returnValue = result.current.attachCompletedRecording(
+          { id: 'm_recovered', workspaceId: 'ws1', title: 'Recovered import' },
+          {
+            id: 'r_recovered',
+            createdAt: '2026-05-18T16:42:10.000Z',
+            duration: 120,
+            transcript: [{ text: 'Recovered' }],
+            speakerNames: {},
+            speakerCount: 0,
+            analysis: {},
+          }
+        );
+      });
+
+      expect(returnValue).toBe(true);
+      expect(nextMeetings[0]).toMatchObject({
+        id: 'm_recovered',
+        workspaceId: 'ws1',
+        title: 'Recovered import',
+        latestRecordingId: 'r_recovered',
+      });
+      expect(nextMeetings[0].recordings[0]).toMatchObject({ id: 'r_recovered' });
+      expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_recovered');
+      expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_recovered');
+    });
   });
 });

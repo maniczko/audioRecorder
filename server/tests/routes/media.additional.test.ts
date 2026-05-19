@@ -404,12 +404,15 @@ describe('Media Routes - Additional Coverage', () => {
           Authorization: 'Bearer fake_token',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ meeting: { title: 'Test' } }),
+        body: JSON.stringify({ workspaceId: 'ws_1', meeting: { title: 'Test' } }),
       });
 
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.summary).toBe('Test meeting');
+      expect(mockAnalyzeMeetingWithOpenAI).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: 'ws_1' })
+      );
     });
 
     it('returns no-key mode when analysis returns null', async () => {
@@ -431,12 +434,84 @@ describe('Media Routes - Additional Coverage', () => {
           Authorization: 'Bearer fake_token',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ meeting: { title: 'Test' } }),
+        body: JSON.stringify({ workspaceId: 'ws_1', meeting: { title: 'Test' } }),
       });
 
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.mode).toBe('no-key');
+    });
+
+    it('rejects anonymous requests before calling analysis service', async () => {
+      const mockAnalyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+        summary: 'Should not run',
+      });
+      const testApp = createApp({
+        authService: { getSession: vi.fn().mockResolvedValue(null) },
+        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        transcriptionService: {
+          ...mockTranscriptionService,
+          analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
+        },
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const res = await testApp.request('/media/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: 'ws_1', meeting: { title: 'Test' } }),
+      });
+
+      expect(res.status).toBe(401);
+      expect(mockAnalyzeMeetingWithOpenAI).not.toHaveBeenCalled();
+    });
+
+    it('rejects requests without workspaceId before calling analysis service', async () => {
+      const mockAnalyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+        summary: 'Should not run',
+      });
+      const testApp = createApp({
+        authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
+        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        transcriptionService: {
+          ...mockTranscriptionService,
+          analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
+        },
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const res = await testApp.request('/media/analyze', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meeting: { title: 'Test' } }),
+      });
+
+      expect(res.status).toBe(400);
+      expect(mockAnalyzeMeetingWithOpenAI).not.toHaveBeenCalled();
+    });
+
+    it('rejects requests for workspaces the user cannot access', async () => {
+      const mockAnalyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+        summary: 'Should not run',
+      });
+      const testApp = createApp({
+        authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
+        workspaceService: { getMembership: vi.fn().mockResolvedValue(null) },
+        transcriptionService: {
+          ...mockTranscriptionService,
+          analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
+        },
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const res = await testApp.request('/media/analyze', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: 'foreign_ws', meeting: { title: 'Test' } }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(mockAnalyzeMeetingWithOpenAI).not.toHaveBeenCalled();
     });
   });
 

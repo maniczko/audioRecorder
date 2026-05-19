@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createRecordingQueueItem, type RecordingQueueItem } from '../lib/recordingQueue';
+import {
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+  createRecordingQueueItem,
+  type RecordingQueueItem,
+} from '../lib/recordingQueue';
 import type { MeetingAnalysis, TranscriptionStatusPayload } from '../shared/types';
 import {
   attachRecordingWithRetry,
@@ -15,6 +19,7 @@ const meeting = {
   id: 'meeting-1',
   workspaceId: 'workspace-1',
   title: 'Demo meeting',
+  recordings: [],
 };
 
 function makeQueueItem(overrides: Partial<RecordingQueueItem> = {}): RecordingQueueItem {
@@ -423,6 +428,34 @@ describe('processRecordingQueueItem', () => {
     );
   });
 
+  it('uses completed remote status before retrying an uploaded queue item', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        status: 'queued',
+        uploaded: true,
+      }),
+      getAudioBlob: vi.fn(async () => null),
+    });
+    context.mediaService.mode = 'remote';
+    context.mediaService.getTranscriptionJobStatus = vi.fn(async () => makeTranscription());
+    context.mediaService.retryTranscriptionJob = vi.fn(async () =>
+      makeTranscription({ recordingId: 'should-not-retry' })
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.mediaService.getTranscriptionJobStatus).toHaveBeenCalledWith('recording-1');
+    expect(context.mediaService.retryTranscriptionJob).not.toHaveBeenCalled();
+    expect(context.attachCompletedRecording).toHaveBeenCalledWith(
+      meeting.id,
+      expect.objectContaining({
+        id: 'recording-1',
+        pipelineStatus: 'done',
+      })
+    );
+    expect(context.removeQueueItem).toHaveBeenCalledWith('recording-1');
+  });
+
   it('skips local VAD and enhancement for long recordings before upload', async () => {
     const originalBlob = new Blob(['long-recording'], { type: 'audio/webm' });
     const context = buildContext({
@@ -448,6 +481,32 @@ describe('processRecordingQueueItem', () => {
       expect.objectContaining({
         recordingMessage: expect.stringContaining('Długie nagranie'),
         pipelineStageLabel: expect.stringContaining('serwerowego przetwarzania'),
+      })
+    );
+  });
+
+  it('blocks remote upload when neither meeting nor queue item has workspaceId', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        workspaceId: '',
+        meetingSnapshot: { id: 'meeting-1', title: 'Missing workspace' },
+      }),
+      resolveMeetingForQueueItem: vi.fn(() => ({ id: 'meeting-1', title: 'Missing workspace' })),
+    });
+    context.mediaService.mode = 'remote';
+
+    await processRecordingQueueItem(context);
+
+    expect(context.mediaService.persistRecordingAudio).not.toHaveBeenCalled();
+    expect(context.getAudioBlob).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith('recording-1', {
+      status: 'failed',
+      errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+    });
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'error',
+        recordingMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
       })
     );
   });

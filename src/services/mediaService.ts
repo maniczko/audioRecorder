@@ -218,6 +218,12 @@ function createRemoteMediaService() {
     },
     async persistRecordingAudio(recordingId, blob, options: any = {}) {
       const { workspaceId = '', meetingId = '', onProgress } = options;
+      const resolvedWorkspaceId = String(workspaceId || '').trim();
+      if (!resolvedWorkspaceId) {
+        throw new Error(
+          'Nie można rozpocząć uploadu, bo przestrzeń robocza nie jest jeszcze gotowa. Odśwież lub wybierz workspace.'
+        );
+      }
       const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
       const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB — must stay under Vercel's ~4.5 MB serverless payload limit
       const MAX_UPLOAD_SIZE = 500 * 1024 * 1024; // 500 MB — matches server finalize limit
@@ -240,7 +246,7 @@ function createRemoteMediaService() {
                 method: 'GET',
                 retries: 0,
                 headers: {
-                  ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+                  'X-Workspace-Id': resolvedWorkspaceId,
                 },
               }
             );
@@ -277,7 +283,7 @@ function createRemoteMediaService() {
                 total,
                 chunk,
                 contentType: blob.type || 'application/octet-stream',
-                workspaceId,
+                workspaceId: resolvedWorkspaceId,
                 meetingId,
               });
             })
@@ -301,7 +307,7 @@ function createRemoteMediaService() {
           retries: 1,
           body: {
             contentType: blob.type || 'application/octet-stream',
-            workspaceId,
+            workspaceId: resolvedWorkspaceId,
             meetingId,
             total,
           },
@@ -321,7 +327,7 @@ function createRemoteMediaService() {
         body: blob,
         headers: {
           'Content-Type': blob?.type || 'application/octet-stream',
-          ...(workspaceId ? { 'X-Workspace-Id': workspaceId } : {}),
+          'X-Workspace-Id': resolvedWorkspaceId,
           ...(meetingId ? { 'X-Meeting-Id': meetingId } : {}),
         },
       });

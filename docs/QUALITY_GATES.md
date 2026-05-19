@@ -5,11 +5,27 @@
 These checks must pass before a release commit:
 
 ```bash
-pnpm run typecheck:all
-pnpm run lint:all
-$env:NODE_OPTIONS='--max-old-space-size=8192'; pnpm run test:frontend:ci
-pnpm run test:server:retry
-pnpm run build
+pnpm run release:rehearsal
+```
+
+`release:rehearsal` is Node 22 only and runs typecheck, ESLint, Stylelint, Prettier,
+mojibake audit, build-warning audit, server tests, frontend CI, high/critical
+dependency audit, strict a11y audit, and Playwright visual baseline checks.
+
+Local Playwright smoke can target a non-default dev server:
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:3002'
+$env:PLAYWRIGHT_API_BASE_URL='http://127.0.0.1:4001'
+pnpm exec playwright test tests/e2e/smoke.spec.js --project=chromium
+```
+
+Visual baselines are release-blocking:
+
+```bash
+pnpm run test:visual:baseline  # update after deliberate UI review
+pnpm run test:visual:check     # compare against committed baselines
+pnpm run test:visual:states    # focused overlay/error/loading state check
 ```
 
 ## Frontend Gate
@@ -47,6 +63,18 @@ Playwright is release-blocking for UI flows that change navigation, recording UX
 pnpm run test:e2e
 ```
 
+Production release evidence must also include:
+
+```bash
+$env:PRODUCTION_FRONTEND_URL='https://your-production-url'
+$env:PRODUCTION_API_BASE_URL='https://your-production-url'
+pnpm run release:prod-smoke
+```
+
+The production smoke requires `/health` to be healthy and `supabaseRemote: true`.
+Upload/restart/transcript persistence evidence must be attached to the PR checklist
+or exposed through `PRODUCTION_PERSISTENCE_EVIDENCE_URL`.
+
 For audio pipeline changes, manual smoke must include:
 
 - Start frontend and backend locally.
@@ -62,3 +90,14 @@ High and critical vulnerabilities block CI unless there is a documented exceptio
 ```bash
 pnpm audit --audit-level=high
 ```
+
+## Build Warning Gate
+
+Production builds must not emit unresolved Vite placeholders or Rollup chunk warnings.
+
+```bash
+pnpm run audit:build-warnings
+```
+
+If a warning is intentionally accepted, document owner, expiry date, and mitigation
+in the current release audit before merging.

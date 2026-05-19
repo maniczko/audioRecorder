@@ -33,8 +33,8 @@
     "@xenova/transformers": "^2.17.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "dompurify": "^3.3.3",
-    "hono": "^4.12.12",
+    "dompurify": "^3.4.0",
+    "hono": "^4.12.18",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^1.8.0",
     "nodemailer": "^8.0.5",
@@ -54,9 +54,6 @@
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
-  "workspaces": [
-    "server"
-  ],
   "scripts": {
     "start": "vite",
     "start:server": "tsx server/index.ts",
@@ -82,8 +79,10 @@
     "test:performance:ci": "vitest run server/tests/performance/ --reporter=json --outputFile=reports/performance-results.json",
     "test:smoke": "tsx server/scripts/smoke-test.ts",
     "audit:a11y": "node scripts/accessibility-audit.cjs",
-    "audit:a11y:ci": "node scripts/accessibility-audit.cjs --ci",
-    "audit:lighthouse": "lighthouse http://localhost:3000 --output html --output-path ./reports/lighthouse-report.html",
+    "audit:a11y:ci": "node scripts/accessibility-audit.cjs --ci --strict",
+    "audit:build-warnings": "node scripts/audit-build-warnings.mjs",
+    "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
+    "audit:mojibake": "node scripts/audit-mojibake.mjs",
     "cleanup:disk": "node scripts/cleanup-disk-space.js",
     "cleanup:disk:urgent": "node scripts/cleanup-disk-space.js 1",
     "build": "vite build",
@@ -132,10 +131,13 @@
     "coverage:open:frontend": "start coverage\\frontend\\index.html",
     "coverage:summary": "node scripts/coverage-summary.cjs",
     "test:e2e": "playwright test",
+    "test:e2e:remote-api": "node scripts/run-remote-api-playwright.mjs",
     "test:mutation": "stryker run stryker.config.json",
     "test:mutation:ci": "stryker run stryker.config.json --reporters json,html --jsonReporter.fileName mutation-report.json",
     "test:visual": "playwright test tests/e2e/visual-regression.spec.ts --update-snapshots",
+    "test:visual:baseline": "playwright test tests/e2e/visual-regression.spec.ts --update-snapshots",
     "test:visual:check": "playwright test tests/e2e/visual-regression.spec.ts",
+    "test:visual:states": "playwright test tests/e2e/visual-regression.spec.ts --grep @state",
     "test:visual:ui": "playwright test tests/e2e/visual-regression.spec.ts --ui",
     "test:contract": "vitest run -c vitest.contract.config.ts",
     "test:contract:mock": "prism mock docs/openapi.yaml",
@@ -149,8 +151,10 @@
     "test:server": "vitest run -c server/vitest.config.ts",
     "test:server:retry": "vitest run -c server/vitest.config.ts --retry=3",
     "test:server:coverage": "vitest run -c server/vitest.config.ts --coverage",
-    "test:release:guard": "pnpm run test:server:retry && pnpm exec vitest run src/services/httpClient.test.ts src/hooks/useWorkspaceData.test.tsx src/store/recorderStore.test.ts scripts/validate-husky-hooks.test.ts scripts/validate-node-runtime.test.ts --coverage.enabled=false && pnpm run build",
-    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/assign-task-agents.test.ts scripts/dashboard-services.test.ts scripts/detect-backend-smoke-scope.test.ts scripts/monitoring-error-groups.test.ts scripts/railway-status.test.ts scripts/task-agent-runner.test.ts scripts/test-dashboard-pro.test.ts scripts/workflow-dashboard-hermetic.test.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-eslint-lint-gate.test.ts scripts/validate-github-workflows.test.ts scripts/validate-node-runtime.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts scripts/vercel-ignore-command.test.ts && node scripts/validate-eslint-lint-gate.mjs && node scripts/validate-github-workflows.mjs && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
+    "test:release:guard": "pnpm run test:server:retry && pnpm exec vitest run src/services/httpClient.test.ts src/hooks/useWorkspaceData.test.tsx src/store/recorderStore.test.ts scripts/validate-husky-hooks.test.ts scripts/validate-node-runtime.test.ts --coverage.enabled=false && pnpm run audit:build-warnings",
+    "test:workflows": "vitest run -c vitest.scripts.config.ts scripts/assign-task-agents.test.ts scripts/dashboard-services.test.ts scripts/detect-backend-smoke-scope.test.ts scripts/monitoring-error-groups.test.ts scripts/railway-status.test.ts scripts/release-readiness.test.ts scripts/task-agent-runner.test.ts scripts/test-dashboard-pro.test.ts scripts/workflow-dashboard-hermetic.test.ts scripts/validate-ci-workflow-summary.test.ts scripts/validate-env.test.ts scripts/validate-eslint-lint-gate.test.ts scripts/validate-github-workflows.test.ts scripts/validate-node-runtime.test.ts scripts/validate-vite-build-config.test.ts scripts/validate-vitest-coverage-dirs.test.ts scripts/vercel-ignore-command.test.ts && node scripts/validate-eslint-lint-gate.mjs && node scripts/validate-github-workflows.mjs && node scripts/validate-vercel-workflows.mjs && node scripts/validate-ci-workflow-summary.mjs",
+    "release:rehearsal": "node scripts/release-rehearsal.mjs",
+    "release:prod-smoke": "node scripts/production-smoke.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:server": "tsc --project server/tsconfig.server.json --noEmit",
@@ -239,12 +243,17 @@
   "pnpm": {
     "overrides": {
       "@babel/plugin-transform-modules-systemjs": "7.29.4",
+      "@protobufjs/utf8": "1.1.1",
       "axios": "1.16.1",
+      "brace-expansion": "1.1.14",
+      "express-rate-limit": "8.5.1",
       "fast-uri": "3.1.2",
+      "hono": "4.12.18",
       "langsmith": "0.7.1",
       "lodash": "4.18.1",
       "picomatch@4.0.3": "4.0.4",
-      "protobufjs": "7.5.8"
+      "protobufjs": "7.5.8",
+      "uuid": "13.0.2"
     }
   },
   "browserslist": {

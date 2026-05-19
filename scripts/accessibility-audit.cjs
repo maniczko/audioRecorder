@@ -15,6 +15,7 @@ const { execSync } = require('child_process');
 
 const SRC_DIR = path.join(__dirname, '..', 'src');
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
+const TEST_FILE_PATTERN = /\.(test|spec)\.(tsx|jsx)$/i;
 
 // Kolory do outputu
 const colors = {
@@ -269,7 +270,7 @@ function findFiles(dir, extensions) {
       if (!file.startsWith('.') && file !== 'node_modules') {
         results = results.concat(findFiles(filePath, extensions));
       }
-    } else if (extensions.includes(path.extname(file))) {
+    } else if (extensions.includes(path.extname(file)) && !TEST_FILE_PATTERN.test(filePath)) {
       results.push(filePath);
     }
   });
@@ -321,6 +322,13 @@ function runAudit() {
   log(`  Warnings: ${bySeverity.warning}`, bySeverity.warning > 0 ? 'yellow' : 'green');
   log(`  Info: ${bySeverity.info}`, 'blue');
   log(`\n📄 Report saved to: ${reportPath}`, 'cyan');
+
+  const isCi = process.argv.includes('--ci');
+  const isStrict = process.argv.includes('--strict');
+  if (isCi && isStrict && allIssues.length > 0) {
+    log('\nAccessibility audit failed in strict mode', 'red');
+    process.exit(1);
+  }
 
   // CI mode - exit with error if there are errors
   if (process.argv.includes('--ci') && bySeverity.error > 0) {

@@ -237,7 +237,7 @@ html {
   button:hover,
   a:hover {
     opacity: 1;
-    background: unchanged;
+    background: inherit;
   }
 
   /* Add active state for touch feedback */

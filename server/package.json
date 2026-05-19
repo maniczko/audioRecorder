@@ -24,7 +24,7 @@
     "dotenv": "^16.4.0",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
-    "hono": "^4.12.12",
+    "hono": "^4.12.18",
     "nodemailer": "^8.0.5",
     "octokit": "^5.0.5",
     "onnxruntime-node": "^1.24.3",

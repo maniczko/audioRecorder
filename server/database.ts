@@ -136,6 +136,16 @@ function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffe
 
 const WORKER_QUERY_TIMEOUT_MS = 15000;
 
+export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
+  if (!/\badd\s+column\b/i.test(query)) return false;
+  const message = error instanceof Error ? error.message : String((error as any)?.message || error);
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('duplicate column name') ||
+    (normalized.includes('column') && normalized.includes('already exists'))
+  );
+}
+
 export class Database {
   type: string;
   uploadDir: string;
@@ -193,8 +203,17 @@ export class Database {
 
   private _spawnWorker(dbPath: string) {
     this._isShuttingDown = false;
-    const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
-    this.worker = new Worker(path.join(__dirname, `sqliteWorker${ext}`));
+    const isTypeScriptRuntime = __filename.endsWith('.ts');
+    const ext = isTypeScriptRuntime ? '.ts' : '.js';
+    const compiledWorkerPath = path.resolve(__dirname, '..', 'dist-server', 'sqliteWorker.js');
+    const workerPath =
+      isTypeScriptRuntime && fs.existsSync(compiledWorkerPath)
+        ? compiledWorkerPath
+        : path.join(__dirname, `sqliteWorker${ext}`);
+    this.worker =
+      isTypeScriptRuntime && workerPath.endsWith('.ts')
+        ? new Worker(workerPath, { execArgv: ['--import', 'tsx'] })
+        : new Worker(workerPath);
 
     this.worker.on('message', (msg: any) => {
       const { id, result, error } = msg;
@@ -364,6 +383,11 @@ export class Database {
             try {
               await this._execute(q);
             } catch (err: any) {
+              if (isAddColumnAlreadyAppliedMigrationError(q, err)) {
+                if (logger && logger.warn)
+                  logger.warn(`Migration ${file} skipped already-applied ADD COLUMN query: ${q}`);
+                continue;
+              }
               if (logger && logger.error)
                 logger.error(`Migration error in ${file} query: ${q}`, err);
               throw err;
@@ -1537,7 +1561,7 @@ export class Database {
   }
 
   async resetOrphanedJobs(): Promise<number> {
-    const ORPHAN_THRESHOLD_MS = 5 * 60 * 1000;
+    const ORPHAN_THRESHOLD_MS = 30 * 60 * 1000;
     const cutoff = new Date(Date.now() - ORPHAN_THRESHOLD_MS).toISOString();
     const orphans = await this._query(
       "SELECT id FROM media_assets WHERE transcription_status IN ('processing', 'queued') AND updated_at < ?",

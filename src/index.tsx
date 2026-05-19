@@ -5,12 +5,14 @@ import ReactDOM from 'react-dom/client';
 import '@fontsource-variable/geist';
 import './index.css';
 import { initSentry } from './sentry';
+import { initClarity } from './lib/clarity';
 import App from './App';
 import { registerServiceWorker } from './pwa';
 import { prepareHostedRuntime } from './runtime/browserRuntime';
 import reportWebVitals from './reportWebVitals';
 
 initSentry();
+initClarity();
 
 document.documentElement.setAttribute(
   'data-theme',

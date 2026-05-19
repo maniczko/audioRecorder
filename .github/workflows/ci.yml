@@ -57,8 +57,14 @@ jobs:
       - name: ESLint including tests
         run: pnpm run lint:all
 
+      - name: Stylelint CSS
+        run: pnpm run lint:css
+
       - name: Prettier check
         run: pnpm run format:check
+
+      - name: Accessibility audit
+        run: pnpm run audit:a11y:ci
 
   security:
     name: Security Audit
@@ -175,8 +181,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build application
-        run: pnpm run build
+      - name: Build application without release-blocking warnings
+        run: pnpm run audit:build-warnings
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -184,3 +190,40 @@ jobs:
           name: build
           path: build/
           retention-days: 7
+
+  visual-baselines:
+    name: Visual Baselines
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium
+
+      - name: Check visual baselines
+        run: pnpm run test:visual:check
+
+      - name: Upload Playwright visual artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baseline-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

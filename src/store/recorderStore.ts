@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { STORAGE_KEYS, idbJSONStorage } from '../lib/storage';
 import {
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   getNextProcessableRecordingQueueItem,
   getNextPendingRecordingQueueItem,
   removeRecordingQueueItem,
@@ -195,6 +196,7 @@ function isExpectedDomainFailure(error: any) {
   return (
     errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.') ||
     errorMessage.includes('Lokalny plik audio nie istnieje') ||
+    errorMessage.includes(RECORDING_WORKSPACE_REQUIRED_MESSAGE) ||
     error?.status === 409
   );
 }
@@ -334,6 +336,83 @@ export const useRecorderStore = create<any>()(
             );
           };
           window.addEventListener('online', onOnline, { once: true });
+          return;
+        }
+
+        const reconcileAfterMs = 60_000;
+        const reconcileCandidate = (state.recordingQueue || []).find((item) => {
+          if (!item?.uploaded || !['failed', 'failed_permanent'].includes(item.status)) {
+            return false;
+          }
+          const lastQueueUpdate = new Date(item.updatedAt || item.createdAt || 0).getTime();
+          if (Number.isFinite(lastQueueUpdate) && Date.now() < lastQueueUpdate + reconcileAfterMs) {
+            return false;
+          }
+          if (Date.now() < Number(item.lastReconciledAt || 0) + reconcileAfterMs) {
+            return false;
+          }
+          return Boolean(resolveMeetingForQueueItem(item)?.id);
+        });
+
+        if (reconcileCandidate) {
+          const statusSnapshot = getPipelineSnapshot(
+            'processing',
+            64,
+            'Sprawdzanie zakonczonego wyniku na serwerze'
+          );
+          set({
+            isProcessingQueue: true,
+            analysisStatus: 'processing',
+            pipelineProgressPercent: statusSnapshot.progressPercent,
+            pipelineStageLabel: statusSnapshot.stageLabel,
+          });
+          get().updateQueueItem(reconcileCandidate.recordingId, {
+            lastReconciledAt: Date.now(),
+          });
+
+          try {
+            await processRecordingQueueItem({
+              nextItem: {
+                ...reconcileCandidate,
+                status: 'processing' as RecordingPipelineStatus,
+              },
+              resolveMeetingForQueueItem,
+              attachCompletedRecording,
+              setCurrentSegments,
+              updateQueueItem: (recordingId, updates) =>
+                get().updateQueueItem(recordingId, updates),
+              removeQueueItem: (recordingId) => get().removeQueueItem(recordingId),
+              setState: (patch) => set(patch),
+              getState: () => get(),
+              getAudioBlob,
+              createMediaService,
+              filterSilence,
+              enhanceAndReencode,
+              analyzeMeeting,
+              getPipelineSnapshot,
+              normalizeTranscriptionResponse,
+              buildFallbackAnalysis,
+              emptyTranscriptMessage: EMPTY_TRANSCRIPT_MESSAGE,
+              toUserFacingQueueError,
+              isExpectedDomainFailure,
+              isTransientNetworkError,
+              maxAutoRetries: MAX_AUTO_RETRIES,
+              retryDelaysMs: RETRY_DELAYS_MS,
+              sleep,
+              scheduleBackoffReset: (recordingId, delay) => {
+                setTimeout(() => {
+                  get().updateQueueItem(recordingId, { backoffUntil: 0 });
+                }, delay);
+              },
+            });
+          } finally {
+            set({ isProcessingQueue: false });
+            get().processQueue(
+              resolveMeetingForQueueItem,
+              attachCompletedRecording,
+              setCurrentSegments
+            );
+          }
           return;
         }
 

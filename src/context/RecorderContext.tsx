@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import useRecorder from '../hooks/useRecorder';
 import useMeetings from '../hooks/useMeetings';
+import { useWorkspaceSelectors } from '../store/workspaceStore';
 
 type RecorderContextValue = ReturnType<typeof useRecorder>;
 
@@ -17,6 +18,7 @@ const RecorderContext = createContext<RecorderContextValue>(defaultRecorderCtx);
 
 export function RecorderProvider({ children }) {
   const meetings = useMeetings();
+  const { currentWorkspaceId } = useWorkspaceSelectors();
 
   const recorder = useRecorder({
     selectedMeeting: meetings.selectedMeeting,
@@ -25,6 +27,7 @@ export function RecorderProvider({ children }) {
     attachCompletedRecording: meetings.attachCompletedRecording,
     isHydratingRemoteState: meetings.isHydratingRemoteState,
     selectMeeting: meetings.selectMeeting,
+    currentWorkspaceId,
   });
 
   return <RecorderContext.Provider value={recorder}>{children}</RecorderContext.Provider>;

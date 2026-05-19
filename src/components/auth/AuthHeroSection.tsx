@@ -60,7 +60,7 @@ export default function AuthHeroSection() {
               <Sparkles size={24} />
             </div>
             <div>
-              <h3>Precyzyjna Diaryzacja</h3>
+              <h2>Precyzyjna diaryzacja</h2>
               <p>
                 Nigdy więcej pomyłek. Segmenty grupujemy precyzyjnie po sygnaturze głosu, a nie po
                 samej ciszy w tle.
@@ -72,7 +72,7 @@ export default function AuthHeroSection() {
               <CalendarDays size={24} />
             </div>
             <div>
-              <h3>Centrum spotkań</h3>
+              <h2>Centrum spotkań</h2>
               <p>
                 Miesięczny widok zdarzeń wprost połączony ze spotkaniami Google. Bez przełączania
                 między systemami.
@@ -84,7 +84,7 @@ export default function AuthHeroSection() {
               <BrainCircuit size={24} />
             </div>
             <div>
-              <h3>Insight Driven Analytics</h3>
+              <h2>Insight driven analytics</h2>
               <p>
                 Ustalasz cel przed wejściem, a silnik LLM samodzielnie wyciągnie z rozmowy to, czego
                 naprawdę szukałeś.

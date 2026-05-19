@@ -165,6 +165,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 40;
+  min-width: 0;
 }
 
 [data-layout='modern'] .modern-header-left {
@@ -177,6 +178,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
 }
 
 [data-layout='modern'] .modern-search-btn {
@@ -204,6 +206,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 [data-layout='modern'] .modern-search-shortcut {
@@ -321,23 +324,23 @@
 /* Tablet and below (max 768px) */
 @media (max-width: 768px) {
   [data-layout='modern'] {
-    --modern-sidebar-width: 100%;
+    --modern-sidebar-width: 0px;
     --modern-header-height: 60px;
   }
 
-  .app-shell-modern {
+  [data-layout='modern'] .app-shell-modern {
     flex-direction: column;
     height: 100vh;
     width: 100%;
   }
 
   /* Show hamburger button */
-  .modern-hamburger-btn {
+  [data-layout='modern'] .modern-hamburger-btn {
     display: flex;
   }
 
   /* Sidebar becomes a drawer */
-  .modern-sidebar {
+  [data-layout='modern'] .modern-sidebar {
     position: fixed;
     top: 0;
     left: 0;
@@ -350,21 +353,22 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: none;
     overflow-y: auto;
+    background: rgba(15, 23, 42, 0.96);
   }
 
-  .app-shell-modern.sidebar-open .modern-sidebar {
+  [data-layout='modern'] .app-shell-modern.sidebar-open .modern-sidebar {
     transform: translateX(0);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
   }
 
   /* Overlay backdrop */
-  .modern-sidebar-overlay {
+  [data-layout='modern'] .modern-sidebar-overlay {
     display: block;
     position: fixed;
     inset: 0;
     z-index: 150;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: none;
     animation: overlay-fade-in 0.2s ease;
   }
 
@@ -378,57 +382,68 @@
   }
 
   /* Header adjustments for mobile */
-  .modern-header {
+  [data-layout='modern'] .modern-header {
     padding: 0 12px;
     height: 60px;
     gap: 6px;
   }
 
-  .modern-header-left {
+  [data-layout='modern'] .modern-header-left {
     gap: 6px;
+    flex: 0 0 auto;
   }
 
-  .modern-header-right {
+  [data-layout='modern'] .modern-header-right {
     gap: 6px;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    overflow: hidden;
   }
 
   /* Search button: icon-only on mobile */
-  .modern-search-btn {
+  [data-layout='modern'] .modern-search-btn {
     width: auto;
     min-width: 44px;
     min-height: 44px;
+    flex: 0 0 44px;
     padding: 8px;
     justify-content: center;
+    overflow: hidden;
   }
 
-  .modern-search-text {
+  [data-layout='modern'] .modern-search-text {
     display: none;
   }
 
-  .modern-search-shortcut {
+  [data-layout='modern'] .modern-search-shortcut {
     display: none;
   }
 
   /* Record button: icon-only on mobile */
-  .modern-record-btn {
+  [data-layout='modern'] .modern-record-btn {
     padding: 6px 10px;
     min-width: 44px;
     min-height: 44px;
+    flex: 0 0 44px;
     font-size: 0.85rem;
   }
 
-  .modern-record-label {
+  [data-layout='modern'] .modern-record-btn > div {
+    padding: 0 !important;
+  }
+
+  [data-layout='modern'] .modern-record-label {
     display: none;
   }
 
   /* Content area takes full width */
-  .modern-main {
+  [data-layout='modern'] .modern-main {
     width: 100%;
     height: calc(100vh - 60px);
     height: calc(100dvh - 60px);
   }
 
-  .modern-content-wrapper {
+  [data-layout='modern'] .modern-content-wrapper {
     padding: 12px;
     padding-bottom: 140px;
   }
@@ -449,7 +464,7 @@
   }
 
   /* Player bar adjustments */
-  .ff-player-bar {
+  [data-layout='modern'] .ff-player-bar {
     left: 0 !important;
     right: 0 !important;
     width: 100%;
@@ -462,41 +477,41 @@
     --modern-header-height: 56px;
   }
 
-  .modern-sidebar {
+  [data-layout='modern'] .modern-sidebar {
     width: 85vw;
   }
 
-  .modern-header {
+  [data-layout='modern'] .modern-header {
     height: 56px;
     padding: 0 8px;
     gap: 4px;
   }
 
-  .modern-brand {
+  [data-layout='modern'] .modern-brand {
     margin-bottom: 24px;
     gap: 8px;
   }
 
-  .modern-brand h1 {
+  [data-layout='modern'] .modern-brand h1 {
     font-size: 1rem;
   }
 
-  .modern-brand-logo {
+  [data-layout='modern'] .modern-brand-logo {
     width: 28px;
     height: 28px;
   }
 
-  .modern-content-wrapper {
+  [data-layout='modern'] .modern-content-wrapper {
     padding: 8px;
     padding-bottom: 130px;
   }
 
-  .modern-main {
+  [data-layout='modern'] .modern-main {
     height: calc(100vh - 56px);
     height: calc(100dvh - 56px);
   }
 
-  .modern-hamburger-btn {
+  [data-layout='modern'] .modern-hamburger-btn {
     width: 40px;
     height: 40px;
   }

@@ -5,8 +5,10 @@ interface ImportMetaEnv {
   readonly VITE_DATA_PROVIDER: string;
   readonly VITE_MEDIA_PROVIDER: string;
   readonly VITE_GOOGLE_CLIENT_ID: string;
+  readonly VITE_CLARITY_ID?: string;
   readonly VITE_ANTHROPIC_API_KEY: string;
   readonly VITE_ANTHROPIC_MODEL: string;
+  readonly VITE_ALLOW_BROWSER_AI_KEYS: string;
   readonly VITE_OPENAI_API_KEY: string;
   readonly VITE_OPENAI_BASE_URL: string;
   readonly VITE_BUILD_ID: string;

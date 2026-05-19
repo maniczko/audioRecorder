@@ -1,13 +1,13 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-test.describe('Auth â€” rejestracja i logowanie', () => {
+test.describe('Auth - rejestracja i logowanie', () => {
   test.beforeEach(async ({ page }) => {
     // Start from a clean, logged-out state
     await page.goto('/');
   });
 
-  // â”€â”€ Registration â€” happy path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Registration - happy path
   test('rejestracja nowego uzytkownika otwiera aplikacje', async ({ page }) => {
     // Switch to registration mode
     await page.getByRole('button', { name: 'Rejestracja' }).click();
@@ -25,7 +25,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
-  // â”€â”€ Registration â€” error: duplicate email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Registration - error: duplicate email
   test('rejestracja z istniejacym emailem pokazuje blad', async ({ page }) => {
     // Seed current persisted workspace state used by zustand.
     await page.addInitScript(() => {
@@ -66,7 +66,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await expect(page.locator('.auth-shell')).toBeVisible();
   });
 
-  // â”€â”€ Login â€” happy path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Login - happy path
   test('logowanie poprawnym haslem otwiera aplikacje', async ({ page }) => {
     // Register first, then log out, then log back in
     await page.getByRole('button', { name: 'Rejestracja' }).click();
@@ -77,7 +77,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await page.getByPlaceholder('np. Zespół Sprzedaży').fill('Login WS');
     await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
 
-    // Should be logged in now â€” wait for main app
+    // Should be logged in now - wait for main app
     await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
 
     // Log out via Profile
@@ -96,7 +96,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
   });
 
-  // â”€â”€ Login â€” error: wrong password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Login - error: wrong password
   test('logowanie blednym haslem pokazuje blad', async ({ page }) => {
     // Register
     await page.getByRole('button', { name: 'Rejestracja' }).click();
@@ -121,7 +121,7 @@ test.describe('Auth â€” rejestracja i logowanie', () => {
     await expect(page.locator('.inline-alert.error')).toBeVisible();
     await expect(page.locator('.auth-shell')).toBeVisible();
   });
-  // â”€â”€ Login â€” error: user does not exist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Login - error: user does not exist
   test('logowanie nieistniejacym uzytkownikiem pokazuje blad', async ({ page }) => {
     // Directly try to login with a user that doesn't exist
     await page.getByRole('button', { name: 'Logowanie' }).click();

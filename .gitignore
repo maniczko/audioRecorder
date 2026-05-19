@@ -129,6 +129,7 @@ sentry-errors/
 vercel-errors/
 
 # Generated artifacts (agent/CI output)
+.tools/
 *-test-output.txt
 reports/
 scripts/external-services.js
@@ -137,3 +138,4 @@ scripts/test-results.js
 scripts/test-results.json
 scripts/test-dashboard-pro.html
 scripts/test-dashboard-standalone.html
+.vercel

@@ -106,6 +106,7 @@
   margin: 0 auto;
   width: 100%;
   overflow-y: auto;
+  min-width: 0;
 }
 
 .profile-category-view {
@@ -113,6 +114,7 @@
   flex-direction: column;
   gap: 32px;
   animation: profileFadeIn 0.3s ease-out;
+  min-width: 0;
 }
 
 @keyframes profileFadeIn {
@@ -134,12 +136,14 @@
   background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(117, 214, 196, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
+  min-width: 0;
 }
 
 .profile-hero-main {
   display: flex;
   align-items: center;
   gap: 24px;
+  min-width: 0;
 }
 
 .profile-avatar-lg,
@@ -164,6 +168,9 @@
 .profile-hero-side {
   display: flex;
   gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .profile-stat-card {
@@ -194,6 +201,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
+  min-width: 0;
 }
 
 .panel {
@@ -202,6 +210,7 @@
   border-radius: 20px;
   padding: 24px;
   height: fit-content;
+  min-width: 0;
 }
 
 .panel-header.compact {
@@ -714,11 +723,48 @@
 /* MOBILE RESPONSIVE - Profile Tab (2026-04-01)                    */
 /* ================================================================ */
 
+@media (max-width: 1120px) {
+  .profile-main-content {
+    max-width: none;
+    padding: 28px 24px;
+  }
+
+  .profile-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-hero-side {
+    justify-content: flex-start;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-grid-span-two {
+    grid-column: span 1;
+  }
+}
+
 @media (max-width: 768px) {
   /* Profile layout becomes single column */
   .profile-layout {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .profile-main-content {
+    padding: 16px;
+  }
+
+  .profile-hero {
+    padding: 20px;
+  }
+
+  .profile-hero-main {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
   }
 
   .profile-grid-span-two {

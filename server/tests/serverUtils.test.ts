@@ -21,13 +21,20 @@ function createMockRequest() {
 }
 
 describe('serverUtils', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalAllowVercelPreviews = process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+
   beforeEach(() => {
     vi.restoreAllMocks();
     process.env.SKIP_RATE_LIMIT = 'false';
+    process.env.NODE_ENV = originalNodeEnv;
+    process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS = originalAllowVercelPreviews;
   });
 
   afterEach(() => {
     process.env.SKIP_RATE_LIMIT = 'true';
+    process.env.NODE_ENV = originalNodeEnv;
+    process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS = originalAllowVercelPreviews;
   });
 
   it('builds CORS and security headers for localhost, vercel and fallback origins', () => {
@@ -51,6 +58,25 @@ describe('serverUtils', () => {
       'Content-Security-Policy': "default-src 'none'",
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
+    });
+  });
+
+  it('does not allow arbitrary Vercel preview origins in production unless explicitly enabled', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+
+    expect(
+      corsHeaders('https://preview-app.vercel.app', 'https://prod.example.test')
+    ).toMatchObject({
+      'Access-Control-Allow-Origin': 'https://prod.example.test',
+    });
+
+    process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS = 'true';
+
+    expect(
+      corsHeaders('https://preview-app.vercel.app', 'https://prod.example.test')
+    ).toMatchObject({
+      'Access-Control-Allow-Origin': 'https://preview-app.vercel.app',
     });
   });
 

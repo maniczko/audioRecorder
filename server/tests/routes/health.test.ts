@@ -135,6 +135,40 @@ describe('http/health.ts', () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = savedKey;
   });
 
+  test('reports diarization degraded mode when HF token is missing', async () => {
+    const app = makeHonoLike();
+    const savedHfToken = process.env.HF_TOKEN;
+    const savedHuggingFaceToken = process.env.HUGGINGFACE_TOKEN;
+    delete process.env.HF_TOKEN;
+    delete process.env.HUGGINGFACE_TOKEN;
+
+    registerHealthRoute(app, undefined);
+    const route = app._routes.find((r: any) => r.path === '/health');
+
+    let response: any;
+    const mockCtx = makeCtxLike((data: any) => {
+      response = { data };
+    });
+
+    await route.handler(mockCtx);
+    expect(response.data.diarization).toEqual({
+      enabled: false,
+      provider: 'disabled',
+      status: 'degraded',
+    });
+
+    process.env.HF_TOKEN = 'hf_test_token';
+    await route.handler(mockCtx);
+    expect(response.data.diarization).toEqual({
+      enabled: true,
+      provider: 'pyannote',
+      status: 'available',
+    });
+
+    process.env.HF_TOKEN = savedHfToken;
+    process.env.HUGGINGFACE_TOKEN = savedHuggingFaceToken;
+  });
+
   test('includes build metadata', async () => {
     const app = makeHonoLike();
     process.env.GITHUB_SHA = 'sha123';

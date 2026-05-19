@@ -96,4 +96,80 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
       'ok'
     );
   });
+
+  it('blocks production deployments without persistent Supabase storage', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: undefined,
+        SUPABASE_SERVICE_ROLE_KEY: undefined,
+      })
+    );
+
+    expect(report.blocking).toBe(true);
+    expect(report.errors.map((entry) => entry.name)).toEqual(
+      expect.arrayContaining(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'])
+    );
+  });
+
+  it('accepts production storage and allowed origins when configured', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
+      })
+    );
+
+    expect(report.errors.map((entry) => entry.name)).not.toContain('SUPABASE_URL');
+    expect(report.errors.map((entry) => entry.name)).not.toContain('SUPABASE_SERVICE_ROLE_KEY');
+    expect(report.blocking).toBe(false);
+  });
+
+  it('blocks production when DATABASE_URL uses an incomplete Supabase host', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://jfvlwcjmsfewlugdhghq.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
+        DATABASE_URL:
+          'postgresql://postgres:super-secret@postgres.jfvlwcjmsfewlugdhghq:5432/postgres',
+      })
+    );
+
+    const databaseCheck = report.errors.find((entry) => entry.name === 'DATABASE_URL');
+    expect(report.blocking).toBe(true);
+    expect(databaseCheck?.status).toBe('invalid');
+    expect(databaseCheck?.preview).not.toContain('super-secret');
+    expect(databaseCheck?.preview).toContain('postgres.jfvlwcjmsfewlugdhghq');
+  });
+
+  it('accepts complete Supabase Postgres and pooler hosts in production', () => {
+    const directReport = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://jfvlwcjmsfewlugdhghq.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
+        DATABASE_URL:
+          'postgresql://postgres:secret@db.jfvlwcjmsfewlugdhghq.supabase.co:5432/postgres',
+      })
+    );
+    const poolerReport = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://jfvlwcjmsfewlugdhghq.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
+        DATABASE_URL:
+          'postgresql://postgres.jfvlwcjmsfewlugdhghq:secret@aws-0-eu-central-1.pooler.supabase.com:6543/postgres',
+      })
+    );
+
+    expect(directReport.errors.map((entry) => entry.name)).not.toContain('DATABASE_URL');
+    expect(poolerReport.errors.map((entry) => entry.name)).not.toContain('DATABASE_URL');
+  });
 });
