@@ -1,19 +1,10 @@
-/**
- * NOTE: Skipped due to Zustand 5 removing setState/getState from public API.
- * TODO: Re-enable after Zustand 5 migration.
- */
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+vi.unmock('./meetingsStore');
+
 import { useMeetingsStore } from './meetingsStore';
 
-describe.skip('meetingsStore — Zustand 5 migration pending', () => {
-  test('skipped', () => {});
-});
-
-/* Original tests below - disabled until Zustand 5 migration
-import { beforeEach, describe, expect, test } from 'vitest';
-import { useMeetingsStore } from './meetingsStore';
-
-const initialDraft = useMeetingsStore.getState().meetingDraft;
+const emptyDraft = useMeetingsStore.getState().meetingDraft;
 
 describe('meetingsStore', () => {
   beforeEach(() => {
@@ -27,7 +18,7 @@ describe('meetingsStore', () => {
       vocabulary: [],
       workspaceMessage: '',
       storedMeetingDrafts: {},
-      meetingDraft: initialDraft,
+      meetingDraft: emptyDraft,
       selectedMeetingId: null,
       selectedRecordingId: null,
       isDetachedMeetingDraft: false,
@@ -38,16 +29,16 @@ describe('meetingsStore', () => {
   test('supports updater functions across persisted collections', () => {
     const store = useMeetingsStore.getState();
 
-    store.setMeetings(() => [{ id: 'm1' }]);
-    store.setManualTasks(() => [{ id: 't1' }]);
+    store.setMeetings(() => [{ id: 'm1', title: 'Meeting' }]);
+    store.setManualTasks(() => [{ id: 't1', title: 'Task' }]);
     store.setTaskState(() => ({ t1: { done: false } }));
     store.setTaskBoards(() => ({ ws1: [{ id: 'todo' }] }));
     store.setCalendarMeta(() => ({ 'meeting:m1': { googleEventId: 'g1' } }));
     store.setVocabulary(() => ['voice']);
 
     expect(useMeetingsStore.getState()).toMatchObject({
-      meetings: [{ id: 'm1' }],
-      manualTasks: [{ id: 't1' }],
+      meetings: [{ id: 'm1', title: 'Meeting' }],
+      manualTasks: [{ id: 't1', title: 'Task' }],
       taskState: { t1: { done: false } },
       taskBoards: { ws1: [{ id: 'todo' }] },
       calendarMeta: { 'meeting:m1': { googleEventId: 'g1' } },
@@ -55,9 +46,10 @@ describe('meetingsStore', () => {
     });
   });
 
-  test('marks meeting draft as changed and persists stable fields', () => {
+  test('marks meeting draft as changed without persisting transient draft fields', () => {
     const store = useMeetingsStore.getState();
-    store.setMeetingDraft((previous: any) => ({ ...previous, title: 'Nowa notatka' }));
+
+    store.setMeetingDraft((previous) => ({ ...previous, title: 'Nowa notatka' }));
     store.setStoredMeetingDrafts(() => ({ ws1: { title: 'Draft' } }));
 
     expect(useMeetingsStore.getState().meetingDraft.title).toBe('Nowa notatka');
@@ -71,5 +63,18 @@ describe('meetingsStore', () => {
     });
     expect(persisted.state.meetingDraft).toBeUndefined();
   });
+
+  test('tracks selected meeting and recording independently', () => {
+    const store = useMeetingsStore.getState();
+
+    store.setSelectedMeetingId('m1');
+    store.setSelectedRecordingId('r1');
+    store.setIsDetachedMeetingDraft(true);
+
+    expect(useMeetingsStore.getState()).toMatchObject({
+      selectedMeetingId: 'm1',
+      selectedRecordingId: 'r1',
+      isDetachedMeetingDraft: true,
+    });
+  });
 });
-*/

@@ -134,11 +134,39 @@ export default class TranscriptionService extends EventEmitter {
   }
 
   isTranscriptionJobActive(recordingId: string) {
-    if (!recordingId) return false;
-    return (
-      this.transcriptionJobs.has(recordingId) ||
-      this._pendingQueue.some((item) => item.recordingId === recordingId)
-    );
+    return this.getTranscriptionRuntimeStatus(recordingId).activeJob;
+  }
+
+  getTranscriptionRuntimeStatus(recordingId: string) {
+    const emptyStatus = {
+      activeJob: false,
+      queuedPosition: null as number | null,
+      processingAgeMs: null as number | null,
+      retryAfterMs: null as number | null,
+    };
+    if (!recordingId) return emptyStatus;
+
+    const queuedIndex = this._pendingQueue.findIndex((item) => item.recordingId === recordingId);
+    if (queuedIndex >= 0) {
+      return {
+        activeJob: true,
+        queuedPosition: queuedIndex + 1,
+        processingAgeMs: null,
+        retryAfterMs: 60_000,
+      };
+    }
+
+    if (this.transcriptionJobs.has(recordingId)) {
+      const startedAt = this._jobStartTimes.get(recordingId);
+      return {
+        activeJob: true,
+        queuedPosition: null,
+        processingAgeMs: typeof startedAt === 'number' ? Math.max(0, Date.now() - startedAt) : null,
+        retryAfterMs: 60_000,
+      };
+    }
+
+    return emptyStatus;
   }
 
   async saveTranscriptionResult(recordingId: string, result: any) {

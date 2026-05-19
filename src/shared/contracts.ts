@@ -62,6 +62,10 @@ export interface MediaTranscriptionResponse {
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics | null;
   qualityMetrics?: TranscriptionQualityMetrics | null;
+  activeJob?: boolean;
+  queuedPosition?: number | null;
+  processingAgeMs?: number | null;
+  retryAfterMs?: number | null;
   reviewSummary?: string | null;
   errorMessage?: string;
   updatedAt?: string;
@@ -139,6 +143,11 @@ export interface AiPersonProfileResponse {
 type UnknownRecord = Record<string, unknown>;
 type IdentifiedItem = { id?: unknown };
 type DiarizationPayload = Partial<DiarizationResult> & UnknownRecord;
+type TranscriptionRuntimeFields = Pick<
+  TranscriptionStatusPayload,
+  'activeJob' | 'queuedPosition' | 'processingAgeMs' | 'retryAfterMs'
+>;
+type MediaAssetWithRuntime = Partial<MeetingAsset> & Partial<TranscriptionRuntimeFields>;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
@@ -450,7 +459,7 @@ export function normalizePipelineStatus(
 }
 
 export function normalizeTranscriptionStatusPayload(
-  asset: Partial<MeetingAsset> | null | undefined
+  asset: MediaAssetWithRuntime | null | undefined
 ): TranscriptionStatusPayload {
   const diarization = parseJsonRecord(asset?.diarization_json);
   const segments = parseJsonArray<TranscriptSegment>(asset?.transcript_json);
@@ -471,6 +480,10 @@ export function normalizeTranscriptionStatusPayload(
       diarization.transcriptionDiagnostics
     ),
     qualityMetrics: nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics),
+    activeJob: Boolean(asset?.activeJob),
+    queuedPosition: typeof asset?.queuedPosition === 'number' ? asset.queuedPosition : null,
+    processingAgeMs: typeof asset?.processingAgeMs === 'number' ? asset.processingAgeMs : null,
+    retryAfterMs: typeof asset?.retryAfterMs === 'number' ? asset.retryAfterMs : null,
     segments: Array.isArray(segments) ? segments : [],
     diarization,
     speakerNames: isRecord(diarization.speakerNames)
@@ -519,6 +532,11 @@ export function normalizeMediaTranscriptionResponse(
       nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics) ||
       response?.qualityMetrics ||
       null,
+    activeJob: Boolean(response?.activeJob),
+    queuedPosition: typeof response?.queuedPosition === 'number' ? response.queuedPosition : null,
+    processingAgeMs:
+      typeof response?.processingAgeMs === 'number' ? response.processingAgeMs : null,
+    retryAfterMs: typeof response?.retryAfterMs === 'number' ? response.retryAfterMs : null,
     segments,
     diarization,
     speakerNames: isRecord(diarization.speakerNames)

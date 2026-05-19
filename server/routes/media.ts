@@ -201,11 +201,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   }
 
-  function isTranscriptionJobActive(recordingId: string) {
-    return Boolean(
-      typeof transcriptionService.isTranscriptionJobActive === 'function' &&
-      transcriptionService.isTranscriptionJobActive(recordingId)
-    );
+  function getTranscriptionRuntimeStatus(recordingId: string) {
+    const fallback = {
+      activeJob: false,
+      queuedPosition: null,
+      processingAgeMs: null,
+      retryAfterMs: null,
+    };
+    if (typeof transcriptionService.getTranscriptionRuntimeStatus !== 'function') {
+      return fallback;
+    }
+
+    const status = transcriptionService.getTranscriptionRuntimeStatus(recordingId) || {};
+    return {
+      activeJob: Boolean(status.activeJob),
+      queuedPosition: typeof status.queuedPosition === 'number' ? status.queuedPosition : null,
+      processingAgeMs: typeof status.processingAgeMs === 'number' ? status.processingAgeMs : null,
+      retryAfterMs: typeof status.retryAfterMs === 'number' ? status.retryAfterMs : null,
+    };
   }
 
   function scheduleAudioQuality(recordingId: string, asset: MediaAsset) {
@@ -567,6 +580,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
+      const runtimeStatus = getTranscriptionRuntimeStatus(recordingId);
 
       // Detect true orphaned processing. Active long-audio jobs can run well
       // past five minutes, so only inactive stale assets are marked failed.
@@ -575,7 +589,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
         Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
-        !isTranscriptionJobActive(recordingId)
+        !runtimeStatus.activeJob
       ) {
         if (!hasTranscriptSegments(asset)) {
           console.warn(
@@ -592,7 +606,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         }
       }
 
-      return c.json(normalizeTranscriptionStatusPayload(asset), 200);
+      return c.json({ ...normalizeTranscriptionStatusPayload(asset), ...runtimeStatus }, 200);
     } catch (err: any) {
       console.error(`[transcribe-status] Error:`, err?.message);
       const status = err?.statusCode || err?.status || 500;

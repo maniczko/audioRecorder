@@ -716,7 +716,7 @@ describe('recorderStore', { timeout: 30000 }, () => {
   // Fix: check return value; if false, mark queue item as failed instead of removing.
   // -----------------------------------------------------------------
   describe('Regression: #0 - processQueue preserves queue item when attachment fails', () => {
-    test('marks item as failed when attachCompletedRecording returns false (normal transcript)', async () => {
+    test('keeps item recoverable when attachCompletedRecording returns false (normal transcript)', async () => {
       mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
       mocks.analyzeMeeting.mockResolvedValueOnce({
@@ -764,11 +764,11 @@ describe('recorderStore', { timeout: 30000 }, () => {
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan');
       expect(queueItem).toBeDefined();
-      expect(queueItem!.status).toBe('failed');
-      expect(queueItem!.errorMessage).toContain('Nie znaleziono spotkania');
+      expect(queueItem!.status).toBe('processing');
+      expect(queueItem!.errorMessage).toBe('');
     });
 
-    test('marks item as failed when attachCompletedRecording returns false (empty transcript)', async () => {
+    test('keeps item recoverable when attachCompletedRecording returns false (empty transcript)', async () => {
       mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
       mocks.createMediaService.mockReturnValue({
@@ -812,8 +812,8 @@ describe('recorderStore', { timeout: 30000 }, () => {
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan_empty');
       expect(queueItem).toBeDefined();
-      expect(queueItem!.status).toBe('failed');
-      expect(queueItem!.errorMessage).toContain('Nie znaleziono spotkania');
+      expect(queueItem!.status).toBe('processing');
+      expect(queueItem!.errorMessage).toBe('');
     });
   });
 

@@ -6,6 +6,7 @@ const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || baseURL;
 const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
 const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
 const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
+const includeRemoteApiProject = process.env.PLAYWRIGHT_INCLUDE_REMOTE_API === 'true';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -37,6 +38,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: [/remote-api\.spec\.js/, /layout-visual\.spec\.js/],
       use: {
         ...devices['Desktop Chrome'],
         // Increase viewport for better visibility
@@ -45,7 +47,7 @@ export default defineConfig({
     },
     {
       name: 'remote-api',
-      testMatch: /remote-api\.spec\.js/,
+      testMatch: includeRemoteApiProject ? /remote-api\.spec\.js/ : /__remote_api_disabled__/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1280, height: 720 },

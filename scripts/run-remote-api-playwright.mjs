@@ -11,6 +11,7 @@ const env = {
   PLAYWRIGHT_BASE_URL: baseUrl,
   PLAYWRIGHT_WEB_COMMAND: webCommand,
   PLAYWRIGHT_MEDIA_PROVIDER: 'remote',
+  PLAYWRIGHT_INCLUDE_REMOTE_API: 'true',
 };
 const child =
   process.platform === 'win32'

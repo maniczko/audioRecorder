@@ -49,6 +49,47 @@ describe('TranscriptionService - Additional Coverage', () => {
     };
   });
 
+  describe('getTranscriptionRuntimeStatus()', () => {
+    test('reports active processing job age', () => {
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const startedAt = Date.now() - 123_000;
+      service.transcriptionJobs.set('rec_active', Promise.resolve());
+      (service as any)._jobStartTimes.set('rec_active', startedAt);
+
+      const status = service.getTranscriptionRuntimeStatus('rec_active');
+
+      expect(status.activeJob).toBe(true);
+      expect(status.queuedPosition).toBeNull();
+      expect(status.processingAgeMs).toBeGreaterThanOrEqual(123_000);
+      expect(status.retryAfterMs).toBe(60_000);
+    });
+
+    test('reports pending queue position', () => {
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      (service as any)._pendingQueue.push(
+        { recordingId: 'rec_first', asset: {}, options: {} },
+        { recordingId: 'rec_second', asset: {}, options: {} }
+      );
+
+      expect(service.getTranscriptionRuntimeStatus('rec_second')).toMatchObject({
+        activeJob: true,
+        queuedPosition: 2,
+        processingAgeMs: null,
+        retryAfterMs: 60_000,
+      });
+    });
+  });
+
   describe('getSpeakerAcousticFeatures()', () => {
     test('calls pipeline.analyzeAcousticFeatures for each speaker', async () => {
       const fs = await import('node:fs');

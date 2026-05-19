@@ -15,7 +15,9 @@ export const releaseGateCommands = [
   ['pnpm', ['run', 'test:frontend:ci']],
   ['pnpm', ['audit', '--audit-level=high']],
   ['pnpm', ['run', 'audit:a11y:ci']],
+  ['pnpm', ['run', 'test:skips:audit']],
   ['pnpm', ['run', 'test:visual:check']],
+  ['pnpm', ['run', 'test:e2e']],
   ['pnpm', ['run', 'test:e2e:advanced']],
   ['pnpm', ['run', 'test:e2e:remote-api']],
 ];

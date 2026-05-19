@@ -35,7 +35,9 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run test:frontend:ci');
     expect(commandText).toContain('pnpm audit --audit-level=high');
     expect(commandText).toContain('pnpm run audit:a11y:ci');
+    expect(commandText).toContain('pnpm run test:skips:audit');
     expect(commandText).toContain('pnpm run test:visual:check');
+    expect(commandText).toContain('pnpm run test:e2e');
     expect(commandText).toContain('pnpm run test:e2e:advanced');
     expect(commandText).toContain('pnpm run test:e2e:remote-api');
   });
@@ -105,6 +107,10 @@ describe('release readiness gates', () => {
     );
     expect(packageJson.scripts?.['audit:mojibake']).toBe('node scripts/audit-mojibake.mjs');
     expect(packageJson.scripts?.['release:prod-smoke']).toBe('node scripts/production-smoke.mjs');
+    expect(packageJson.scripts?.['release:prod-smoke:strict']).toBe(
+      'node scripts/production-smoke-strict.mjs'
+    );
+    expect(packageJson.scripts?.['test:skips:audit']).toBe('node scripts/audit-test-skips.mjs');
   });
 
   it('uses pnpm-workspace.yaml as the only workspace declaration', () => {

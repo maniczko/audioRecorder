@@ -117,6 +117,10 @@ export interface TranscriptionStatusPayload {
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
   qualityMetrics?: TranscriptionQualityMetrics | null;
+  activeJob?: boolean;
+  queuedPosition?: number | null;
+  processingAgeMs?: number | null;
+  retryAfterMs?: number | null;
   providerId?: string;
   providerLabel?: string;
   segments: TranscriptSegment[];

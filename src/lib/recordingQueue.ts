@@ -42,6 +42,24 @@ function getQueueMeetingSnapshot(item: unknown): RecordingQueueMeetingLike | nul
     return snapshot;
   }
 
+  const queueCandidate = item as {
+    recordingId?: string;
+    meetingId?: string;
+    workspaceId?: string;
+    meetingTitle?: string;
+    title?: string;
+  };
+  if (queueCandidate.recordingId || queueCandidate.meetingId || queueCandidate.meetingTitle) {
+    const reconstructed = {
+      id: String(queueCandidate.meetingId || ''),
+      workspaceId: String(queueCandidate.workspaceId || ''),
+      title: String(queueCandidate.meetingTitle || queueCandidate.title || ''),
+    };
+    if (reconstructed.id && (reconstructed.workspaceId || reconstructed.title)) {
+      return reconstructed;
+    }
+  }
+
   const candidate = item as RecordingQueueMeetingLike;
   if (candidate.id || candidate.workspaceId || candidate.title) {
     return candidate;
@@ -149,6 +167,10 @@ export interface RecordingQueueItem {
   pipelineBuildTime?: string;
   audioQuality?: unknown;
   transcriptionDiagnostics?: unknown;
+  activeJob?: boolean;
+  queuedPosition?: number | null;
+  processingAgeMs?: number | null;
+  retryAfterMs?: number | null;
   /** Timestamp (ISO string) when processing started — used to compute elapsed processing time */
   lastReconciledAt?: number;
   processingStartedAt?: string;

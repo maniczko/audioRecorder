@@ -9,6 +9,8 @@ import {
   attachRecordingWithRetry,
   buildAudioPreprocessingPlan,
   CLIENT_AUDIO_PREPROCESSING_LIMITS,
+  BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+  calculateTranscriptionHardTimeoutMs,
   processRecordingQueueItem,
   waitForCompletedTranscription,
   type QueueProcessorContext,
@@ -281,6 +283,12 @@ describe('attachRecordingWithRetry', () => {
 });
 
 describe('waitForCompletedTranscription', () => {
+  it('calculates hard timeout from recording duration with safe bounds', () => {
+    expect(calculateTranscriptionHardTimeoutMs(60)).toBe(30 * 60 * 1000);
+    expect(calculateTranscriptionHardTimeoutMs(45 * 60)).toBe(90 * 60 * 1000);
+    expect(calculateTranscriptionHardTimeoutMs(0)).toBe(45 * 60 * 1000);
+  });
+
   it('returns the started payload immediately when the pipeline is already done', async () => {
     const started = makeTranscription();
     const mediaService = {
@@ -398,6 +406,90 @@ describe('waitForCompletedTranscription', () => {
       transcriptionDiagnostics: { chunksAttempted: 2 },
     });
   });
+
+  it('parks active remote processing after the soft polling window instead of failing', async () => {
+    let now = 0;
+    const processing = makeTranscription({
+      pipelineStatus: 'processing',
+      segments: [],
+      activeJob: true,
+      processingAgeMs: 120_000,
+      retryAfterMs: 60_000,
+    } as Partial<TranscriptionStatusPayload>);
+    const updateQueueItem = vi.fn();
+    const sleep = vi.fn(async (ms: number) => {
+      now += ms;
+    });
+
+    await expect(
+      waitForCompletedTranscription({
+        nextItem: makeQueueItem({
+          status: 'processing',
+          uploaded: true,
+          processingStartedAt: new Date(0).toISOString(),
+        }),
+        mediaService: {
+          getTranscriptionJobStatus: vi.fn(async () => processing),
+        },
+        started: makeTranscription({ pipelineStatus: 'processing', segments: [] }),
+        startStatus: 'processing',
+        updateQueueItem,
+        setState: vi.fn(),
+        getPipelineSnapshot: vi.fn(() => ({
+          progressPercent: 64,
+          stageLabel: 'processing',
+        })),
+        normalizeTranscriptionResponse: vi.fn((response) => response),
+        sleep,
+        now: () => now,
+        softPollingMs: 3_000,
+      })
+    ).rejects.toMatchObject({
+      code: 'BACKGROUND_TRANSCRIPTION_PENDING',
+      message: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+      retryAfterMs: 60_000,
+      activeJob: true,
+      processingAgeMs: 120_000,
+    });
+
+    expect(updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'processing',
+        errorMessage: '',
+      })
+    );
+  });
+
+  it('throws a terminal timeout only after the hard timeout expires', async () => {
+    const now = Date.UTC(2026, 0, 1, 1, 0, 1);
+    const processingStartedAt = new Date(Date.UTC(2026, 0, 1, 0, 0, 0)).toISOString();
+
+    await expect(
+      waitForCompletedTranscription({
+        nextItem: makeQueueItem({
+          duration: 60,
+          status: 'processing',
+          uploaded: true,
+          processingStartedAt,
+        }),
+        mediaService: {
+          getTranscriptionJobStatus: vi.fn(),
+        },
+        started: makeTranscription({ pipelineStatus: 'processing', segments: [] }),
+        startStatus: 'processing',
+        updateQueueItem: vi.fn(),
+        setState: vi.fn(),
+        getPipelineSnapshot: vi.fn(() => ({
+          progressPercent: 64,
+          stageLabel: 'processing',
+        })),
+        normalizeTranscriptionResponse: vi.fn((response) => response),
+        sleep: vi.fn(async () => undefined),
+        now: () => now,
+      })
+    ).rejects.toThrow('Transkrypcja przekroczyla bezpieczny limit czasu.');
+  });
 });
 
 describe('processRecordingQueueItem', () => {
@@ -410,7 +502,11 @@ describe('processRecordingQueueItem', () => {
     expect(context.mediaService.startTranscriptionJob).toHaveBeenCalledTimes(1);
     expect(context.analyzeMeeting).toHaveBeenCalledTimes(1);
     expect(context.attachCompletedRecording).toHaveBeenCalledWith(
-      meeting.id,
+      expect.objectContaining({
+        id: meeting.id,
+        workspaceId: meeting.workspaceId,
+        title: meeting.title,
+      }),
       expect.objectContaining({
         id: 'recording-1',
         transcript: expect.arrayContaining([
@@ -424,6 +520,51 @@ describe('processRecordingQueueItem', () => {
       expect.objectContaining({
         analysisStatus: 'done',
         pipelineProgressPercent: 100,
+      })
+    );
+  });
+
+  it('keeps active remote processing in the queue after soft polling timeout', async () => {
+    let now = Date.UTC(2026, 0, 1, 0, 0, 0);
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        status: 'processing',
+        uploaded: true,
+        processingStartedAt: new Date(now).toISOString(),
+      }),
+      sleep: vi.fn(async (ms: number) => {
+        now += ms;
+      }),
+      now: () => now,
+    });
+    const mediaService = context.createMediaService();
+    mediaService.mode = 'remote';
+    mediaService.getTranscriptionJobStatus = vi.fn(async () =>
+      makeTranscription({
+        pipelineStatus: 'processing',
+        segments: [],
+        activeJob: true,
+        processingAgeMs: now - Date.UTC(2026, 0, 1, 0, 0, 0),
+        retryAfterMs: 60_000,
+      } as Partial<TranscriptionStatusPayload>)
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+    expect(context.analyzeMeeting).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'processing',
+        errorMessage: '',
+        backoffUntil: now + 60_000,
+      })
+    );
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'processing',
+        recordingMessage: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
       })
     );
   });
@@ -447,13 +588,68 @@ describe('processRecordingQueueItem', () => {
     expect(context.mediaService.getTranscriptionJobStatus).toHaveBeenCalledWith('recording-1');
     expect(context.mediaService.retryTranscriptionJob).not.toHaveBeenCalled();
     expect(context.attachCompletedRecording).toHaveBeenCalledWith(
-      meeting.id,
+      expect.objectContaining({
+        id: meeting.id,
+        workspaceId: meeting.workspaceId,
+        title: meeting.title,
+      }),
       expect.objectContaining({
         id: 'recording-1',
         pipelineStatus: 'done',
       })
     );
     expect(context.removeQueueItem).toHaveBeenCalledWith('recording-1');
+  });
+
+  it('passes the full meeting context so attach can recover when the live id changed', async () => {
+    const attachCompletedRecording = vi.fn((target) => {
+      return (
+        typeof target === 'object' &&
+        target?.id === meeting.id &&
+        target?.workspaceId === meeting.workspaceId &&
+        target?.title === meeting.title
+      );
+    });
+    const context = buildContext({ attachCompletedRecording });
+
+    await processRecordingQueueItem(context);
+
+    expect(attachCompletedRecording).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: meeting.id,
+        workspaceId: meeting.workspaceId,
+        title: meeting.title,
+      }),
+      expect.objectContaining({ id: 'recording-1', pipelineStatus: 'done' })
+    );
+    expect(context.removeQueueItem).toHaveBeenCalledWith('recording-1');
+  });
+
+  it('keeps a completed transcript recoverable instead of failing when attach is temporarily missing the meeting', async () => {
+    const now = 10_000;
+    const context = buildContext({
+      attachCompletedRecording: vi.fn(() => false),
+      now: () => now,
+    });
+
+    await processRecordingQueueItem(context);
+
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'processing',
+        errorMessage: '',
+        lastErrorMessage: '',
+        backoffUntil: now + 60_000,
+      })
+    );
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'processing',
+        recordingMessage: 'Nagranie jest gotowe, odtwarzamy spotkanie i podpinamy wynik.',
+      })
+    );
   });
 
   it('skips local VAD and enhancement for long recordings before upload', async () => {

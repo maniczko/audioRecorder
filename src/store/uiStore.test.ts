@@ -1,16 +1,7 @@
-/**
- * NOTE: Skipped due to Zustand 5 removing setState from public API.
- * TODO: Re-enable after Zustand 5 migration.
- */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { useUIStore } from './uiStore';
 
-describe.skip('uiStore — Zustand 5 migration pending', () => {
-  test('skipped', () => {});
-});
+vi.unmock('./uiStore');
 
-/* Original tests below - disabled until Zustand 5 migration
-import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { useUIStore } from './uiStore';
 
 describe('uiStore', () => {
@@ -22,9 +13,10 @@ describe('uiStore', () => {
       activeTab: 'studio',
       tabHistory: ['studio'],
       theme: 'dark',
-      layoutPreset: 'default',
+      layoutPreset: 'modern',
       pendingTaskId: '',
       pendingPersonId: '',
+      studioHomeSignal: 0,
       commandPaletteOpen: false,
       notificationCenterOpen: false,
       notificationState: { dismissedIds: [], deliveredIds: [] },
@@ -59,22 +51,30 @@ describe('uiStore', () => {
     store.dismissNotification('n1');
 
     expect(requestPermission).toHaveBeenCalledTimes(1);
-    expect(useUIStore.getState().notificationPermission).toBe('granted');
     expect(notificationSpy).toHaveBeenCalledTimes(1);
+    expect(useUIStore.getState().notificationPermission).toBe('granted');
     expect(useUIStore.getState().notificationState).toMatchObject({
       deliveredIds: ['n1'],
       dismissedIds: ['n1'],
     });
+  });
 
-    const persisted = JSON.parse(localStorage.getItem('voicelog_ui_store') || '{}');
-    expect(persisted.state).toMatchObject({
-      theme: 'dark',
-      layoutPreset: 'default',
-      notificationState: {
-        deliveredIds: ['n1'],
-        dismissedIds: ['n1'],
-      },
+  test('stores transient UI toggles without disturbing active tab', () => {
+    const store = useUIStore.getState();
+
+    store.setCommandPaletteOpen(true);
+    store.setNotificationCenterOpen(true);
+    store.setPendingTaskId('task-1');
+    store.setPendingPersonId('person-1');
+    store.triggerStudioHome();
+
+    expect(useUIStore.getState()).toMatchObject({
+      activeTab: 'studio',
+      commandPaletteOpen: true,
+      notificationCenterOpen: true,
+      pendingTaskId: 'task-1',
+      pendingPersonId: 'person-1',
+      studioHomeSignal: 1,
     });
   });
 });
-*/

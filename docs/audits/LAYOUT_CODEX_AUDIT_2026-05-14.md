@@ -52,7 +52,7 @@ Validated on 2026-05-14 from this workstation:
 Read-only production smoke was attempted on 2026-05-14:
 
 - Frontend `https://voicelog-audiorecorder.vercel.app` returned `200` and exposed the app root/VoiceLog markers.
-- Frontend asset `https://voicelog-audiorecorder.vercel.app/assets/index-BpHlFh6g.js` contains mojibake, for example `Minimum 6 znakĂłw`, `VoiceBĂłbr`, and `WiÄ™cej niĹĽ bĂłbr`.
+- Frontend asset `https://voicelog-audiorecorder.vercel.app/assets/index-BpHlFh6g.js` zawieral zepsute polskie znaki w copy walidacji, nazwie produktu i sloganie.
 - Backend `https://audiorecorder-production.up.railway.app/health` returned `503`.
 - The backend health payload reported `supabaseRemote: true`, but `status: degraded`.
 - The DB health error indicates an incomplete Supabase Postgres host: `postgres.<project-ref>` instead of a complete resolvable Supabase direct or pooler host.

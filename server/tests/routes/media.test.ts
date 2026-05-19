@@ -35,6 +35,12 @@ describe('Media Routes', () => {
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
       isTranscriptionJobActive: vi.fn(() => false),
+      getTranscriptionRuntimeStatus: vi.fn(() => ({
+        activeJob: false,
+        queuedPosition: null,
+        processingAgeMs: null,
+        retryAfterMs: null,
+      })),
       diarizeFromTranscript: vi.fn(),
       on: vi.fn(),
       removeListener: vi.fn(),
@@ -1016,6 +1022,12 @@ describe('Media Routes', () => {
     it('does not mark active long-running processing job as failed', async () => {
       const staleDate = new Date(Date.now() - 20 * 60 * 1000).toISOString();
       mockTranscriptionService.isTranscriptionJobActive.mockReturnValue(true);
+      mockTranscriptionService.getTranscriptionRuntimeStatus.mockReturnValue({
+        activeJob: true,
+        queuedPosition: null,
+        processingAgeMs: 20 * 60 * 1000,
+        retryAfterMs: 60_000,
+      });
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_active_long',
         workspace_id: 'ws_1',
@@ -1033,7 +1045,44 @@ describe('Media Routes', () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.pipelineStatus).toBe('processing');
+      expect(data).toMatchObject({
+        activeJob: true,
+        queuedPosition: null,
+        processingAgeMs: 20 * 60 * 1000,
+        retryAfterMs: 60_000,
+      });
       expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+    });
+
+    it('returns queued runtime diagnostics for pending jobs', async () => {
+      mockTranscriptionService.getTranscriptionRuntimeStatus.mockReturnValue({
+        activeJob: true,
+        queuedPosition: 2,
+        processingAgeMs: null,
+        retryAfterMs: 60_000,
+      });
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_queued_runtime',
+        workspace_id: 'ws_1',
+        transcription_status: 'queued',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: new Date().toISOString(),
+      });
+
+      const res = await app.request('/media/recordings/rec_queued_runtime/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toMatchObject({
+        pipelineStatus: 'queued',
+        activeJob: true,
+        queuedPosition: 2,
+        retryAfterMs: 60_000,
+      });
     });
 
     it('does not mark as failed when processing for <5 min', async () => {

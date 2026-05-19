@@ -4,6 +4,7 @@ import {
   type RecordingPipelineStatus,
   type RecordingQueueItem,
 } from '../lib/recordingQueue';
+import { Sentry } from '../sentry';
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { MeetingAnalysis, TranscriptSegment } from '../shared/types';
 
@@ -13,6 +14,16 @@ type QueueSnapshot = {
 };
 
 type QueueStatePatch = Record<string, unknown>;
+
+export const BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE =
+  'Transkrypcja nadal trwa w tle. Odswiezymy status automatycznie.';
+export const RECORDING_ATTACH_RECOVERY_MESSAGE =
+  'Nagranie jest gotowe, odtwarzamy spotkanie i podpinamy wynik.';
+export const BACKGROUND_TRANSCRIPTION_RETRY_MS = 60_000;
+export const TRANSCRIPTION_SOFT_POLLING_MS = 3 * 60 * 1000;
+const TRANSCRIPTION_MIN_HARD_TIMEOUT_MS = 30 * 60 * 1000;
+const TRANSCRIPTION_DEFAULT_HARD_TIMEOUT_MS = 45 * 60 * 1000;
+const TRANSCRIPTION_MAX_HARD_TIMEOUT_MS = 90 * 60 * 1000;
 
 export interface QueueProcessorContext {
   nextItem: RecordingQueueItem;
@@ -73,11 +84,84 @@ type StartedTranscription = TranscriptionStatusPayload & {
   diarization?: Record<string, unknown>;
   confidence?: number;
   errorMessage?: string;
+  activeJob?: boolean;
+  queuedPosition?: number | null;
+  processingAgeMs?: number | null;
+  retryAfterMs?: number | null;
 };
 
 function defaultSleep(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
+  });
+}
+
+export function calculateTranscriptionHardTimeoutMs(durationSeconds?: number | null) {
+  const durationMs = Math.max(0, Number(durationSeconds) || 0) * 1000;
+  if (!durationMs) return TRANSCRIPTION_DEFAULT_HARD_TIMEOUT_MS;
+  return Math.max(
+    TRANSCRIPTION_MIN_HARD_TIMEOUT_MS,
+    Math.min(TRANSCRIPTION_MAX_HARD_TIMEOUT_MS, durationMs * 2)
+  );
+}
+
+function safeTimestampMs(value: unknown, fallback: number) {
+  const parsed = Date.parse(String(value || ''));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeRetryAfterMs(value: unknown) {
+  const retryAfterMs = Number(value);
+  return Number.isFinite(retryAfterMs) && retryAfterMs > 0
+    ? retryAfterMs
+    : BACKGROUND_TRANSCRIPTION_RETRY_MS;
+}
+
+function getPollingSleepMs(value: unknown) {
+  const retryAfterMs = Number(value);
+  if (!Number.isFinite(retryAfterMs) || retryAfterMs <= 0) return 1500;
+  return Math.max(1500, Math.min(10_000, retryAfterMs));
+}
+
+export class BackgroundTranscriptionPendingError extends Error {
+  code = 'BACKGROUND_TRANSCRIPTION_PENDING';
+  retryAfterMs: number;
+  activeJob: boolean;
+  queuedPosition: number | null;
+  processingAgeMs: number | null;
+  pipelineStatus: RecordingPipelineStatus;
+
+  constructor(status: StartedTranscription, processingAgeMs: number | null) {
+    super(BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE);
+    this.name = 'BackgroundTranscriptionPendingError';
+    this.retryAfterMs = normalizeRetryAfterMs(status?.retryAfterMs);
+    this.activeJob = Boolean(status?.activeJob);
+    this.queuedPosition = typeof status?.queuedPosition === 'number' ? status.queuedPosition : null;
+    this.processingAgeMs =
+      typeof status?.processingAgeMs === 'number' ? status.processingAgeMs : processingAgeMs;
+    this.pipelineStatus = normalizeRecordingPipelineStatus(status?.pipelineStatus);
+  }
+}
+
+function isBackgroundTranscriptionPendingError(
+  error: unknown
+): error is BackgroundTranscriptionPendingError {
+  return (
+    error instanceof BackgroundTranscriptionPendingError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      (error as { code?: string }).code === 'BACKGROUND_TRANSCRIPTION_PENDING')
+  );
+}
+
+function reportBackgroundTranscriptionPending(data: Record<string, unknown>) {
+  console.warn('[queue] Transcription still processing in background.', data);
+  if (typeof window === 'undefined') return;
+  Sentry?.addBreadcrumb?.({
+    category: 'recording.queue',
+    level: 'warning',
+    message: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+    data,
   });
 }
 
@@ -160,12 +244,76 @@ export async function attachRecordingWithRetry({
   return attached !== false;
 }
 
-function getAttachTarget(target: any) {
-  return Array.isArray(target?.recordings) ? target.id : target;
+function getAttachTarget(target: any, nextItem?: RecordingQueueItem) {
+  if (target && typeof target === 'object' && target.id) {
+    return {
+      ...target,
+      workspaceId: target.workspaceId || nextItem?.workspaceId || '',
+      title: target.title || nextItem?.meetingTitle || 'Spotkanie',
+    };
+  }
+
+  const snapshot = nextItem?.meetingSnapshot;
+  if (snapshot?.id) {
+    return {
+      ...snapshot,
+      workspaceId: snapshot.workspaceId || nextItem?.workspaceId || '',
+      title: snapshot.title || nextItem?.meetingTitle || 'Spotkanie',
+    };
+  }
+
+  return target;
 }
 
 function resolveWorkspaceId(target: any, nextItem: RecordingQueueItem) {
   return String(target?.workspaceId || nextItem.workspaceId || '').trim();
+}
+
+function hasRecoverableAttachContext(target: any, nextItem: RecordingQueueItem) {
+  const attachTarget = getAttachTarget(target, nextItem);
+  if (!attachTarget || typeof attachTarget !== 'object' || !attachTarget.id) {
+    return false;
+  }
+
+  return Boolean(
+    attachTarget.workspaceId ||
+    nextItem.workspaceId ||
+    attachTarget.title ||
+    nextItem.meetingTitle ||
+    nextItem.meetingSnapshot?.id
+  );
+}
+
+function scheduleCompletedAttachRecovery({
+  nextItem,
+  updateQueueItem,
+  setState,
+  getPipelineSnapshot,
+  scheduleBackoffReset,
+  now,
+}: {
+  nextItem: RecordingQueueItem;
+  updateQueueItem: QueueProcessorContext['updateQueueItem'];
+  setState: QueueProcessorContext['setState'];
+  getPipelineSnapshot: QueueProcessorContext['getPipelineSnapshot'];
+  scheduleBackoffReset: QueueProcessorContext['scheduleBackoffReset'];
+  now: () => number;
+}) {
+  const retryAfterMs = BACKGROUND_TRANSCRIPTION_RETRY_MS;
+  updateQueueItem(nextItem.recordingId, {
+    status: 'processing',
+    errorMessage: '',
+    lastErrorMessage: '',
+    backoffUntil: now() + retryAfterMs,
+  });
+  scheduleBackoffReset?.(nextItem.recordingId, retryAfterMs);
+  const recoverySnapshot = getPipelineSnapshot('processing', 96, RECORDING_ATTACH_RECOVERY_MESSAGE);
+  setState({
+    analysisStatus: 'processing',
+    pipelineProgressPercent: recoverySnapshot.progressPercent,
+    pipelineStageLabel: recoverySnapshot.stageLabel,
+    recordingMessage: RECORDING_ATTACH_RECOVERY_MESSAGE,
+  });
 }
 
 export async function waitForCompletedTranscription({
@@ -178,6 +326,8 @@ export async function waitForCompletedTranscription({
   getPipelineSnapshot,
   normalizeTranscriptionResponse,
   sleep = defaultSleep,
+  now = () => Date.now(),
+  softPollingMs = TRANSCRIPTION_SOFT_POLLING_MS,
 }: {
   nextItem: RecordingQueueItem;
   mediaService: any;
@@ -188,26 +338,41 @@ export async function waitForCompletedTranscription({
   getPipelineSnapshot: QueueProcessorContext['getPipelineSnapshot'];
   normalizeTranscriptionResponse: QueueProcessorContext['normalizeTranscriptionResponse'];
   sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
+  softPollingMs?: number;
 }) {
   if (startStatus === 'done') {
     return { ...started, pipelineStatus: 'done' } as StartedTranscription;
   }
 
-  let attempts = 0;
   let consecutiveErrors = 0;
   let totalPollErrors = 0;
   const maxConsecutiveErrors = 20;
   const maxTotalPollErrors = 30;
   let finalTranscription: StartedTranscription | null = null;
+  let lastStatus = started;
+  const pollingStartedAt = now();
+  const processingStartedAt = safeTimestampMs(nextItem.processingStartedAt, pollingStartedAt);
+  const hardTimeoutMs = calculateTranscriptionHardTimeoutMs(nextItem.duration);
 
-  while (attempts < 120) {
-    attempts += 1;
+  while (true) {
+    const currentTime = now();
+    const processingAgeMs = Math.max(0, currentTime - processingStartedAt);
+    if (processingAgeMs >= hardTimeoutMs) {
+      throw new Error('Transkrypcja przekroczyla bezpieczny limit czasu.');
+    }
+
+    if (currentTime - pollingStartedAt >= softPollingMs) {
+      throw new BackgroundTranscriptionPendingError(lastStatus, processingAgeMs);
+    }
+
     let result: StartedTranscription;
 
     try {
       result = normalizeTranscriptionResponse(
         await mediaService.getTranscriptionJobStatus(nextItem.recordingId)
       ) as StartedTranscription;
+      lastStatus = result;
       consecutiveErrors = 0;
     } catch (pollError: any) {
       consecutiveErrors += 1;
@@ -277,14 +442,17 @@ export async function waitForCompletedTranscription({
             ? 'Rozpoznawanie mowcow i porzadkowanie wypowiedzi...'
             : 'Serwer przetwarza nagranie...',
     });
-    await sleep(1500);
+    await sleep(getPollingSleepMs(result?.retryAfterMs));
   }
 
   if (!finalTranscription) {
     if (totalPollErrors > 0) {
       throw new Error('Backend niedostepny przez dluzszy czas. Sprobuj ponownie za chwile.');
     }
-    throw new Error('Transkrypcja trwa zbyt dlugo. Sprobuj ponownie za chwile.');
+    throw new BackgroundTranscriptionPendingError(
+      lastStatus,
+      Math.max(0, now() - processingStartedAt)
+    );
   }
 
   return finalTranscription;
@@ -441,11 +609,12 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       });
     }
 
+    const processingStartedAt = nextItem.processingStartedAt || new Date(now()).toISOString();
     updateQueueItem(nextItem.recordingId, {
       status: 'processing',
       uploaded: true,
       errorMessage: '',
-      processingStartedAt: new Date().toISOString(),
+      processingStartedAt,
     });
 
     const processingSnapshot = getPipelineSnapshot(
@@ -518,7 +687,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     let transcription: StartedTranscription;
     try {
       transcription = await waitForCompletedTranscription({
-        nextItem,
+        nextItem: { ...nextItem, processingStartedAt },
         mediaService,
         started,
         startStatus,
@@ -527,6 +696,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         getPipelineSnapshot,
         normalizeTranscriptionResponse,
         sleep,
+        now,
       });
     } finally {
       unsubscribeProgress?.();
@@ -590,12 +760,28 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
       const attached = await attachRecordingWithRetry({
         attachCompletedRecording,
-        meetingId: getAttachTarget(targetWithWorkspace),
+        meetingId: getAttachTarget(targetWithWorkspace, nextItem),
         recording,
         sleep,
       });
 
       if (!attached) {
+        if (hasRecoverableAttachContext(targetWithWorkspace, nextItem)) {
+          console.warn(
+            '[queue] Completed empty transcript attach deferred until meeting state is hydrated',
+            nextItem.recordingId,
+            targetWithWorkspace.id
+          );
+          scheduleCompletedAttachRecovery({
+            nextItem,
+            updateQueueItem,
+            setState,
+            getPipelineSnapshot,
+            scheduleBackoffReset,
+            now,
+          });
+          return;
+        }
         console.warn(
           '[queue] Meeting not found when attaching empty-transcript recording after retries',
           nextItem.recordingId,
@@ -679,12 +865,28 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     const attached = await attachRecordingWithRetry({
       attachCompletedRecording,
-      meetingId: getAttachTarget(targetWithWorkspace),
+      meetingId: getAttachTarget(targetWithWorkspace, nextItem),
       recording,
       sleep,
     });
 
     if (!attached) {
+      if (hasRecoverableAttachContext(targetWithWorkspace, nextItem)) {
+        console.warn(
+          '[queue] Completed recording attach deferred until meeting state is hydrated',
+          nextItem.recordingId,
+          targetWithWorkspace.id
+        );
+        scheduleCompletedAttachRecovery({
+          nextItem,
+          updateQueueItem,
+          setState,
+          getPipelineSnapshot,
+          scheduleBackoffReset,
+          now,
+        });
+        return;
+      }
       console.warn(
         '[queue] Meeting not found when attaching recording after retries',
         nextItem.recordingId,
@@ -710,6 +912,45 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
           : 'Nagranie zostalo przetworzone.',
     });
   } catch (error: any) {
+    if (isBackgroundTranscriptionPendingError(error)) {
+      const retryAfterMs = normalizeRetryAfterMs(error.retryAfterMs);
+      const status = normalizeRecordingPipelineStatus(error.pipelineStatus || nextItem.status);
+      const diagnostics = {
+        recordingId: nextItem.recordingId,
+        workspaceId: nextItem.workspaceId,
+        duration: nextItem.duration,
+        status,
+        attempts: nextItem.attempts,
+        processingAgeMs: error.processingAgeMs,
+        activeJob: error.activeJob,
+        queuedPosition: error.queuedPosition,
+      };
+      reportBackgroundTranscriptionPending(diagnostics);
+      updateQueueItem(nextItem.recordingId, {
+        status,
+        errorMessage: '',
+        lastErrorMessage: '',
+        backoffUntil: now() + retryAfterMs,
+        activeJob: error.activeJob,
+        queuedPosition: error.queuedPosition,
+        processingAgeMs: error.processingAgeMs,
+        retryAfterMs,
+      });
+      scheduleBackoffReset?.(nextItem.recordingId, retryAfterMs);
+      const pendingSnapshot = getPipelineSnapshot(
+        status,
+        null,
+        BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE
+      );
+      setState({
+        analysisStatus: 'processing',
+        pipelineProgressPercent: pendingSnapshot.progressPercent,
+        pipelineStageLabel: pendingSnapshot.stageLabel,
+        recordingMessage: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+      });
+      return;
+    }
+
     const retryCount = nextItem.retryCount || 0;
     if (isTransientNetworkError(error) && retryCount < maxAutoRetries) {
       const delay = retryDelaysMs[retryCount] ?? retryDelaysMs[retryDelaysMs.length - 1];

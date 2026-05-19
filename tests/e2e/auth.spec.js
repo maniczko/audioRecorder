@@ -1,136 +1,138 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
+const uniqueEmail = (prefix) => `${prefix}.${Date.now()}@example.com`;
+
+async function openRegister(page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Rejestracja' }).click();
+}
+
+async function fillRegisterForm(page, { name, email, password = 'haslo123', workspace }) {
+  await page.getByLabel('Imię i nazwisko').fill(name);
+  await page.getByLabel('Adres email').fill(email);
+  await page.getByLabel('Hasło').fill(password);
+  await page.getByLabel(/Nazwa nowej przestrzeni/).fill(workspace);
+}
+
+async function submitRegister(page) {
+  await page.getByRole('button', { name: /Wejd[zź] do aplikacji/i }).click();
+}
+
+async function expectMainApp(page) {
+  await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible({
+    timeout: 15_000,
+  });
+}
+
 test.describe('Auth - rejestracja i logowanie', () => {
-  test.beforeEach(async ({ page }) => {
-    // Start from a clean, logged-out state
-    await page.goto('/');
-  });
-
-  // Registration - happy path
   test('rejestracja nowego uzytkownika otwiera aplikacje', async ({ page }) => {
-    // Switch to registration mode
-    await page.getByRole('button', { name: 'Rejestracja' }).click();
-
-    // Fill in the registration form
-    await page.getByPlaceholder('np. Anna Nowak').fill('Jan Testowy');
-    await page.getByPlaceholder('name@company.com').fill('jan.testowy@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
-    await page.getByPlaceholder('np. Zespół Sprzedaży').fill('Test Workspace');
-
-    await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
-
-    // After successful registration the auth screen disappears and
-    // the main app with the Studio tab should be visible.
-    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
-  });
-
-  // Registration - error: duplicate email
-  test('rejestracja z istniejacym emailem pokazuje blad', async ({ page }) => {
-    // Seed current persisted workspace state used by zustand.
-    await page.addInitScript(() => {
-      const user = {
-        id: 'user_existing',
-        email: 'jan.testowy@example.com',
-        name: 'Existing User',
-        provider: 'local',
-        passwordHash: 'hash',
-        workspaceIds: [],
-        defaultWorkspaceId: '',
-      };
-      localStorage.setItem(
-        'voicelog_workspace_store',
-        JSON.stringify({
-          state: {
-            users: [user],
-            workspaces: [],
-            session: null,
-          },
-          version: 0,
-        })
-      );
+    await openRegister(page);
+    await fillRegisterForm(page, {
+      name: 'Jan Testowy',
+      email: uniqueEmail('jan.testowy'),
+      workspace: 'Test Workspace',
     });
 
-    await page.goto('/');
+    await submitRegister(page);
+
+    await expectMainApp(page);
+  });
+
+  test('rejestracja z istniejacym emailem pokazuje blad', async ({ page }) => {
+    const email = uniqueEmail('duplicate');
+
+    await openRegister(page);
+    await fillRegisterForm(page, {
+      name: 'Jan Testowy',
+      email,
+      workspace: 'Test Workspace',
+    });
+    await submitRegister(page);
+    await expectMainApp(page);
+
+    await page.locator('[title="Ustawienia profilu"]').click();
+    await page.getByRole('button', { name: 'Wyloguj' }).click();
+    await expect(page.locator('.auth-shell')).toBeVisible();
+
     await page.getByRole('button', { name: 'Rejestracja' }).click();
-
-    await page.getByPlaceholder('np. Anna Nowak').fill('Jan Testowy');
-    await page.getByPlaceholder('name@company.com').fill('jan.testowy@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
-    await page.getByPlaceholder('np. Zespół Sprzedaży').fill('Test Workspace');
-
-    await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
+    await fillRegisterForm(page, {
+      name: 'Jan Testowy',
+      email,
+      workspace: 'Test Workspace',
+    });
+    await submitRegister(page);
 
     await expect(page.locator('.inline-alert.error')).toBeVisible();
-    // Auth screen should still be showing
     await expect(page.locator('.auth-shell')).toBeVisible();
   });
 
-  // Login - happy path
   test('logowanie poprawnym haslem otwiera aplikacje', async ({ page }) => {
-    // Register first, then log out, then log back in
-    await page.getByRole('button', { name: 'Rejestracja' }).click();
+    const email = uniqueEmail('login');
 
-    await page.getByPlaceholder('np. Anna Nowak').fill('Login Tester');
-    await page.getByPlaceholder('name@company.com').fill('login@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
-    await page.getByPlaceholder('np. Zespół Sprzedaży').fill('Login WS');
-    await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
+    await openRegister(page);
+    await fillRegisterForm(page, {
+      name: 'Login Tester',
+      email,
+      workspace: 'Login Workspace',
+    });
+    await submitRegister(page);
+    await expectMainApp(page);
 
-    // Should be logged in now - wait for main app
-    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
-
-    // Log out via Profile
     await page.locator('[title="Ustawienia profilu"]').click();
     await page.getByRole('button', { name: 'Wyloguj' }).click();
-
-    // Back to auth screen
     await expect(page.locator('.auth-shell')).toBeVisible();
 
-    // Now log in
     await page.getByRole('button', { name: 'Logowanie' }).click();
-    await page.getByPlaceholder('name@company.com').fill('login@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('haslo123');
-    await page.getByRole('button', { name: 'Zaloguj' }).click();
+    await page.getByLabel('Adres email').fill(email);
+    await page.getByLabel('Hasło').fill('haslo123');
+    await page.getByRole('button', { name: /Zaloguj się/i }).click();
 
-    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
+    await expectMainApp(page);
   });
 
-  // Login - error: wrong password
-  test('logowanie blednym haslem pokazuje blad', async ({ page }) => {
-    // Register
-    await page.getByRole('button', { name: 'Rejestracja' }).click();
+  test('logowanie blednym haslem pokazuje przyjazny blad', async ({ page }) => {
+    const email = uniqueEmail('wrongpass');
 
-    await page.getByPlaceholder('np. Anna Nowak').fill('Wrong Pass Tester');
-    await page.getByPlaceholder('name@company.com').fill('wrongpass@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('dobrehasto');
-    await page.getByPlaceholder('np. Zespół Sprzedaży').fill('WP Workspace');
-    await page.getByRole('button', { name: 'Wejdz do aplikacji' }).click();
+    await openRegister(page);
+    await fillRegisterForm(page, {
+      name: 'Wrong Pass Tester',
+      email,
+      password: 'dobrehasto',
+      workspace: 'Wrong Password Workspace',
+    });
+    await submitRegister(page);
+    await expectMainApp(page);
 
-    // Log out
-    await expect(page.locator('.modern-nav-item').filter({ hasText: 'Studio' })).toBeVisible();
     await page.locator('[title="Ustawienia profilu"]').click();
     await page.getByRole('button', { name: 'Wyloguj' }).click();
 
-    // Try wrong password
     await page.getByRole('button', { name: 'Logowanie' }).click();
-    await page.getByPlaceholder('name@company.com').fill('wrongpass@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('zle_haslo');
-    await page.getByRole('button', { name: 'Zaloguj' }).click();
+    await page.getByLabel('Adres email').fill(email);
+    await page.getByLabel('Hasło').fill('zle_haslo');
+    await page.getByRole('button', { name: /Zaloguj się/i }).click();
 
     await expect(page.locator('.inline-alert.error')).toBeVisible();
+    await expect(page.locator('.inline-alert.error')).not.toContainText(
+      /ENOTFOUND|postgres|tenant/i
+    );
     await expect(page.locator('.auth-shell')).toBeVisible();
   });
-  // Login - error: user does not exist
-  test('logowanie nieistniejacym uzytkownikiem pokazuje blad', async ({ page }) => {
-    // Directly try to login with a user that doesn't exist
+
+  test('logowanie nieistniejacym uzytkownikiem pokazuje blad bez detali technicznych', async ({
+    page,
+  }) => {
+    await page.goto('/');
     await page.getByRole('button', { name: 'Logowanie' }).click();
 
-    await page.getByPlaceholder('name@company.com').fill('nie_istnieje@example.com');
-    await page.getByPlaceholder('Minimum 6 znaków').fill('cokolwiek');
-    await page.getByRole('button', { name: 'Zaloguj' }).click();
+    await page.getByLabel('Adres email').fill(uniqueEmail('missing'));
+    await page.getByLabel('Hasło').fill('cokolwiek');
+    await page.getByRole('button', { name: /Zaloguj się/i }).click();
 
     await expect(page.locator('.inline-alert.error')).toBeVisible();
     await expect(page.locator('.inline-alert.error')).toContainText('Niepoprawny email lub haslo.');
+    await expect(page.locator('.inline-alert.error')).not.toContainText(
+      /ENOTFOUND|postgres|tenant/i
+    );
   });
 });

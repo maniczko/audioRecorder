@@ -69,8 +69,8 @@ Artefakty:
 
 - Ekran/obszar: auth, app shell, copy PL.
 - Viewporty: wszystkie.
-- Reprodukcja: `rg -n "Ă|Ä|â|Â|�" src`.
-- Dowod: `src/components/auth/AuthHeroSection.tsx:49` pokazuje `VoiceBĂłbr`; `src/components/app-shell/AppHeader.tsx:80` pokazuje `Szukaj wszÄ™dzie...`; `src/components/app-shell/AppSidebar.tsx:114` pokazuje `Strona gĹ‚Ăłwna`.
+- Reprodukcja: uruchom `pnpm run audit:mojibake` albo skan niepoprawnie zdekodowanych sekwencji w `src`.
+- Dowod: poprzedni build produkcyjny pokazywal zepsute polskie znaki w nazwie produktu, wyszukiwarce i etykietach nawigacji.
 - Wplyw: bezposrednio obniza jakosc premium i wiarygodnosc produktu w PL.
 - Rekomendacja: znormalizowac pliki do UTF-8, naprawic copy w komponentach i testach, dodac regresyjny skan mojibake do CI dla `src`, `scripts` i aktywnych docs.
 

@@ -119,6 +119,28 @@ describe('recordingQueue helpers', () => {
     expect(resolveQueueMeetingContext(meetings, item)).toEqual(meetings[0]);
   });
 
+  test('reconstructs meeting context from queue metadata when the snapshot is missing', () => {
+    const item = createRecordingQueueItem({
+      recordingId: 'recording_4',
+      meetingId: 'meeting_recoverable',
+      workspaceId: 'workspace_1',
+      meeting: undefined,
+      mimeType: 'audio/webm',
+    });
+
+    const resolved = resolveQueueMeetingContext([], {
+      ...item,
+      meetingTitle: 'Recovered import',
+      meetingSnapshot: null,
+    });
+
+    expect(resolved).toEqual({
+      id: 'meeting_recoverable',
+      workspaceId: 'workspace_1',
+      title: 'Recovered import',
+    });
+  });
+
   test('returns the next processable pending item based on a predicate', () => {
     const first = createRecordingQueueItem({
       recordingId: 'recording_1',

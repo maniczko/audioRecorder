@@ -1,25 +1,15 @@
-/**
- * NOTE: These tests are skipped because Zustand 5 removed `setState` from the
- * public API. Tests need to be rewritten to use individual setters or
- * `store.setState` from the raw store instance.
- * TODO: Re-enable after Zustand 5 migration.
- */
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-describe.skip('workspaceStore — Zustand 5 migration pending', () => {
-  test('skipped', () => {});
-});
+vi.unmock('./workspaceStore');
 
-/* Original tests below - disabled until Zustand 5 migration
-import { describe, expect, test, vi } from 'vitest';
+import { useWorkspaceStore } from './workspaceStore';
 
-// Hoisted mocks for services
 const mocks = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),
   clearPersistedSession: vi.fn(),
-  syncLegacySession: vi.fn((s) => s),
-  bootstrap: vi.fn().mockResolvedValue(null),
+  syncLegacySession: vi.fn((session) => session),
+  bootstrap: vi.fn(),
 }));
 
 vi.mock('../services/workspaceService', () => ({
@@ -33,7 +23,7 @@ vi.mock('../services/stateService', () => ({
   createStateService: () => ({
     mode: 'remote',
     bootstrap: mocks.bootstrap,
-    syncWorkspaceState: vi.fn().mockResolvedValue(null),
+    syncWorkspaceState: vi.fn(),
   }),
 }));
 
@@ -42,116 +32,70 @@ vi.mock('../lib/sessionStorage', () => ({
   syncLegacySessionFromWorkspaceSession: mocks.syncLegacySession,
 }));
 
-describe('workspaceStore — actions that use mocked services', () => {
-  test('updateWorkspaceMemberRole is a no-op without workspace', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
+describe('workspaceStore', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
     useWorkspaceStore.setState({
-      session: null,
       users: [],
       workspaces: [],
-    });
-
-    await useWorkspaceStore.getState().updateWorkspaceMemberRole('u2', 'admin');
-
-    expect(mocks.updateMemberRole).not.toHaveBeenCalled();
-  });
-
-  test('removeWorkspaceMember is a no-op without workspace', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({
       session: null,
-      users: [],
-      workspaces: [],
-    });
-
-    await useWorkspaceStore.getState().removeWorkspaceMember('u2');
-
-    expect(mocks.removeMember).not.toHaveBeenCalled();
-  });
-});
-
-describe('workspaceStore — pure state operations', () => {
-  test('switches workspace and updates session workspaceId', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({
-      session: { userId: 'u1', workspaceId: 'ws_old', token: 'tok' },
-    });
-
-    useWorkspaceStore.getState().switchWorkspace('ws_new');
-
-    expect(useWorkspaceStore.getState().session).toMatchObject({
-      workspaceId: 'ws_new',
+      isHydratingSession: false,
+      sessionError: '',
     });
   });
 
-  test('switchWorkspace is a no-op for same workspace', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({
-      session: { userId: 'u1', workspaceId: 'ws1', token: 'tok' },
-    });
+  test('setSession persists a legacy-compatible snapshot', () => {
+    const session = { userId: 'u1', workspaceId: 'ws1', token: 'token' };
 
-    useWorkspaceStore.getState().switchWorkspace('ws1');
+    useWorkspaceStore.getState().setSession(session);
 
-    expect(useWorkspaceStore.getState().session).toMatchObject({ workspaceId: 'ws1' });
+    expect(mocks.syncLegacySession).toHaveBeenCalledWith(session);
+    expect(useWorkspaceStore.getState().session).toEqual(session);
   });
 
-  test('switchWorkspace is a no-op for empty workspaceId', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({
-      session: { userId: 'u1', workspaceId: 'ws1', token: 'tok' },
-    });
+  test('switchWorkspace ignores empty or unchanged workspace ids', () => {
+    const session = { userId: 'u1', workspaceId: 'ws1', token: 'token' };
+    useWorkspaceStore.setState({ session });
 
     useWorkspaceStore.getState().switchWorkspace('');
+    useWorkspaceStore.getState().switchWorkspace('ws1');
 
-    expect(useWorkspaceStore.getState().session).toMatchObject({ workspaceId: 'ws1' });
+    expect(useWorkspaceStore.getState().session).toEqual(session);
   });
 
-  test('logout clears session', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
+  test('switchWorkspace updates the active workspace when session is valid', () => {
+    useWorkspaceStore.setState({ session: { userId: 'u1', workspaceId: 'ws1', token: 'token' } });
+
+    useWorkspaceStore.getState().switchWorkspace('ws2');
+
+    expect(useWorkspaceStore.getState().session).toMatchObject({ workspaceId: 'ws2' });
+  });
+
+  test('updateWorkspaceMemberRole updates local workspace and user role fallback', async () => {
+    mocks.updateMemberRole.mockResolvedValue({ membership: { memberRole: 'admin' } });
     useWorkspaceStore.setState({
-      session: { userId: 'u1', workspaceId: 'ws1', token: 'tok' },
+      users: [
+        { id: 'owner', defaultWorkspaceId: 'ws1', workspaceIds: ['ws1'] },
+        { id: 'member', defaultWorkspaceId: 'ws1', workspaceIds: ['ws1'] },
+      ],
+      workspaces: [{ id: 'ws1', memberIds: ['owner', 'member'], memberRoles: { owner: 'owner' } }],
+      session: { userId: 'owner', workspaceId: 'ws1', token: 'token' },
     });
+
+    await useWorkspaceStore.getState().updateWorkspaceMemberRole('member', 'admin');
+
+    expect(mocks.updateMemberRole).toHaveBeenCalled();
+    expect(useWorkspaceStore.getState().workspaces[0].memberRoles.member).toBe('admin');
+    expect(useWorkspaceStore.getState().users[1].workspaceMemberRole).toBe('admin');
+  });
+
+  test('logout clears session and persisted session snapshot', () => {
+    useWorkspaceStore.setState({ session: { userId: 'u1', workspaceId: 'ws1', token: 'token' } });
 
     useWorkspaceStore.getState().logout();
 
+    expect(mocks.clearPersistedSession).toHaveBeenCalled();
     expect(useWorkspaceStore.getState().session).toBeNull();
   });
-
-  test('setUsers accepts array updater', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({ users: [] });
-
-    useWorkspaceStore.getState().setUsers([{ id: 'u1' }]);
-
-    expect(useWorkspaceStore.getState().users).toEqual([{ id: 'u1' }]);
-  });
-
-  test('setUsers accepts function updater', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({ users: [{ id: 'u1' }] });
-
-    useWorkspaceStore.getState().setUsers((prev) => [...prev, { id: 'u2' }]);
-
-    expect(useWorkspaceStore.getState().users).toHaveLength(2);
-  });
-
-  test('setWorkspaces accepts array updater', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({ workspaces: [] });
-
-    useWorkspaceStore.getState().setWorkspaces([{ id: 'ws1' }]);
-
-    expect(useWorkspaceStore.getState().workspaces).toEqual([{ id: 'ws1' }]);
-  });
-
-  test('setSession updates session', async () => {
-    const { useWorkspaceStore } = await import('./workspaceStore');
-    useWorkspaceStore.setState({ session: null });
-
-    const newSession = { userId: 'u1', workspaceId: 'ws1', token: 'tok' };
-    useWorkspaceStore.getState().setSession(newSession);
-
-    expect(useWorkspaceStore.getState().session).toEqual(newSession);
-  });
 });
-*/
