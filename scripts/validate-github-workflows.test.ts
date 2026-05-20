@@ -93,6 +93,7 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).toContain("workflows: ['CI']");
     expect(railwayWorkflow).toContain('github.event.workflow_run.head_sha || github.sha');
     expect(railwayWorkflow).toContain('railway deployment list');
+    expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
 

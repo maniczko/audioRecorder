@@ -46,16 +46,19 @@ jobs:
           printf '%s' "$BUILD_SHA" | railway variable set \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
+            --skip-deploys \
             --stdin \
             RAILWAY_GIT_COMMIT_SHA
           printf '%s' "$BUILD_SHA" | railway variable set \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
+            --skip-deploys \
             --stdin \
             GITHUB_SHA
           date -u +%Y-%m-%dT%H:%M:%SZ | railway variable set \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
+            --skip-deploys \
             --stdin \
             APP_BUILD_TIME
 
