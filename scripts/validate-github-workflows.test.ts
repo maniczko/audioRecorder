@@ -98,6 +98,8 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).toContain('cancel-in-progress: true');
     expect(railwayWorkflow).toContain('timeout-minutes: 30');
     expect(railwayWorkflow).toContain('--detach');
+    expect(railwayWorkflow).toContain('for attempt in 1 2 3');
+    expect(railwayWorkflow).toContain('Railway deploy failed after 3 attempts');
     expect(railwayWorkflow).toContain('seq 1 60');
     expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");

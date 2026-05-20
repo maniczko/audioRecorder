@@ -73,13 +73,25 @@ jobs:
           RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
-          railway up \
-            --ci \
-            --detach \
-            --project "$RAILWAY_PROJECT_ID" \
-            --environment production \
-            --service "$RAILWAY_SERVICE_ID" \
-            --message "Sync build metadata from GitHub Actions"
+          for attempt in 1 2 3; do
+            echo "Railway deploy attempt $attempt/3"
+            if railway up \
+              --ci \
+              --detach \
+              --project "$RAILWAY_PROJECT_ID" \
+              --environment production \
+              --service "$RAILWAY_SERVICE_ID" \
+              --message "Sync build metadata from GitHub Actions"; then
+              break
+            fi
+
+            if [ "$attempt" = "3" ]; then
+              echo "Railway deploy failed after 3 attempts" >&2
+              exit 1
+            fi
+
+            sleep $((attempt * 20))
+          done
           railway deployment list \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
