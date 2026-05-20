@@ -48,6 +48,7 @@ export const DEFAULT_WHISPER_PROMPT =
  */
 export const VERIFY_CONFIDENCE_THRESHOLD = 0.52;
 export const VERIFY_SCORE_THRESHOLD = 0.65;
+export const LOW_CONFIDENCE_SCORE_THRESHOLD = 0.45;
 
 /**
  * Chunk duration in seconds for large audio files.
@@ -141,6 +142,66 @@ export function hasRepeatedPhrase(text: string): boolean {
     return false;
   }
   return new Set(tokens).size <= Math.ceil(tokens.length / 2.4);
+}
+
+const NON_POLISH_SCRIPT_PATTERN =
+  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/gu;
+const LATIN_WORD_PATTERN = /\p{Script=Latin}{2,}/gu;
+const LETTER_PATTERN = /\p{L}/gu;
+const POLISH_DIACRITIC_PATTERN = /[\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c]/iu;
+const ENGLISH_HINT_PATTERN =
+  /\b(?:the|and|we|are|you|your|got|charity|sweet|whereby|comment|find|hear|archived|please|thanks?)\b/gi;
+
+export function assessSegmentLanguageQuality(text: string): {
+  hasNonLatinScript: boolean;
+  hasLatinWords: boolean;
+  nonLatinScriptRatio: number;
+  englishHintCount: number;
+  isSuspicious: boolean;
+  isSevere: boolean;
+  scorePenalty: number;
+  reasons: string[];
+} {
+  const normalized = clean(text);
+  const letters = normalized.match(LETTER_PATTERN) || [];
+  const nonLatinScript = normalized.match(NON_POLISH_SCRIPT_PATTERN) || [];
+  const latinWords = normalized.match(LATIN_WORD_PATTERN) || [];
+  const latinLetters = normalized.match(/\p{Script=Latin}/gu) || [];
+  const englishHints = normalized.match(ENGLISH_HINT_PATTERN) || [];
+  const hasPolishSignal = POLISH_DIACRITIC_PATTERN.test(normalized);
+
+  const nonLatinScriptRatio = letters.length ? nonLatinScript.length / letters.length : 0;
+  const hasNonLatinScript = nonLatinScript.length > 0;
+  const hasLatinWords = latinWords.length > 0 || (latinLetters.length > 0 && !hasNonLatinScript);
+  const looksLikeEnglishHallucination =
+    englishHints.length >= 3 && !hasPolishSignal && latinWords.length <= englishHints.length + 3;
+
+  const reasons: string[] = [];
+  if (hasNonLatinScript && (nonLatinScript.length >= 2 || nonLatinScriptRatio >= 0.18)) {
+    reasons.push('znaki spoza alfabetu lacinskiego');
+  }
+  if (!hasLatinWords && letters.length > 0) {
+    reasons.push('brak czytelnych slow lacinskich');
+  }
+  if (looksLikeEnglishHallucination) {
+    reasons.push('tekst wyglada na angielska halucynacje');
+  }
+
+  const isSevere =
+    (!hasLatinWords && letters.length > 0) ||
+    (hasNonLatinScript && (nonLatinScript.length >= 3 || nonLatinScriptRatio >= 0.35));
+  const isSuspicious = reasons.length > 0;
+
+  return {
+    hasNonLatinScript,
+    hasLatinWords,
+    nonLatinScriptRatio,
+    englishHintCount: englishHints.length,
+    isSuspicious,
+    isSevere,
+    scorePenalty: isSevere ? 0.35 : isSuspicious ? 0.18 : 0,
+    reasons,
+  };
 }
 
 /**
@@ -295,9 +356,13 @@ export function mergeShortSegments<
         endTimestamp: seg.endTimestamp,
         // Keep the lower verification score to preserve review flags
         verificationScore: Math.min(pending.verificationScore ?? 1, seg.verificationScore ?? 1),
-        verificationStatus: [pending.verificationStatus, seg.verificationStatus].includes('review')
-          ? 'review'
-          : 'verified',
+        verificationStatus: [pending.verificationStatus, seg.verificationStatus].includes(
+          'low-confidence'
+        )
+          ? 'low-confidence'
+          : [pending.verificationStatus, seg.verificationStatus].includes('review')
+            ? 'review'
+            : 'verified',
       } as T;
     } else {
       result.push(pending);
@@ -337,6 +402,9 @@ export function estimateQualityScore(text: string): number {
   if (/[?]{2,}/.test(normalizedText)) {
     score -= 0.08;
   }
+
+  const languageQuality = assessSegmentLanguageQuality(normalizedText);
+  score -= languageQuality.scorePenalty;
 
   return clamp(score, 0, 1);
 }
@@ -579,11 +647,17 @@ export function normalizeVerificationSegments(payload: any): any[] {
   const rawSegments = Array.isArray(payload?.segments) ? payload.segments : [];
 
   if (!rawSegments.length) {
+    const tokenLogprobs = Array.isArray(payload?.logprobs)
+      ? payload.logprobs
+          .map((entry: any) => Number(entry?.logprob))
+          .filter((value: number) => Number.isFinite(value))
+      : [];
+    const avgLogprob = tokenLogprobs.length ? average(tokenLogprobs) : null;
     return (synthesizeSegmentsFromWords(payload)?.segments || []).map((segment) => ({
       text: segment.text,
       start: segment.timestamp,
       end: segment.endTimestamp,
-      avgLogprob: null,
+      avgLogprob,
       noSpeechProb: null,
     }));
   }
@@ -701,10 +775,11 @@ export function buildVerificationResult(
   confidence: number;
 } {
   const verifiedSegments = diarizedSegments.map((segment, index) => {
+    const languageQuality = assessSegmentLanguageQuality(segment.text);
     const qualityScore = estimateQualityScore(segment.text);
     const verification = evaluateAgainstVerificationPass(segment, verificationSegments);
     const previousSegment = diarizedSegments[index - 1];
-    const reasons = [...verification.reasons];
+    const reasons = [...verification.reasons, ...languageQuality.reasons];
 
     if (previousSegment && normalizeText(previousSegment.text) === normalizeText(segment.text)) {
       reasons.push('duplikat poprzedniego fragmentu');
@@ -725,13 +800,21 @@ export function buildVerificationResult(
       0,
       1
     );
+    const verificationStatus =
+      verificationScore >= VERIFY_SCORE_THRESHOLD && !languageQuality.isSuspicious
+        ? 'verified'
+        : languageQuality.isSevere ||
+            (languageQuality.isSuspicious && verificationScore < LOW_CONFIDENCE_SCORE_THRESHOLD)
+          ? 'low-confidence'
+          : 'review';
 
     return {
       ...segment,
       rawConfidence: verification.whisperConfidence,
       verificationScore,
-      verificationStatus: verificationScore >= VERIFY_SCORE_THRESHOLD ? 'verified' : 'review',
+      verificationStatus,
       verificationReasons: [...new Set(reasons)],
+      languageQuality,
       verificationEvidence: {
         alignmentScore: verification.alignmentScore,
         whisperConfidence: verification.whisperConfidence,
@@ -744,6 +827,42 @@ export function buildVerificationResult(
     verifiedSegments,
     confidence: average(verifiedSegments.map((segment) => segment.verificationScore)),
   };
+}
+
+export function shouldDropLowConfidenceGibberishSegment(segment: any): boolean {
+  const languageQuality =
+    segment?.languageQuality && typeof segment.languageQuality === 'object'
+      ? segment.languageQuality
+      : assessSegmentLanguageQuality(segment?.text || '');
+  const verificationScore = Number(segment?.verificationScore ?? 1);
+  return Boolean(
+    segment?.verificationStatus === 'low-confidence' &&
+    languageQuality.isSuspicious &&
+    (languageQuality.isSevere || verificationScore < LOW_CONFIDENCE_SCORE_THRESHOLD)
+  );
+}
+
+export function shouldRetrySegmentWithPremiumStt(segment: any): boolean {
+  const languageQuality =
+    segment?.languageQuality && typeof segment.languageQuality === 'object'
+      ? segment.languageQuality
+      : assessSegmentLanguageQuality(segment?.text || '');
+  const reasons = Array.isArray(segment?.verificationReasons)
+    ? segment.verificationReasons.map((reason: any) => String(reason || '').toLowerCase())
+    : [];
+  return Boolean(
+    segment?.verificationStatus === 'low-confidence' ||
+    languageQuality.isSuspicious ||
+    Number(segment?.rawConfidence || 1) < VERIFY_CONFIDENCE_THRESHOLD ||
+    reasons.some(
+      (reason) =>
+        reason.includes('cisze') ||
+        reason.includes('szum') ||
+        reason.includes('brak czytelnych') ||
+        reason.includes('spoza alfabetu') ||
+        reason.includes('halucynacje')
+    )
+  );
 }
 
 /**

@@ -16,13 +16,23 @@ const WAVEFORM_NUM_BARS = 200;
 
 type ReviewableTranscriptSegment = TranscriptSegment & {
   id: string;
-  verificationStatus?: 'review' | 'verified';
+  verificationStatus?: 'review' | 'verified' | 'low-confidence';
   verificationScore?: number;
   verificationReasons?: string[];
   verificationEvidence?: {
     comparisonText?: string;
   };
 };
+
+function segmentNeedsReview(segment: ReviewableTranscriptSegment) {
+  return segment.verificationStatus === 'review' || segment.verificationStatus === 'low-confidence';
+}
+
+function segmentLowConfidence(segment: ReviewableTranscriptSegment) {
+  return (
+    segment.verificationStatus === 'low-confidence' || Number(segment.verificationScore || 1) < 0.6
+  );
+}
 
 function WaveformPanel({
   selectedRecording,
@@ -408,11 +418,11 @@ export default function TranscriptPanel({
   );
   const filteredSegments = useMemo(() => {
     return transcript.filter((segment) => {
-      if (filterMode === 'review' && segment.verificationStatus !== 'review') {
+      if (filterMode === 'review' && !segmentNeedsReview(segment)) {
         return false;
       }
 
-      if (filterMode === 'verified' && segment.verificationStatus === 'review') {
+      if (filterMode === 'verified' && segmentNeedsReview(segment)) {
         return false;
       }
 
@@ -420,7 +430,7 @@ export default function TranscriptPanel({
         return false;
       }
 
-      if (lowConfidenceOnly && Number(segment.verificationScore || 0) >= 0.6) {
+      if (lowConfidenceOnly && !segmentLowConfidence(segment)) {
         return false;
       }
 
@@ -428,7 +438,7 @@ export default function TranscriptPanel({
     });
   }, [filterMode, lowConfidenceOnly, speakerFilter, transcript]);
   const reviewSegments = useMemo(
-    () => filteredSegments.filter((segment) => segment.verificationStatus === 'review'),
+    () => filteredSegments.filter((segment) => segmentNeedsReview(segment)),
     [filteredSegments]
   );
   const totalDuration = useMemo(() => {
@@ -834,7 +844,7 @@ export default function TranscriptPanel({
                   className={
                     segment.id === activeSegmentId
                       ? 'timeline-segment active'
-                      : segment.verificationStatus === 'review'
+                      : segmentNeedsReview(segment)
                         ? 'timeline-segment review'
                         : 'timeline-segment'
                   }
@@ -1112,10 +1122,12 @@ export default function TranscriptPanel({
                 const isSelected = selectedSegmentIds.includes(segment.id);
                 const isActive = segment.id === activeSegmentId;
                 const verificationReasons = segment.verificationReasons || [];
+                const needsReview = segmentNeedsReview(segment);
+                const isLowConfidence = segmentLowConfidence(segment);
 
                 return (
                   <div
-                    className={`fireflies-segment ${isActive ? 'active' : ''} ${segment.verificationStatus === 'review' ? 'needs-review' : ''} ${Number(segment.verificationScore || 1) < 0.6 ? 'low-confidence' : ''}`}
+                    className={`fireflies-segment ${isActive ? 'active' : ''} ${needsReview ? 'needs-review' : ''} ${isLowConfidence ? 'low-confidence' : ''}`}
                     onClick={() => !isActive && activateSegment(segment)}
                     style={{ marginBottom: '10px' }}
                   >
@@ -1166,7 +1178,7 @@ export default function TranscriptPanel({
                           </strong>
                         )}
 
-                        {Number(segment.verificationScore || 1) < 0.6 && (
+                        {isLowConfidence && (
                           <span
                             className="task-flag low-confidence"
                             title={`Niska pewność transkrypcji (${Math.round(Number(segment.verificationScore || 0) * 100)}%)`}
@@ -1209,12 +1221,14 @@ export default function TranscriptPanel({
                         >
                           {formatDuration(segment.timestamp)}
                         </button>
-                        {segment.verificationStatus === 'review' && (
+                        {needsReview && (
                           <span
                             className="task-flag review"
                             style={{ padding: '2px 6px', fontSize: '0.7rem', borderRadius: '4px' }}
                           >
-                            Do weryfikacji
+                            {segment.verificationStatus === 'low-confidence'
+                              ? 'Wymaga sprawdzenia'
+                              : 'Do weryfikacji'}
                           </span>
                         )}
                         <label className="fireflies-select" onClick={(e) => e.stopPropagation()}>

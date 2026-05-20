@@ -23,6 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
   review: 'Oczekuje na weryfikację',
   done: 'Transkrypcja gotowa',
   failed: 'Błąd przetwarzania',
+  failed_permanent: 'Wymaga ponownego importu',
 };
 
 export function RecordingPipelineStatus({
@@ -35,9 +36,10 @@ export function RecordingPipelineStatus({
   className = '',
   processingStartedAt,
 }: RecordingPipelineStatusProps) {
-  const isFailed = status === 'failed';
+  const isFailed = status === 'failed' || status === 'failed_permanent';
   const inProgress = ['uploading', 'queued', 'processing', 'diarization'].includes(status);
   const isDone = status === 'done' || status === 'review';
+  const retryHandler = status === 'failed' ? onRetry : undefined;
 
   const label = STATUS_LABELS[status] || STATUS_LABELS.queued;
 
@@ -102,13 +104,13 @@ export function RecordingPipelineStatus({
           <span className="pipeline-error-text" title={errorMessage}>
             {errorMessage || 'Wystąpił nieoczekiwany błąd.'}
           </span>
-          {onRetry && (
+          {retryHandler && (
             <button
               type="button"
               className="pipeline-retry-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                onRetry();
+                retryHandler();
               }}
             >
               <svg

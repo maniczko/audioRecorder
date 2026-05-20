@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.example.test/v1' } = {}) {
   vi.resetModules();
   (globalThis as any).__audioPipelineExecCalls = 0;
+  (globalThis as any).__audioPipelineExecCommands = [];
 
   // Set environment variables BEFORE importing any modules
   process.env.VOICELOG_OPENAI_API_KEY = openAiKey;
@@ -29,6 +30,7 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
   vi.doMock('node:child_process', () => ({
     exec: vi.fn((cmd, opts, callback) => {
       (globalThis as any).__audioPipelineExecCalls += 1;
+      (globalThis as any).__audioPipelineExecCommands.push(String(cmd || ''));
       const quoted = Array.from(String(cmd || '').matchAll(/"([^"]+)"/g)).map(
         (match: any) => match[1]
       );
@@ -125,6 +127,54 @@ describe('audioPipeline exports', () => {
 
     expect(firstPath).toBe(secondPath);
     expect(firstPath).toContain('.cache');
+
+    realFs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('does not remove silence before diarization by default', async () => {
+    const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });
+    const realFs = await vi.importActual<any>('node:fs');
+    const tempDir = realFs.mkdtempSync(path.join(os.tmpdir(), 'audio-no-silence-remove-'));
+    const sourcePath = path.join(tempDir, 'source.wav');
+    realFs.writeFileSync(sourcePath, Buffer.from('source-audio'));
+
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(
+          JSON.stringify({
+            text: 'Wspolpraca w Wroclawiu',
+            segments: [
+              {
+                text: 'Wspolpraca w Wroclawiu',
+                start: 0,
+                end: 2,
+                avg_logprob: -0.1,
+                no_speech_prob: 0.05,
+              },
+            ],
+          })
+        ),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: JSON.stringify({ segments: [] }) } }],
+        }),
+      });
+
+    await pipeline.transcribeRecording(
+      {
+        id: 'rec_no_silence_remove',
+        file_path: sourcePath,
+        content_type: 'audio/wav',
+      },
+      { skipEarlyPyannote: true, skipChunkVAD: true }
+    );
+
+    const commands = ((globalThis as any).__audioPipelineExecCommands || []) as string[];
+    const preprocessCommand = commands.find((cmd) => cmd.includes(' -af ')) || '';
+    expect(preprocessCommand).not.toContain('silenceremove');
 
     realFs.rmSync(tempDir, { recursive: true, force: true });
   });

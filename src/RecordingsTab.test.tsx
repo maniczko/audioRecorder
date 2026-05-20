@@ -189,6 +189,48 @@ describe('RecordingsTab', () => {
     expect(within(importRow as HTMLElement).getByText('W toku')).toBeInTheDocument();
   });
 
+  test('Regression: stale remote import is permanent and does not expose retry', () => {
+    const { container } = render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={mockMeetings}
+          recordingQueue={[
+            {
+              id: 'rec_stale',
+              recordingId: 'rec_stale',
+              meetingId: 'meeting_stale',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import: Stare nagranie',
+              meetingSnapshot: {
+                id: 'meeting_stale',
+                workspaceId: 'ws1',
+                title: 'Import: Stare nagranie',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'failed_permanent',
+              uploaded: true,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: 'Nagranie nie jest juz dostepne na serwerze.',
+              createdAt: '2026-04-06T08:00:00.000Z',
+              updatedAt: '2026-04-06T08:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getAllByText('Import: Stare nagranie').length).toBeGreaterThan(0);
+    expect(screen.getByText('Nagranie nie jest juz dostepne na serwerze.')).toBeInTheDocument();
+    expect(container.querySelector('.pipeline-retry-btn')).toBeNull();
+    expect(defaultProps.retryRecordingQueueItem).not.toHaveBeenCalled();
+  });
+
   test('Regression: optimistic imports without owner, guests, or tags do not break filtering', () => {
     render(
       <ToastProvider>

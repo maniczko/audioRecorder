@@ -1,6 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-import { seedLoggedInUser } from './helpers/seed.js';
+import { seedLoggedInUser, seedMeeting, seedQueueItem } from './helpers/seed.js';
 
 function smallAudioFile() {
   return {
@@ -10,7 +10,45 @@ function smallAudioFile() {
   };
 }
 
+async function readPersistedRecordingQueue(page) {
+  return page.evaluate(async () => {
+    const storageKey = 'voicelog.recordingQueue.v1';
+    const readLocal = () => JSON.parse(localStorage.getItem(storageKey) || '{}');
+    if (!window.indexedDB) {
+      return readLocal();
+    }
+
+    try {
+      const value = await new Promise((resolve, reject) => {
+        const openRequest = window.indexedDB.open('keyval-store');
+        openRequest.onerror = () => reject(openRequest.error);
+        openRequest.onsuccess = () => {
+          const db = openRequest.result;
+          const transaction = db.transaction('keyval', 'readonly');
+          const store = transaction.objectStore('keyval');
+          const getRequest = store.get(storageKey);
+          getRequest.onerror = () => reject(getRequest.error);
+          getRequest.onsuccess = () => resolve(getRequest.result);
+        };
+      });
+      return value || readLocal();
+    } catch {
+      return readLocal();
+    }
+  });
+}
+
 test.describe('Remote media workspace contract', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/media/analyze', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ mode: 'no-key' }),
+      });
+    });
+  });
+
   test('sends auth and X-Workspace-Id before remote audio upload', async ({ page }) => {
     let audioUploadSeen = false;
 
@@ -92,5 +130,94 @@ test.describe('Remote media workspace contract', () => {
       page.getByRole('alert').getByText(/robocza nie jest jeszcze gotowa/i)
     ).toBeVisible();
     expect(audioUploadSeen).toBe(false);
+  });
+
+  test('turns a persisted stale remote queue item into a permanent local state', async ({
+    page,
+  }) => {
+    const staleRecordingId = 'recording_stale_remote_404';
+    let statusRequests = 0;
+    let retryRequests = 0;
+    const queueFailureLogs = [];
+
+    page.on('console', (message) => {
+      const text = message.text();
+      if (text.includes('Recording queue item failed')) {
+        queueFailureLogs.push(text);
+      }
+    });
+
+    await page.route(
+      `**/media/recordings/${staleRecordingId}/transcribe`,
+      async (route, request) => {
+        if (request.method() === 'GET') {
+          statusRequests += 1;
+          await route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({ message: 'Nie znaleziono nagrania.' }),
+          });
+          return;
+        }
+
+        await route.fulfill({ status: 500, body: 'unexpected transcribe mutation' });
+      }
+    );
+
+    await page.route(`**/media/recordings/${staleRecordingId}/retry-transcribe`, async (route) => {
+      retryRequests += 1;
+      await route.fulfill({ status: 500, body: 'unexpected retry' });
+    });
+
+    await seedLoggedInUser(page);
+    await seedMeeting(page, {
+      id: 'meeting_stale_remote',
+      title: 'Stale remote meeting',
+      workspaceId: 'ws_e2e',
+      recordings: [],
+    });
+    await seedQueueItem(page, {
+      id: 'queue_stale_remote',
+      recordingId: staleRecordingId,
+      meetingId: 'meeting_stale_remote',
+      meetingTitle: 'Stale remote meeting',
+      status: 'processing',
+      uploaded: true,
+      retryCount: 0,
+      attempts: 0,
+      workspaceId: 'ws_e2e',
+      createdAt: new Date().toISOString(),
+      meetingSnapshot: {
+        id: 'meeting_stale_remote',
+        title: 'Stale remote meeting',
+        workspaceId: 'ws_e2e',
+      },
+    });
+
+    await page.goto('/');
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
+
+    await expect(page.getByText('Stale remote meeting').first()).toBeVisible();
+    await expect(
+      page.locator('.pipeline-error-text').filter({
+        hasText: /Nagranie nie jest juz dostepne na serwerze/i,
+      })
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('.pipeline-retry-btn')).toHaveCount(0);
+
+    await page.waitForTimeout(1500);
+    expect(statusRequests).toBe(1);
+    expect(retryRequests).toBe(0);
+    expect(queueFailureLogs).toEqual([]);
+
+    await expect
+      .poll(
+        async () => {
+          const queueState = await readPersistedRecordingQueue(page);
+          return queueState?.state?.recordingQueue?.[0]?.status || '';
+        },
+        { timeout: 5_000 }
+      )
+      .toBe('failed_permanent');
   });
 });

@@ -82,10 +82,11 @@ export function printMeetingPdf(meeting, recording, speakerNames, formatDateTime
   const transcript = (recording?.transcript || []).map((segment) => {
     const speaker =
       speakerNames?.[String(segment.speakerId)] || `Speaker ${Number(segment.speakerId) + 1}`;
-    const verification =
-      segment.verificationStatus === 'review'
-        ? `<span class="doc-badge warning">Do weryfikacji</span>`
-        : `<span class="doc-badge success">Zweryfikowane</span>`;
+    const requiresReview =
+      segment.verificationStatus === 'review' || segment.verificationStatus === 'low-confidence';
+    const verification = requiresReview
+      ? `<span class="doc-badge warning">Do weryfikacji</span>`
+      : `<span class="doc-badge success">Zweryfikowane</span>`;
     return `
       <article class="doc-transcript-row">
         <div class="doc-transcript-meta">

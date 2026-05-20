@@ -39,6 +39,60 @@ export interface SttProviderRunResult {
 }
 
 const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024;
+const GPT4O_TRANSCRIBE_MODELS = new Set([
+  'gpt-4o-transcribe',
+  'gpt-4o-mini-transcribe',
+  'gpt-4o-mini-transcribe-2025-12-15',
+]);
+
+function normalizeArrayField(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+}
+
+export function resolveProviderCompatibleFields(
+  provider: Pick<SttProvider, 'id' | 'defaultModel'>,
+  fields: Record<string, unknown> = {}
+) {
+  const requestedModel = String(fields.model || provider.defaultModel || '').trim();
+  const model =
+    provider.id === 'groq' && GPT4O_TRANSCRIBE_MODELS.has(requestedModel)
+      ? provider.defaultModel
+      : requestedModel || provider.defaultModel;
+
+  const next: Record<string, unknown> = { ...fields, model };
+
+  if (provider.id === 'openai' && GPT4O_TRANSCRIBE_MODELS.has(model)) {
+    next.response_format = 'json';
+    delete next.timestamp_granularities;
+
+    const include = new Set(normalizeArrayField(next.include));
+    include.add('logprobs');
+    next.include = [...include];
+    return next;
+  }
+
+  if (provider.id === 'groq') {
+    next.response_format = next.response_format || 'verbose_json';
+    const timestampGranularities = normalizeArrayField(next.timestamp_granularities);
+    next.timestamp_granularities = timestampGranularities.length
+      ? timestampGranularities
+      : ['segment', 'word'];
+  }
+
+  return next;
+}
+
+export function resolveProviderCompatibleRequest(
+  provider: Pick<SttProvider, 'id' | 'defaultModel'>,
+  request: SttAudioRequest
+): SttAudioRequest {
+  return {
+    ...request,
+    fields: resolveProviderCompatibleFields(provider, request.fields || {}),
+  };
+}
 
 function ensureAudioBuffer(request: SttAudioRequest) {
   const audioBuffer =
@@ -120,7 +174,8 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
   }
 
   const url = `${provider.baseUrl}/audio/transcriptions`;
-  const model = (request.fields as any)?.model || provider.defaultModel;
+  const providerRequest = resolveProviderCompatibleRequest(provider, request);
+  const model = (providerRequest.fields as any)?.model || provider.defaultModel;
   console.log(`[stt] ${provider.id} model=${model} → POST ${url}`);
 
   let response: Awaited<ReturnType<typeof httpClient>>;
@@ -130,8 +185,8 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
       headers: {
         Authorization: `Bearer ${provider.apiKey}`,
       },
-      body: createFormData(request),
-      signal: request.signal,
+      body: createFormData(providerRequest),
+      signal: providerRequest.signal,
       timeout: 120000,
     });
   } catch (err: any) {
@@ -227,12 +282,13 @@ export async function transcribeWithProviders(
     }
 
     const startedAt = performance.now();
+    const request = resolveProviderCompatibleRequest(provider, requestFactory(provider));
     try {
-      const payload = await provider.transcribeAudio(requestFactory(provider));
+      const payload = await provider.transcribeAudio(request);
       attempts.push({
         providerId: provider.id,
         providerLabel: provider.label,
-        model: String((requestFactory(provider).fields as any)?.model || provider.defaultModel),
+        model: String((request.fields as any)?.model || provider.defaultModel),
         success: true,
         durationMs: Math.round(performance.now() - startedAt),
       });
@@ -240,7 +296,7 @@ export async function transcribeWithProviders(
         payload,
         providerId: provider.id,
         providerLabel: provider.label,
-        model: String((requestFactory(provider).fields as any)?.model || provider.defaultModel),
+        model: String((request.fields as any)?.model || provider.defaultModel),
         attempts,
       };
     } catch (error: any) {
@@ -248,7 +304,7 @@ export async function transcribeWithProviders(
       attempts.push({
         providerId: provider.id,
         providerLabel: provider.label,
-        model: String((requestFactory(provider).fields as any)?.model || provider.defaultModel),
+        model: String((request.fields as any)?.model || provider.defaultModel),
         success: false,
         durationMs: Math.round(performance.now() - startedAt),
         errorMessage: lastError.message,

@@ -38,6 +38,22 @@ describe('RecordingPipelineStatus', () => {
     expect(screen.getByText('Błąd przetwarzania')).toBeInTheDocument();
   });
 
+  test('renders permanent missing recording state without retry action', () => {
+    const onRetry = vi.fn();
+    const { container } = render(
+      <RecordingPipelineStatus
+        status="failed_permanent"
+        errorMessage="Nagranie nie jest juz dostepne na serwerze."
+        onRetry={onRetry}
+      />
+    );
+
+    expect(screen.getByText('Wymaga ponownego importu')).toBeInTheDocument();
+    expect(screen.getByText('Nagranie nie jest juz dostepne na serwerze.')).toBeInTheDocument();
+    expect(container.querySelector('.status-chip')).toHaveClass('failed');
+    expect(container.querySelector('.pipeline-retry-btn')).toBeNull();
+  });
+
   test('renders default label for unknown status', () => {
     render(<RecordingPipelineStatus status="unknown" />);
     expect(screen.getByText('W kolejce')).toBeInTheDocument();

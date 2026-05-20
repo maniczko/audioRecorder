@@ -188,4 +188,39 @@ describe('http/health.ts', () => {
     delete process.env.GITHUB_SHA;
     delete process.env.APP_VERSION;
   });
+
+  test('includes premium STT policy without exposing secrets', async () => {
+    const app = makeHonoLike();
+    const savedOpenAiKey = process.env.OPENAI_API_KEY;
+    const savedGroqKey = process.env.GROQ_API_KEY;
+    process.env.OPENAI_API_KEY = 'sk-test';
+    process.env.GROQ_API_KEY = 'gsk-test';
+    registerHealthRoute(app, undefined);
+    const route = app._routes.find((r: any) => r.path === '/health');
+
+    let response: any;
+    const mockCtx = makeCtxLike((data: any) => {
+      response = { data };
+    });
+
+    await route.handler(mockCtx);
+
+    expect(response.data.stt).toMatchObject({
+      policy: 'premium',
+      provider: 'openai',
+      fallbackProvider: 'groq',
+      processingMode: 'full',
+      fullModel: 'gpt-4o-transcribe',
+      language: 'pl',
+      openAiConfigured: true,
+      groqConfigured: true,
+    });
+    expect(JSON.stringify(response.data.stt)).not.toContain('sk-test');
+    expect(JSON.stringify(response.data.stt)).not.toContain('gsk-test');
+
+    if (savedOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = savedOpenAiKey;
+    if (savedGroqKey === undefined) delete process.env.GROQ_API_KEY;
+    else process.env.GROQ_API_KEY = savedGroqKey;
+  });
 });

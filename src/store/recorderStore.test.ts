@@ -120,6 +120,35 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('queued');
   });
 
+  test('does not auto-reconcile permanent missing remote recordings', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: 'rec_missing_remote',
+          meetingId: 'm1',
+          workspaceId: 'ws1',
+          status: 'failed_permanent',
+          uploaded: true,
+          errorMessage: 'Nagranie nie jest juz dostepne na serwerze.',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+          lastReconciledAt: 0,
+        },
+      ],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
+
+    expect(mocks.createMediaService).not.toHaveBeenCalled();
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      recordingId: 'rec_missing_remote',
+      status: 'failed_permanent',
+    });
+  });
+
   test('retryStoredRecording returns null for missing meeting or recording', async () => {
     const { useRecorderStore } = await import('./recorderStore');
 

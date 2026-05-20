@@ -14,6 +14,8 @@ import { promisify } from 'node:util';
 import { spawn, exec } from 'node:child_process';
 import { config } from './config.ts';
 import { resolveConfiguredSttProviders, transcribeWithProviders } from './stt/providers.ts';
+import { resolveSttRuntimePolicy } from './stt/policy.ts';
+import { addBreadcrumb } from './sentry.ts';
 import {
   clean,
   getRawWords,
@@ -21,6 +23,10 @@ import {
   deriveFfprobeBinary,
   clamp,
   parseDbNumber,
+  assessSegmentLanguageQuality,
+  estimateQualityScore,
+  normalizeVerificationSegments,
+  shouldRetrySegmentWithPremiumStt,
   CHUNK_DURATION_SECONDS,
   CHUNK_OVERLAP_SECONDS,
   MAX_FILE_SIZE_BYTES,
@@ -35,7 +41,11 @@ const OPENAI_API_KEY = config.VOICELOG_OPENAI_API_KEY || config.OPENAI_API_KEY |
 const OPENAI_BASE_URL = config.VOICELOG_OPENAI_BASE_URL;
 const AUDIO_LANGUAGE = config.AUDIO_LANGUAGE;
 const GROQ_API_KEY = config.GROQ_API_KEY || '';
-export const _sttUseGroq = config.VOICELOG_STT_PROVIDER === 'groq' && !!GROQ_API_KEY;
+export const STT_RUNTIME_POLICY = resolveSttRuntimePolicy(config, {
+  hasOpenAi: Boolean(OPENAI_API_KEY),
+  hasGroq: Boolean(GROQ_API_KEY),
+});
+export const _sttUseGroq = STT_RUNTIME_POLICY.provider === 'groq' && !!GROQ_API_KEY;
 export const VERIFICATION_MODEL = _sttUseGroq ? 'whisper-large-v3' : config.VERIFICATION_MODEL;
 // Auto-detect fallback: if GROQ_API_KEY is set and primary is openai (or vice versa),
 // enable fallback automatically instead of requiring VOICELOG_STT_FALLBACK_PROVIDER env var.
@@ -50,12 +60,13 @@ const _autoFallback: 'openai' | 'groq' | 'none' =
         : 'none';
 
 export const STT_PROVIDER_CHAIN = resolveConfiguredSttProviders({
-  preferredProvider: config.VOICELOG_STT_PROVIDER,
-  fallbackProvider: _autoFallback,
+  preferredProvider: STT_RUNTIME_POLICY.provider,
+  fallbackProvider:
+    config.VOICELOG_STT_POLICY === 'premium' ? STT_RUNTIME_POLICY.fallbackProvider : _autoFallback,
   openAiApiKey: OPENAI_API_KEY,
   openAiBaseUrl: OPENAI_BASE_URL,
   groqApiKey: GROQ_API_KEY,
-  openAiModel: config.VERIFICATION_MODEL,
+  openAiModel: STT_RUNTIME_POLICY.fullModel,
   groqModel: 'whisper-large-v3',
 });
 
@@ -166,7 +177,10 @@ function getPreprocessCacheDir() {
   return path.join(getUploadDir(), '.cache', 'preprocessed');
 }
 
-export function buildAudioPreprocessCacheKey(asset: any, profile: 'standard' | 'enhanced') {
+export function buildAudioPreprocessCacheKey(
+  asset: any,
+  profile: 'standard' | 'enhanced' | 'noisy' | 'long-meeting'
+) {
   const parts = [
     AUDIO_PREPROCESS_CACHE_VERSION,
     profile,
@@ -179,7 +193,10 @@ export function buildAudioPreprocessCacheKey(asset: any, profile: 'standard' | '
   return crypto.createHash('sha256').update(parts.join('|')).digest('hex');
 }
 
-export function getPreprocessCachePath(cacheKey: string, profile: 'standard' | 'enhanced') {
+export function getPreprocessCachePath(
+  cacheKey: string,
+  profile: 'standard' | 'enhanced' | 'noisy' | 'long-meeting'
+) {
   return path.join(getPreprocessCacheDir(), `${cacheKey}.${profile}.wav`);
 }
 
@@ -359,7 +376,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
 export async function preprocessAudio(
   filePath: string,
   signal: any,
-  profile: 'standard' | 'enhanced' = 'standard',
+  profile: 'standard' | 'enhanced' | 'noisy' | 'long-meeting' = 'standard',
   options: { cacheKey?: string; silenceRemove?: boolean } = {}
 ) {
   if (!AUDIO_PREPROCESS) return null;
@@ -368,9 +385,11 @@ export async function preprocessAudio(
     : `${filePath}.prep.wav`;
   const tmpPath = options.cacheKey ? `${cachePath}.tmp-${crypto.randomUUID()}.wav` : cachePath;
   let filter =
-    profile === 'enhanced'
+    profile === 'enhanced' || profile === 'noisy'
       ? 'highpass=f=80,lowpass=f=10000,adeclick=w=55:o=75,afftdn=nf=-28:nr=0.95,dynaudnorm=p=1.0:m=30:s=12,acompressor=threshold=-21dB:ratio=3:attack=5:release=80:makeup=4,loudnorm=I=-16:TP=-1.5:LRA=7,aresample=16000,pan=mono|c0=0.5*c0+0.5*c1'
-      : 'adeclick=w=55:o=75,afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=resampler=swr';
+      : profile === 'long-meeting'
+        ? 'highpass=f=80,lowpass=f=12000,adeclick=w=45:o=60,afftdn=nf=-18:nr=0.55,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=16000'
+        : 'adeclick=w=55:o=75,afftdn=nf=-20:nr=0.85,highpass=f=80,lowpass=f=16000,dynaudnorm=p=0.9:m=100:s=5,aresample=16000';
 
   if (options.silenceRemove) {
     filter +=
@@ -448,11 +467,32 @@ export async function requestAudioTranscription({
   contentType,
   fields,
   signal,
+  preferredProvider,
+  apiKey,
+  baseUrl,
 }: any) {
-  if (!STT_PROVIDER_CHAIN.length) {
+  const providerChain =
+    preferredProvider === 'openai'
+      ? resolveConfiguredSttProviders({
+          preferredProvider: 'openai',
+          fallbackProvider: 'none',
+          openAiApiKey: apiKey || OPENAI_API_KEY,
+          openAiBaseUrl: baseUrl || OPENAI_BASE_URL,
+          openAiModel: fields?.model || config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe',
+        })
+      : preferredProvider === 'groq'
+        ? resolveConfiguredSttProviders({
+            preferredProvider: 'groq',
+            fallbackProvider: 'none',
+            groqApiKey: apiKey || GROQ_API_KEY,
+            groqModel: fields?.model || 'whisper-large-v3',
+          })
+        : STT_PROVIDER_CHAIN;
+
+  if (!providerChain.length) {
     throw new Error('Brakuje skonfigurowanego providera STT.');
   }
-  return transcribeWithProviders(STT_PROVIDER_CHAIN, (provider) => ({
+  return transcribeWithProviders(providerChain, (provider) => ({
     filePath,
     buffer,
     filename,
@@ -465,6 +505,252 @@ export async function requestAudioTranscription({
         provider.id === 'groq' ? provider.defaultModel : fields?.model || provider.defaultModel,
     },
   }));
+}
+
+export function getPayloadLanguageQualityStats(payload: any): {
+  textLength: number;
+  segmentCount: number;
+  suspiciousSegments: number;
+  severeSegments: number;
+} {
+  const verificationSegments = normalizeVerificationSegments(payload || {});
+  const texts = verificationSegments.length
+    ? verificationSegments.map((segment: any) => clean(segment.text || ''))
+    : [clean(payload?.text || payload?.transcript || payload?.results?.text)].filter(Boolean);
+  const qualities = texts.map((text) => assessSegmentLanguageQuality(text));
+  return {
+    textLength: texts.join(' ').length,
+    segmentCount: texts.length,
+    suspiciousSegments: qualities.filter((quality) => quality.isSuspicious).length,
+    severeSegments: qualities.filter((quality) => quality.isSevere).length,
+  };
+}
+
+export function shouldUseOpenAiQualityRetryResult(
+  primaryPayload: any,
+  retryPayload: any,
+  options: { preferRetryWhenClean?: boolean } = {}
+): boolean {
+  const primary = getPayloadLanguageQualityStats(primaryPayload);
+  const retry = getPayloadLanguageQualityStats(retryPayload);
+  if (!retry.textLength) return false;
+  if (!primary.textLength) return true;
+  if (retry.severeSegments < primary.severeSegments) return true;
+  if (retry.suspiciousSegments < primary.suspiciousSegments) return true;
+  if (
+    options.preferRetryWhenClean &&
+    retry.severeSegments <= primary.severeSegments &&
+    retry.suspiciousSegments <= primary.suspiciousSegments &&
+    retry.textLength >= Math.max(12, primary.textLength * 0.5)
+  ) {
+    return true;
+  }
+  return primary.severeSegments > 0 && retry.textLength >= Math.max(12, primary.textLength * 0.5);
+}
+
+export async function maybeRetryPoorQualityWithOpenAi({
+  sttResult,
+  request,
+  audioQuality,
+}: {
+  sttResult: any;
+  request: any;
+  audioQuality?: any;
+}) {
+  if (!sttResult?.payload || sttResult.providerId !== 'groq' || !OPENAI_API_KEY) {
+    return sttResult;
+  }
+
+  const stats = getPayloadLanguageQualityStats(sttResult.payload);
+  const shouldRetry =
+    audioQuality?.qualityLabel === 'poor' ||
+    stats.severeSegments > 0 ||
+    stats.suspiciousSegments > 0;
+  if (!shouldRetry) return sttResult;
+
+  const retryModel = config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe';
+  try {
+    const retryResult = await requestAudioTranscription({
+      ...request,
+      preferredProvider: 'openai',
+      apiKey: OPENAI_API_KEY,
+      baseUrl: OPENAI_BASE_URL,
+      fields: {
+        ...(request.fields || {}),
+        model: retryModel,
+        temperature: 0,
+      },
+    });
+    const attempts = [
+      ...(Array.isArray(sttResult.attempts) ? sttResult.attempts : []),
+      ...(Array.isArray(retryResult?.attempts) ? retryResult.attempts : []),
+    ];
+
+    if (
+      shouldUseOpenAiQualityRetryResult(sttResult.payload, retryResult?.payload, {
+        preferRetryWhenClean: audioQuality?.qualityLabel === 'poor',
+      })
+    ) {
+      return { ...retryResult, attempts };
+    }
+
+    return { ...sttResult, attempts };
+  } catch (error: any) {
+    if (DEBUG) {
+      console.warn('[stt] OpenAI quality retry failed:', error?.message || error);
+    }
+    return sttResult;
+  }
+}
+
+function extractSttText(payload: any): string {
+  return clean(
+    payload?.text ||
+      payload?.transcript ||
+      payload?.results?.text ||
+      (Array.isArray(payload?.segments)
+        ? payload.segments.map((segment: any) => clean(segment?.text || '')).join(' ')
+        : '')
+  );
+}
+
+function scoreTranscriptionText(text: string) {
+  const languageQuality = assessSegmentLanguageQuality(text);
+  return {
+    languageQuality,
+    score: estimateQualityScore(text),
+  };
+}
+
+export function shouldUseSecondPassSegmentText(originalSegment: any, retryText: string): boolean {
+  const candidateText = clean(retryText);
+  if (candidateText.length < 2) return false;
+
+  const original = scoreTranscriptionText(originalSegment?.text || '');
+  const candidate = scoreTranscriptionText(candidateText);
+  if (candidate.languageQuality.isSevere) return false;
+  if (original.languageQuality.isSevere && !candidate.languageQuality.isSuspicious) return true;
+  if (original.languageQuality.isSuspicious && !candidate.languageQuality.isSuspicious) return true;
+  return candidate.score >= original.score + 0.08;
+}
+
+export async function retryLowConfidenceSegmentsWithOpenAi({
+  filePath,
+  fields,
+  segments,
+  signal,
+  maxSegments = 6,
+  paddingSeconds = 0.75,
+}: {
+  filePath: string;
+  fields: any;
+  segments: any[];
+  signal?: any;
+  maxSegments?: number;
+  paddingSeconds?: number;
+}) {
+  const safeSegments = Array.isArray(segments) ? segments : [];
+  const diagnostics = {
+    attempted: 0,
+    improved: 0,
+    failed: 0,
+    skipped: safeSegments.filter((segment) => !shouldRetrySegmentWithPremiumStt(segment)).length,
+    model: config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe',
+  };
+
+  if (!OPENAI_API_KEY || !filePath) {
+    return { segments: safeSegments, diagnostics };
+  }
+
+  const nextSegments = [...safeSegments];
+  const retryIndexes = safeSegments
+    .map((segment, index) => ({ segment, index }))
+    .filter(({ segment }) => shouldRetrySegmentWithPremiumStt(segment))
+    .slice(0, maxSegments);
+
+  for (const { segment, index } of retryIndexes) {
+    const start = Math.max(0, Number(segment.timestamp || 0) - paddingSeconds);
+    const end = Math.max(
+      start + 0.8,
+      Number(segment.endTimestamp || segment.timestamp || start + 1.5) + paddingSeconds
+    );
+    const duration = Math.min(Math.max(end - start, 0.8), 30);
+
+    try {
+      diagnostics.attempted += 1;
+      const buffer = await extractAudioSegmentMemory(filePath, start, duration, signal);
+      if (buffer.byteLength < 500) {
+        diagnostics.failed += 1;
+        continue;
+      }
+
+      const retryResult = await requestAudioTranscription({
+        buffer,
+        filename: `segment_${segment.id || index}.wav`,
+        contentType: 'audio/wav',
+        preferredProvider: 'openai',
+        apiKey: OPENAI_API_KEY,
+        baseUrl: OPENAI_BASE_URL,
+        signal,
+        fields: {
+          ...(fields || {}),
+          model: config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe',
+          language: fields?.language || AUDIO_LANGUAGE || 'pl',
+          temperature: 0,
+        },
+      });
+
+      const retryText = extractSttText(retryResult?.payload);
+      if (!shouldUseSecondPassSegmentText(segment, retryText)) {
+        continue;
+      }
+
+      diagnostics.improved += 1;
+      const quality = scoreTranscriptionText(retryText);
+      nextSegments[index] = {
+        ...segment,
+        text: retryText,
+        verificationStatus: quality.languageQuality.isSuspicious ? 'review' : 'verified',
+        verificationScore: Math.max(Number(segment.verificationScore || 0), quality.score),
+        verificationReasons: [
+          ...new Set([
+            ...(Array.isArray(segment.verificationReasons)
+              ? segment.verificationReasons.filter(
+                  (reason: any) =>
+                    !String(reason || '').includes('spoza alfabetu') &&
+                    !String(reason || '').includes('brak czytelnych')
+                )
+              : []),
+            'poprawione w drugim przebiegu gpt-4o-transcribe',
+          ]),
+        ],
+        languageQuality: quality.languageQuality,
+        secondPass: {
+          providerId: retryResult?.providerId || 'openai',
+          model: retryResult?.model || config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe',
+          improved: true,
+        },
+      };
+      addBreadcrumb({
+        category: 'stt.second_pass',
+        level: 'info',
+        message: 'Segment improved by gpt-4o-transcribe second pass',
+        data: {
+          provider: retryResult?.providerId || 'openai',
+          model: retryResult?.model || config.VOICELOG_STT_MODEL_FULL || 'gpt-4o-transcribe',
+          language: fields?.language || AUDIO_LANGUAGE || 'pl',
+          status: nextSegments[index].verificationStatus,
+        },
+      });
+    } catch (error: any) {
+      diagnostics.failed += 1;
+      if (DEBUG) {
+        console.warn('[stt] Segment second pass failed:', error?.message || error);
+      }
+    }
+  }
+
+  return { segments: nextSegments, diagnostics };
 }
 
 // ── Silero VAD ────────────────────────────────────────────────────────────────
@@ -515,7 +801,7 @@ export async function runSileroVAD(audioPath: string, signal: any) {
 
 // ── In-memory chunked transcription ──────────────────────────────────────────
 
-function extractAudioSegmentMemory(
+export function extractAudioSegmentMemory(
   filePath: string,
   start: number,
   duration: number,
@@ -753,21 +1039,42 @@ export async function transcribeInChunks(
                 contentType: 'audio/wav',
                 fields,
                 signal: options.signal,
+                preferredProvider: options.sttPreferredProvider,
+                apiKey: options.sttApiKey,
+                baseUrl: options.sttBaseUrl,
               });
-              const payload = sttResult?.payload || null;
+              const finalSttResult = await maybeRetryPoorQualityWithOpenAi({
+                sttResult,
+                request: {
+                  buffer,
+                  filename: `chunk_${currentOffset}.wav`,
+                  contentType: 'audio/wav',
+                  fields,
+                  signal: options.signal,
+                },
+                audioQuality: options.audioQuality,
+              });
+              const payload = finalSttResult?.payload || null;
               diagnostics.hasSegments =
                 Array.isArray(payload?.segments) && payload.segments.length > 0;
               diagnostics.hasWords = getRawWords(payload).length > 0;
               diagnostics.hasText = Boolean(
                 clean(payload?.text || payload?.transcript || payload?.results?.text)
               );
-              diagnostics.providerId = sttResult?.providerId || '';
-              diagnostics.providerLabel = sttResult?.providerLabel || '';
-              diagnostics.providerModel = sttResult?.model || '';
+              diagnostics.providerId = finalSttResult?.providerId || '';
+              diagnostics.providerLabel = finalSttResult?.providerLabel || '';
+              diagnostics.providerModel = finalSttResult?.model || '';
+              diagnostics.qualityRetryToOpenAi =
+                sttResult?.providerId === 'groq' && finalSttResult?.providerId === 'openai';
               diagnostics.sttFailed = false;
               // Release audio buffer immediately after successful STT to reduce heap pressure
               buffer = null as any;
-              return { payload, offsetSeconds: currentOffset, diagnostics, sttResult };
+              return {
+                payload,
+                offsetSeconds: currentOffset,
+                diagnostics,
+                sttResult: finalSttResult,
+              };
             } catch (error: any) {
               diagnostics.sentToStt = true;
               diagnostics.sttFailed = true;

@@ -21,7 +21,7 @@ import {
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { RecordingPipelineStatus } from '../lib/recordingQueue';
 import { isTransportErrorMessage } from '../lib/transportErrors';
-import { processRecordingQueueItem } from './recorderQueueProcessor';
+import { isRemoteRecordingMissingError, processRecordingQueueItem } from './recorderQueueProcessor';
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => {
@@ -152,6 +152,10 @@ function toUserFacingQueueError(error: any) {
   const errorMessage = String(error?.message || 'Blad przetwarzania.');
   const normalizedMessage = normalizeErrorForMatching(errorMessage);
 
+  if (isRemoteRecordingMissingError(error)) {
+    return errorMessage;
+  }
+
   if (
     errorMessage.includes('Brak tokenu autoryzacyjnego') ||
     errorMessage.includes('Sesja wygasla')
@@ -196,6 +200,7 @@ function isExpectedDomainFailure(error: any) {
   return (
     errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.') ||
     errorMessage.includes('Lokalny plik audio nie istnieje') ||
+    isRemoteRecordingMissingError(error) ||
     errorMessage.includes(RECORDING_WORKSPACE_REQUIRED_MESSAGE) ||
     error?.status === 409
   );
@@ -341,7 +346,7 @@ export const useRecorderStore = create<any>()(
 
         const reconcileAfterMs = 60_000;
         const reconcileCandidate = (state.recordingQueue || []).find((item) => {
-          if (!item?.uploaded || !['failed', 'failed_permanent'].includes(item.status)) {
+          if (!item?.uploaded || item.status !== 'failed') {
             return false;
           }
           const lastQueueUpdate = new Date(item.updatedAt || item.createdAt || 0).getTime();

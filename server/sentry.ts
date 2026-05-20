@@ -34,3 +34,11 @@ export function captureException(error: Error) {
     // Fail silently if Sentry is not initialized
   }
 }
+
+export function addBreadcrumb(breadcrumb: Parameters<typeof Sentry.addBreadcrumb>[0]) {
+  try {
+    Sentry.addBreadcrumb(breadcrumb);
+  } catch (err) {
+    // Fail silently if Sentry is not initialized
+  }
+}

@@ -162,8 +162,14 @@ function createLocalMediaService() {
         providerLabel: TRANSCRIPTION_PROVIDER.label,
         pipelineStatus: 'done',
         reviewSummary: {
-          needsReview: verifiedSegments.filter((segment) => segment.verificationStatus === 'review')
-            .length,
+          needsReview: verifiedSegments.filter(
+            (segment) =>
+              segment.verificationStatus === 'review' ||
+              segment.verificationStatus === 'low-confidence'
+          ).length,
+          lowConfidence: verifiedSegments.filter(
+            (segment) => segment.verificationStatus === 'low-confidence'
+          ).length,
           approved: verifiedSegments.filter((segment) => segment.verificationStatus === 'verified')
             .length,
         },

@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "description": "Safe synthetic Polish STT corpus for release gating. No private recordings.",
+  "samples": [
+    {
+      "id": "clean-short-001",
+      "category": "clean-short",
+      "goldTranscript": "Ustalmy plan wdrozenia na przyszly tydzien",
+      "hypothesisTranscript": "Ustalmy plan wdrozenia na przyszly tydzien",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-002",
+      "category": "clean-short",
+      "goldTranscript": "Anna przygotuje podsumowanie spotkania do piatku",
+      "hypothesisTranscript": "Anna przygotuje podsumowanie spotkania do piatku",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-003",
+      "category": "clean-short",
+      "goldTranscript": "Budzet kampanii zostaje bez zmian",
+      "hypothesisTranscript": "Budzet kampanii zostaje bez zmian",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-004",
+      "category": "clean-short",
+      "goldTranscript": "Klient poprosil o raport z wynikami sprzedazy",
+      "hypothesisTranscript": "Klient poprosil o raport z wynikami sprzedazy",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-005",
+      "category": "clean-short",
+      "goldTranscript": "Spotkanie zaczynamy od omowienia ryzyk projektu",
+      "hypothesisTranscript": "Spotkanie zaczynamy od omowienia ryzyk projektu",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-006",
+      "category": "clean-short",
+      "goldTranscript": "Prosze przypisac zadania do wlascicieli procesow",
+      "hypothesisTranscript": "Prosze przypisac zadania do wlascicieli procesow",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-007",
+      "category": "clean-short",
+      "goldTranscript": "Wroclaw potwierdzil termin warsztatu na maj",
+      "hypothesisTranscript": "Wroclaw potwierdzil termin warsztatu na maj",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-008",
+      "category": "clean-short",
+      "goldTranscript": "Na koniec wyslemy decyzje i nastepne kroki",
+      "hypothesisTranscript": "Na koniec wyslemy decyzje i nastepne kroki",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-009",
+      "category": "clean-short",
+      "goldTranscript": "Marek sprawdzi integracje kalendarza Google",
+      "hypothesisTranscript": "Marek sprawdzi integracje kalendarza Google",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-010",
+      "category": "clean-short",
+      "goldTranscript": "Nagranie powinno miec czytelne etykiety mowcow",
+      "hypothesisTranscript": "Nagranie powinno miec czytelne etykiety mowcow",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-011",
+      "category": "clean-short",
+      "goldTranscript": "Zapisz prosze decyzje dotyczace kosztow",
+      "hypothesisTranscript": "Zapisz prosze decyzje dotyczace kosztow",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "clean-short-012",
+      "category": "clean-short",
+      "goldTranscript": "Kolejne spotkanie odbedzie sie w srode rano",
+      "hypothesisTranscript": "Kolejne spotkanie odbedzie sie w srode rano",
+      "expectedStatus": "verified"
+    },
+    {
+      "id": "noisy-short-001",
+      "category": "noisy-short",
+      "goldTranscript": "Musimy poprawic jakosc dzwieku w sali",
+      "hypothesisTranscript": "Musimy poprawic jakosc dzwieku w sali",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-002",
+      "category": "noisy-short",
+      "goldTranscript": "W tle slychac klimatyzacje ale mowa jest zrozumiala",
+      "hypothesisTranscript": "W tle slychac klimatyzacje ale mowa jest zrozumiala",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-003",
+      "category": "noisy-short",
+      "goldTranscript": "Poprosze o powtorzenie ostatniego zdania",
+      "hypothesisTranscript": "Prosze o powtorzenie ostatniego zdania",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-004",
+      "category": "noisy-short",
+      "goldTranscript": "Ten fragment wymaga recznej weryfikacji",
+      "hypothesisTranscript": "Ten fragment wymaga recznej weryfikacji",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-005",
+      "category": "noisy-short",
+      "goldTranscript": "Rozmowa dotyczy wdrozenia systemu VoiceLog",
+      "hypothesisTranscript": "Rozmowa dotyczy wdrozenia VoiceLog",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-006",
+      "category": "noisy-short",
+      "goldTranscript": "Nie przerywajmy sobie podczas omawiania budzetu",
+      "hypothesisTranscript": "Nie przerywajmy sobie podczas omawiania budzetu",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-007",
+      "category": "noisy-short",
+      "goldTranscript": "Dwa mikrofony nagrywaja ten sam glos",
+      "hypothesisTranscript": "Dwa mikrofony nagrywaja ten sam glos",
+      "expectedStatus": "review"
+    },
+    {
+      "id": "noisy-short-008",
+      "category": "noisy-short",
+      "goldTranscript": "Krotka pauza nie powinna usunac mowcy",
+      "hypothesisTranscript": "Krotka pauza nie powinna usunac mowcy",
+      "expectedStatus": "review"
+    }
+  ]
+}

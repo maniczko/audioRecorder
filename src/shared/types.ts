@@ -20,7 +20,7 @@ export interface TranscriptSegment {
   speakerId?: string | number;
   rawSpeakerLabel?: string;
   speakerName?: string;
-  verificationStatus?: 'review' | 'verified' | 'pending';
+  verificationStatus?: 'review' | 'verified' | 'pending' | 'low-confidence';
 }
 
 export interface DiarizationResult {
@@ -45,7 +45,7 @@ export interface AudioQualityDiagnostics {
   qualityLabel?: 'good' | 'fair' | 'poor';
   enhancementRecommended?: boolean;
   enhancementApplied?: boolean;
-  enhancementProfile?: 'none' | 'standard' | 'enhanced';
+  enhancementProfile?: 'none' | 'standard' | 'enhanced' | 'noisy' | 'long-meeting';
 }
 
 export interface TranscriptionDiagnostics {
@@ -65,9 +65,24 @@ export interface TranscriptionDiagnostics {
   mergedWordsCount?: number;
   mergedTextLength?: number;
   lastChunkErrorMessage?: string;
-  transcriptionProfileUsed?: 'standard' | 'enhanced';
+  transcriptionProfileUsed?: 'standard' | 'enhanced' | 'noisy' | 'long-meeting';
   transcriptionAttemptCount?: 1 | 2;
   sttAttempts?: SttProviderAttempt[];
+  segmentSecondPass?: {
+    attempted: number;
+    improved: number;
+    failed: number;
+    skipped: number;
+    model: string;
+  };
+  filteredArtifactCount?: number;
+  filteredArtifacts?: Array<{
+    id?: string;
+    timestamp?: number;
+    endTimestamp?: number;
+    verificationStatus?: string;
+    verificationReasons?: string[];
+  }>;
 }
 
 export interface SttProviderAttempt {

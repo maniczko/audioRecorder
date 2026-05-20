@@ -10,6 +10,7 @@ import {
   buildAudioPreprocessingPlan,
   CLIENT_AUDIO_PREPROCESSING_LIMITS,
   BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+  REMOTE_RECORDING_MISSING_MESSAGE,
   calculateTranscriptionHardTimeoutMs,
   processRecordingQueueItem,
   waitForCompletedTranscription,
@@ -407,6 +408,41 @@ describe('waitForCompletedTranscription', () => {
     });
   });
 
+  it('treats transcription status 404 as stale remote recording without polling storm', async () => {
+    const notFound = Object.assign(new Error('Nie znaleziono nagrania.'), { status: 404 });
+    const mediaService = {
+      getTranscriptionJobStatus: vi.fn(async () => {
+        throw notFound;
+      }),
+    };
+    const sleep = vi.fn(async () => undefined);
+
+    await expect(
+      waitForCompletedTranscription({
+        nextItem: makeQueueItem({ uploaded: true, status: 'processing' }),
+        mediaService,
+        started: makeTranscription({ pipelineStatus: 'processing', segments: [] }),
+        startStatus: 'processing',
+        updateQueueItem: vi.fn(),
+        setState: vi.fn(),
+        getPipelineSnapshot: vi.fn(() => ({
+          progressPercent: 64,
+          stageLabel: 'processing',
+        })),
+        normalizeTranscriptionResponse: vi.fn((response) => response),
+        sleep,
+      })
+    ).rejects.toMatchObject({
+      code: 'REMOTE_RECORDING_MISSING',
+      status: 404,
+      message: REMOTE_RECORDING_MISSING_MESSAGE,
+      originalMessage: 'Nie znaleziono nagrania.',
+    });
+
+    expect(mediaService.getTranscriptionJobStatus).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
   it('parks active remote processing after the soft polling window instead of failing', async () => {
     let now = 0;
     const processing = makeTranscription({
@@ -746,6 +782,36 @@ describe('processRecordingQueueItem', () => {
     );
     expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1000);
     expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('marks stale uploaded remote recordings as permanent without retrying STT', async () => {
+    const notFound = Object.assign(new Error('Nie znaleziono nagrania.'), { status: 404 });
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        uploaded: true,
+        status: 'processing',
+        workspaceId: 'workspace-1',
+      }),
+      toUserFacingQueueError: vi.fn((error: Error) => error.message),
+      isExpectedDomainFailure: vi.fn(() => true),
+    });
+    context.mediaService.mode = 'remote';
+    context.mediaService.getTranscriptionJobStatus.mockRejectedValueOnce(notFound);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.getAudioBlob).not.toHaveBeenCalled();
+    expect(context.mediaService.retryTranscriptionJob).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith('recording-1', {
+      status: 'failed_permanent',
+      errorMessage: REMOTE_RECORDING_MISSING_MESSAGE,
+    });
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'error',
+        recordingMessage: `Blad w kolejce: ${REMOTE_RECORDING_MISSING_MESSAGE}`,
+      })
+    );
   });
 
   it('marks non-transient conflicts as permanent failures', async () => {

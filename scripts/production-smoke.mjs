@@ -111,9 +111,46 @@ async function runAudioUploadSmoke({
   return true;
 }
 
+export async function runStaleRecordingSmoke({
+  api,
+  authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
+  workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
+  staleRecordingId = process.env.PRODUCTION_SMOKE_STALE_RECORDING_ID,
+} = {}) {
+  const token = String(authToken || '').trim();
+  const workspace = String(workspaceId || '').trim();
+  const recordingId = String(staleRecordingId || '').trim();
+  if (!token || !workspace || !recordingId) {
+    return false;
+  }
+
+  const response = await fetch(
+    `${api}/media/recordings/${encodeURIComponent(recordingId)}/transcribe`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Workspace-Id': workspace,
+      },
+    }
+  );
+
+  if (response.status === 404) {
+    return true;
+  }
+
+  throw new Error(
+    `Stale recording smoke expected 404 for ${recordingId}, received ${response.status}: ${await response.text()}`
+  );
+}
+
 export function evaluateHealthPayload(
   payload,
-  { requireSupabaseRemote = true, requireKnownGitSha = false } = {}
+  {
+    requireSupabaseRemote = true,
+    requireKnownGitSha = false,
+    requirePremiumStt = process.env.PRODUCTION_REQUIRE_PREMIUM_STT !== 'false',
+  } = {}
 ) {
   const failures = [];
 
@@ -134,9 +171,27 @@ export function evaluateHealthPayload(
     failures.push(`health status must be ok/healthy, received ${payload.status}`);
   }
 
-  const gitSha = String(payload.gitSha || '').trim().toLowerCase();
+  const gitSha = String(payload.gitSha || '')
+    .trim()
+    .toLowerCase();
   if (requireKnownGitSha && (!gitSha || gitSha === 'unknown')) {
     failures.push('health gitSha must be configured and cannot be unknown in production');
+  }
+
+  if (requirePremiumStt) {
+    const stt = payload.stt || {};
+    if (stt.policy !== 'premium') {
+      failures.push(`health stt.policy must be premium, received ${stt.policy}`);
+    }
+    if (stt.provider !== 'openai') {
+      failures.push(`health stt.provider must be openai, received ${stt.provider}`);
+    }
+    if (stt.fullModel !== 'gpt-4o-transcribe') {
+      failures.push(`health stt.fullModel must be gpt-4o-transcribe, received ${stt.fullModel}`);
+    }
+    if (stt.language !== 'pl') {
+      failures.push(`health stt.language must be pl, received ${stt.language}`);
+    }
   }
 
   return failures;
@@ -147,8 +202,10 @@ export async function runProductionSmoke({
   apiBaseUrl = process.env.PRODUCTION_API_BASE_URL || frontendUrl,
   requireSupabaseRemote = process.env.PRODUCTION_REQUIRE_SUPABASE_REMOTE !== 'false',
   requireKnownGitSha = process.env.PRODUCTION_REQUIRE_KNOWN_GIT_SHA === 'true',
+  requirePremiumStt = process.env.PRODUCTION_REQUIRE_PREMIUM_STT !== 'false',
   requireSentryDsn = process.env.PRODUCTION_REQUIRE_SENTRY_DSN === 'true',
   requireAudioUploadSmoke = process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE === 'true',
+  requireStaleRecordingSmoke = process.env.PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE === 'true',
   persistenceEvidenceUrl = process.env.PRODUCTION_PERSISTENCE_EVIDENCE_URL,
 } = {}) {
   const frontend = normalizeBaseUrl(frontendUrl, 'PRODUCTION_FRONTEND_URL');
@@ -185,6 +242,7 @@ export async function runProductionSmoke({
   const healthFailures = evaluateHealthPayload(healthPayload, {
     requireSupabaseRemote,
     requireKnownGitSha,
+    requirePremiumStt,
   });
   if (healthFailures.length > 0) {
     throw new Error(`Health smoke failed:\n- ${healthFailures.join('\n- ')}`);
@@ -206,12 +264,20 @@ export async function runProductionSmoke({
     );
   }
 
+  const staleRecordingChecked = await runStaleRecordingSmoke({ api });
+  if (requireStaleRecordingSmoke && !staleRecordingChecked) {
+    throw new Error(
+      'Stale recording smoke requires PRODUCTION_SMOKE_AUTH_TOKEN, PRODUCTION_SMOKE_WORKSPACE_ID and PRODUCTION_SMOKE_STALE_RECORDING_ID.'
+    );
+  }
+
   return {
     frontend,
     api,
     supabaseRemote: Boolean(healthPayload.supabaseRemote),
     gitSha: String(healthPayload.gitSha || ''),
     audioUploadChecked,
+    staleRecordingChecked,
     persistenceEvidenceChecked: Boolean(persistenceEvidenceUrl),
   };
 }
@@ -231,6 +297,7 @@ if (isMainModule) {
             supabaseRemote: result.supabaseRemote,
             gitSha: result.gitSha,
             audioUploadChecked: result.audioUploadChecked,
+            staleRecordingChecked: result.staleRecordingChecked,
             persistenceEvidenceChecked: result.persistenceEvidenceChecked,
           },
           null,

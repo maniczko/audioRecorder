@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resolveConfiguredSttProviders, transcribeWithProviders } from '../stt/providers.ts';
+import {
+  resolveConfiguredSttProviders,
+  resolveProviderCompatibleFields,
+  transcribeWithProviders,
+} from '../stt/providers.ts';
 import * as httpClientModule from '../lib/httpClient.ts';
 
 describe('stt providers', () => {
@@ -253,12 +257,62 @@ describe('stt providers — HTTP behavior', () => {
       buffer: Buffer.from('fake-audio'),
       filename: 'chunk.wav',
       contentType: 'audio/wav',
-      fields: { model: 'gpt-4o-transcribe', timestamp_granularities: ['segment', 'word'] },
+      fields: { model: 'whisper-1', timestamp_granularities: ['segment', 'word'] },
     });
 
     const [, opts] = httpClientSpy.mock.calls[0];
     const body = opts?.body as FormData;
     expect(body.getAll('timestamp_granularities[]')).toEqual(['segment', 'word']);
+  });
+
+  it('sanitizes gpt-4o-transcribe fields for OpenAI audio API', async () => {
+    const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      text: async () => '{"text":"ok","logprobs":[]}',
+      json: async () => ({ text: 'ok' }),
+    } as any);
+
+    const provider = makeProvider();
+    await provider.transcribeAudio({
+      buffer: Buffer.from('fake-audio'),
+      filename: 'chunk.wav',
+      contentType: 'audio/wav',
+      fields: {
+        model: 'gpt-4o-transcribe',
+        language: 'pl',
+        response_format: 'verbose_json',
+        timestamp_granularities: ['segment', 'word'],
+        prompt: 'VoiceLog, Wroclaw, Anna',
+      },
+    });
+
+    const [, opts] = httpClientSpy.mock.calls[0];
+    const body = opts?.body as FormData;
+    expect(body.get('model')).toBe('gpt-4o-transcribe');
+    expect(body.get('language')).toBe('pl');
+    expect(body.get('prompt')).toBe('VoiceLog, Wroclaw, Anna');
+    expect(body.get('response_format')).toBe('json');
+    expect(body.getAll('include[]')).toEqual(['logprobs']);
+    expect(body.getAll('timestamp_granularities[]')).toEqual([]);
+  });
+});
+
+describe('stt providers — model capability adapter', () => {
+  it('keeps timestamp-compatible fields for Groq Whisper', () => {
+    const fields = resolveProviderCompatibleFields(
+      { id: 'groq', defaultModel: 'whisper-large-v3' },
+      { model: 'gpt-4o-transcribe', language: 'pl' }
+    );
+
+    expect(fields).toMatchObject({
+      model: 'whisper-large-v3',
+      language: 'pl',
+      response_format: 'verbose_json',
+    });
+    expect(fields.timestamp_granularities).toEqual(['segment', 'word']);
   });
 });
 

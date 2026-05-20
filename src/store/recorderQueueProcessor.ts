@@ -19,6 +19,8 @@ export const BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE =
   'Transkrypcja nadal trwa w tle. Odswiezymy status automatycznie.';
 export const RECORDING_ATTACH_RECOVERY_MESSAGE =
   'Nagranie jest gotowe, odtwarzamy spotkanie i podpinamy wynik.';
+export const REMOTE_RECORDING_MISSING_MESSAGE =
+  'Nagranie nie jest juz dostepne na serwerze. Odswiez dane albo zaimportuj plik ponownie.';
 export const BACKGROUND_TRANSCRIPTION_RETRY_MS = 60_000;
 export const TRANSCRIPTION_SOFT_POLLING_MS = 3 * 60 * 1000;
 const TRANSCRIPTION_MIN_HARD_TIMEOUT_MS = 30 * 60 * 1000;
@@ -151,6 +153,33 @@ function isBackgroundTranscriptionPendingError(
     (typeof error === 'object' &&
       error !== null &&
       (error as { code?: string }).code === 'BACKGROUND_TRANSCRIPTION_PENDING')
+  );
+}
+
+export class RemoteRecordingMissingError extends Error {
+  code = 'REMOTE_RECORDING_MISSING';
+  status = 404;
+  originalMessage: string;
+
+  constructor(error: unknown) {
+    super(REMOTE_RECORDING_MISSING_MESSAGE);
+    this.name = 'RemoteRecordingMissingError';
+    this.originalMessage = String((error as { message?: string })?.message || '');
+  }
+}
+
+export function isRemoteRecordingMissingError(
+  error: unknown
+): error is RemoteRecordingMissingError {
+  return (
+    error instanceof RemoteRecordingMissingError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      ((error as { code?: string }).code === 'REMOTE_RECORDING_MISSING' ||
+        (Number((error as { status?: number }).status) === 404 &&
+          String((error as { message?: string }).message || '').includes(
+            REMOTE_RECORDING_MISSING_MESSAGE
+          ))))
   );
 }
 
@@ -375,6 +404,10 @@ export async function waitForCompletedTranscription({
       lastStatus = result;
       consecutiveErrors = 0;
     } catch (pollError: any) {
+      if (Number(pollError?.status) === 404) {
+        throw new RemoteRecordingMissingError(pollError);
+      }
+
       consecutiveErrors += 1;
       totalPollErrors += 1;
 
@@ -630,7 +663,15 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     let startedRaw: unknown;
     if (canReuseRemoteUpload) {
-      const currentRaw = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+      let currentRaw: unknown;
+      try {
+        currentRaw = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
+      } catch (statusError: any) {
+        if (Number(statusError?.status) === 404) {
+          throw new RemoteRecordingMissingError(statusError);
+        }
+        throw statusError;
+      }
       const current = normalizeTranscriptionResponse(currentRaw) as StartedTranscription;
       const currentStatus = normalizeRecordingPipelineStatus(current?.pipelineStatus);
       startedRaw =
@@ -705,11 +746,15 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const verifiedSegments = Array.isArray(transcription.segments) ? transcription.segments : [];
     const reviewableSegments = verifiedSegments as Array<
       TranscriptionStatusPayload['segments'][number] & {
-        verificationStatus?: 'review' | 'verified';
+        verificationStatus?: 'review' | 'verified' | 'low-confidence';
       }
     >;
     const needsReviewCount = reviewableSegments.filter(
-      (segment) => segment.verificationStatus === 'review'
+      (segment) =>
+        segment.verificationStatus === 'review' || segment.verificationStatus === 'low-confidence'
+    ).length;
+    const lowConfidenceCount = reviewableSegments.filter(
+      (segment) => segment.verificationStatus === 'low-confidence'
     ).length;
     const approvedCount = reviewableSegments.filter(
       (segment) => segment.verificationStatus === 'verified'
@@ -745,7 +790,11 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         speakerNames: transcription.speakerNames || {},
         speakerCount: transcription.speakerCount || 0,
         diarizationConfidence: transcription.confidence || 0,
-        reviewSummary: transcription.reviewSummary || { needsReview: 0, approved: 0 },
+        reviewSummary: transcription.reviewSummary || {
+          needsReview: 0,
+          lowConfidence: 0,
+          approved: 0,
+        },
         transcriptionProvider: transcriptionProviderId,
         transcriptionProviderLabel: transcriptionProviderLabel,
         pipelineStatus: 'done',
@@ -847,6 +896,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       diarizationConfidence: transcription.confidence || 0,
       reviewSummary: transcription.reviewSummary || {
         needsReview: needsReviewCount,
+        lowConfidence: lowConfidenceCount,
         approved: approvedCount,
       },
       transcriptionProvider: transcriptionProviderId,
@@ -979,7 +1029,9 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     }
 
     const isPermanent =
-      error?.status === 409 || (!isTransientNetworkError(error) && retryCount >= maxAutoRetries);
+      error?.status === 409 ||
+      isRemoteRecordingMissingError(error) ||
+      (!isTransientNetworkError(error) && retryCount >= maxAutoRetries);
 
     updateQueueItem(nextItem.recordingId, {
       status: isPermanent ? 'failed_permanent' : 'failed',

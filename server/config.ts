@@ -49,9 +49,13 @@ const envSchema = z.object({
   LANGSMITH_PROJECT: z.string().optional(),
 
   GROQ_API_KEY: z.string().optional(),
+  VOICELOG_STT_POLICY: z.preprocess(
+    optionalEnumValue,
+    z.enum(['premium', 'fast', 'cost']).default('premium')
+  ),
   VOICELOG_STT_PROVIDER: z.preprocess(
     optionalEnumValue,
-    z.enum(['openai', 'groq']).default('groq')
+    z.enum(['openai', 'groq']).default('openai')
   ),
   VOICELOG_STT_FALLBACK_PROVIDER: z.preprocess(
     optionalEnumValue,
@@ -60,7 +64,7 @@ const envSchema = z.object({
   STT_CONCURRENCY_LIMIT: z
     .preprocess((val) => (val ? Number(val) : undefined), z.number().optional())
     .default(2),
-  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('fast'),
+  VOICELOG_PROCESSING_MODE_DEFAULT: z.enum(['fast', 'full']).default('full'),
   VOICELOG_STT_MODEL_FAST: z.string().default('whisper-1'), // Fast mode: whisper-1 for balance
   VOICELOG_STT_MODEL_FULL: z.string().default('gpt-4o-transcribe'), // Full mode: gpt-4o-transcribe for premium accuracy
   VOICELOG_CHUNK_OVERLAP_SECONDS: z
@@ -188,6 +192,7 @@ export function validateRequiredApiKeys() {
     console.log(
       `  - STT Provider: ${config.VOICELOG_STT_PROVIDER} ${hasOpenAI ? '(OpenAI)' : hasGroq ? '(Groq)' : ''}`
     );
+    console.log(`  - STT policy: ${config.VOICELOG_STT_POLICY}`);
     console.log(
       `  - Diarization: ${config.HF_TOKEN || config.HUGGINGFACE_TOKEN ? 'pyannote (HF token set)' : 'disabled'}`
     );

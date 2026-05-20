@@ -240,6 +240,26 @@ describe('audioPipeline.utils', () => {
     });
   });
 
+  describe('assessSegmentLanguageQuality()', () => {
+    it('flags CJK or Korean artifacts in Polish transcript segments', () => {
+      const result = utils.assessSegmentLanguageQuality(
+        '지그, chodziliście do gminy, przychodzą 술Comment find hear'
+      );
+
+      expect(result.hasNonLatinScript).toBe(true);
+      expect(result.isSuspicious).toBe(true);
+      expect(result.reasons).toEqual(expect.arrayContaining(['znaki spoza alfabetu lacinskiego']));
+    });
+
+    it('flags text without readable Latin words as severe gibberish', () => {
+      const result = utils.assessSegmentLanguageQuality('u 謝謝.');
+
+      expect(result.hasLatinWords).toBe(false);
+      expect(result.isSevere).toBe(true);
+      expect(result.reasons).toEqual(expect.arrayContaining(['brak czytelnych slow lacinskich']));
+    });
+  });
+
   // ==================== MATH UTILITIES ====================
 
   describe('clamp()', () => {
@@ -358,6 +378,30 @@ describe('audioPipeline.utils', () => {
       const result = utils.mergeShortSegments(segments, 1.2);
       expect(result[0].verificationStatus).toBe('review');
       expect(result[0].verificationScore).toBe(0.4);
+    });
+
+    it('preserves low-confidence status when merging short segments', () => {
+      const segments = [
+        {
+          text: '지그',
+          timestamp: 0,
+          endTimestamp: 0.4,
+          speakerId: 0,
+          verificationStatus: 'low-confidence',
+          verificationScore: 0.2,
+        },
+        {
+          text: 'normalny fragment',
+          timestamp: 0.5,
+          endTimestamp: 0.9,
+          speakerId: 0,
+          verificationStatus: 'verified',
+          verificationScore: 0.8,
+        },
+      ];
+      const result = utils.mergeShortSegments(segments, 1.2);
+      expect(result[0].verificationStatus).toBe('low-confidence');
+      expect(result[0].verificationScore).toBe(0.2);
     });
 
     it('handles empty segments array', () => {
@@ -607,6 +651,59 @@ describe('audioPipeline.utils', () => {
       const verificationSegments = [];
       const result = utils.buildVerificationResult(diarizedSegments, verificationSegments);
       expect(result.verifiedSegments[0].verificationStatus).toBe('review');
+    });
+
+    it('marks non-Polish gibberish artifacts as low-confidence', () => {
+      const diarizedSegments = [
+        {
+          text: '지그, chodziliście do gminy, przychodzą 술Comment find hear the archived',
+          timestamp: 8,
+          endTimestamp: 10,
+          speakerId: 1,
+        },
+      ];
+      const verificationSegments = [
+        {
+          text: '지그, chodziliście do gminy, przychodzą 술Comment find hear the archived',
+          start: 8,
+          end: 10,
+          avgLogprob: -2.2,
+          noSpeechProb: 0.72,
+        },
+      ];
+
+      const result = utils.buildVerificationResult(diarizedSegments, verificationSegments);
+
+      expect(result.verifiedSegments[0].verificationStatus).toBe('low-confidence');
+      expect(result.verifiedSegments[0].verificationReasons).toEqual(
+        expect.arrayContaining(['znaki spoza alfabetu lacinskiego'])
+      );
+      expect(result.verifiedSegments[0].languageQuality).toEqual(
+        expect.objectContaining({ isSuspicious: true })
+      );
+    });
+
+    it('marks segments without Latin words as low-confidence', () => {
+      const diarizedSegments = [{ text: 'u 謝謝.', timestamp: 9, endTimestamp: 9.5, speakerId: 1 }];
+      const verificationSegments = [
+        { text: 'u 謝謝.', start: 9, end: 9.5, avgLogprob: -2, noSpeechProb: 0.8 },
+      ];
+
+      const result = utils.buildVerificationResult(diarizedSegments, verificationSegments);
+
+      expect(result.verifiedSegments[0].verificationStatus).toBe('low-confidence');
+      expect(result.verifiedSegments[0].verificationReasons).toEqual(
+        expect.arrayContaining(['brak czytelnych slow lacinskich'])
+      );
+    });
+
+    it('allows dropping severe low-confidence gibberish after verification', () => {
+      const segment = utils.buildVerificationResult(
+        [{ text: 'u \u8b1d\u8b1d.', timestamp: 9, endTimestamp: 9.5, speakerId: 1 }],
+        [{ text: 'u \u8b1d\u8b1d.', start: 9, end: 9.5, avgLogprob: -2, noSpeechProb: 0.8 }]
+      ).verifiedSegments[0];
+
+      expect(utils.shouldDropLowConfidenceGibberishSegment(segment)).toBe(true);
     });
 
     it('detects duplicate segments', () => {

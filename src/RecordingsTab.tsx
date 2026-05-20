@@ -1295,8 +1295,7 @@ export default function RecordingsTab(props) {
                     errorMessage={item.errorMessage}
                     processingStartedAt={item.processingStartedAt}
                     onRetry={
-                      (item.status === 'failed' || item.status === 'failed_permanent') &&
-                      retryRecordingQueueItem
+                      item.status === 'failed' && retryRecordingQueueItem
                         ? () => retryRecordingQueueItem(item.recordingId)
                         : undefined
                     }

@@ -31,6 +31,8 @@ import {
   transcribeInChunks,
   mergeChunkedPayloads,
   transcribeLiveChunk,
+  maybeRetryPoorQualityWithOpenAi,
+  retryLowConfidenceSegmentsWithOpenAi,
   _sttUseGroq,
   VERIFICATION_MODEL,
   STT_PROVIDER_CHAIN,
@@ -67,6 +69,7 @@ import {
   normalizeDiarizedSegments,
   computeWerProxy,
   isHallucination,
+  shouldDropLowConfidenceGibberishSegment,
   removeConsecutiveDuplicates,
   mergeShortSegments,
   clean,
@@ -98,9 +101,11 @@ function isRemoteAudioPath(filePath: string) {
   return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
 }
 
+type AudioPreprocessProfile = 'standard' | 'enhanced' | 'noisy' | 'long-meeting';
+
 function buildAudioQualityForAttempt(
   audioQuality: any,
-  profile: 'standard' | 'enhanced',
+  profile: AudioPreprocessProfile,
   enhancementApplied = false
 ) {
   if (!audioQuality || typeof audioQuality !== 'object') return null;
@@ -112,7 +117,7 @@ function buildAudioQualityForAttempt(
 }
 
 function shouldRetryWithEnhancedProfile(
-  profile: 'standard' | 'enhanced',
+  profile: AudioPreprocessProfile,
   attemptCount: number,
   outcome: any
 ) {
@@ -127,7 +132,7 @@ async function runTranscriptionAttempt(
   asset: any,
   options: any = {},
   baseAudioQuality: any = null,
-  profile: 'standard' | 'enhanced' = 'standard',
+  profile: AudioPreprocessProfile = 'standard',
   attemptCount: 1 | 2 = 1
 ) {
   const notify = (p: number, m: string) => {
@@ -180,9 +185,10 @@ async function runTranscriptionAttempt(
 
     notify(10, 'Wyciąganie audio do pamięci podręcznej...');
     if (!prepPath) {
+      const allowPreDiarizationSilenceRemoval = options.allowPreDiarizationSilenceRemoval === true;
       prepPath = await preprocessAudio(workingFilePath, options.signal, profile, {
         cacheKey: preprocessCacheKey,
-        silenceRemove: SILENCE_REMOVE && !HF_TOKEN_SET,
+        silenceRemove: allowPreDiarizationSilenceRemoval && SILENCE_REMOVE && !HF_TOKEN_SET,
       });
     }
     let transcribeFilePath = prepPath || workingFilePath;
@@ -340,7 +346,7 @@ async function runTranscriptionAttempt(
               transcribeFilePath,
               transcribeContentType,
               fields,
-              options
+              { ...options, audioQuality: attemptAudioQuality }
             );
             logMemory('after-chunked-transcription');
             whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
@@ -364,8 +370,18 @@ async function runTranscriptionAttempt(
               fields,
               signal: options.signal,
             });
-            whisperPayload = sttResult?.payload || null;
-            sttProviderInfo = sttResult;
+            const finalSttResult = await maybeRetryPoorQualityWithOpenAi({
+              sttResult,
+              request: {
+                filePath: transcribeFilePath,
+                contentType: transcribeContentType,
+                fields,
+                signal: options.signal,
+              },
+              audioQuality: attemptAudioQuality,
+            });
+            whisperPayload = finalSttResult?.payload || null;
+            sttProviderInfo = finalSttResult;
             transcriptionDiagnostics = {
               ...transcriptionDiagnostics,
               chunksAttempted: 1,
@@ -403,7 +419,7 @@ async function runTranscriptionAttempt(
                 whisperPayload?.text || whisperPayload?.transcript || whisperPayload?.results?.text
               ).length,
               lastChunkErrorMessage: '',
-              sttAttempts: Array.isArray(sttResult?.attempts) ? sttResult.attempts : [],
+              sttAttempts: Array.isArray(finalSttResult?.attempts) ? finalSttResult.attempts : [],
             };
           }
           if (DEBUG) console.log(`[pipeline] Transcription succeeded with model: ${model}`);
@@ -431,9 +447,9 @@ async function runTranscriptionAttempt(
       // Provider-level fallback: Groq primary failed → retry with OpenAI
       if (!whisperPayload && _sttUseGroq && OPENAI_API_KEY) {
         const openaiModels =
-          config.VERIFICATION_MODEL !== 'whisper-1'
-            ? [config.VERIFICATION_MODEL, 'whisper-1']
-            : ['whisper-1'];
+          config.VOICELOG_STT_MODEL_FULL !== 'whisper-1'
+            ? [...new Set([config.VOICELOG_STT_MODEL_FULL, config.VERIFICATION_MODEL, 'whisper-1'])]
+            : [...new Set([config.VERIFICATION_MODEL, 'whisper-1'])];
         for (const model of openaiModels) {
           const fallbackFields = { ...whisperFields, model };
           try {
@@ -445,6 +461,8 @@ async function runTranscriptionAttempt(
                 fallbackFields,
                 {
                   ...options,
+                  audioQuality: attemptAudioQuality,
+                  sttPreferredProvider: 'openai',
                   sttApiKey: OPENAI_API_KEY,
                   sttBaseUrl: OPENAI_BASE_URL,
                 }
@@ -455,14 +473,17 @@ async function runTranscriptionAttempt(
                 ...(whisperPayload?.transcriptionDiagnostics || {}),
               };
             } else {
-              whisperPayload = await requestAudioTranscription({
+              const fallbackResult = await requestAudioTranscription({
                 filePath: transcribeFilePath,
                 contentType: transcribeContentType,
                 fields: fallbackFields,
                 signal: options.signal,
+                preferredProvider: 'openai',
                 apiKey: OPENAI_API_KEY,
                 baseUrl: OPENAI_BASE_URL,
               });
+              whisperPayload = fallbackResult?.payload || null;
+              sttProviderInfo = fallbackResult;
             }
             if (whisperPayload) {
               lastTranscriptionError = null;
@@ -606,6 +627,17 @@ async function runTranscriptionAttempt(
         diarization.segments,
         verificationSegments
       );
+      const segmentSecondPass = await retryLowConfidenceSegmentsWithOpenAi({
+        filePath: transcribeFilePath,
+        fields: whisperFields,
+        segments: verificationResult.verifiedSegments,
+        signal: options.signal,
+      });
+      verificationResult.verifiedSegments = segmentSecondPass.segments;
+      transcriptionDiagnostics = {
+        ...transcriptionDiagnostics,
+        segmentSecondPass: segmentSecondPass.diagnostics,
+      };
 
       if (DEBUG) {
         const spkDist = verificationResult.verifiedSegments.reduce((acc: any, s: any) => {
@@ -683,8 +715,22 @@ async function runTranscriptionAttempt(
       const startPostProcess = stageStart('post-processing');
       const processedSegments = await (async () => {
         notify(90, 'Czyszczenie halucynacji AI za sprawą hybrydowej analizy WavLM...');
+        const filteredArtifacts = verificationResult.verifiedSegments
+          .filter((seg: any) => shouldDropLowConfidenceGibberishSegment(seg))
+          .map((seg: any) => ({
+            id: seg.id,
+            timestamp: seg.timestamp,
+            endTimestamp: seg.endTimestamp,
+            verificationStatus: seg.verificationStatus,
+            verificationReasons: seg.verificationReasons || [],
+          }));
+        transcriptionDiagnostics = {
+          ...transcriptionDiagnostics,
+          filteredArtifacts,
+          filteredArtifactCount: filteredArtifacts.length,
+        };
         const withoutHallucinations = verificationResult.verifiedSegments.filter(
-          (seg: any) => !isHallucination(seg.text)
+          (seg: any) => !isHallucination(seg.text) && !shouldDropLowConfidenceGibberishSegment(seg)
         );
         if (DEBUG && withoutHallucinations.length < verificationResult.verifiedSegments.length) {
           console.log(
@@ -776,10 +822,15 @@ async function runTranscriptionAttempt(
         confidence: verificationResult.confidence,
         reviewSummary: {
           needsReview: processedSegments.filter(
-            (segment: any) => segment.verificationStatus === 'review'
+            (segment: any) =>
+              segment.verificationStatus === 'review' ||
+              segment.verificationStatus === 'low-confidence'
           ).length,
           approved: processedSegments.filter(
             (segment: any) => segment.verificationStatus === 'verified'
+          ).length,
+          lowConfidence: processedSegments.filter(
+            (segment: any) => segment.verificationStatus === 'low-confidence'
           ).length,
         },
       };
@@ -859,11 +910,16 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     }
   }
 
-  const initialProfile: 'standard' | 'enhanced' = (audioQuality as any)?.enhancementRecommended
-    ? 'enhanced'
-    : 'standard';
-  const attemptProfiles: Array<'standard' | 'enhanced'> =
-    initialProfile === 'standard' ? ['standard', 'enhanced'] : ['enhanced'];
+  const durationSeconds = Number((audioQuality as any)?.durationSeconds || 0);
+  const initialProfile: AudioPreprocessProfile =
+    durationSeconds >= 20 * 60
+      ? 'long-meeting'
+      : (audioQuality as any)?.qualityLabel === 'poor' ||
+          (audioQuality as any)?.enhancementRecommended
+        ? 'noisy'
+        : 'standard';
+  const attemptProfiles: AudioPreprocessProfile[] =
+    initialProfile === 'standard' ? ['standard', 'noisy'] : [initialProfile];
   const preprocessPlan = new Map(
     attemptProfiles.map((profile) => {
       const cacheKey = buildAudioPreprocessCacheKey(asset, profile);
@@ -943,7 +999,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
         lastResult = result;
         if (
           shouldRetryWithEnhancedProfile(profile, attemptCount, result) &&
-          attemptProfiles[index + 1] === 'enhanced'
+          attemptProfiles[index + 1] === 'noisy'
         ) {
           if (DEBUG) {
             console.log('[pipeline] Retrying transcription with enhanced preprocessing profile.');
@@ -955,7 +1011,7 @@ export async function transcribeRecording(asset: any, options: any = {}) {
         lastError = error;
         if (
           shouldRetryWithEnhancedProfile(profile, attemptCount, error) &&
-          attemptProfiles[index + 1] === 'enhanced'
+          attemptProfiles[index + 1] === 'noisy'
         ) {
           if (DEBUG) {
             console.warn(

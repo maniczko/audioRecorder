@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { findBuildWarnings } from './audit-build-warnings.mjs';
 import { findMojibakeIssues } from './audit-mojibake.mjs';
@@ -9,6 +9,7 @@ import {
   collectFrontendAssetUrls,
   evaluateHealthPayload,
   findMojibake,
+  runStaleRecordingSmoke,
 } from './production-smoke.mjs';
 import { assertNode22, releaseGateCommands } from './release-rehearsal.mjs';
 
@@ -17,6 +18,10 @@ const rootDir = process.cwd();
 function read(relativePath: string) {
   return readFileSync(path.join(rootDir, relativePath), 'utf8');
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('release readiness gates', () => {
   it('requires the full rehearsal to run on Node 22', () => {
@@ -32,6 +37,7 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run lint:css');
     expect(commandText).toContain('pnpm run audit:build-warnings');
     expect(commandText).toContain('pnpm run test:server:retry');
+    expect(commandText).toContain('pnpm run test:stt-corpus');
     expect(commandText).toContain('pnpm run test:frontend:ci');
     expect(commandText).toContain('pnpm audit --audit-level=high');
     expect(commandText).toContain('pnpm run audit:a11y:ci');
@@ -53,23 +59,52 @@ describe('release readiness gates', () => {
   });
 
   it('rejects production health without remote Supabase persistence', () => {
-    expect(evaluateHealthPayload({ ok: true, status: 'ok', supabaseRemote: true })).toEqual([]);
-    expect(evaluateHealthPayload({ ok: true, status: 'ok', supabaseRemote: false })).toContain(
-      'health supabaseRemote must be true in production'
-    );
+    expect(
+      evaluateHealthPayload(
+        { ok: true, status: 'ok', supabaseRemote: true },
+        { requirePremiumStt: false }
+      )
+    ).toEqual([]);
+    expect(
+      evaluateHealthPayload(
+        { ok: true, status: 'ok', supabaseRemote: false },
+        { requirePremiumStt: false }
+      )
+    ).toContain('health supabaseRemote must be true in production');
+  });
+
+  it('requires premium OpenAI STT evidence in production health', () => {
+    const premiumHealth = {
+      ok: true,
+      status: 'ok',
+      supabaseRemote: true,
+      stt: {
+        policy: 'premium',
+        provider: 'openai',
+        fullModel: 'gpt-4o-transcribe',
+        language: 'pl',
+      },
+    };
+    expect(evaluateHealthPayload(premiumHealth)).toEqual([]);
+    expect(
+      evaluateHealthPayload({
+        ...premiumHealth,
+        stt: { ...premiumHealth.stt, provider: 'groq' },
+      })
+    ).toContain('health stt.provider must be openai, received groq');
   });
 
   it('can require a known backend git SHA for production release evidence', () => {
     expect(
       evaluateHealthPayload(
         { ok: true, status: 'ok', supabaseRemote: true, gitSha: 'unknown' },
-        { requireKnownGitSha: true }
+        { requireKnownGitSha: true, requirePremiumStt: false }
       )
     ).toContain('health gitSha must be configured and cannot be unknown in production');
     expect(
       evaluateHealthPayload(
         { ok: true, status: 'ok', supabaseRemote: true, gitSha: 'abc123' },
-        { requireKnownGitSha: true }
+        { requireKnownGitSha: true, requirePremiumStt: false }
       )
     ).toEqual([]);
   });
@@ -95,6 +130,45 @@ describe('release readiness gates', () => {
     ]);
   });
 
+  it('checks stale remote recordings with auth and workspace headers in production smoke', async () => {
+    const fetchMock = vi.fn(async () => ({
+      status: 404,
+      text: async () => JSON.stringify({ message: 'Nie znaleziono nagrania.' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      runStaleRecordingSmoke({
+        api: 'https://voicelog.example.com',
+        authToken: 'token',
+        workspaceId: 'workspace_1',
+        staleRecordingId: 'recording_missing',
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://voicelog.example.com/media/recordings/recording_missing/transcribe',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token',
+          'X-Workspace-Id': 'workspace_1',
+        }),
+      })
+    );
+  });
+
+  it('skips stale recording smoke only when release does not require its secrets', async () => {
+    await expect(
+      runStaleRecordingSmoke({
+        api: 'https://voicelog.example.com',
+        authToken: '',
+        workspaceId: 'workspace_1',
+        staleRecordingId: 'recording_missing',
+      })
+    ).resolves.toBe(false);
+  });
+
   it('keeps package scripts wired to the release gates', () => {
     const packageJson = JSON.parse(read('package.json')) as {
       scripts?: Record<string, string>;
@@ -107,6 +181,7 @@ describe('release readiness gates', () => {
     );
     expect(packageJson.scripts?.['audit:mojibake']).toBe('node scripts/audit-mojibake.mjs');
     expect(packageJson.scripts?.['release:prod-smoke']).toBe('node scripts/production-smoke.mjs');
+    expect(packageJson.scripts?.['test:stt-corpus']).toBe('node scripts/stt-corpus-gate.mjs');
     expect(packageJson.scripts?.['release:prod-smoke:strict']).toBe(
       'node scripts/production-smoke-strict.mjs'
     );
@@ -129,6 +204,13 @@ describe('release readiness gates', () => {
     expect(ci).toContain('pnpm run audit:build-warnings');
     expect(ci).toContain('pnpm run test:visual:check');
     expect(ci).toContain('runs-on: windows-latest');
+  });
+
+  it('requires production deploy smoke to cover stale remote recording 404s', () => {
+    const workflow = read('.github/workflows/vercel-production.yml');
+
+    expect(workflow).toContain('PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE');
+    expect(workflow).toContain('PRODUCTION_SMOKE_STALE_RECORDING_ID');
   });
 
   it('keeps release-critical UI/config surfaces free of mojibake', () => {

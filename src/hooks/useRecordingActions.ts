@@ -21,7 +21,7 @@ export default function useRecordingActions({
     speakerId?: number | string;
     rawConfidence?: number;
     verificationScore?: number;
-    verificationStatus?: 'review' | 'verified';
+    verificationStatus?: 'review' | 'verified' | 'low-confidence';
     verificationReasons?: string[];
     verificationEvidence?: { comparisonText?: string };
     [key: string]: any;
@@ -70,8 +70,13 @@ export default function useRecordingActions({
   function buildTranscriptReviewSummary(transcript: ReviewableTranscriptSegment[]) {
     const safeTranscript = Array.isArray(transcript) ? transcript : [];
     return {
-      needsReview: safeTranscript.filter((segment) => segment.verificationStatus === 'review')
-        .length,
+      needsReview: safeTranscript.filter(
+        (segment) =>
+          segment.verificationStatus === 'review' || segment.verificationStatus === 'low-confidence'
+      ).length,
+      lowConfidence: safeTranscript.filter(
+        (segment) => segment.verificationStatus === 'low-confidence'
+      ).length,
       approved: safeTranscript.filter((segment) => segment.verificationStatus === 'verified')
         .length,
     };
@@ -218,9 +223,11 @@ export default function useRecordingActions({
           sorted.reduce((sum, { s }) => sum + Number(s.rawConfidence || 0), 0) / sorted.length,
         verificationScore:
           sorted.reduce((sum, { s }) => sum + Number(s.verificationScore || 0), 0) / sorted.length,
-        verificationStatus: sorted.some(({ s }) => s.verificationStatus === 'review')
-          ? 'review'
-          : 'verified',
+        verificationStatus: sorted.some(({ s }) => s.verificationStatus === 'low-confidence')
+          ? 'low-confidence'
+          : sorted.some(({ s }) => s.verificationStatus === 'review')
+            ? 'review'
+            : 'verified',
         verificationReasons: [
           ...new Set(
             sorted

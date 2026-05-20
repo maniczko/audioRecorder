@@ -64,7 +64,31 @@ describe('config.ts — validateRequiredApiKeys', () => {
   test('exports config object with expected properties', async () => {
     const { config } = await import('../config.js');
     expect(config).toHaveProperty('VOICELOG_STT_PROVIDER');
+    expect(config).toHaveProperty('VOICELOG_STT_POLICY');
     expect(config).toHaveProperty('VOICELOG_OPENAI_BASE_URL');
     expect(config).toHaveProperty('VOICELOG_PROCESSING_MODE_DEFAULT');
+  });
+
+  test('defaults production-quality STT to OpenAI premium mode', async () => {
+    const previousProvider = process.env.VOICELOG_STT_PROVIDER;
+    const previousPolicy = process.env.VOICELOG_STT_POLICY;
+    const previousMode = process.env.VOICELOG_PROCESSING_MODE_DEFAULT;
+    vi.resetModules();
+    delete process.env.VOICELOG_STT_PROVIDER;
+    delete process.env.VOICELOG_STT_POLICY;
+    delete process.env.VOICELOG_PROCESSING_MODE_DEFAULT;
+
+    const { config } = await import('../config.js');
+
+    expect(config.VOICELOG_STT_POLICY).toBe('premium');
+    expect(config.VOICELOG_STT_PROVIDER).toBe('openai');
+    expect(config.VOICELOG_PROCESSING_MODE_DEFAULT).toBe('full');
+
+    if (previousProvider === undefined) delete process.env.VOICELOG_STT_PROVIDER;
+    else process.env.VOICELOG_STT_PROVIDER = previousProvider;
+    if (previousPolicy === undefined) delete process.env.VOICELOG_STT_POLICY;
+    else process.env.VOICELOG_STT_POLICY = previousPolicy;
+    if (previousMode === undefined) delete process.env.VOICELOG_PROCESSING_MODE_DEFAULT;
+    else process.env.VOICELOG_PROCESSING_MODE_DEFAULT = previousMode;
   });
 });

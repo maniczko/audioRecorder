@@ -12,6 +12,7 @@ export const releaseGateCommands = [
   ['pnpm', ['run', 'audit:mojibake']],
   ['pnpm', ['run', 'audit:build-warnings']],
   ['pnpm', ['run', 'test:server:retry']],
+  ['pnpm', ['run', 'test:stt-corpus']],
   ['pnpm', ['run', 'test:frontend:ci']],
   ['pnpm', ['audit', '--audit-level=high']],
   ['pnpm', ['run', 'audit:a11y:ci']],
