@@ -212,6 +212,18 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('PRODUCTION_SMOKE_STALE_RECORDING_ID');
   });
 
+  it('keeps production deploys ordered behind Railway verification with exact backend SHA', () => {
+    const railwayWorkflow = read('.github/workflows/railway-build-metadata.yml');
+    const backendSmokeWorkflow = read('.github/workflows/backend-production-smoke.yml');
+    const vercelWorkflow = read('.github/workflows/vercel-production.yml');
+
+    expect(railwayWorkflow).toContain("workflows: ['CI']");
+    expect(railwayWorkflow).toContain('github.event.workflow_run.head_sha || github.sha');
+    expect(backendSmokeWorkflow).toContain("workflows: ['Railway Build Metadata']");
+    expect(backendSmokeWorkflow).toContain("REQUIRE_EXACT_GIT_SHA: 'true'");
+    expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
+  });
+
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   });

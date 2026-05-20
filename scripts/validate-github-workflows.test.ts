@@ -72,20 +72,28 @@ describe('GitHub workflows validation', () => {
     expect(parsed?.jobs?.test?.env?.NODE_OPTIONS).toBe('--max-old-space-size=12288');
   });
 
-  it('passes exact SHA enforcement into backend smoke checks', () => {
+  it('runs backend smoke only after Railway deploy and requires an exact SHA match', () => {
     const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
+    expect(content).toContain("workflows: ['Railway Build Metadata']");
     expect(content).toContain('REQUIRE_EXACT_GIT_SHA');
-    expect(content).toContain('require_exact_git_sha');
+    expect(content).toContain("REQUIRE_EXACT_GIT_SHA: 'true'");
+    expect(content).toContain("SMOKE_MAX_RETRIES: '30'");
+    expect(content).not.toContain('steps.scope.outputs.require_exact_git_sha');
   });
 
-  it('uses the backend smoke scope helper instead of treating every package.json edit as a backend deploy', () => {
-    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
-    const content = readFileSync(workflowPath, 'utf8');
+  it('deploys Railway after CI and deploys Vercel only after Railway verification', () => {
+    const railwayWorkflow = readFileSync(
+      path.join(workflowDir, 'railway-build-metadata.yml'),
+      'utf8'
+    );
+    const vercelWorkflow = readFileSync(path.join(workflowDir, 'vercel-production.yml'), 'utf8');
 
-    expect(content).toContain('scripts/detect-backend-smoke-scope.mjs');
-    expect(content).not.toContain("grep -Eq '^(server/|Dockerfile|package\\.json");
+    expect(railwayWorkflow).toContain("workflows: ['CI']");
+    expect(railwayWorkflow).toContain('github.event.workflow_run.head_sha || github.sha');
+    expect(railwayWorkflow).toContain('railway deployment list');
+    expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
 
   it('keeps the changelog CLI installed for tag release automation', () => {

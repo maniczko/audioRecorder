@@ -1,16 +1,23 @@
 name: Railway Build Metadata
 
 on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   sync-build-metadata:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -35,6 +42,7 @@ jobs:
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
             || true
+          railway status || true
           printf '%s' "$BUILD_SHA" | railway variable set \
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
@@ -63,6 +71,10 @@ jobs:
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
             --message "Sync build metadata from GitHub Actions"
+          railway deployment list \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            || true
 
       - name: Verify production health git SHA
         env:

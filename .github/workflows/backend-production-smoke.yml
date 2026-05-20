@@ -1,7 +1,9 @@
 name: Backend Production Smoke
 
 on:
-  push:
+  workflow_run:
+    workflows: ['Railway Build Metadata']
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -17,42 +19,16 @@ jobs:
     permissions:
       contents: read
       issues: write
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
       - run: corepack enable
-      - name: Detect backend deploy-relevant changes
-        id: scope
-        shell: bash
-        run: |
-          BEFORE_SHA="${{ github.event.before }}"
-          HEAD_SHA="${{ github.sha }}"
-          ZERO_SHA="0000000000000000000000000000000000000000"
-          CHANGED_FILES_PATH="$(mktemp)"
-          BEFORE_PACKAGE_JSON_PATH="$(mktemp)"
-
-          if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" == "$ZERO_SHA" ]]; then
-            CHANGED_FILES="$(git show --pretty='' --name-only "$HEAD_SHA")"
-          else
-            CHANGED_FILES="$(git diff --name-only "$BEFORE_SHA" "$HEAD_SHA")"
-            if git cat-file -e "$BEFORE_SHA:package.json" 2>/dev/null; then
-              git show "$BEFORE_SHA:package.json" > "$BEFORE_PACKAGE_JSON_PATH"
-            fi
-          fi
-
-          printf '%s\n' "$CHANGED_FILES" > "$CHANGED_FILES_PATH"
-
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
-          node scripts/detect-backend-smoke-scope.mjs \
-            --changed-files "$CHANGED_FILES_PATH" \
-            --before-package-json "$BEFORE_PACKAGE_JSON_PATH" \
-            --after-package-json package.json
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
       - name: Smoke-check deployed backend health
@@ -74,9 +50,9 @@ jobs:
           pnpm run test:smoke
         env:
           SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
-          EXPECTED_GIT_SHA: ${{ github.sha }}
-          REQUIRE_EXACT_GIT_SHA: ${{ steps.scope.outputs.require_exact_git_sha }}
-          SMOKE_MAX_RETRIES: ${{ steps.scope.outputs.require_exact_git_sha == 'true' && '30' || '10' }}
+          EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          REQUIRE_EXACT_GIT_SHA: 'true'
+          SMOKE_MAX_RETRIES: '30'
           SMOKE_WAIT_MS: '10000'
 
       - name: Debug - Log Railway deployment status

@@ -1,9 +1,10 @@
 name: Production Deployment (Vercel)
 
-# Trigger only after CI passes; never deploy broken code.
+# Trigger only after Railway exposes the same SHA; never deploy a frontend
+# against a stale production backend.
 on:
   workflow_run:
-    workflows: ['CI']
+    workflows: ['Railway Build Metadata']
     types: [completed]
     branches: [main]
   workflow_dispatch:
