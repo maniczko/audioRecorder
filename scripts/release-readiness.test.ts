@@ -158,13 +158,12 @@ describe('release readiness gates', () => {
     );
   });
 
-  it('skips stale recording smoke only when release does not require its secrets', async () => {
+  it('skips stale recording smoke only when auth or workspace evidence is missing', async () => {
     await expect(
       runStaleRecordingSmoke({
         api: 'https://voicelog.example.com',
         authToken: '',
         workspaceId: 'workspace_1',
-        staleRecordingId: 'recording_missing',
       })
     ).resolves.toBe(false);
   });

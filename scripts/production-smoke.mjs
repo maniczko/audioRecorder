@@ -115,12 +115,13 @@ export async function runStaleRecordingSmoke({
   api,
   authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
   workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
-  staleRecordingId = process.env.PRODUCTION_SMOKE_STALE_RECORDING_ID,
+  staleRecordingId = process.env.PRODUCTION_SMOKE_STALE_RECORDING_ID ||
+    `production_smoke_missing_${Date.now()}`,
 } = {}) {
   const token = String(authToken || '').trim();
   const workspace = String(workspaceId || '').trim();
   const recordingId = String(staleRecordingId || '').trim();
-  if (!token || !workspace || !recordingId) {
+  if (!token || !workspace) {
     return false;
   }
 
@@ -267,7 +268,7 @@ export async function runProductionSmoke({
   const staleRecordingChecked = await runStaleRecordingSmoke({ api });
   if (requireStaleRecordingSmoke && !staleRecordingChecked) {
     throw new Error(
-      'Stale recording smoke requires PRODUCTION_SMOKE_AUTH_TOKEN, PRODUCTION_SMOKE_WORKSPACE_ID and PRODUCTION_SMOKE_STALE_RECORDING_ID.'
+      'Stale recording smoke requires PRODUCTION_SMOKE_AUTH_TOKEN and PRODUCTION_SMOKE_WORKSPACE_ID.'
     );
   }
 
