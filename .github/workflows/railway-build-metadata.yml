@@ -7,9 +7,14 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: railway-build-metadata-production
+  cancel-in-progress: true
+
 jobs:
   sync-build-metadata:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
@@ -70,6 +75,7 @@ jobs:
         run: |
           railway up \
             --ci \
+            --detach \
             --project "$RAILWAY_PROJECT_ID" \
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
@@ -83,7 +89,7 @@ jobs:
         env:
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          for attempt in $(seq 1 36); do
+          for attempt in $(seq 1 60); do
             echo "Health check attempt $attempt"
             payload="$(curl -fsS https://audiorecorder-production.up.railway.app/health || true)"
             echo "$payload" | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{try{const json=JSON.parse(data);console.log(JSON.stringify({ok:json.ok,gitSha:json.gitSha,runtime:json.runtime,supabaseRemote:json.supabaseRemote}));process.exit(json.gitSha===process.env.EXPECTED_SHA?0:2)}catch{process.exit(2)}});" && exit 0

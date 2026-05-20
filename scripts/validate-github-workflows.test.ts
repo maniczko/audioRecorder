@@ -95,6 +95,10 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).not.toContain('BUILD_SHA: ${{ github.sha }}');
     expect(railwayWorkflow).not.toContain('EXPECTED_SHA: ${{ github.sha }}');
     expect(railwayWorkflow).toContain('railway deployment list');
+    expect(railwayWorkflow).toContain('cancel-in-progress: true');
+    expect(railwayWorkflow).toContain('timeout-minutes: 30');
+    expect(railwayWorkflow).toContain('--detach');
+    expect(railwayWorkflow).toContain('seq 1 60');
     expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
