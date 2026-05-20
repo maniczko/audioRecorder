@@ -1,16 +1,16 @@
 # Railway Configuration
 # https://docs.railway.app/guides/configure
 # Environment variables and volumes are configured in the Railway dashboard.
-# Build and start commands come from the Dockerfile — do NOT set startCommand
+# Build and start commands come from the Dockerfile - do NOT set startCommand
 # here as the container file layout differs from the source tree.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
-watchPatterns = ["server/*.ts", "server/*.py", "server/requirements.txt", "server/routes/**", "server/services/**", "server/lib/**", "server/stt/**", "server/http/**", "server/scripts/**", "server/agents/**", "server/migrations/**", "server/package.json", "Dockerfile", "package.json", "pnpm-lock.yaml", "railway.toml", "tsconfig.json"]
+watchPatterns = ["**/*"]
 
 [deploy]
-# No startCommand — Dockerfile CMD handles it: node server/index.js (via tini)
+# No startCommand - Dockerfile CMD handles it: node server/index.js (via tini)
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"

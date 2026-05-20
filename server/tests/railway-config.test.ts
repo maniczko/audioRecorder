@@ -55,34 +55,29 @@ describe('Railway deployment config', () => {
     expect(content).not.toMatch(/^\[volumes\]/m);
   });
 
-  it('does not redeploy Railway for frontend-only src changes', () => {
+  it('redeploys Railway for every release commit to keep backend gitSha in parity', () => {
     const content = readRailwayToml();
 
-    expect(content).not.toContain('src/**');
+    expect(content).toContain('watchPatterns = ["**/*"]');
   });
 
-  it('watches backend and deploy files that should trigger a Railway rollout', () => {
+  it('watches all release inputs that should trigger a Railway rollout', () => {
     const content = readRailwayToml();
 
-    expect(content).toContain('server/*.ts');
-    expect(content).toContain('server/routes/**');
-    expect(content).toContain('server/http/**');
-    expect(content).toContain('server/scripts/**');
-    expect(content).toContain('Dockerfile');
-    expect(content).toContain('package.json');
+    expect(content).toContain('watchPatterns = ["**/*"]');
   });
 });
 
-// ─────────────────────────────────────────────────────────────────
-// Issue #0 — Dockerfile CMD path vs railway.toml startCommand mismatch
+// ----------------------------------------------------------------
+// Issue #0 - Dockerfile CMD path vs railway.toml startCommand mismatch
 // Date: 2026-03-29
 // Bug: railway.toml had startCommand = "node dist-server/index.js" but
 //      Dockerfile copies dist-server/ -> server/ in the container.
 //      Railway overrides Dockerfile CMD with startCommand, causing
 //      "file not found" and healthcheck failure.
 // Fix: Remove startCommand from railway.toml, let Dockerfile CMD handle it.
-// ─────────────────────────────────────────────────────────────────
-describe('Regression: Issue #0 — Dockerfile CMD consistency', () => {
+// ----------------------------------------------------------------
+describe('Regression: Issue #0 - Dockerfile CMD consistency', () => {
   it('Dockerfile CMD uses correct path: server/index.js', () => {
     const content = readDockerfile();
     // CMD should match the COPY destination, not the source build dir

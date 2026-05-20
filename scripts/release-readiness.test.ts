@@ -219,6 +219,8 @@ describe('release readiness gates', () => {
 
     expect(railwayWorkflow).toContain("workflows: ['CI']");
     expect(railwayWorkflow).toContain('github.event.workflow_run.head_sha || github.sha');
+    expect(railwayWorkflow).not.toContain('BUILD_SHA: ${{ github.sha }}');
+    expect(railwayWorkflow).not.toContain('EXPECTED_SHA: ${{ github.sha }}');
     expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
     expect(backendSmokeWorkflow).toContain("workflows: ['Railway Build Metadata']");
     expect(backendSmokeWorkflow).toContain("REQUIRE_EXACT_GIT_SHA: 'true'");

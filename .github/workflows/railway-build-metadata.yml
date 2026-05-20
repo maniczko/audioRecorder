@@ -35,7 +35,7 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-          BUILD_SHA: ${{ github.sha }}
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           railway link \
             --project "$RAILWAY_PROJECT_ID" \
@@ -81,7 +81,7 @@ jobs:
 
       - name: Verify production health git SHA
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           for attempt in $(seq 1 36); do
             echo "Health check attempt $attempt"
