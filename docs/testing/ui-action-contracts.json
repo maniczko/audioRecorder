@@ -45,7 +45,7 @@
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
       "expectedActionCount": 54,
-      "fingerprint": "c5cfd82a4a3b28b0",
+      "fingerprint": "73ecd47e55a8a96f",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -113,7 +113,7 @@
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
       "expectedActionCount": 34,
-      "fingerprint": "f4a2e4520cbcc087",
+      "fingerprint": "c61941b9e3568274",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
       "testEvidence": ["Zapisz profil", "Zmień hasło", "reviewBtn"],
