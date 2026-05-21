@@ -186,6 +186,7 @@ Tests are **always colocated** next to source (frontend) or in `server/tests/` m
 
 Each AI agent should have a **thin pointer file** in its own config directory
 that references this document. Do NOT duplicate these rules.
+Codex and plugin orchestration must also follow `docs/CODEX_ORCHESTRATION.md`.
 
 | Agent          | Config location                   | What to put there                                   |
 | -------------- | --------------------------------- | --------------------------------------------------- |
