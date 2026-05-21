@@ -822,12 +822,14 @@ describe('audioPipeline exports', () => {
     }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
+      const existsSync = vi.fn(() => true);
       return {
         ...actual,
-        default: { ...actual.default, renameSync, unlinkSync, readFileSync },
+        default: { ...actual.default, renameSync, unlinkSync, readFileSync, existsSync },
         renameSync,
         unlinkSync,
         readFileSync,
+        existsSync,
       };
     });
 
@@ -898,11 +900,13 @@ describe('audioPipeline exports', () => {
     }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
+      const existsSync = vi.fn(() => true);
       return {
         ...actual,
-        default: { ...actual.default, unlinkSync, readFileSync },
+        default: { ...actual.default, unlinkSync, readFileSync, existsSync },
         unlinkSync,
         readFileSync,
+        existsSync,
       };
     });
     const pipeline = await import('../audioPipeline.ts');
