@@ -976,6 +976,7 @@ export default function StudioMeetingView({
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState<string | null>(null);
   const rediarizeRecordingId = selectedRecording?.id || displayRecording?.id || '';
+  const playbackRecordingId = selectedRecording?.id || displayRecording?.id || '';
 
   const autoTaskSyncKeyRef = useRef('');
 
@@ -1380,14 +1381,17 @@ export default function StudioMeetingView({
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
-    if (!remoteApiEnabled()) return;
-    const recordingId = selectedRecording?.id || displayRecording?.id;
+    if (!remoteApiEnabled()) {
+      setRediarizeMsg('Wykrywanie mówców wymaga połączenia z backendem.');
+      return;
+    }
+    const recordingId = rediarizeRecordingId;
     if (!recordingId) {
       setRediarizeMsg('Brak zapisanego nagrania do wykrycia mówców.');
       return;
     }
     setRediarizing(true);
-    setRediarizeMsg(null);
+    setRediarizeMsg('Wykrywanie mówców w toku. To może potrwać kilkadziesiąt sekund.');
     try {
       const result = await apiRequest(`/media/recordings/${recordingId}/rediarize`, {
         method: 'POST',
@@ -1400,14 +1404,18 @@ export default function StudioMeetingView({
               rawSpeakerLabel: seg.rawSpeakerLabel,
             });
         }
-        setRediarizeMsg(`Wykryto ${result.speakerCount} mówcę/mówców.`);
+        setRediarizeMsg(`Wykryto ${result.speakerCount ?? 'nowych'} mówców.`);
+      } else {
+        setRediarizeMsg('Wykrywanie mówców zakończone, ale nie zwrócono nowych segmentów.');
       }
     } catch (err) {
-      setRediarizeMsg(`Błąd: ${err instanceof Error ? err.message : String(err)}`);
+      setRediarizeMsg(
+        `Nie udało się wykryć mówców: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       setRediarizing(false);
     }
-  }, [displayRecording?.id, selectedRecording?.id, updateTranscriptSegment]);
+  }, [rediarizeRecordingId, updateTranscriptSegment]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
@@ -1478,27 +1486,27 @@ export default function StudioMeetingView({
   }, [selectedRecordingAudioUrl]);
 
   useEffect(() => {
-    if (!selectedRecording?.id || !hydrateRecordingAudio) return;
+    if (!playbackRecordingId || !hydrateRecordingAudio) return;
     if (selectedRecordingAudioUrl) return;
     if (selectedRecordingAudioStatus === 'loading') return;
     if (selectedRecordingAudioStatus === 'error') return;
-    hydrateRecordingAudio(selectedRecording.id, { priority: true }).catch(() => {});
+    hydrateRecordingAudio(playbackRecordingId, { priority: true }).catch(() => {});
   }, [
     hydrateRecordingAudio,
-    selectedRecording?.id,
+    playbackRecordingId,
     selectedRecordingAudioStatus,
     selectedRecordingAudioUrl,
   ]);
 
   const shouldShowPlayerBar =
     isRecording ||
-    Boolean(selectedRecording) ||
+    Boolean(playbackRecordingId) ||
     isQueued ||
     analysisStatus === 'error' ||
     analysisStatus === 'failed';
   const playerState = isRecording
     ? 'recording'
-    : selectedRecording && !selectedRecordingAudioUrl
+    : playbackRecordingId && !selectedRecordingAudioUrl
       ? selectedRecordingAudioStatus === 'error'
         ? 'audio-error'
         : 'loading-audio'
@@ -3160,9 +3168,10 @@ export default function StudioMeetingView({
                   className="ff-sidebar-action-btn ff-sidebar-action-btn-centered"
                   onClick={handleRediarize}
                   disabled={rediarizing || !rediarizeRecordingId}
+                  aria-busy={rediarizing ? 'true' : undefined}
                   title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
                 >
-                  {rediarizing ? '…' : 'Wykryj mówców'}
+                  {rediarizing ? 'Wykrywam...' : 'Wykryj mówców'}
                 </button>
               )}
             </div>
@@ -3662,13 +3671,13 @@ export default function StudioMeetingView({
               {selectedRecordingAudioError ? (
                 <span className="soft-copy ff-audio-error-copy">{selectedRecordingAudioError}</span>
               ) : null}
-              {selectedRecording?.id && hydrateRecordingAudio ? (
+              {playbackRecordingId && hydrateRecordingAudio ? (
                 <button
                   type="button"
                   className="ghost-button"
                   onClick={() => {
-                    clearAudioHydrationError?.(selectedRecording.id);
-                    hydrateRecordingAudio(selectedRecording.id, {
+                    clearAudioHydrationError?.(playbackRecordingId);
+                    hydrateRecordingAudio(playbackRecordingId, {
                       force: true,
                       priority: true,
                     }).catch(() => {});

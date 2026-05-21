@@ -35,6 +35,7 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run typecheck:all');
     expect(commandText).toContain('pnpm run lint:all');
     expect(commandText).toContain('pnpm run lint:css');
+    expect(commandText).toContain('pnpm run audit:ui-actions');
     expect(commandText).toContain('pnpm run audit:build-warnings');
     expect(commandText).toContain('pnpm run test:server:retry');
     expect(commandText).toContain('pnpm run test:stt-corpus');
@@ -179,6 +180,9 @@ describe('release readiness gates', () => {
       'node scripts/audit-build-warnings.mjs'
     );
     expect(packageJson.scripts?.['audit:mojibake']).toBe('node scripts/audit-mojibake.mjs');
+    expect(packageJson.scripts?.['audit:ui-actions']).toBe(
+      'node scripts/audit-ui-action-contracts.mjs --write-report'
+    );
     expect(packageJson.scripts?.['release:prod-smoke']).toBe('node scripts/production-smoke.mjs');
     expect(packageJson.scripts?.['test:stt-corpus']).toBe('node scripts/stt-corpus-gate.mjs');
     expect(packageJson.scripts?.['release:prod-smoke:strict']).toBe(

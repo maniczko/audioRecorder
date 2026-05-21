@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "screens": [
+    {
+      "screen": "Auth",
+      "file": "src/components/auth/AuthCredentialsForm.tsx",
+      "expectedActionCount": 4,
+      "fingerprint": "3e8af17b5cbd7083",
+      "contractStatus": "covered",
+      "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
+      "testEvidence": ["Zapomniałeś hasła?", "Dołącz z kodu", "Wejd[zź] do aplikacji"],
+      "owner": "frontend-auth"
+    },
+    {
+      "screen": "Auth",
+      "file": "src/components/auth/AuthModeTabs.tsx",
+      "expectedActionCount": 2,
+      "fingerprint": "f1a7c6d18e5f2690",
+      "contractStatus": "covered",
+      "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
+      "testEvidence": ["rejestracja", "logowanie"],
+      "owner": "frontend-auth"
+    },
+    {
+      "screen": "Auth",
+      "file": "src/components/auth/PasswordResetForm.tsx",
+      "expectedActionCount": 3,
+      "fingerprint": "7a38406efe1be0f9",
+      "contractStatus": "covered",
+      "testFiles": ["src/AuthScreen.test.tsx"],
+      "testEvidence": ["Wyślij kod resetu", "Zmień hasło"],
+      "owner": "frontend-auth"
+    },
+    {
+      "screen": "Topbar",
+      "file": "src/Topbar.tsx",
+      "expectedActionCount": 11,
+      "fingerprint": "cf02a2bd665531b6",
+      "contractStatus": "covered",
+      "testFiles": ["src/Topbar.a11y.test.tsx"],
+      "testEvidence": ["record button starts ad-hoc recording", "opens command palette on Szukaj click"],
+      "owner": "frontend-shell"
+    },
+    {
+      "screen": "Studio",
+      "file": "src/studio/StudioMeetingView.tsx",
+      "expectedActionCount": 54,
+      "fingerprint": "c5cfd82a4a3b28b0",
+      "contractStatus": "covered",
+      "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
+      "testEvidence": [
+        "Regression: rediarize button uses display recording id when selected recording is missing",
+        "Regression: rediarize shows progress feedback while speaker detection is running",
+        "Regression: playback controls remain visible for display recording audio without selected recording",
+        "fireEvent.click(screen.getByRole('button', { name: /Zadania/i }))"
+      ],
+      "owner": "frontend-studio"
+    },
+    {
+      "screen": "Recordings",
+      "file": "src/RecordingsTab.tsx",
+      "expectedActionCount": 7,
+      "fingerprint": "c2c04fadd5e828c1",
+      "contractStatus": "covered",
+      "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
+      "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
+      "owner": "frontend-recordings"
+    },
+    {
+      "screen": "Calendar",
+      "file": "src/CalendarTab.tsx",
+      "expectedActionCount": 29,
+      "fingerprint": "b66de93a73632bda",
+      "contractStatus": "covered",
+      "testFiles": ["src/CalendarTab.test.tsx"],
+      "testEvidence": ["opens StudioBriefModal when + button is clicked in month view"],
+      "owner": "frontend-calendar"
+    },
+    {
+      "screen": "Tasks",
+      "file": "src/TasksTab.tsx",
+      "expectedActionCount": 1,
+      "fingerprint": "92222956c2de5318",
+      "contractStatus": "covered",
+      "testFiles": ["src/TasksTab.test.tsx"],
+      "testEvidence": ["moves a task between kanban columns with drag and drop", "creates a task with the group"],
+      "owner": "frontend-tasks"
+    },
+    {
+      "screen": "People",
+      "file": "src/PeopleTab.tsx",
+      "expectedActionCount": 26,
+      "fingerprint": "f7cb89c98e22d79c",
+      "contractStatus": "covered",
+      "testFiles": ["src/PeopleTab.test.tsx"],
+      "testEvidence": [
+        "switches between people when sidebar item is clicked",
+        "adds a new need for the selected person"
+      ],
+      "owner": "frontend-people"
+    },
+    {
+      "screen": "Notes",
+      "file": "src/NotesTab.tsx",
+      "expectedActionCount": 14,
+      "fingerprint": "9f4b174bbc40971c",
+      "contractStatus": "covered",
+      "testFiles": ["src/NotesTab.test.tsx"],
+      "testEvidence": ["+ Nowa notatka", "Zapisz notatk"],
+      "owner": "frontend-notes"
+    },
+    {
+      "screen": "Profile",
+      "file": "src/ProfileTab.tsx",
+      "expectedActionCount": 34,
+      "fingerprint": "f4a2e4520cbcc087",
+      "contractStatus": "covered",
+      "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
+      "testEvidence": ["Zapisz profil", "Zmień hasło", "reviewBtn"],
+      "owner": "frontend-profile"
+    },
+    {
+      "screen": "CommandPalette",
+      "file": "src/CommandPalette.tsx",
+      "expectedActionCount": 2,
+      "fingerprint": "30aad752b145e6fe",
+      "contractStatus": "covered",
+      "testFiles": ["src/CommandPalette.test.tsx", "src/CommandPalette.a11y.test.tsx"],
+      "testEvidence": ["Spotkanie Test", "userEvent.click(btn)"],
+      "owner": "frontend-shell"
+    },
+    {
+      "screen": "NotificationCenter",
+      "file": "src/NotificationCenter.tsx",
+      "expectedActionCount": 4,
+      "fingerprint": "e10f6746004b8efd",
+      "contractStatus": "covered",
+      "testFiles": ["src/NotificationCenter.test.tsx"],
+      "testEvidence": ["Powiadomienia", "dismissButtons"],
+      "owner": "frontend-shell"
+    }
+  ],
+  "criticalActions": [
+    {
+      "id": "studio.rediarize-speakers",
+      "screen": "Studio",
+      "file": "src/studio/StudioMeetingView.tsx",
+      "labelPattern": "Wykryj m",
+      "testFile": "src/studio/StudioMeetingView.test.tsx",
+      "testTitle": "Regression: rediarize button uses display recording id when selected recording is missing",
+      "reason": "Production bug 2026-05-21: visible speaker detection button silently returned when selectedRecording was missing."
+    }
+  ]
+}

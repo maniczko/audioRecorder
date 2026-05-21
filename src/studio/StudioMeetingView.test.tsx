@@ -476,6 +476,48 @@ describe('StudioMeetingView', () => {
     expect(await screen.findByText(/Wykryto 2/i)).toBeInTheDocument();
   });
 
+  test('Regression: rediarize shows progress feedback while speaker detection is running', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    let resolveRediarize: ((value: unknown) => void) | undefined;
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') return Promise.resolve({ profiles: [] });
+      if (url === '/media/recordings/rec-display-only/rediarize') {
+        return new Promise((resolve) => {
+          resolveRediarize = resolve;
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{
+          id: 'rec-display-only',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'To jest testowy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Wykryj m/i }));
+
+    expect(await screen.findByText(/Wykrywanie m[óo]wc[óo]w/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wykrywam/i })).toBeDisabled();
+
+    resolveRediarize?.({ speakerCount: 2, segments: [] });
+    expect(await screen.findByText(/Wykryto 2/i)).toBeInTheDocument();
+  });
+
   test('keeps rediarize button disabled when transcript has no stored recording id', () => {
     remoteApiEnabledMock.mockReturnValue(true);
     apiRequestMock.mockImplementation((url: string) => {
@@ -571,6 +613,39 @@ describe('StudioMeetingView', () => {
     expect(slider).toBeInTheDocument();
     fireEvent.change(slider, { target: { value: '42' } });
     expect(screen.getByText('00:42 / 02:00')).toBeInTheDocument();
+  });
+
+  test('Regression: hydrates and shows player for display recording when selected recording is missing', async () => {
+    const hydrateRecordingAudio = vi.fn(() => Promise.resolve(null));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{ id: 'rec-display-only', transcript: [], duration: 120 }}
+        selectedRecording={null}
+        selectedRecordingAudioStatus="idle"
+        hydrateRecordingAudio={hydrateRecordingAudio}
+      />
+    );
+
+    expect(screen.getByTestId('player-loading-audio')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(hydrateRecordingAudio).toHaveBeenCalledWith('rec-display-only', { priority: true });
+    });
+  });
+
+  test('Regression: playback controls remain visible for display recording audio without selected recording', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{ id: 'rec-display-only', transcript: [], duration: 120 }}
+        selectedRecording={null}
+        selectedRecordingAudioUrl="blob:test-audio"
+      />
+    );
+
+    expect(screen.getByRole('slider', { name: /Pozycja odtwarzania/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Odtworsz/i })).toBeInTheDocument();
   });
 
   test('renders empty state when no meeting selected', () => {
