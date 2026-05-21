@@ -24,6 +24,12 @@ These rules are release-blocking for UI work. They encode the Figma/Codex govern
 - Empty, loading, error, disabled, retry, and completed states must be visually covered before release.
 - Use `prefers-reduced-motion` friendly transitions in visual tests.
 
+## Transcript And Popover Controls
+
+- Transcript row selection uses a `24px` visual hit area with a `14px` checkbox inside it; override global mobile `44px` form-control minimums inside dense transcript rows.
+- Speaker menus, selects, and popovers must define solid theme-specific backgrounds, readable foreground colors, separators, hover states, and z-index. Do not rely on inherited panel backgrounds.
+- Rows that open an inline popover must create a local stacking context so menus render above neighboring transcript text, scrollbars, and selection controls.
+
 ## Visual QA
 
 - Every UI change that affects layout must run a real browser check.

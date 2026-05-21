@@ -631,11 +631,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   flex-shrink: 0;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: background-color 0.15s ease;
 }
 
@@ -643,9 +645,11 @@
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-.fireflies-select input[type="checkbox"] {
+.fireflies-select input[type='checkbox'] {
   width: 14px;
   height: 14px;
+  min-width: 14px;
+  min-height: 14px;
   margin: 0;
   cursor: pointer;
   accent-color: var(--accent, #75d6c4);

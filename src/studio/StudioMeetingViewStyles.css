@@ -1217,18 +1217,35 @@
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  z-index: 200;
+  z-index: 1200;
   min-width: 200px;
   max-width: min(320px, calc(100vw - 32px));
-  background: var(--bg-panel, #1e293b);
-  border: 1px solid var(--surface-stroke, rgba(255, 255, 255, 0.12));
-  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(0, 0, 0, 0.1);
+    0 18px 42px rgba(2, 8, 23, 0.26),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
   overflow: hidden;
   padding: 4px 0;
   animation: ff-dropdown-in 0.12s ease;
+}
+
+[data-theme='dark'] .ff-speaker-dropdown {
+  background: #08131f;
+  border-color: rgba(117, 214, 196, 0.22);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(117, 214, 196, 0.08);
+}
+
+.fireflies-segment:has(.ff-speaker-dropdown) {
+  position: relative;
+  z-index: 8;
+}
+
+.ff-speaker-picker-wrap:has(.ff-speaker-dropdown) {
+  z-index: 1201;
 }
 
 @keyframes ff-dropdown-in {
@@ -1248,19 +1265,33 @@
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-width: 0;
+  min-height: 36px;
   padding: 8px 14px;
-  background: none;
+  background: transparent;
   border: none;
-  color: #374151;
+  color: #1f2937;
   font-size: 0.84rem;
   text-align: left;
   cursor: pointer;
-  transition: background 0.1s;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
   font-family: inherit;
 }
 
 .ff-speaker-dropdown-item:hover {
   background: #f3f4f6;
+  color: #111827;
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item {
+  color: rgba(236, 244, 255, 0.92);
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item:hover {
+  background: rgba(117, 214, 196, 0.12);
+  color: #f8fffc;
 }
 
 .ff-speaker-dropdown-split {
@@ -1276,6 +1307,8 @@
   background: transparent;
   border: none;
   cursor: pointer;
+  min-width: 40px;
+  min-height: 36px;
   padding: 0 12px;
   color: #6b7280;
   transition: all 0.15s ease;
@@ -1286,9 +1319,23 @@
   background: #eef2ff;
 }
 
+[data-theme='dark'] .ff-speaker-dropdown-action-all {
+  color: rgba(203, 213, 225, 0.72);
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-action-all:hover {
+  color: #75d6c4;
+  background: rgba(117, 214, 196, 0.12);
+}
+
 .ff-speaker-dropdown-item.current {
+  background: rgba(99, 102, 241, 0.08);
   font-weight: 600;
   cursor: default;
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item.current {
+  background: rgba(117, 214, 196, 0.14);
 }
 
 .ff-speaker-dropdown-item.rename {
@@ -1309,6 +1356,19 @@
 .ff-speaker-dropdown-item.rename:hover {
   background: #f3f4f6;
   color: #111827;
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item.rename {
+  color: rgba(236, 244, 255, 0.88);
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item.rename svg {
+  color: rgba(203, 213, 225, 0.72);
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-item.rename:hover {
+  background: rgba(117, 214, 196, 0.12);
+  color: #f8fffc;
 }
 
 .ff-speaker-input-highlight {
@@ -1345,6 +1405,10 @@
   flex-shrink: 0;
 }
 
+[data-theme='dark'] .ff-spk-check {
+  color: rgba(117, 214, 196, 0.9);
+}
+
 .ff-spk-arrow {
   color: #9ca3af;
   flex-shrink: 0;
@@ -1354,6 +1418,10 @@
   height: 1px;
   background: #e5e7eb;
   margin: 4px 0;
+}
+
+[data-theme='dark'] .ff-speaker-dropdown-divider {
+  background: rgba(148, 163, 184, 0.18);
 }
 
 .ff-voice-analytics {
