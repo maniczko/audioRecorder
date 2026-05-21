@@ -7,6 +7,7 @@ import {
   getNextPendingRecordingQueueItem,
   normalizeRecordingQueue,
   removeRecordingQueueItem,
+  removeRecordingQueueItemsForMeeting,
   updateRecordingQueueItem,
   isWorkspaceMissingErrorMessage,
 } from '../lib/recordingQueue';
@@ -267,6 +268,15 @@ export const useRecorderStore = create<any>()(
       removeQueueItem: (recordingId) =>
         set((state) => ({
           recordingQueue: removeRecordingQueueItem(state.recordingQueue, recordingId),
+        })),
+
+      removeQueueItemsForMeeting: (meetingId, recordingIds = []) =>
+        set((state) => ({
+          recordingQueue: removeRecordingQueueItemsForMeeting(
+            state.recordingQueue,
+            meetingId,
+            recordingIds
+          ),
         })),
 
       setAnalysisStatus: (status) => set({ analysisStatus: status }),

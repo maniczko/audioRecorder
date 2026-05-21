@@ -231,6 +231,73 @@ describe('RecordingsTab', () => {
     expect(defaultProps.retryRecordingQueueItem).not.toHaveBeenCalled();
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - deleted queued imports returned after success toast
+  // Date: 2026-05-21
+  // Bug: the library rebuilt deleted rows from recordingQueue optimistic state.
+  // Fix: hide deleted meeting/recording ids immediately and pass recording ids
+  //      to the parent so the persisted queue can be cleared.
+  // -----------------------------------------------------------------
+  test('Regression: deleting an optimistic queued import hides it and passes queue recording ids', async () => {
+    const onDeleteMeeting = vi.fn().mockResolvedValue(undefined);
+    const { container } = render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[]}
+          deleteRecordingAndMeeting={onDeleteMeeting}
+          recordingQueue={[
+            {
+              id: 'recording_deleted',
+              recordingId: 'recording_deleted',
+              meetingId: 'meeting_deleted',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import: Do usuniecia',
+              meetingSnapshot: {
+                id: 'meeting_deleted',
+                workspaceId: 'ws1',
+                title: 'Import: Do usuniecia',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'failed_permanent',
+              uploaded: true,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: 'Nagranie nie jest juz dostepne na serwerze.',
+              createdAt: '2026-05-18T18:41:00.000Z',
+              updatedAt: '2026-05-18T18:41:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getAllByText('Import: Do usuniecia').length).toBeGreaterThan(0);
+
+    const deleteButton = container.querySelector('.recordings-library-delete-btn');
+    expect(deleteButton).not.toBeNull();
+    fireEvent.click(deleteButton as HTMLElement);
+
+    const confirmButton = document.querySelector('.danger-button');
+    expect(confirmButton).not.toBeNull();
+    fireEvent.click(confirmButton as HTMLElement);
+
+    await waitFor(() => {
+      expect(onDeleteMeeting).toHaveBeenCalledWith(
+        'meeting_deleted',
+        expect.objectContaining({ recordingIds: ['recording_deleted'] })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Import: Do usuniecia')).not.toBeInTheDocument();
+    });
+  });
+
   test('Regression: optimistic imports without owner, guests, or tags do not break filtering', () => {
     render(
       <ToastProvider>

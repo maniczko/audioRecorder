@@ -181,6 +181,49 @@ describe('recorderStore', { timeout: 30000 }, () => {
     });
   });
 
+  test('removes queue items for a deleted meeting before they can recreate library rows', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: 'rec_deleted_by_meeting',
+          meetingId: 'meeting_deleted',
+          workspaceId: 'ws1',
+          status: 'processing',
+          uploaded: true,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          recordingId: 'rec_deleted_explicitly',
+          meetingId: 'meeting_other',
+          workspaceId: 'ws1',
+          status: 'failed_permanent',
+          uploaded: true,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          recordingId: 'rec_keep',
+          meetingId: 'meeting_keep',
+          workspaceId: 'ws1',
+          status: 'queued',
+          uploaded: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    });
+
+    useRecorderStore
+      .getState()
+      .removeQueueItemsForMeeting('meeting_deleted', ['rec_deleted_explicitly']);
+
+    expect(useRecorderStore.getState().recordingQueue.map((item) => item.recordingId)).toEqual([
+      'rec_keep',
+    ]);
+  });
+
   // -----------------------------------------------------------------
   // Issue #0 - stale missing-workspace state could process after hydration
   // Date: 2026-05-21

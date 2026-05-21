@@ -54,6 +54,7 @@ export default function useRecordingPipeline({
     getMeetingQueue,
     updateQueueItem: store.updateQueueItem,
     removeQueueItem: store.removeQueueItem,
+    removeQueueItemsForMeeting: store.removeQueueItemsForMeeting,
     setRecordingQueue: store.setRecordingQueue,
   };
 }

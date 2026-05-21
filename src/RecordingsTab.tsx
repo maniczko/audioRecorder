@@ -285,6 +285,34 @@ function buildOptimisticMeetingFromQueueItem(item: PendingImportQueueItem): Reco
   };
 }
 
+function collectRecordingIdsForMeeting(
+  meeting: Partial<RecordingsTabMeeting> | null | undefined,
+  queue: PendingImportQueueItem[] = []
+) {
+  const ids = new Set<string>();
+  const meetingId = String(meeting?.id || '').trim();
+
+  if (meeting?.latestRecordingId) {
+    ids.add(String(meeting.latestRecordingId));
+  }
+
+  if (Array.isArray(meeting?.recordings)) {
+    meeting.recordings.forEach((recording) => {
+      const id = String(recording?.id || recording?.recordingId || '').trim();
+      if (id) ids.add(id);
+    });
+  }
+
+  queue.forEach((item) => {
+    const itemMeetingId = String(item?.meetingId || '').trim();
+    if (meetingId && itemMeetingId === meetingId && item?.recordingId) {
+      ids.add(String(item.recordingId));
+    }
+  });
+
+  return [...ids];
+}
+
 function mergeMeetingsWithPendingImports(
   userMeetings: RecordingsTabMeeting[] = [],
   recordingQueue: PendingImportQueueItem[] = []
@@ -366,6 +394,7 @@ function UnifiedLibrary({
   const [meetingToDelete, setMeetingToDelete] = React.useState<{
     id: string;
     title: string;
+    recordingIds: string[];
   } | null>(null);
 
   const handleSort = (
@@ -954,6 +983,7 @@ function UnifiedLibrary({
                         setMeetingToDelete({
                           id: String(m.id || ''),
                           title: String(m.title || ''),
+                          recordingIds: collectRecordingIdsForMeeting(m, recordingQueue),
                         });
                       }}
                       className="recordings-library-delete-btn"
@@ -1007,12 +1037,17 @@ function UnifiedLibrary({
             <button
               type="button"
               className="danger-button"
-              onClick={() => {
-                if (onDeleteMeeting) {
-                  onDeleteMeeting(meetingToDelete.id);
-                  toast.success('Pomyślnie usunięto spotkanie i powiązane nagrania.');
-                }
+              onClick={async () => {
+                const target = meetingToDelete;
                 setMeetingToDelete(null);
+                if (onDeleteMeeting) {
+                  try {
+                    await onDeleteMeeting(target.id, { recordingIds: target.recordingIds });
+                    toast.success('Pomyślnie usunięto spotkanie i powiązane nagrania.');
+                  } catch (_) {
+                    toast.error('Nie udało się usunąć spotkania. Spróbuj ponownie.');
+                  }
+                }
               }}
             >
               Usuń powiązane nagrania do spotkania
@@ -1048,7 +1083,45 @@ export default function RecordingsTab(props) {
   const [uploadingFileName, setUploadingFileName] = React.useState('');
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = React.useState('');
+  const [deletedMeetingIds, setDeletedMeetingIds] = React.useState<Set<string>>(() => new Set());
+  const [deletedRecordingIds, setDeletedRecordingIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
   const mainFileInputRef = React.useRef<HTMLInputElement>(null);
+  const filteredUserMeetings = React.useMemo(
+    () =>
+      (Array.isArray(userMeetings) ? userMeetings : []).filter(
+        (meeting) => !deletedMeetingIds.has(String(meeting?.id || ''))
+      ),
+    [deletedMeetingIds, userMeetings]
+  );
+  const filteredRecordingQueue = React.useMemo(
+    () =>
+      (Array.isArray(recordingQueue) ? recordingQueue : []).filter((item) => {
+        if (deletedRecordingIds.has(String(item?.recordingId || ''))) {
+          return false;
+        }
+        return !deletedMeetingIds.has(String(item?.meetingId || ''));
+      }),
+    [deletedMeetingIds, deletedRecordingIds, recordingQueue]
+  );
+  const handleDeleteMeeting = React.useCallback(
+    async (meetingId: string, options: { recordingIds?: string[] } = {}) => {
+      const recordingIds = collectRecordingIdsForMeeting(
+        (Array.isArray(userMeetings) ? userMeetings : []).find(
+          (meeting) => String(meeting?.id || '') === String(meetingId || '')
+        ) || { id: meetingId },
+        Array.isArray(recordingQueue) ? recordingQueue : []
+      );
+      const mergedRecordingIds = [...new Set([...recordingIds, ...(options.recordingIds || [])])];
+
+      setDeletedMeetingIds((previous) => new Set([...previous, String(meetingId || '')]));
+      setDeletedRecordingIds((previous) => new Set([...previous, ...mergedRecordingIds]));
+
+      await deleteRecordingAndMeeting?.(meetingId, { recordingIds: mergedRecordingIds });
+    },
+    [deleteRecordingAndMeeting, recordingQueue, userMeetings]
+  );
   const showPipelineStatus =
     Boolean(recordingMessage) ||
     ['queued', 'uploading', 'processing', 'diarization', 'review', 'failed', 'done'].includes(
@@ -1056,11 +1129,11 @@ export default function RecordingsTab(props) {
     );
   const pendingImports = React.useMemo(
     () =>
-      [...(Array.isArray(recordingQueue) ? recordingQueue : [])].sort(
+      [...filteredRecordingQueue].sort(
         (left, right) =>
           new Date(right.createdAt || 0).valueOf() - new Date(left.createdAt || 0).valueOf()
       ),
-    [recordingQueue]
+    [filteredRecordingQueue]
   );
   const activeDiagnostics = React.useMemo(
     () => formatPipelineDiagnostics(activeQueueItem),
@@ -1313,12 +1386,12 @@ export default function RecordingsTab(props) {
 
       <main className="recordings-tab-content">
         <UnifiedLibrary
-          userMeetings={userMeetings}
-          recordingQueue={recordingQueue}
+          userMeetings={filteredUserMeetings}
+          recordingQueue={filteredRecordingQueue}
           selectedMeeting={selectedMeeting}
           selectMeeting={selectMeeting}
           setActiveTab={setActiveTab}
-          onDeleteMeeting={deleteRecordingAndMeeting}
+          onDeleteMeeting={handleDeleteMeeting}
           onUploadClick={() => mainFileInputRef.current?.click()}
           isUploading={isUploading}
           uploadingFileName={uploadingFileName}

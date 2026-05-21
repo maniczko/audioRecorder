@@ -166,6 +166,14 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
 
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => new Date());
 
+  const deleteRecordingAndMeeting = useCallback(
+    async (meetingId: string, options: { recordingIds?: string[] } = {}) => {
+      recorder.removeQueueItemsForMeeting?.(meetingId, options.recordingIds || []);
+      await meetings.deleteRecordingAndMeeting(meetingId);
+    },
+    [meetings, recorder]
+  );
+
   const allTags = useMemo(
     () => buildAllTags(meetings.userMeetings, meetings.meetingTasks),
     [meetings.meetingTasks, meetings.userMeetings]
@@ -371,7 +379,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             pipelineStageLabel={recorder.pipelineStageLabel}
             retryRecordingQueueItem={recorder.retryRecordingQueueItem}
             retryStoredRecording={recorder.retryStoredRecording}
-            deleteRecordingAndMeeting={meetings.deleteRecordingAndMeeting}
+            deleteRecordingAndMeeting={deleteRecordingAndMeeting}
           />
         );
       default:

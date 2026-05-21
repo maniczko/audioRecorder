@@ -10,6 +10,7 @@ import {
   normalizeQueueErrorMessage,
   normalizeRecordingQueue,
   normalizeRecordingPipelineStatus,
+  removeRecordingQueueItemsForMeeting,
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   resolveQueueMeetingContext,
   updateRecordingQueueItem,
@@ -52,6 +53,36 @@ describe('recordingQueue helpers', () => {
       total: 1,
       failed: 1,
     });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - deleted recordings came back from the persisted queue
+  // Date: 2026-05-21
+  // Bug: deleting a meeting removed workspace state but left queue items that
+  //      rebuilt optimistic recordings in the library after sync/reload.
+  // Fix: remove queue items by meeting id and explicit recording ids.
+  // -----------------------------------------------------------------
+  test('Regression: removes queue items for a deleted meeting and its recordings', () => {
+    const queue = [
+      createRecordingQueueItem({
+        recordingId: 'recording_deleted',
+        meeting: { id: 'meeting_deleted', workspaceId: 'workspace_1', title: 'Deleted import' },
+      }),
+      createRecordingQueueItem({
+        recordingId: 'recording_explicit',
+        meeting: { id: 'meeting_other', workspaceId: 'workspace_1', title: 'Other import' },
+      }),
+      createRecordingQueueItem({
+        recordingId: 'recording_keep',
+        meeting: { id: 'meeting_keep', workspaceId: 'workspace_1', title: 'Keep import' },
+      }),
+    ];
+
+    const result = removeRecordingQueueItemsForMeeting(queue, 'meeting_deleted', [
+      'recording_explicit',
+    ]);
+
+    expect(result.map((item) => item.recordingId)).toEqual(['recording_keep']);
   });
 
   test('resolveMeetingForQueueItem uses fresh meetings over stale snapshot', () => {

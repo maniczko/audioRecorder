@@ -354,6 +354,27 @@ export function removeRecordingQueueItem(
   return normalizeRecordingQueue(queue).filter((item) => item.recordingId !== recordingId);
 }
 
+export function removeRecordingQueueItemsForMeeting(
+  queue: unknown[],
+  meetingId: string,
+  recordingIds: string[] = []
+): RecordingQueueItem[] {
+  const normalizedMeetingId = String(meetingId || '').trim();
+  const normalizedRecordingIds = new Set(
+    (Array.isArray(recordingIds) ? recordingIds : [])
+      .map((recordingId) => String(recordingId || '').trim())
+      .filter(Boolean)
+  );
+
+  return normalizeRecordingQueue(queue).filter((item) => {
+    if (normalizedRecordingIds.has(item.recordingId)) {
+      return false;
+    }
+
+    return !normalizedMeetingId || item.meetingId !== normalizedMeetingId;
+  });
+}
+
 export function updateRecordingQueueItem(
   queue: unknown[],
   recordingId: string,
