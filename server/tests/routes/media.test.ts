@@ -1129,16 +1129,15 @@ describe('Media Routes', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────
-  // Issue #0 — DELETE /recordings/:id zwraca 404 dla nieistniejącego nagrania
+  // Issue #0 — DELETE /recordings/:id zwraca 204 dla nieistniejącego nagrania
   // Date: 2026-03-31
   // Bug: Frontend próbuje usunąć nagranie, które nie istnieje w bazie (np. zostało
-  //      już usunięte, lub było tylko w IndexedDB). Backend powinien zwrócić 404,
-  //      a frontend to obsługuje jako sukces (idempotentność).
-  // Fix: Test weryfikuje, że endpoint DELETE poprawnie zwraca 404 dla brakującego
-  //      nagrania, co jest oczekiwanym zachowaniem, a nie błędem.
+  //      już usunięte, lub było tylko w IndexedDB). Backend zwracał 404, co
+  //      tworzyło fałszywy błąd w konsoli przeglądarki.
+  // Fix: DELETE jest idempotentny i zwraca 204 także dla brakującego assetu.
   // ─────────────────────────────────────────────────────────────────
   describe('DELETE /recordings/:recordingId — Regression: nieistniejące nagranie', () => {
-    it('zwraca 404, gdy nagranie nie istnieje w bazie', async () => {
+    it('zwraca 204, gdy nagranie nie istnieje w bazie', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
 
       const res = await app.request('/media/recordings/recording_nonexistent', {
@@ -1146,9 +1145,7 @@ describe('Media Routes', () => {
         headers: { Authorization: 'Bearer fake_token' },
       });
 
-      expect(res.status).toBe(404);
-      const data = await res.json();
-      expect(data.message).toBe('Nie znaleziono nagrania.');
+      expect(res.status).toBe(204);
       expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
     });
 

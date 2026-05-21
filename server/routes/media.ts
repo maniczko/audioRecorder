@@ -457,7 +457,12 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   router.delete('/recordings/:recordingId', async (c) => {
     const recordingId = c.req.param('recordingId');
     const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+    if (!asset) {
+      // DELETE is intentionally idempotent. The frontend may hold stale IndexedDB
+      // queue entries for assets already removed from Supabase, and surfacing 404
+      // here creates a false production error while no server cleanup is needed.
+      return c.body(null, 204);
+    }
 
     // Ensure the user has rights to delete from this workspace
     await ensureWorkspaceAccess(c, asset.workspace_id);

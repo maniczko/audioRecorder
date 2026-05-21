@@ -139,7 +139,7 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
-    it('returns 404 when asset does not exist', async () => {
+    it('returns 204 when asset does not exist so stale client deletes stay idempotent', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
 
       const res = await app.request('/media/recordings/rec_nonexistent', {
@@ -147,7 +147,8 @@ describe('Media Routes - Additional Coverage', () => {
         headers: { Authorization: 'Bearer fake_token' },
       });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(204);
+      expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
     });
 
     it('returns 500 when deletion fails', async () => {
