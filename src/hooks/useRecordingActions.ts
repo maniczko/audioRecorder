@@ -529,18 +529,29 @@ export default function useRecordingActions({
   async function autoCreateVoiceProfile(
     speakerId: string | number,
     speakerName: string,
-    options: { transcriptSegments?: any[] } = {}
+    options: { transcriptSegments?: any[]; recordingId?: string } = {}
   ): Promise<boolean> {
-    if (!selectedRecording?.id || !remoteApiEnabled()) return false;
+    if (!remoteApiEnabled()) return false;
     const normalizedSpeakerId = String(speakerId ?? '').trim();
     const normalizedSpeakerName = String(speakerName || '').trim();
+    const targetRecordingId = String(options.recordingId || selectedRecording?.id || '').trim();
     if (!normalizedSpeakerId || !normalizedSpeakerName) return false;
-    if (!isRecordingReadyForVoiceProfile(selectedRecording)) return false;
+    if (!targetRecordingId) return false;
     const transcriptSegments = normalizeVoiceProfileTranscriptSegments(options.transcriptSegments);
-    const recordingForSpeakerCheck =
-      transcriptSegments.length > 0
-        ? { ...selectedRecording, transcript: transcriptSegments }
-        : selectedRecording;
+    const selectedMeetingRecordings = Array.isArray(selectedMeeting?.recordings)
+      ? selectedMeeting.recordings
+      : [];
+    const targetRecording =
+      selectedRecording?.id === targetRecordingId
+        ? selectedRecording
+        : selectedMeetingRecordings.find((recording) => recording?.id === targetRecordingId);
+    const recordingForSpeakerCheck = transcriptSegments.length
+      ? {
+          ...(targetRecording || { id: targetRecordingId, pipelineStatus: 'done' }),
+          transcript: transcriptSegments,
+        }
+      : targetRecording || selectedRecording;
+    if (!isRecordingReadyForVoiceProfile(recordingForSpeakerCheck)) return false;
     if (!hasVoiceProfileSpeakerSegment(recordingForSpeakerCheck, normalizedSpeakerId)) return false;
     // Don't create profile for generic auto-labels like "Speaker 1"
     if (/^speaker\s*\d+$/i.test(normalizedSpeakerName)) return false;
@@ -552,13 +563,25 @@ export default function useRecordingActions({
       if (transcriptSegments.length > 0) {
         body.segments = transcriptSegments;
       }
-      await apiRequest(`/media/recordings/${selectedRecording.id}/voice-profiles/from-speaker`, {
+      await apiRequest(`/media/recordings/${targetRecordingId}/voice-profiles/from-speaker`, {
         method: 'POST',
         body,
       });
       return true;
     } catch (error: any) {
-      throw new Error(error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
+      const voiceProfileError = new Error(
+        error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.'
+      ) as Error & {
+        status?: number;
+        code?: string;
+        stage?: string;
+        requestId?: string;
+      };
+      if (error?.status) voiceProfileError.status = error.status;
+      if (error?.code) voiceProfileError.code = String(error.code);
+      if (error?.stage) voiceProfileError.stage = String(error.stage);
+      if (error?.requestId) voiceProfileError.requestId = String(error.requestId);
+      throw voiceProfileError;
     }
   }
 

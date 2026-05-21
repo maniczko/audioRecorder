@@ -546,6 +546,81 @@ describe('useRecordingActions', () => {
       );
     });
 
+    test('preserves structured voice profile endpoint error metadata', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      apiRequestMock.mockRejectedValueOnce(
+        Object.assign(new Error('Audio nie jest dostepne na serwerze.'), {
+          status: 424,
+          code: 'audio_source_unavailable',
+          stage: 'audio_source',
+          requestId: 'req-voice-1',
+        })
+      );
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Dobra probka glosu', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      const error = await result.current.autoCreateVoiceProfile('0', 'Anna').catch((e) => e);
+
+      expect(error).toMatchObject({
+        message: 'Audio nie jest dostepne na serwerze.',
+        status: 424,
+        code: 'audio_source_unavailable',
+        stage: 'audio_source',
+        requestId: 'req-voice-1',
+      });
+    });
+
+    test('uses explicit display recording id when selectedRecording is missing', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      const transcriptSegments = [
+        {
+          id: 's-visible',
+          speakerId: '2',
+          text: 'Widoczny fragment do probki glosu',
+          timestamp: 12,
+          endTimestamp: 18,
+        },
+      ];
+
+      const { result } = setupHook(
+        {
+          ...baseMeeting,
+          recordings: [],
+        },
+        null
+      );
+
+      let enrolled = false;
+      await act(async () => {
+        enrolled = await result.current.autoCreateVoiceProfile('2', 'Barbara', {
+          recordingId: 'recording_visible_only',
+          transcriptSegments,
+        });
+      });
+
+      expect(enrolled).toBe(true);
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/recording_visible_only/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          body: {
+            speakerId: '2',
+            speakerName: 'Barbara',
+            segments: transcriptSegments,
+          },
+        }
+      );
+    });
+
     test('uses provided transcript override when manual speaker assignment changed local segments', async () => {
       remoteApiEnabledMock.mockReturnValue(true);
       const readyRecording = {

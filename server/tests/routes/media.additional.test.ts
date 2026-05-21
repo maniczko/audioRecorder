@@ -1081,6 +1081,45 @@ describe('Media Routes - Additional Coverage', () => {
       expect(res.status).toBe(400);
       const data = await res.json();
       expect(data.message).toContain('speakerId');
+      expect(data.code).toBe('missing_speaker_id');
+      expect(data.stage).toBe('validation');
+      expect(data.recordingId).toBe('rec_vp_missing_speaker');
+      expect(data.requestId).toEqual(expect.any(String));
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
+    it('returns coded validation error when speakerName is missing', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_missing_name',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcript_json: JSON.stringify([
+          { text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_missing_name/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '0' }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'missing_speaker_name',
+          stage: 'validation',
+          recordingId: 'rec_vp_missing_name',
+          speakerId: '0',
+        })
+      );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
@@ -1111,7 +1150,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
-    it('returns 400 without calling creation when requested speaker has no transcript segments', async () => {
+    it('returns 422 without calling creation when requested speaker has no transcript segments', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_vp_wrong_speaker',
         workspace_id: 'ws_1',
@@ -1134,13 +1173,84 @@ describe('Media Routes - Additional Coverage', () => {
         }
       );
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       const data = await res.json();
       expect(data.message).toContain('wypowiedzi');
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'speaker_segment_not_found',
+          stage: 'transcript',
+          recordingId: 'rec_vp_wrong_speaker',
+          speakerId: '99',
+          speakerName: 'Nobody',
+          segmentCount: 1,
+          matchedSegmentCount: 0,
+        })
+      );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
-    it('returns 400 when creation fails', async () => {
+    it('normalizes speakerName-matched override segments to the requested speakerId', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_name_match',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify([
+          { text: 'old label', speakerId: 'speaker_1', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+      mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+        id: 'vp_name_match',
+        speaker_name: 'Barbara',
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_name_match/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            speakerId: 'speaker_2',
+            speakerName: 'Barbara',
+            segments: [
+              {
+                id: 's1',
+                text: 'Fragment przypisany do Barbary',
+                speakerId: 'speaker_1',
+                speakerName: 'Barbara',
+                startTime: 2,
+                endTime: 8,
+              },
+            ],
+          }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'rec_vp_name_match' }),
+        'speaker_2',
+        'Barbara',
+        'user_1',
+        {
+          transcriptSegments: [
+            expect.objectContaining({
+              id: 's1',
+              speakerId: 'speaker_2',
+              speakerName: 'Barbara',
+              timestamp: 2,
+              endTimestamp: 8,
+            }),
+          ],
+        }
+      );
+    });
+
+    it('returns diagnostic audio_source_unavailable when creation cannot load audio', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_vp_fail',
         workspace_id: 'ws_1',
@@ -1150,7 +1260,7 @@ describe('Media Routes - Additional Coverage', () => {
         ]),
       });
       mockTranscriptionService.createVoiceProfileFromSpeaker.mockRejectedValue(
-        new Error('No valid segments for speaker 99')
+        new Error('Nie mozna pobrac pliku audio do probki glosu.')
       );
 
       const res = await app.request('/media/recordings/rec_vp_fail/voice-profiles/from-speaker', {
@@ -1162,9 +1272,60 @@ describe('Media Routes - Additional Coverage', () => {
         body: JSON.stringify({ speakerId: '99', speakerName: 'Nobody' }),
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(424);
       const data = await res.json();
-      expect(data.message).toContain('No valid segments');
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'audio_source_unavailable',
+          stage: 'audio_source',
+          recordingId: 'rec_vp_fail',
+          speakerId: '99',
+          speakerName: 'Nobody',
+          segmentCount: 1,
+          matchedSegmentCount: 1,
+        })
+      );
+    });
+
+    it('returns diagnostic embedding_failed instead of a generic 400', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_embedding_fail',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcript_json: JSON.stringify([
+          { text: 'voice sample', speakerId: '2', timestamp: 0, endTimestamp: 4 },
+        ]),
+      });
+      const error = Object.assign(new Error('Embedding provider unavailable'), {
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+      mockTranscriptionService.createVoiceProfileFromSpeaker.mockRejectedValue(error);
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_embedding_fail/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '2', speakerName: 'Barbara' }),
+        }
+      );
+
+      expect(res.status).toBe(503);
+      const data = await res.json();
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'embedding_failed',
+          stage: 'embedding',
+          recordingId: 'rec_vp_embedding_fail',
+          speakerId: '2',
+          speakerName: 'Barbara',
+        })
+      );
     });
   });
 });

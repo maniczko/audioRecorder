@@ -75,13 +75,21 @@ function isVoiceProfileTranscriptPending(asset: any, segments: any[]) {
   return ['uploading', 'queued', 'processing', 'diarization', 'review'].includes(status);
 }
 
-function hasTranscriptSegmentForSpeaker(segments: any[], speakerId: string) {
+function normalizeSpeakerName(value: unknown) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function countVoiceProfileSegmentsForSpeaker(segments: any[], speakerId: string, speakerName = '') {
   const speakerKey = String(speakerId || '').trim();
-  return segments.some(
-    (segment) =>
-      String(segment?.speakerId ?? '').trim() === speakerKey &&
-      String(segment?.text || '').trim().length > 0
-  );
+  const speakerNameKey = normalizeSpeakerName(speakerName);
+  return segments.filter((segment) => {
+    if (!String(segment?.text || '').trim()) return false;
+    if (String(segment?.speakerId ?? '').trim() === speakerKey) return true;
+    return Boolean(speakerNameKey && normalizeSpeakerName(segment?.speakerName) === speakerNameKey);
+  }).length;
 }
 
 function readSegmentTimestamp(
@@ -116,7 +124,7 @@ function inferSegmentEndTimestamp(
   for (let nextIndex = index + 1; nextIndex < segments.length; nextIndex += 1) {
     const nextStart = readSegmentTimestamp(
       segments[nextIndex],
-      ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds'],
+      ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds', 'time', 'offset'],
       ['startMs', 'start_ms']
     );
     if (Number.isFinite(nextStart) && nextStart > start) return nextStart;
@@ -126,16 +134,29 @@ function inferSegmentEndTimestamp(
   return start + estimatedDuration;
 }
 
-function normalizeVoiceProfileTranscriptSegments(value: unknown): any[] {
+function normalizeVoiceProfileTranscriptSegments(
+  value: unknown,
+  options: { requestedSpeakerId?: string; requestedSpeakerName?: string } = {}
+): any[] {
   if (!Array.isArray(value)) return [];
+  const requestedSpeakerId = String(options.requestedSpeakerId || '').trim();
+  const requestedSpeakerName = normalizeSpeakerName(options.requestedSpeakerName);
   return value
     .map((segment, index, segments) => {
       if (!segment) return null;
-      const speakerId = String(segment?.speakerId ?? '').trim();
+      let speakerId = String(segment?.speakerId ?? '').trim();
       const text = String(segment?.text || '').trim();
+      const speakerName = String(segment?.speakerName || '').trim();
+      if (
+        requestedSpeakerId &&
+        requestedSpeakerName &&
+        normalizeSpeakerName(speakerName) === requestedSpeakerName
+      ) {
+        speakerId = requestedSpeakerId;
+      }
       const timestamp = readSegmentTimestamp(
         segment,
-        ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds'],
+        ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds', 'time', 'offset'],
         ['startMs', 'start_ms']
       );
       const endTimestamp = inferSegmentEndTimestamp(segments, index, timestamp, text);
@@ -149,13 +170,90 @@ function normalizeVoiceProfileTranscriptSegments(value: unknown): any[] {
         timestamp,
         endTimestamp,
       };
-      const speakerName = String(segment?.speakerName || '').trim();
       if (speakerName) normalizedSegment.speakerName = speakerName;
       if (!normalizedSegment.id) delete normalizedSegment.id;
       return normalizedSegment;
     })
     .filter(Boolean)
     .slice(0, 50);
+}
+
+function buildVoiceProfileErrorBody(input: {
+  code: string;
+  message: string;
+  stage: string;
+  recordingId: string;
+  speakerId?: string;
+  speakerName?: string;
+  segmentCount?: number;
+  matchedSegmentCount?: number;
+  requestId?: string;
+}) {
+  return {
+    code: input.code,
+    message: input.message,
+    stage: input.stage,
+    recordingId: input.recordingId,
+    speakerId: input.speakerId || undefined,
+    speakerName: input.speakerName || undefined,
+    segmentCount: input.segmentCount ?? 0,
+    matchedSegmentCount: input.matchedSegmentCount ?? 0,
+    requestId: input.requestId || 'unknown',
+  };
+}
+
+function classifyVoiceProfileEnrollmentError(error: any) {
+  const message = String(error?.message || '');
+  const lower = message.toLowerCase();
+  if (error?.code && error?.stage) {
+    return {
+      code: String(error.code),
+      stage: String(error.stage),
+      status: Number(error.statusCode || error.status || 500) || 500,
+      message,
+    };
+  }
+  if (
+    lower.includes('transkrypc') ||
+    lower.includes('segment') ||
+    lower.includes('znacznik') ||
+    lower.includes('valid segments')
+  ) {
+    return {
+      code: 'speaker_segment_not_found',
+      stage: 'transcript',
+      status: 422,
+      message: 'Nie znaleziono przypisanego fragmentu wypowiedzi dla tej osoby.',
+    };
+  }
+  if (
+    lower.includes('pobrac') ||
+    lower.includes('audio') ||
+    lower.includes('plik') ||
+    lower.includes('sciezk') ||
+    lower.includes('storage')
+  ) {
+    return {
+      code: 'audio_source_unavailable',
+      stage: 'audio_source',
+      status: 424,
+      message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+    };
+  }
+  if (lower.includes('embedding')) {
+    return {
+      code: 'embedding_failed',
+      stage: 'embedding',
+      status: 503,
+      message: 'Nie udalo sie utworzyc profilu glosu. Sprobuj ponownie za chwile.',
+    };
+  }
+  return {
+    code: 'profile_save_failed',
+    stage: 'profile_save',
+    status: 500,
+    message: 'Nie udalo sie zapisac profilu glosu.',
+  };
 }
 
 export function buildRemoteAudioStorageCandidates(
@@ -787,29 +885,105 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
   router.post('/recordings/:recordingId/voice-profiles/from-speaker', async (c) => {
     const session = c.get('session') as any;
+    const requestId = c.get('reqId') || crypto.randomUUID();
     const recordingId = c.req.param('recordingId');
     const body = await c.req.json().catch(() => ({}));
     const speakerId = String(body?.speakerId ?? '').trim();
     const speakerName = String(body?.speakerName ?? '').trim();
-    if (!speakerId) return c.json({ message: 'Brakuje speakerId.' }, 400);
-    if (!speakerName) return c.json({ message: 'Brakuje speakerName.' }, 400);
+    if (!speakerId) {
+      return c.json(
+        buildVoiceProfileErrorBody({
+          code: 'missing_speaker_id',
+          message: 'Brakuje speakerId.',
+          stage: 'validation',
+          recordingId,
+          speakerName,
+          requestId,
+        }),
+        400
+      );
+    }
+    if (!speakerName) {
+      return c.json(
+        buildVoiceProfileErrorBody({
+          code: 'missing_speaker_name',
+          message: 'Brakuje speakerName.',
+          stage: 'validation',
+          recordingId,
+          speakerId,
+          requestId,
+        }),
+        400
+      );
+    }
 
     const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+    if (!asset) {
+      return c.json(
+        buildVoiceProfileErrorBody({
+          code: 'recording_not_found',
+          message: 'Nie znaleziono nagrania.',
+          stage: 'recording_lookup',
+          recordingId,
+          speakerId,
+          speakerName,
+          requestId,
+        }),
+        404
+      );
+    }
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
     const transcriptSegments = parseTranscriptJsonSegments(asset.transcript_json);
-    const overrideSegments = normalizeVoiceProfileTranscriptSegments(body?.segments);
+    const storedSegments = normalizeVoiceProfileTranscriptSegments(transcriptSegments, {
+      requestedSpeakerId: speakerId,
+      requestedSpeakerName: speakerName,
+    });
+    const overrideSegments = normalizeVoiceProfileTranscriptSegments(body?.segments, {
+      requestedSpeakerId: speakerId,
+      requestedSpeakerName: speakerName,
+    });
     if (isVoiceProfileTranscriptPending(asset, transcriptSegments)) {
       return c.json(
-        { message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.' },
+        buildVoiceProfileErrorBody({
+          code: 'transcription_not_ready',
+          message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.',
+          stage: 'transcript',
+          recordingId,
+          speakerId,
+          speakerName,
+          requestId,
+        }),
         409
       );
     }
     const voiceProfileSegments =
-      overrideSegments.length > 0 ? overrideSegments : transcriptSegments;
-    if (!hasTranscriptSegmentForSpeaker(voiceProfileSegments, speakerId)) {
-      return c.json({ message: 'Brak wypowiedzi tego mowcy w gotowej transkrypcji.' }, 400);
+      overrideSegments.length > 0
+        ? overrideSegments
+        : storedSegments.length > 0
+          ? storedSegments
+          : transcriptSegments;
+    const segmentCount = Array.isArray(voiceProfileSegments) ? voiceProfileSegments.length : 0;
+    const matchedSegmentCount = countVoiceProfileSegmentsForSpeaker(
+      voiceProfileSegments,
+      speakerId,
+      speakerName
+    );
+    if (matchedSegmentCount <= 0) {
+      return c.json(
+        buildVoiceProfileErrorBody({
+          code: 'speaker_segment_not_found',
+          message: 'Brak wypowiedzi tego mowcy w gotowej transkrypcji.',
+          stage: 'transcript',
+          recordingId,
+          speakerId,
+          speakerName,
+          segmentCount,
+          matchedSegmentCount,
+          requestId,
+        }),
+        422
+      );
     }
 
     try {
@@ -823,7 +997,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       );
       return c.json(profile, 201);
     } catch (err: any) {
-      return c.json({ message: err.message }, 400);
+      const details = classifyVoiceProfileEnrollmentError(err);
+      const body = buildVoiceProfileErrorBody({
+        code: details.code,
+        message: details.message,
+        stage: details.stage,
+        recordingId,
+        speakerId,
+        speakerName,
+        segmentCount,
+        matchedSegmentCount,
+        requestId,
+      });
+      console.warn('[voice-profile] Enrollment failed', body);
+      return c.json(body, details.status as any);
     }
   });
 

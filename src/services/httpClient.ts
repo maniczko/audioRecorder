@@ -392,8 +392,9 @@ export async function apiRequest(path: string, options: ApiOptions = {}) {
       unauthorizedHandlers.forEach((h: any) => h());
     }
     let message = `HTTP ${response.status}`;
+    let errorBody: any = null;
     try {
-      const errorBody = await parseResponse(response);
+      errorBody = await parseResponse(response);
       message =
         (typeof errorBody === 'object' && errorBody?.message) ||
         (typeof errorBody === 'string' && errorBody) ||
@@ -403,8 +404,16 @@ export async function apiRequest(path: string, options: ApiOptions = {}) {
     }
     const error = new Error(normalizeApiErrorMessage(message, response.status)) as Error & {
       status?: number;
+      code?: string;
+      stage?: string;
+      requestId?: string;
     };
     error.status = response.status;
+    if (errorBody && typeof errorBody === 'object') {
+      if (errorBody.code) error.code = String(errorBody.code);
+      if (errorBody.stage) error.stage = String(errorBody.stage);
+      if (errorBody.requestId) error.requestId = String(errorBody.requestId);
+    }
     throw error;
   }
 

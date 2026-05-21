@@ -671,6 +671,58 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  test('Regression: auto-learns voice profile from display recording when selectedRecording is missing', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: true }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+        displayRecording={{
+          id: 'rec-display',
+          transcript: [
+            {
+              id: 'seg-display',
+              speakerId: 'speaker_1',
+              text: 'Widoczny fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-barbara',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary jako probka.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+    await waitFor(() => {
+      expect(autoCreateVoiceProfile).toHaveBeenCalledWith(
+        'speaker_2',
+        'Barbara',
+        expect.objectContaining({
+          recordingId: 'rec-display',
+          transcriptSegments: expect.arrayContaining([
+            expect.objectContaining({ id: 'seg-display', speakerId: 'speaker_2' }),
+          ]),
+        })
+      );
+    });
+  });
+
   test('Regression: asks to save a voice profile sample after assigning a segment when auto-learn is off', async () => {
     const updateTranscriptSegment = vi.fn();
     const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));

@@ -1351,6 +1351,7 @@ export default function StudioMeetingView({
       if (!recordingId) return;
 
       const options = {
+        recordingId,
         transcriptSegments: Array.isArray(transcriptSegments) ? transcriptSegments : transcript,
       };
 
@@ -3969,6 +3970,7 @@ export default function StudioMeetingView({
                 const pending = pendingVoiceProfileEnrollment;
                 setPendingVoiceProfileEnrollment(null);
                 await enrollSpeakerProfile(pending.speakerId, pending.speakerName, {
+                  recordingId: pending.recordingId,
                   transcriptSegments: pending.transcriptSegments,
                 });
               }}

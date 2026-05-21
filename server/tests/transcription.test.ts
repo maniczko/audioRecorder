@@ -272,7 +272,7 @@ describe('TranscriptionService', () => {
     expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledWith(
       asset,
       '0',
-      [{ text: 'hello', speakerId: 0, timestamp: 0, endTimestamp: 1 }],
+      [expect.objectContaining({ text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 })],
       {}
     );
     expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalledWith(

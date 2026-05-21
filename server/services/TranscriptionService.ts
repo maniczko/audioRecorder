@@ -1,6 +1,143 @@
 import { EventEmitter } from 'node:events';
 import { config } from '../config.ts';
 
+type VoiceProfileEnrollmentCode =
+  | 'speaker_segment_not_found'
+  | 'audio_source_unavailable'
+  | 'clip_extraction_failed'
+  | 'embedding_failed'
+  | 'profile_save_failed';
+
+type VoiceProfileEnrollmentStage =
+  | 'transcript'
+  | 'audio_source'
+  | 'clip_extraction'
+  | 'embedding'
+  | 'profile_save';
+
+function voiceProfileError(
+  code: VoiceProfileEnrollmentCode,
+  message: string,
+  stage: VoiceProfileEnrollmentStage,
+  statusCode: number,
+  cause?: unknown
+) {
+  const error = new Error(message) as Error & {
+    code: VoiceProfileEnrollmentCode;
+    stage: VoiceProfileEnrollmentStage;
+    statusCode: number;
+    cause?: unknown;
+  };
+  error.code = code;
+  error.stage = stage;
+  error.statusCode = statusCode;
+  if (cause !== undefined) error.cause = cause;
+  return error;
+}
+
+function readVoiceProfileSegmentTime(segment: any, secondKeys: string[], msKeys: string[] = []) {
+  for (const key of secondKeys) {
+    const value = Number(segment?.[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  for (const key of msKeys) {
+    const value = Number(segment?.[key]);
+    if (Number.isFinite(value)) return value / 1000;
+  }
+  return NaN;
+}
+
+function inferVoiceProfileSegmentEnd(segments: any[], index: number, start: number, text: string) {
+  const segment = segments[index];
+  const explicitEnd = readVoiceProfileSegmentTime(
+    segment,
+    ['endTimestamp', 'end', 'endTime', 'endSeconds', 'stop'],
+    ['endMs', 'end_ms']
+  );
+  if (Number.isFinite(explicitEnd) && explicitEnd > start) return explicitEnd;
+
+  for (let nextIndex = index + 1; nextIndex < segments.length; nextIndex += 1) {
+    const nextStart = readVoiceProfileSegmentTime(
+      segments[nextIndex],
+      ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds', 'time', 'offset'],
+      ['startMs', 'start_ms']
+    );
+    if (Number.isFinite(nextStart) && nextStart > start) return nextStart;
+  }
+
+  return start + Math.min(15, Math.max(2, String(text || '').length / 14));
+}
+
+function normalizeVoiceProfileSegments(segments: any[]) {
+  if (!Array.isArray(segments)) return [];
+  return segments
+    .map((segment, index) => {
+      if (!segment) return null;
+      const speakerId = String(segment?.speakerId ?? '').trim();
+      const text = String(segment?.text || '').trim();
+      if (!speakerId || !text) return null;
+
+      const timestamp = readVoiceProfileSegmentTime(
+        segment,
+        ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds', 'time', 'offset'],
+        ['startMs', 'start_ms']
+      );
+      const endTimestamp = inferVoiceProfileSegmentEnd(segments, index, timestamp, text);
+      if (!Number.isFinite(timestamp) || !Number.isFinite(endTimestamp)) return null;
+      if (timestamp < 0 || endTimestamp <= timestamp) return null;
+
+      return {
+        ...segment,
+        speakerId,
+        text,
+        timestamp,
+        endTimestamp,
+      };
+    })
+    .filter(Boolean);
+}
+
+function classifyClipExtractionError(error: any) {
+  const message = String(error?.message || '');
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('segment') ||
+    lower.includes('znacznik') ||
+    lower.includes('timestamp') ||
+    lower.includes('valid segments')
+  ) {
+    return voiceProfileError(
+      'speaker_segment_not_found',
+      'Nie znaleziono poprawnego fragmentu wypowiedzi dla tej osoby.',
+      'transcript',
+      422,
+      error
+    );
+  }
+  if (
+    lower.includes('pobrac') ||
+    lower.includes('audio') ||
+    lower.includes('plik') ||
+    lower.includes('sciezk') ||
+    lower.includes('storage')
+  ) {
+    return voiceProfileError(
+      'audio_source_unavailable',
+      'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+      'audio_source',
+      424,
+      error
+    );
+  }
+  return voiceProfileError(
+    'clip_extraction_failed',
+    'Nie udalo sie wyciac probki glosu z nagrania.',
+    'clip_extraction',
+    502,
+    error
+  );
+}
+
 // LangChain Document and RagVectorStore loaded lazily to reduce startup memory
 let _Document: any = null;
 let _RagVectorStore: any = null;
@@ -538,29 +675,59 @@ export default class TranscriptionService extends EventEmitter {
     ) {
       segments = (options as any).transcriptSegments;
     }
-    if (!segments.length) throw new Error('Brak transkrypcji w bazie.');
+    segments = normalizeVoiceProfileSegments(segments);
+    if (!segments.length) {
+      throw voiceProfileError(
+        'speaker_segment_not_found',
+        'Brak transkrypcji w bazie.',
+        'transcript',
+        422
+      );
+    }
 
-    const clipPath = await this.pipeline.extractSpeakerAudioClip(
-      asset,
-      speakerId,
-      segments,
-      options
-    );
+    let clipPath: string;
+    try {
+      clipPath = await this.pipeline.extractSpeakerAudioClip(asset, speakerId, segments, options);
+    } catch (error) {
+      throw classifyClipExtractionError(error);
+    }
 
     try {
-      const embedding = await this.computeEmbedding(clipPath);
+      let embedding: any[] = [];
+      try {
+        embedding = await this.computeEmbedding(clipPath);
+      } catch (error) {
+        throw voiceProfileError(
+          'embedding_failed',
+          'Nie udalo sie utworzyc profilu glosu. Sprobuj ponownie za chwile.',
+          'embedding',
+          503,
+          error
+        );
+      }
       const profileId = `vp_${crypto.randomUUID().replace(/-/g, '')}`;
       const newPath = path.join(this.db.uploadDir, `${profileId}.wav`);
 
       fs.renameSync(clipPath, newPath);
-      const profile = await this.workspaceService.saveVoiceProfile({
-        id: profileId,
-        userId,
-        workspaceId: asset.workspace_id,
-        speakerName,
-        audioPath: newPath,
-        embedding: embedding || [],
-      });
+      let profile;
+      try {
+        profile = await this.workspaceService.saveVoiceProfile({
+          id: profileId,
+          userId,
+          workspaceId: asset.workspace_id,
+          speakerName,
+          audioPath: newPath,
+          embedding: embedding || [],
+        });
+      } catch (error) {
+        throw voiceProfileError(
+          'profile_save_failed',
+          'Nie udalo sie zapisac profilu glosu.',
+          'profile_save',
+          500,
+          error
+        );
+      }
       return profile;
     } finally {
       try {

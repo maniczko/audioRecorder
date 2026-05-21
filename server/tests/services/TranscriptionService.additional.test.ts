@@ -301,6 +301,143 @@ describe('TranscriptionService - Additional Coverage', () => {
       } catch (_) {}
     });
 
+    test('normalizes production timestamp variants before clip extraction', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_time_variants.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Production timestamp sample', speakerId: '2', startTime: 3, endTime: 9 },
+        ]),
+      };
+
+      await service.createVoiceProfileFromSpeaker(asset, '2', 'Barbara', 'user1');
+
+      expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledWith(
+        asset,
+        '2',
+        [
+          expect.objectContaining({
+            text: 'Production timestamp sample',
+            speakerId: '2',
+            timestamp: 3,
+            endTimestamp: 9,
+          }),
+        ],
+        expect.any(Object)
+      );
+
+      try {
+        fs.unlinkSync(tempClipPath);
+      } catch (_) {}
+    });
+
+    test('classifies clip extraction failures as audio_source_unavailable', async () => {
+      mockAudioPipeline.extractSpeakerAudioClip.mockRejectedValue(
+        new Error('Nie mozna pobrac pliku audio do probki glosu.')
+      );
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Voice sample', speakerId: '1', timestamp: 0, endTimestamp: 4 },
+        ]),
+      };
+
+      await expect(
+        service.createVoiceProfileFromSpeaker(asset, '1', 'Barbara', 'user1')
+      ).rejects.toMatchObject({
+        code: 'audio_source_unavailable',
+        stage: 'audio_source',
+        statusCode: 424,
+      });
+    });
+
+    test('classifies embedding failures as embedding_failed', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_embedding_fail.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockSpeakerEmbedder.computeEmbedding.mockRejectedValue(new Error('Embedding provider down'));
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Voice sample', speakerId: '1', timestamp: 0, endTimestamp: 4 },
+        ]),
+      };
+
+      await expect(
+        service.createVoiceProfileFromSpeaker(asset, '1', 'Barbara', 'user1')
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      expect((globalThis as any).__mockFs.unlinkSync).toHaveBeenCalledWith(tempClipPath);
+    });
+
+    test('classifies profile persistence failures as profile_save_failed', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_save_fail.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockWorkspaceService.saveVoiceProfile.mockRejectedValue(new Error('database unavailable'));
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Voice sample', speakerId: '1', timestamp: 0, endTimestamp: 4 },
+        ]),
+      };
+
+      await expect(
+        service.createVoiceProfileFromSpeaker(asset, '1', 'Barbara', 'user1')
+      ).rejects.toMatchObject({
+        code: 'profile_save_failed',
+        stage: 'profile_save',
+        statusCode: 500,
+      });
+    });
+
     test('throws error when no transcript available', async () => {
       const service = new TranscriptionService(
         mockDb,

@@ -768,3 +768,52 @@ describe('Regression: Issue #0 - timeout exceeded when trying to connect is trea
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+// -----------------------------------------------------------------
+// Issue #0 - voice profile API returned anonymous 400 in the browser
+// Date: 2026-05-21
+// Bug: apiRequest kept only the message from structured error responses,
+//      dropping code/stage/requestId needed for UI diagnostics.
+// Fix: preserve safe structured fields on thrown Error objects.
+// -----------------------------------------------------------------
+describe('Regression: Issue #0 - apiRequest preserves structured API error fields', () => {
+  let originalFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('attaches code, stage, requestId and status to thrown errors', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 424,
+      json: () =>
+        Promise.resolve({
+          code: 'audio_source_unavailable',
+          message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+          stage: 'audio_source',
+          requestId: 'req-voice-1',
+        }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    }) as any;
+
+    const error = await apiRequest('/media/recordings/rec/voice-profiles/from-speaker', {
+      method: 'POST',
+      retries: 0,
+    }).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain('Audio nie jest dostepne');
+    expect(error).toMatchObject({
+      status: 424,
+      code: 'audio_source_unavailable',
+      stage: 'audio_source',
+      requestId: 'req-voice-1',
+    });
+  });
+});
