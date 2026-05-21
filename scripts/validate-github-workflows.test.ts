@@ -105,12 +105,13 @@ describe('GitHub workflows validation', () => {
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
 
-  it('checks out the error monitor workflow with the built-in GitHub token fallback', () => {
+  it('checks out the error monitor workflow with the built-in GitHub token', () => {
     const workflowPath = path.join(workflowDir, 'error-monitor-and-task-creator.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
     expect(content).toContain('actions/checkout@v6');
     expect(content).toContain('github.token');
+    expect(content).not.toContain('secrets.GH_PAT');
     expect(content).not.toContain('secrets.GITHUB_TOKEN');
   });
 
