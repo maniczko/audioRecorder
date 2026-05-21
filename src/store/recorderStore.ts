@@ -5,8 +5,10 @@ import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   getNextProcessableRecordingQueueItem,
   getNextPendingRecordingQueueItem,
+  normalizeRecordingQueue,
   removeRecordingQueueItem,
   updateRecordingQueueItem,
+  isWorkspaceMissingErrorMessage,
 } from '../lib/recordingQueue';
 import { getAudioBlob } from '../lib/audioStore';
 import { analyzeMeeting } from '../lib/analysis';
@@ -156,6 +158,10 @@ function toUserFacingQueueError(error: any) {
     return errorMessage;
   }
 
+  if (isWorkspaceMissingErrorMessage(errorMessage)) {
+    return RECORDING_WORKSPACE_REQUIRED_MESSAGE;
+  }
+
   if (
     errorMessage.includes('Brak tokenu autoryzacyjnego') ||
     errorMessage.includes('Sesja wygasla')
@@ -201,6 +207,7 @@ function isExpectedDomainFailure(error: any) {
     errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.') ||
     errorMessage.includes('Lokalny plik audio nie istnieje') ||
     isRemoteRecordingMissingError(error) ||
+    isWorkspaceMissingErrorMessage(errorMessage) ||
     errorMessage.includes(RECORDING_WORKSPACE_REQUIRED_MESSAGE) ||
     error?.status === 409
   );
@@ -220,6 +227,20 @@ const MAX_AUTO_RETRIES = 5;
 // Exponential backoff delays for retries: 1s, 4s, 16s, 32s, 64s (~2 min total - enough for Railway restart)
 const RETRY_DELAYS_MS = [1000, 4000, 16000, 32000, 64000];
 
+function hasQueueNormalizationDrift(queue: unknown[], normalizedQueue: unknown[]) {
+  const current = Array.isArray(queue) ? queue : [];
+  if (current.length !== normalizedQueue.length) return true;
+  return normalizedQueue.some((item: any, index) => {
+    const previous = current[index] as any;
+    const hadWorkspaceMissingError = isWorkspaceMissingErrorMessage(previous?.errorMessage);
+    return Boolean(
+      previous?.recordingId &&
+      hadWorkspaceMissingError &&
+      (item?.status !== previous?.status || item?.errorMessage !== previous?.errorMessage)
+    );
+  });
+}
+
 export const useRecorderStore = create<any>()(
   persist(
     (set, get: any) => ({
@@ -233,7 +254,9 @@ export const useRecorderStore = create<any>()(
 
       setRecordingQueue: (updater) =>
         set((state) => ({
-          recordingQueue: typeof updater === 'function' ? updater(state.recordingQueue) : updater,
+          recordingQueue: normalizeRecordingQueue(
+            typeof updater === 'function' ? updater(state.recordingQueue) : updater
+          ),
         })),
 
       updateQueueItem: (recordingId, updates) =>
@@ -258,6 +281,17 @@ export const useRecorderStore = create<any>()(
         const existing = (get().recordingQueue || []).find(
           (item) => item.recordingId === recordingId
         );
+        if (existing?.status === 'failed_permanent') {
+          set({
+            lastQueueErrorKey: '',
+            recordingMessage:
+              existing.errorMessage || 'Nagranie wymaga ponownego importu zamiast retry.',
+            analysisStatus: 'error',
+            pipelineProgressPercent: 0,
+            pipelineStageLabel: existing.errorMessage || 'Wymaga ponownego importu',
+          });
+          return;
+        }
         const reuseRemoteUpload = Boolean(existing?.uploaded);
         get().updateQueueItem(recordingId, {
           status: 'queued' as RecordingPipelineStatus,
@@ -330,6 +364,12 @@ export const useRecorderStore = create<any>()(
       ) => {
         const state = get();
         if (state.isProcessingQueue) return;
+
+        const normalizedQueue = normalizeRecordingQueue(state.recordingQueue);
+        if (hasQueueNormalizationDrift(state.recordingQueue, normalizedQueue)) {
+          set({ recordingQueue: normalizedQueue });
+          return;
+        }
 
         // Wait for network connectivity - register a one-time listener and bail
         if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -513,6 +553,25 @@ export const useRecorderStore = create<any>()(
     {
       name: STORAGE_KEYS.recordingQueue,
       storage: createJSONStorage(() => idbJSONStorage),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if ((state as any).__recordingQueueNeedsPersistence) {
+          state.setRecordingQueue(state.recordingQueue);
+        }
+      },
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState || {}) as any;
+        const recordingQueue = normalizeRecordingQueue(persisted.recordingQueue);
+        return {
+          ...currentState,
+          ...persisted,
+          recordingQueue,
+          __recordingQueueNeedsPersistence: hasQueueNormalizationDrift(
+            persisted.recordingQueue,
+            recordingQueue
+          ),
+        };
+      },
       partialize: (state) => ({ recordingQueue: state.recordingQueue }),
     }
   )

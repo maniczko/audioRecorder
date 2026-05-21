@@ -1,5 +1,6 @@
 import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+  isWorkspaceMissingErrorMessage,
   normalizeRecordingPipelineStatus,
   type RecordingPipelineStatus,
   type RecordingQueueItem,
@@ -533,7 +534,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     if (mediaService.mode === 'remote' && !workspaceId) {
       updateQueueItem(nextItem.recordingId, {
-        status: 'failed',
+        status: 'failed_permanent',
         errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
       });
       const snapshot = getPipelineSnapshot('failed', 0, RECORDING_WORKSPACE_REQUIRED_MESSAGE);
@@ -1031,6 +1032,8 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const isPermanent =
       error?.status === 409 ||
       isRemoteRecordingMissingError(error) ||
+      isWorkspaceMissingErrorMessage(userFacingMessage) ||
+      isWorkspaceMissingErrorMessage(error?.message) ||
       (!isTransientNetworkError(error) && retryCount >= maxAutoRetries);
 
     updateQueueItem(nextItem.recordingId, {

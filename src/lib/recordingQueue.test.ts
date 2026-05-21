@@ -6,7 +6,11 @@ import {
   getNextProcessableRecordingQueueItem,
   getRecordingQueueForMeeting,
   hasRecordingWorkspaceContext,
+  isWorkspaceMissingErrorMessage,
+  normalizeQueueErrorMessage,
+  normalizeRecordingQueue,
   normalizeRecordingPipelineStatus,
+  RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   resolveQueueMeetingContext,
   updateRecordingQueueItem,
 } from './recordingQueue';
@@ -104,6 +108,37 @@ describe('recordingQueue helpers', () => {
         hasRecordingWorkspaceContext(candidate)
       )
     ).toBeUndefined();
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - stale persisted queue with missing X-Workspace-Id
+  // Date: 2026-05-21
+  // Bug: old failed queue items kept technical backend errors and retry UI.
+  // Fix: normalize them to a permanent, friendly re-import state.
+  // -----------------------------------------------------------------
+  test('Regression: normalizes persisted missing-workspace failures to permanent friendly state', () => {
+    const [item] = normalizeRecordingQueue([
+      {
+        id: 'queue_missing_workspace',
+        recordingId: 'recording_missing_workspace',
+        meetingId: 'meeting_1',
+        meetingTitle: 'Missing workspace',
+        status: 'failed',
+        uploaded: true,
+        errorMessage: 'Brakuje X-Workspace-Id.',
+        createdAt: '2026-05-18T17:47:00.000Z',
+      },
+    ]);
+
+    expect(isWorkspaceMissingErrorMessage('Brakuje X-Workspace-Id.')).toBe(true);
+    expect(normalizeQueueErrorMessage('Brakuje X-Workspace-Id.')).toBe(
+      RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
+    expect(item).toMatchObject({
+      recordingId: 'recording_missing_workspace',
+      status: 'failed_permanent',
+      errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+    });
   });
 
   test('finds a live meeting by workspace and title when the snapshot id changed after sync', () => {

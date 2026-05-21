@@ -19,6 +19,26 @@ export interface RecordingQueueMeetingLike {
 export const RECORDING_WORKSPACE_REQUIRED_MESSAGE =
   'Nie można rozpocząć uploadu, bo przestrzeń robocza nie jest jeszcze gotowa. Odśwież lub wybierz workspace.';
 
+export function isWorkspaceMissingErrorMessage(value: unknown) {
+  const message = String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return (
+    message.includes('brakuje x-workspace-id') ||
+    message.includes('brakuje workspaceid') ||
+    message.includes('x-workspace-id') ||
+    (message.includes('przestrze') && message.includes('robocza') && message.includes('gotowa'))
+  );
+}
+
+export function normalizeQueueErrorMessage(value: unknown) {
+  return isWorkspaceMissingErrorMessage(value)
+    ? RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    : String(value || '');
+}
+
 export function hasRecordingWorkspaceContext(
   value: Pick<RecordingQueueItem, 'workspaceId'> | RecordingQueueMeetingLike | null | undefined
 ) {
@@ -264,6 +284,12 @@ export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueIt
       if (!current?.recordingId) {
         return null;
       }
+      const normalizedErrorMessage = normalizeQueueErrorMessage(current.errorMessage || '');
+      const normalizedStatus = normalizeRecordingPipelineStatus(current.status);
+      const status =
+        normalizedStatus === 'failed' && isWorkspaceMissingErrorMessage(current.errorMessage)
+          ? 'failed_permanent'
+          : normalizedStatus;
 
       return {
         id: current.id || current.recordingId,
@@ -273,13 +299,13 @@ export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueIt
         meetingTitle: current.meetingTitle || 'Spotkanie',
         meetingSnapshot: current.meetingSnapshot || null,
         mimeType: current.mimeType || 'audio/webm',
-        status: normalizeRecordingPipelineStatus(current.status) as RecordingPipelineStatus,
+        status: status as RecordingPipelineStatus,
         uploaded: Boolean(current.uploaded),
         attempts: Math.max(0, Number(current.attempts) || 0),
         retryCount: Math.max(0, Number(current.retryCount) || 0),
         backoffUntil: Math.max(0, Number(current.backoffUntil) || 0),
         lastErrorMessage: String(current.lastErrorMessage || ''),
-        errorMessage: String(current.errorMessage || ''),
+        errorMessage: normalizedErrorMessage,
         rawSegments: Array.isArray(current.rawSegments) ? current.rawSegments : [],
         duration: Math.max(0, Number(current.duration) || 0),
         createdAt: current.createdAt || new Date().toISOString(),

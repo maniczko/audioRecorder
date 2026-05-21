@@ -206,6 +206,31 @@ describe('StudioMeetingView', () => {
     expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec-failed');
   }, 15000);
 
+  // -----------------------------------------------------------------
+  // Issue #0 - permanent queue failures exposed retry in Studio
+  // Date: 2026-05-21
+  // Bug: a re-import-only queue item could still show "Ponow przetwarzanie".
+  // Fix: only retry transient failed items, never failed_permanent.
+  // -----------------------------------------------------------------
+  test('Regression: hides retry action for permanent queue failures', () => {
+    const retryRecordingQueueItem = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        recordingMessage="Nagranie nie jest juz dostepne na serwerze."
+        analysisStatus="error"
+        retryRecordingQueueItem={retryRecordingQueueItem}
+        selectedMeetingQueue={[
+          { recordingId: 'rec-permanent', meetingId: 'm1', status: 'failed_permanent' },
+        ]}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /Ponow przetwarzanie/i })).not.toBeInTheDocument();
+    expect(retryRecordingQueueItem).not.toHaveBeenCalled();
+  }, 15000);
+
   test('renders workspace backend warning banner when workspaceMessage is set', () => {
     renderWithContext(
       <StudioMeetingView

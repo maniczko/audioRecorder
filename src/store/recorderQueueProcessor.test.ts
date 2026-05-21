@@ -732,7 +732,7 @@ describe('processRecordingQueueItem', () => {
     expect(context.mediaService.persistRecordingAudio).not.toHaveBeenCalled();
     expect(context.getAudioBlob).not.toHaveBeenCalled();
     expect(context.updateQueueItem).toHaveBeenCalledWith('recording-1', {
-      status: 'failed',
+      status: 'failed_permanent',
       errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
     });
     expect(context.setState).toHaveBeenCalledWith(
@@ -810,6 +810,42 @@ describe('processRecordingQueueItem', () => {
       expect.objectContaining({
         analysisStatus: 'error',
         recordingMessage: `Blad w kolejce: ${REMOTE_RECORDING_MISSING_MESSAGE}`,
+      })
+    );
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - backend missing X-Workspace-Id leaked as retryable queue error
+  // Date: 2026-05-21
+  // Bug: a 400 workspace-header error could remain retryable and technical.
+  // Fix: mark it permanent and show the user-facing workspace message.
+  // -----------------------------------------------------------------
+  it('marks backend missing workspace errors as permanent friendly queue failures', async () => {
+    const missingWorkspace = Object.assign(new Error('Brakuje X-Workspace-Id.'), { status: 400 });
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        uploaded: true,
+        status: 'processing',
+        workspaceId: 'workspace-1',
+      }),
+      toUserFacingQueueError: vi.fn(() => RECORDING_WORKSPACE_REQUIRED_MESSAGE),
+      isExpectedDomainFailure: vi.fn(() => true),
+    });
+    context.mediaService.mode = 'remote';
+    context.mediaService.getTranscriptionJobStatus.mockRejectedValueOnce(missingWorkspace);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.getAudioBlob).not.toHaveBeenCalled();
+    expect(context.mediaService.retryTranscriptionJob).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith('recording-1', {
+      status: 'failed_permanent',
+      errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+    });
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'error',
+        recordingMessage: `Blad w kolejce: ${RECORDING_WORKSPACE_REQUIRED_MESSAGE}`,
       })
     );
   });

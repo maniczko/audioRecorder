@@ -220,4 +220,91 @@ test.describe('Remote media workspace contract', () => {
       )
       .toBe('failed_permanent');
   });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - persisted missing X-Workspace-Id failure survived reload
+  // Date: 2026-05-21
+  // Bug: stale local queue state kept polling/retry UI after refresh.
+  // Fix: hydrate it into failed_permanent without backend calls.
+  // -----------------------------------------------------------------
+  test('normalizes persisted workspace-header queue failure after reload', async ({ page }) => {
+    const recordingId = 'recording_missing_workspace_after_reload';
+    let statusRequests = 0;
+    let retryRequests = 0;
+    let uploadRequests = 0;
+
+    await page.route(`**/media/recordings/${recordingId}/transcribe`, async (route) => {
+      statusRequests += 1;
+      await route.fulfill({ status: 500, body: 'unexpected transcribe poll' });
+    });
+
+    await page.route(`**/media/recordings/${recordingId}/retry-transcribe`, async (route) => {
+      retryRequests += 1;
+      await route.fulfill({ status: 500, body: 'unexpected retry' });
+    });
+
+    await page.route(`**/media/recordings/${recordingId}/audio`, async (route, request) => {
+      if (request.method() === 'PUT') {
+        uploadRequests += 1;
+      }
+      await route.fulfill({ status: 500, body: 'unexpected upload' });
+    });
+
+    await seedLoggedInUser(page);
+    await seedMeeting(page, {
+      id: 'meeting_missing_workspace_reload',
+      title: 'Missing workspace reload',
+      workspaceId: '',
+      recordings: [],
+    });
+    await seedQueueItem(page, {
+      id: 'queue_missing_workspace_reload',
+      recordingId,
+      meetingId: 'meeting_missing_workspace_reload',
+      meetingTitle: 'Missing workspace reload',
+      status: 'failed',
+      uploaded: true,
+      retryCount: 0,
+      attempts: 0,
+      workspaceId: '',
+      errorMessage: 'Brakuje X-Workspace-Id.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      meetingSnapshot: {
+        id: 'meeting_missing_workspace_reload',
+        title: 'Missing workspace reload',
+        workspaceId: '',
+      },
+    });
+
+    await page.goto('/');
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
+
+    await expect(page.getByText('Missing workspace reload').first()).toBeVisible();
+    await expect(
+      page.locator('.pipeline-error-text').filter({
+        hasText: /robocza nie jest jeszcze gotowa/i,
+      })
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('.pipeline-retry-btn')).toHaveCount(0);
+
+    await page.waitForTimeout(1500);
+    expect(statusRequests).toBe(0);
+    expect(retryRequests).toBe(0);
+    expect(uploadRequests).toBe(0);
+
+    await expect
+      .poll(
+        async () => {
+          const queueState = await readPersistedRecordingQueue(page);
+          const item = queueState?.state?.recordingQueue?.[0];
+          return {
+            status: item?.status || '',
+            isTechnicalError: String(item?.errorMessage || '').includes('Brakuje X-Workspace-Id'),
+          };
+        },
+        { timeout: 5_000 }
+      )
+      .toEqual({ status: 'failed_permanent', isTechnicalError: false });
+  });
 });

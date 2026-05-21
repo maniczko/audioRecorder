@@ -3,6 +3,7 @@
  * setupTests mocks this module globally, so this file explicitly un-mocks it.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { RECORDING_WORKSPACE_REQUIRED_MESSAGE } from '../lib/recordingQueue';
 
 vi.unmock('./recorderStore');
 
@@ -95,6 +96,37 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().pipelineProgressPercent).toBe(8);
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - permanent queue failures were still retryable from store API
+  // Date: 2026-05-21
+  // Bug: retryRecordingQueueItem could requeue an item that needs re-import.
+  // Fix: leave failed_permanent items untouched and surface the explanation.
+  // -----------------------------------------------------------------
+  test('does not retry permanent missing-workspace queue item', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: 'rec_missing_workspace',
+          status: 'failed_permanent',
+          uploaded: true,
+          errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+        },
+      ],
+    });
+
+    useRecorderStore.getState().retryRecordingQueueItem('rec_missing_workspace');
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      recordingId: 'rec_missing_workspace',
+      status: 'failed_permanent',
+      uploaded: true,
+      errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+    });
+    expect(useRecorderStore.getState().recordingMessage).toBe(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+    expect(useRecorderStore.getState().analysisStatus).toBe('error');
+  });
+
   test('queues stored recording for retry without reupload', async () => {
     const { useRecorderStore } = await import('./recorderStore');
     const meeting = { id: 'm1', workspaceId: 'ws1', title: 'Test' };
@@ -146,6 +178,40 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
       recordingId: 'rec_missing_remote',
       status: 'failed_permanent',
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - stale missing-workspace state could process after hydration
+  // Date: 2026-05-21
+  // Bug: processQueue could try network work before cleaning old storage.
+  // Fix: normalize stale persisted queue state and stop that processing turn.
+  // -----------------------------------------------------------------
+  test('normalizes persisted missing-workspace queue state before processing', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        {
+          recordingId: 'rec_missing_workspace_reload',
+          meetingId: 'm1',
+          status: 'failed',
+          uploaded: true,
+          errorMessage: 'Brakuje X-Workspace-Id.',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: '' }), vi.fn(), vi.fn());
+
+    expect(mocks.createMediaService).not.toHaveBeenCalled();
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      recordingId: 'rec_missing_workspace_reload',
+      status: 'failed_permanent',
+      errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
     });
   });
 

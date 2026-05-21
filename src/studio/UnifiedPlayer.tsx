@@ -111,7 +111,7 @@ export default function UnifiedPlayer({
       : analysisStatus === 'processing'
         ? 'Transkrypcja w toku…'
         : activeQueueItem?.status === 'failed_permanent'
-          ? 'Trwały błąd — wymagana ręczna próba'
+          ? 'Wymaga ponownego importu'
           : activeQueueItem?.backoffUntil > Date.now()
             ? `Ponowienie za chwilę… (próba ${activeQueueItem.retryCount}/3)`
             : 'Nagranie w kolejce…';
@@ -295,8 +295,7 @@ export default function UnifiedPlayer({
           <span className="uplayer-rec-dot" aria-label="Nagrywanie">
             REC
           </span>
-        ) : activeQueueItem?.status === 'failed' ||
-          activeQueueItem?.status === 'failed_permanent' ? (
+        ) : activeQueueItem?.status === 'failed' ? (
           <button
             type="button"
             className="ghost-button"

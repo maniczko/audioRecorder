@@ -995,7 +995,7 @@ export default function StudioMeetingView({
   )?.status;
   const retryableSelectedQueueItem = (
     Array.isArray(selectedMeetingQueue) ? selectedMeetingQueue : []
-  ).find((item) => item && ['failed', 'failed_permanent'].includes(item.status));
+  ).find((item) => item && item.status === 'failed');
   const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
   const selectedTranscript = Array.isArray(selectedRecording?.transcript)
     ? selectedRecording.transcript
