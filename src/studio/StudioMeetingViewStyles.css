@@ -1566,6 +1566,12 @@
   border: 1px solid rgba(103, 213, 159, 0.2);
 }
 
+.ff-voice-profile-toast-error {
+  color: #ff8a8a;
+  background: rgba(255, 75, 95, 0.1);
+  border-color: rgba(255, 75, 95, 0.28);
+}
+
 .ff-voice-coaching-btn {
   width: 100%;
   padding: 5px 0;

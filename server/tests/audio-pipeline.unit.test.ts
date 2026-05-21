@@ -1235,6 +1235,74 @@ describe('audioPipeline exports', () => {
     );
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - voice profile extraction fails for Supabase-backed audio
+  // Date: 2026-05-21
+  // Bug: speaker profile creation treated Supabase storage keys as local
+  //      file paths, so ffmpeg failed after Railway redeploys.
+  // Fix: materialize remote audio to a temp file before extracting clips.
+  // -----------------------------------------------------------------
+  it('Regression: extractSpeakerAudioClip materializes Supabase storage audio before ffmpeg', async () => {
+    vi.resetModules();
+    const downloadAudioToFile = vi.fn().mockResolvedValue(undefined);
+    const unlinkSync = vi.fn();
+    const existsSync = vi.fn((filePath: string) => !String(filePath).includes('recording_remote'));
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, '', '');
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+
+    vi.doMock('../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'key-1',
+        OPENAI_API_KEY: 'key-1',
+        FFMPEG_BINARY: 'ffmpeg',
+        PYTHON_BINARY: 'python',
+        VOICELOG_UPLOAD_DIR: '/tmp/voicelog-uploads',
+        DEBUG: false,
+      },
+    }));
+    vi.doMock('../logger.ts', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock('../speakerEmbedder.ts', () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock('../lib/supabaseStorage.js', () => ({ downloadAudioToFile }));
+    vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock('node:fs', async () => {
+      const actual = await vi.importActual<any>('node:fs');
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync,
+          mkdirSync: vi.fn(),
+          unlinkSync,
+        },
+        existsSync,
+        mkdirSync: vi.fn(),
+        unlinkSync,
+      };
+    });
+
+    const pipeline = await import('../audioPipeline.ts');
+    const asset = {
+      id: 'recording_remote',
+      file_path: 'recording_remote.webm',
+      content_type: 'audio/webm',
+    };
+
+    await pipeline.extractSpeakerAudioClip(asset, 'speaker_1', [
+      { speakerId: 'speaker_1', timestamp: 0, endTimestamp: 5 },
+    ]);
+
+    expect(downloadAudioToFile).toHaveBeenCalledWith(
+      'recording_remote.webm',
+      expect.stringContaining('temp_voice_profile_source_')
+    );
+    const ffmpegCommand = execMock.mock.calls[0][0];
+    expect(ffmpegCommand).toContain('temp_voice_profile_source_');
+    expect(ffmpegCommand).not.toContain('-i "recording_remote.webm"');
+    expect(unlinkSync).toHaveBeenCalledWith(expect.stringContaining('temp_voice_profile_source_'));
+  }, 10000);
+
   it('extractSpeakerAudioClip throws error when no valid segments', async () => {
     vi.resetModules();
     vi.doMock('../config.ts', () => ({

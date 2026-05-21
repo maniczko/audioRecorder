@@ -557,8 +557,8 @@ export default function useRecordingActions({
         body,
       });
       return true;
-    } catch (_) {
-      return false;
+    } catch (error: any) {
+      throw new Error(error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
     }
   }
 

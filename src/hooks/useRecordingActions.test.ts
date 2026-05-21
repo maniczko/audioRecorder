@@ -517,6 +517,35 @@ describe('useRecordingActions', () => {
       );
     });
 
+    // -----------------------------------------------------------------
+    // Issue #0 - voice profile API failures were swallowed
+    // Date: 2026-05-21
+    // Bug: autoCreateVoiceProfile returned false for backend failures, so
+    //      the Studio view could not display the real failure reason.
+    // Fix: preserve guard false values, but surface API errors to callers.
+    // -----------------------------------------------------------------
+    test('surfaces remote voice profile endpoint errors to the caller', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      apiRequestMock.mockRejectedValueOnce(
+        new Error('Nie mozna pobrac pliku audio do probki glosu.')
+      );
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Dobra probka glosu', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      await expect(result.current.autoCreateVoiceProfile('0', 'Anna')).rejects.toThrow(
+        'Nie mozna pobrac pliku audio do probki glosu.'
+      );
+    });
+
     test('uses provided transcript override when manual speaker assignment changed local segments', async () => {
       remoteApiEnabledMock.mockReturnValue(true);
       const readyRecording = {

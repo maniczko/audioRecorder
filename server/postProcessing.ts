@@ -31,6 +31,113 @@ const PYTHON_BINARY = config.PYTHON_BINARY;
 const ACOUSTIC_FEATURES_SCRIPT = path.join(__dirname, 'acoustic_features.py');
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
 
+const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
+  'audio/webm': ['.webm'],
+  'audio/mpeg': ['.mp3'],
+  'audio/mp4': ['.mp4', '.m4a'],
+  'audio/wav': ['.wav'],
+  'audio/ogg': ['.ogg', '.oga'],
+  'audio/flac': ['.flac'],
+  'application/octet-stream': ['.webm'],
+};
+
+function extractLeafPathSegment(filePath: string) {
+  return filePath.split(/[\\/]/).filter(Boolean).pop() ?? filePath;
+}
+
+function sanitizeStorageName(value: string) {
+  return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function deriveAudioExtensions(filePath: string, contentType?: string) {
+  const candidates = new Set<string>();
+  const explicitExt = path.extname(extractLeafPathSegment(filePath || ''));
+  if (explicitExt) candidates.add(explicitExt.toLowerCase());
+
+  const normalizedType = String(contentType || '').toLowerCase();
+  for (const extension of AUDIO_CONTENT_TYPE_EXTENSIONS[normalizedType] || []) {
+    candidates.add(extension);
+  }
+
+  if (candidates.size === 0) candidates.add('.webm');
+  return [...candidates];
+}
+
+function isRemoteAudioStoragePath(filePath: string) {
+  return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
+}
+
+function getVoiceProfileAudioWorkDir() {
+  const preferred = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
+  fs.mkdirSync(preferred, { recursive: true });
+  return preferred;
+}
+
+function buildRemoteAudioStorageCandidates(asset: any) {
+  const rawPath = String(asset?.file_path || '').trim();
+  if (!rawPath) return [];
+
+  const candidates = new Set<string>();
+  const leafName = extractLeafPathSegment(rawPath);
+  if (isRemoteAudioStoragePath(rawPath)) candidates.add(rawPath);
+  if (leafName) candidates.add(leafName);
+
+  const safeRecordingId = sanitizeStorageName(String(asset?.id || 'recording'));
+  for (const extension of deriveAudioExtensions(rawPath, asset?.content_type)) {
+    candidates.add(`${safeRecordingId}${extension}`);
+  }
+
+  return [...candidates];
+}
+
+async function resolveSpeakerAudioClipSource(asset: any) {
+  const rawPath = String(asset?.file_path || '').trim();
+  if (!rawPath) throw new Error('Brak sciezki pliku audio.');
+
+  const isRemotePath = isRemoteAudioStoragePath(rawPath);
+  if (!isRemotePath && fs.existsSync(rawPath)) {
+    return {
+      inputPath: rawPath,
+      outputDir: path.dirname(rawPath),
+      cleanup: () => {},
+    };
+  }
+
+  const workDir = getVoiceProfileAudioWorkDir();
+  const tempExt = deriveAudioExtensions(rawPath, asset?.content_type)[0] || '.webm';
+  const candidates = buildRemoteAudioStorageCandidates(asset);
+  let lastError: any = null;
+
+  for (const storagePath of candidates) {
+    const sourceTempPath = path.join(
+      workDir,
+      `temp_voice_profile_source_${sanitizeStorageName(String(asset?.id || 'recording'))}_${crypto.randomUUID().slice(0, 8)}${tempExt}`
+    );
+
+    try {
+      const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
+      await downloadAudioToFile(storagePath, sourceTempPath);
+      return {
+        inputPath: sourceTempPath,
+        outputDir: workDir,
+        cleanup: () => {
+          try {
+            fs.unlinkSync(sourceTempPath);
+          } catch (_) {}
+        },
+      };
+    } catch (error) {
+      lastError = error;
+      try {
+        fs.unlinkSync(sourceTempPath);
+      } catch (_) {}
+    }
+  }
+
+  const reason = lastError?.message ? ` (${lastError.message})` : '';
+  throw new Error(`Nie mozna pobrac pliku audio do probki glosu${reason}.`);
+}
+
 // ── LLM transcript correction ─────────────────────────────────────────────────
 
 export async function correctTranscriptWithLLM(segments: any[], options: any = {}) {
@@ -318,8 +425,9 @@ export async function extractSpeakerAudioClip(
 
   if (!validSegs.length) throw new Error('Brak segmentów z poprawnymi znacznikami czasu.');
 
+  const source = await resolveSpeakerAudioClipSource(asset);
   const clipPath = path.join(
-    path.dirname(asset.file_path),
+    source.outputDir,
     `speaker_${asset.id}_${String(speakerId).replace(/[^a-zA-Z0-9_-]/g, '')}_${crypto.randomUUID().slice(0, 8)}.wav`
   );
 
@@ -330,10 +438,14 @@ export async function extractSpeakerAudioClip(
     )
     .join('+');
 
-  await execPromise(
-    `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
-    { timeout: 30000, signal: options.signal }
-  );
+  try {
+    await execPromise(
+      `"${FFMPEG_BINARY}" -y -i "${source.inputPath}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
+      { timeout: 30000, signal: options.signal }
+    );
+  } finally {
+    source.cleanup();
+  }
 
   return clipPath;
 }

@@ -749,6 +749,84 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - voice profile sample failures were console-only
+  // Date: 2026-05-21
+  // Bug: clicking "Zapisz do profilu glosu" could fail with HTTP 400
+  //      without any user-facing feedback.
+  // Fix: catch enrollment errors and show the backend-safe message.
+  // -----------------------------------------------------------------
+  test('Regression: shows feedback when saving a voice profile sample fails', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() =>
+      Promise.reject(new Error('Nie mozna pobrac pliku audio do probki glosu.'))
+    );
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: false }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary.',
+              timestamp: 6,
+              endTimestamp: 10,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary.',
+              timestamp: 6,
+              endTimestamp: 10,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Zapisz do profilu glosu/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Zapisz do profilu glosu/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Nie mozna pobrac pliku audio do probki glosu/i)).toBeInTheDocument();
+    });
+  });
+
   test('renders playback scrubber and lets user seek audio', async () => {
     renderWithContext(
       <StudioMeetingView

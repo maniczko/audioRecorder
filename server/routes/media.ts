@@ -84,15 +84,61 @@ function hasTranscriptSegmentForSpeaker(segments: any[], speakerId: string) {
   );
 }
 
+function readSegmentTimestamp(
+  segment: any,
+  secondKeys: string[],
+  millisecondKeys: string[] = []
+): number {
+  for (const key of secondKeys) {
+    const value = Number(segment?.[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  for (const key of millisecondKeys) {
+    const value = Number(segment?.[key]);
+    if (Number.isFinite(value)) return value / 1000;
+  }
+  return NaN;
+}
+
+function inferSegmentEndTimestamp(
+  segments: any[],
+  index: number,
+  start: number,
+  text: string
+): number {
+  const explicitEnd = readSegmentTimestamp(
+    segments[index],
+    ['endTimestamp', 'end', 'endTime', 'endSeconds', 'stop'],
+    ['endMs', 'end_ms']
+  );
+  if (Number.isFinite(explicitEnd) && explicitEnd > start) return explicitEnd;
+
+  for (let nextIndex = index + 1; nextIndex < segments.length; nextIndex += 1) {
+    const nextStart = readSegmentTimestamp(
+      segments[nextIndex],
+      ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds'],
+      ['startMs', 'start_ms']
+    );
+    if (Number.isFinite(nextStart) && nextStart > start) return nextStart;
+  }
+
+  const estimatedDuration = Math.min(15, Math.max(2, text.length / 14));
+  return start + estimatedDuration;
+}
+
 function normalizeVoiceProfileTranscriptSegments(value: unknown): any[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((segment) => {
+    .map((segment, index, segments) => {
       if (!segment) return null;
       const speakerId = String(segment?.speakerId ?? '').trim();
       const text = String(segment?.text || '').trim();
-      const timestamp = Number(segment?.timestamp ?? segment?.start ?? NaN);
-      const endTimestamp = Number(segment?.endTimestamp ?? segment?.end ?? NaN);
+      const timestamp = readSegmentTimestamp(
+        segment,
+        ['timestamp', 'start', 'startTime', 'startTimestamp', 'startSeconds'],
+        ['startMs', 'start_ms']
+      );
+      const endTimestamp = inferSegmentEndTimestamp(segments, index, timestamp, text);
       if (!speakerId || !text) return null;
       if (!Number.isFinite(timestamp) || !Number.isFinite(endTimestamp)) return null;
       if (endTimestamp <= timestamp || timestamp < 0) return null;

@@ -987,6 +987,60 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
+    it('Regression: infers clip end time for reassigned speaker segments without endTimestamp', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_infer_end',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcript_json: JSON.stringify([
+          { text: 'old speaker', speakerId: '0', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+      mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+        id: 'vp_infer_end',
+        speaker_name: 'Barbara',
+      });
+      const segments = [
+        {
+          id: 's1',
+          text: 'manual assignment sample',
+          speakerId: '99',
+          timestamp: 1,
+        },
+        {
+          id: 's2',
+          text: 'next speaker starts later',
+          speakerId: '0',
+          timestamp: 8,
+        },
+      ];
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_infer_end/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '99', speakerName: 'Barbara', segments }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'rec_vp_infer_end' }),
+        '99',
+        'Barbara',
+        'user_1',
+        {
+          transcriptSegments: expect.arrayContaining([
+            expect.objectContaining({ id: 's1', speakerId: '99', timestamp: 1, endTimestamp: 8 }),
+          ]),
+        }
+      );
+    });
+
     it('returns 404 when asset does not exist', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
 

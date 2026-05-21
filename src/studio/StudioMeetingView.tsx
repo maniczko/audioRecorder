@@ -957,6 +957,7 @@ export default function StudioMeetingView({
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
+  const [voiceProfileError, setVoiceProfileError] = useState<string | null>(null);
   const [verifiedSpeakerNames, setVerifiedSpeakerNames] = useState<string[]>([]);
 
   useEffect(() => {
@@ -1299,22 +1300,42 @@ export default function StudioMeetingView({
   }, [transcript, displaySpeakerNames]);
 
   const showVoiceProfileToast = useCallback((speakerName) => {
+    setVoiceProfileError(null);
     setVoiceProfileToast(speakerName);
     if (typeof window !== 'undefined') {
       window.setTimeout(() => setVoiceProfileToast(null), 3500);
     }
   }, []);
 
+  const showVoiceProfileError = useCallback((error) => {
+    const message =
+      typeof error === 'string'
+        ? error
+        : String(error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
+    setVoiceProfileToast(null);
+    setVoiceProfileError(message);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => setVoiceProfileError(null), 7000);
+    }
+  }, []);
+
   const enrollSpeakerProfile = useCallback(
     async (speakerId, speakerName, options = {}) => {
       if (typeof autoCreateVoiceProfile !== 'function') return false;
-      const enrolled = await autoCreateVoiceProfile(speakerId, speakerName, options);
-      if (enrolled) {
-        showVoiceProfileToast(speakerName);
+      try {
+        const enrolled = await autoCreateVoiceProfile(speakerId, speakerName, options);
+        if (enrolled) {
+          showVoiceProfileToast(speakerName);
+        } else {
+          showVoiceProfileError('Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
+        }
+        return enrolled;
+      } catch (error) {
+        showVoiceProfileError(error);
+        return false;
       }
-      return enrolled;
     },
-    [autoCreateVoiceProfile, showVoiceProfileToast]
+    [autoCreateVoiceProfile, showVoiceProfileError, showVoiceProfileToast]
   );
 
   const requestVoiceProfileEnrollment = useCallback(
@@ -3262,6 +3283,12 @@ export default function StudioMeetingView({
           ) : null}
 
           {/* Voice analytics panel — collapsible, shown only when transcript is available */}
+          {voiceProfileError ? (
+            <p className="ff-voice-profile-toast ff-voice-profile-toast-error" role="status">
+              {voiceProfileError}
+            </p>
+          ) : null}
+
           {transcript.length > 0 ? (
             <div className="ff-voice-analytics ff-voice-analytics-top">
               <button
