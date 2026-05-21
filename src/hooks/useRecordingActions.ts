@@ -481,17 +481,50 @@ export default function useRecordingActions({
     );
   }
 
+  function isRecordingReadyForVoiceProfile(recording) {
+    const status = String(
+      recording?.pipelineStatus || recording?.transcriptionStatus || recording?.status || ''
+    )
+      .trim()
+      .toLowerCase();
+
+    return ![
+      'uploading',
+      'queued',
+      'processing',
+      'diarization',
+      'failed',
+      'failed_permanent',
+    ].includes(status);
+  }
+
+  function hasVoiceProfileSpeakerSegment(recording, speakerId) {
+    const speakerKey = String(speakerId ?? '').trim();
+    if (!speakerKey) return false;
+    const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
+    return transcript.some(
+      (segment) =>
+        String(segment?.speakerId ?? '').trim() === speakerKey &&
+        String(segment?.text || '').trim().length > 0
+    );
+  }
+
   async function autoCreateVoiceProfile(
     speakerId: string | number,
     speakerName: string
   ): Promise<boolean> {
     if (!selectedRecording?.id || !remoteApiEnabled()) return false;
+    const normalizedSpeakerId = String(speakerId ?? '').trim();
+    const normalizedSpeakerName = String(speakerName || '').trim();
+    if (!normalizedSpeakerId || !normalizedSpeakerName) return false;
+    if (!isRecordingReadyForVoiceProfile(selectedRecording)) return false;
+    if (!hasVoiceProfileSpeakerSegment(selectedRecording, normalizedSpeakerId)) return false;
     // Don't create profile for generic auto-labels like "Speaker 1"
-    if (/^speaker\s*\d+$/i.test(speakerName.trim())) return false;
+    if (/^speaker\s*\d+$/i.test(normalizedSpeakerName)) return false;
     try {
       await apiRequest(`/media/recordings/${selectedRecording.id}/voice-profiles/from-speaker`, {
         method: 'POST',
-        body: { speakerId: String(speakerId), speakerName: speakerName.trim() },
+        body: { speakerId: normalizedSpeakerId, speakerName: normalizedSpeakerName },
       });
       return true;
     } catch (_) {

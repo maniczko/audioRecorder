@@ -184,8 +184,16 @@ export function isRemoteRecordingMissingError(
   );
 }
 
+export function shouldReportBackgroundTranscriptionPendingToConsole(
+  env: Record<string, unknown> = ((import.meta as any).env || {}) as Record<string, unknown>
+) {
+  return env.VITE_VOICELOG_DEBUG_QUEUE === 'true' || env.PROD !== true;
+}
+
 function reportBackgroundTranscriptionPending(data: Record<string, unknown>) {
-  console.warn('[queue] Transcription still processing in background.', data);
+  if (shouldReportBackgroundTranscriptionPendingToConsole()) {
+    console.info('[queue] Transcription still processing in background.', data);
+  }
   if (typeof window === 'undefined') return;
   Sentry?.addBreadcrumb?.({
     category: 'recording.queue',

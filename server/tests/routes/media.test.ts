@@ -812,7 +812,7 @@ describe('Media Routes', () => {
       .mockResolvedValueOnce({
         id: 'rec_voice',
         workspace_id: 'ws_1',
-        transcript_json: '[{"text":"hello","timestamp":0,"endTimestamp":1}]',
+        transcript_json: '[{"text":"hello","speakerId":"0","timestamp":0,"endTimestamp":1}]',
       })
       .mockResolvedValueOnce({
         id: 'rec_rediarize_missing',

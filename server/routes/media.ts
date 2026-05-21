@@ -57,6 +57,33 @@ function deriveAudioExtensions(filePath: string, contentType?: string): string[]
   return [...candidates];
 }
 
+function parseTranscriptJsonSegments(value: unknown): any[] {
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function isVoiceProfileTranscriptPending(asset: any, segments: any[]) {
+  if (segments.length > 0) return false;
+  const status = String(asset?.transcription_status || asset?.pipelineStatus || '')
+    .trim()
+    .toLowerCase();
+  return ['uploading', 'queued', 'processing', 'diarization', 'review'].includes(status);
+}
+
+function hasTranscriptSegmentForSpeaker(segments: any[], speakerId: string) {
+  const speakerKey = String(speakerId || '').trim();
+  return segments.some(
+    (segment) =>
+      String(segment?.speakerId ?? '').trim() === speakerKey &&
+      String(segment?.text || '').trim().length > 0
+  );
+}
+
 export function buildRemoteAudioStorageCandidates(
   recordingId: string,
   asset: Pick<MediaAsset, 'file_path' | 'content_type'>
@@ -688,15 +715,31 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const session = c.get('session') as any;
     const recordingId = c.req.param('recordingId');
     const body = await c.req.json().catch(() => ({}));
+    const speakerId = String(body?.speakerId ?? '').trim();
+    const speakerName = String(body?.speakerName ?? '').trim();
+    if (!speakerId) return c.json({ message: 'Brakuje speakerId.' }, 400);
+    if (!speakerName) return c.json({ message: 'Brakuje speakerName.' }, 400);
+
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
+    const transcriptSegments = parseTranscriptJsonSegments(asset.transcript_json);
+    if (isVoiceProfileTranscriptPending(asset, transcriptSegments)) {
+      return c.json(
+        { message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.' },
+        409
+      );
+    }
+    if (!hasTranscriptSegmentForSpeaker(transcriptSegments, speakerId)) {
+      return c.json({ message: 'Brak wypowiedzi tego mowcy w gotowej transkrypcji.' }, 400);
+    }
+
     try {
       const profile = await transcriptionService.createVoiceProfileFromSpeaker(
         asset,
-        body.speakerId,
-        body.speakerName,
+        speakerId,
+        speakerName,
         session.user_id,
         {}
       );

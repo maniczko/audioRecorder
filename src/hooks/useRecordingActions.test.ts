@@ -1,4 +1,16 @@
 import { renderHook, act } from '@testing-library/react';
+
+const apiRequestMock = vi.hoisted(() => vi.fn());
+const remoteApiEnabledMock = vi.hoisted(() => vi.fn(() => false));
+
+vi.mock('../services/httpClient', () => ({
+  apiRequest: apiRequestMock,
+}));
+
+vi.mock('../services/config', () => ({
+  remoteApiEnabled: remoteApiEnabledMock,
+}));
+
 import useRecordingActions from './useRecordingActions';
 
 describe('useRecordingActions', () => {
@@ -29,6 +41,10 @@ describe('useRecordingActions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    apiRequestMock.mockReset();
+    apiRequestMock.mockResolvedValue({ id: 'vp_1' });
+    remoteApiEnabledMock.mockReset();
+    remoteApiEnabledMock.mockReturnValue(false);
   });
 
   function setupHook(meetingOverride = baseMeeting, recordingOverride = baseMeeting.recordings[0]) {
@@ -414,6 +430,91 @@ describe('useRecordingActions', () => {
       expect(nextMeetings[0].recordings[0]).toMatchObject({ id: 'r_recovered' });
       expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_recovered');
       expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_recovered');
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - voice profile enrollment posts before transcript is ready
+  // Date: 2026-05-21
+  // Bug: renaming a speaker could POST /voice-profiles/from-speaker while
+  //      the remote recording was still processing or had no matching segment.
+  // Fix: only call the backend when the selected recording is transcript-ready
+  //      and contains a real segment for the requested speaker.
+  // -----------------------------------------------------------------
+  describe('Regression: #0 - voice profile enrollment readiness guard', () => {
+    test('does not call remote voice profile endpoint while selected recording is processing', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      const processingRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_processing',
+        pipelineStatus: 'processing',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Gotowy tekst lokalny', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [processingRecording] },
+        processingRecording
+      );
+
+      let enrolled = true;
+      await act(async () => {
+        enrolled = await result.current.autoCreateVoiceProfile('0', 'Anna');
+      });
+
+      expect(enrolled).toBe(false);
+      expect(apiRequestMock).not.toHaveBeenCalled();
+    });
+
+    test('does not call remote voice profile endpoint without a matching speaker segment', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Tylko pierwszy mowca', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      let enrolled = true;
+      await act(async () => {
+        enrolled = await result.current.autoCreateVoiceProfile('99', 'Anna');
+      });
+
+      expect(enrolled).toBe(false);
+      expect(apiRequestMock).not.toHaveBeenCalled();
+    });
+
+    test('calls remote voice profile endpoint for completed recording with matching speaker', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Dobra probka glosu', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      let enrolled = false;
+      await act(async () => {
+        enrolled = await result.current.autoCreateVoiceProfile('0', 'Anna');
+      });
+
+      expect(enrolled).toBe(true);
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/recording_ready/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          body: { speakerId: '0', speakerName: 'Anna' },
+        }
+      );
     });
   });
 });

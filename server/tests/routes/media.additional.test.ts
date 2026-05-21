@@ -960,12 +960,98 @@ describe('Media Routes - Additional Coverage', () => {
       expect(res.status).toBe(404);
     });
 
+    it('returns 400 without calling creation when speakerId is missing', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_missing_speaker',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcript_json: JSON.stringify([
+          { text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_missing_speaker/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerName: 'Anna' }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.message).toContain('speakerId');
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
+    it('returns 409 without calling creation while transcription is not ready', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_processing',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_processing/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+        }
+      );
+
+      expect(res.status).toBe(409);
+      const data = await res.json();
+      expect(data.message).toContain('transkrypcji');
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 without calling creation when requested speaker has no transcript segments', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_wrong_speaker',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify([
+          { text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_wrong_speaker/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '99', speakerName: 'Nobody' }),
+        }
+      );
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.message).toContain('wypowiedzi');
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
     it('returns 400 when creation fails', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_vp_fail',
         workspace_id: 'ws_1',
         file_path: '/tmp/audio.webm',
-        transcript_json: '[]',
+        transcript_json: JSON.stringify([
+          { text: 'short clip', speakerId: '99', timestamp: 0, endTimestamp: 0.5 },
+        ]),
       });
       mockTranscriptionService.createVoiceProfileFromSpeaker.mockRejectedValue(
         new Error('No valid segments for speaker 99')

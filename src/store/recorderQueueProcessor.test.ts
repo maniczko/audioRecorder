@@ -13,6 +13,7 @@ import {
   REMOTE_RECORDING_MISSING_MESSAGE,
   calculateTranscriptionHardTimeoutMs,
   processRecordingQueueItem,
+  shouldReportBackgroundTranscriptionPendingToConsole,
   waitForCompletedTranscription,
   type QueueProcessorContext,
 } from './recorderQueueProcessor';
@@ -24,6 +25,27 @@ const meeting = {
   title: 'Demo meeting',
   recordings: [],
 };
+
+describe('queue diagnostics console policy', () => {
+  // -----------------------------------------------------------------
+  // Issue #0 - background transcription emits production console noise
+  // Date: 2026-05-21
+  // Bug: background polling used console.warn in production for normal
+  //      processing state, making healthy long-running STT look broken.
+  // Fix: keep Sentry breadcrumbs, but only write console diagnostics in
+  //      non-production builds or when an explicit debug flag is enabled.
+  // -----------------------------------------------------------------
+  it('does not report normal background processing to production console by default', () => {
+    expect(shouldReportBackgroundTranscriptionPendingToConsole({ PROD: true })).toBe(false);
+    expect(
+      shouldReportBackgroundTranscriptionPendingToConsole({
+        PROD: true,
+        VITE_VOICELOG_DEBUG_QUEUE: 'true',
+      })
+    ).toBe(true);
+    expect(shouldReportBackgroundTranscriptionPendingToConsole({ PROD: false })).toBe(true);
+  });
+});
 
 function makeQueueItem(overrides: Partial<RecordingQueueItem> = {}): RecordingQueueItem {
   return {
