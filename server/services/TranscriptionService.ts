@@ -532,6 +532,12 @@ export default class TranscriptionService extends EventEmitter {
     try {
       segments = JSON.parse(asset.transcript_json || '[]');
     } catch (_) {}
+    if (
+      Array.isArray((options as any)?.transcriptSegments) &&
+      (options as any).transcriptSegments.length
+    ) {
+      segments = (options as any).transcriptSegments;
+    }
     if (!segments.length) throw new Error('Brak transkrypcji w bazie.');
 
     const clipPath = await this.pipeline.extractSpeakerAudioClip(

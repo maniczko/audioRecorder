@@ -599,6 +599,156 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Anna/i)).toBeInTheDocument();
   });
 
+  test('Regression: auto-learns a voice profile sample after assigning a segment to a named speaker', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: true }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary jako gotowa probka.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary jako gotowa probka.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+    expect(updateTranscriptSegment).toHaveBeenCalledWith('seg-1', { speakerId: 'speaker_2' });
+    await waitFor(() => {
+      expect(autoCreateVoiceProfile).toHaveBeenCalledWith(
+        'speaker_2',
+        'Barbara',
+        expect.objectContaining({
+          transcriptSegments: expect.arrayContaining([
+            expect.objectContaining({ id: 'seg-1', speakerId: 'speaker_2' }),
+          ]),
+        })
+      );
+    });
+  });
+
+  test('Regression: asks to save a voice profile sample after assigning a segment when auto-learn is off', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: false }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary jako gotowa probka.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary jako gotowa probka.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+    expect(updateTranscriptSegment).toHaveBeenCalledWith('seg-1', { speakerId: 'speaker_2' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Zapisz do profilu glosu/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Zapisz do profilu glosu/i }));
+
+    await waitFor(() => {
+      expect(autoCreateVoiceProfile).toHaveBeenCalledWith(
+        'speaker_2',
+        'Barbara',
+        expect.objectContaining({
+          transcriptSegments: expect.arrayContaining([
+            expect.objectContaining({ id: 'seg-1', speakerId: 'speaker_2' }),
+          ]),
+        })
+      );
+    });
+  });
+
   test('renders playback scrubber and lets user seek audio', async () => {
     renderWithContext(
       <StudioMeetingView

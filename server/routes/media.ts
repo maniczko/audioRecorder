@@ -84,6 +84,34 @@ function hasTranscriptSegmentForSpeaker(segments: any[], speakerId: string) {
   );
 }
 
+function normalizeVoiceProfileTranscriptSegments(value: unknown): any[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((segment) => {
+      if (!segment) return null;
+      const speakerId = String(segment?.speakerId ?? '').trim();
+      const text = String(segment?.text || '').trim();
+      const timestamp = Number(segment?.timestamp ?? segment?.start ?? NaN);
+      const endTimestamp = Number(segment?.endTimestamp ?? segment?.end ?? NaN);
+      if (!speakerId || !text) return null;
+      if (!Number.isFinite(timestamp) || !Number.isFinite(endTimestamp)) return null;
+      if (endTimestamp <= timestamp || timestamp < 0) return null;
+      const normalizedSegment: any = {
+        id: String(segment?.id || '').trim() || undefined,
+        speakerId,
+        text,
+        timestamp,
+        endTimestamp,
+      };
+      const speakerName = String(segment?.speakerName || '').trim();
+      if (speakerName) normalizedSegment.speakerName = speakerName;
+      if (!normalizedSegment.id) delete normalizedSegment.id;
+      return normalizedSegment;
+    })
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
 export function buildRemoteAudioStorageCandidates(
   recordingId: string,
   asset: Pick<MediaAsset, 'file_path' | 'content_type'>
@@ -725,23 +753,27 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     await ensureWorkspaceAccess(c, asset.workspace_id);
 
     const transcriptSegments = parseTranscriptJsonSegments(asset.transcript_json);
+    const overrideSegments = normalizeVoiceProfileTranscriptSegments(body?.segments);
     if (isVoiceProfileTranscriptPending(asset, transcriptSegments)) {
       return c.json(
         { message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.' },
         409
       );
     }
-    if (!hasTranscriptSegmentForSpeaker(transcriptSegments, speakerId)) {
+    const voiceProfileSegments =
+      overrideSegments.length > 0 ? overrideSegments : transcriptSegments;
+    if (!hasTranscriptSegmentForSpeaker(voiceProfileSegments, speakerId)) {
       return c.json({ message: 'Brak wypowiedzi tego mowcy w gotowej transkrypcji.' }, 400);
     }
 
     try {
+      const options = overrideSegments.length > 0 ? { transcriptSegments: overrideSegments } : {};
       const profile = await transcriptionService.createVoiceProfileFromSpeaker(
         asset,
         speakerId,
         speakerName,
         session.user_id,
-        {}
+        options
       );
       return c.json(profile, 201);
     } catch (err: any) {

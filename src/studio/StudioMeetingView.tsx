@@ -971,6 +971,7 @@ export default function StudioMeetingView({
     recordingId: string;
     speakerId: string;
     speakerName: string;
+    transcriptSegments?: any[];
   } | null>(null);
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
@@ -1297,32 +1298,6 @@ export default function StudioMeetingView({
     return [...seen.entries()].map(([id, name]) => ({ id, name }));
   }, [transcript, displaySpeakerNames]);
 
-  // Reassign a single segment to a different speaker
-  const reassignSegmentSpeaker = useCallback(
-    (segId, newSpeakerId) => {
-      if (typeof updateTranscriptSegment === 'function') {
-        updateTranscriptSegment(segId, { speakerId: newSpeakerId });
-      }
-      setSpeakerDropdownSegId(null);
-    },
-    [updateTranscriptSegment]
-  );
-
-  // Reassign all segments of a speaker to a different speaker
-  const reassignAllSegmentSpeaker = useCallback(
-    (oldSpeakerId, newSpeakerId) => {
-      if (typeof updateTranscriptSegment === 'function') {
-        transcript.forEach((s) => {
-          if (String(s.speakerId) === String(oldSpeakerId)) {
-            updateTranscriptSegment(s.id, { speakerId: newSpeakerId });
-          }
-        });
-      }
-      setSpeakerDropdownSegId(null);
-    },
-    [transcript, updateTranscriptSegment]
-  );
-
   const showVoiceProfileToast = useCallback((speakerName) => {
     setVoiceProfileToast(speakerName);
     if (typeof window !== 'undefined') {
@@ -1331,15 +1306,92 @@ export default function StudioMeetingView({
   }, []);
 
   const enrollSpeakerProfile = useCallback(
-    async (speakerId, speakerName) => {
+    async (speakerId, speakerName, options = {}) => {
       if (typeof autoCreateVoiceProfile !== 'function') return false;
-      const enrolled = await autoCreateVoiceProfile(speakerId, speakerName);
+      const enrolled = await autoCreateVoiceProfile(speakerId, speakerName, options);
       if (enrolled) {
         showVoiceProfileToast(speakerName);
       }
       return enrolled;
     },
     [autoCreateVoiceProfile, showVoiceProfileToast]
+  );
+
+  const requestVoiceProfileEnrollment = useCallback(
+    (speakerId, transcriptSegments) => {
+      if (typeof autoCreateVoiceProfile !== 'function') return;
+      const normalizedSpeakerId = String(speakerId ?? '').trim();
+      if (!normalizedSpeakerId) return;
+      const speakerName = String(
+        labelSpeaker(displaySpeakerNames, normalizedSpeakerId) || ''
+      ).trim();
+      if (!speakerName || /^speaker\s*\d+$/i.test(speakerName)) return;
+      const recordingId = String(selectedRecording?.id || displayRecording?.id || '').trim();
+      if (!recordingId) return;
+
+      const options = {
+        transcriptSegments: Array.isArray(transcriptSegments) ? transcriptSegments : transcript,
+      };
+
+      if (autoLearnSpeakerProfiles) {
+        enrollSpeakerProfile(normalizedSpeakerId, speakerName, options).catch(() => undefined);
+        return;
+      }
+
+      setPendingVoiceProfileEnrollment({
+        recordingId,
+        speakerId: normalizedSpeakerId,
+        speakerName,
+        transcriptSegments: options.transcriptSegments,
+      });
+    },
+    [
+      autoCreateVoiceProfile,
+      autoLearnSpeakerProfiles,
+      displayRecording?.id,
+      displaySpeakerNames,
+      enrollSpeakerProfile,
+      selectedRecording?.id,
+      transcript,
+    ]
+  );
+
+  // Reassign a single segment to a different speaker
+  const reassignSegmentSpeaker = useCallback(
+    (segId, newSpeakerId) => {
+      const nextTranscript = transcript.map((segment) =>
+        String(segment.id) === String(segId)
+          ? { ...segment, speakerId: String(newSpeakerId) }
+          : segment
+      );
+      if (typeof updateTranscriptSegment === 'function') {
+        updateTranscriptSegment(segId, { speakerId: newSpeakerId });
+      }
+      requestVoiceProfileEnrollment(newSpeakerId, nextTranscript);
+      setSpeakerDropdownSegId(null);
+    },
+    [requestVoiceProfileEnrollment, transcript, updateTranscriptSegment]
+  );
+
+  // Reassign all segments of a speaker to a different speaker
+  const reassignAllSegmentSpeaker = useCallback(
+    (oldSpeakerId, newSpeakerId) => {
+      const nextTranscript = transcript.map((segment) =>
+        String(segment.speakerId) === String(oldSpeakerId)
+          ? { ...segment, speakerId: String(newSpeakerId) }
+          : segment
+      );
+      if (typeof updateTranscriptSegment === 'function') {
+        transcript.forEach((s) => {
+          if (String(s.speakerId) === String(oldSpeakerId)) {
+            updateTranscriptSegment(s.id, { speakerId: newSpeakerId });
+          }
+        });
+      }
+      requestVoiceProfileEnrollment(newSpeakerId, nextTranscript);
+      setSpeakerDropdownSegId(null);
+    },
+    [requestVoiceProfileEnrollment, transcript, updateTranscriptSegment]
   );
 
   const commitSpeakerRename = useCallback(
@@ -3889,7 +3941,9 @@ export default function StudioMeetingView({
               onClick={async () => {
                 const pending = pendingVoiceProfileEnrollment;
                 setPendingVoiceProfileEnrollment(null);
-                await enrollSpeakerProfile(pending.speakerId, pending.speakerName);
+                await enrollSpeakerProfile(pending.speakerId, pending.speakerName, {
+                  transcriptSegments: pending.transcriptSegments,
+                });
               }}
             >
               Zapisz do profilu glosu

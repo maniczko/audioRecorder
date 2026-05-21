@@ -516,5 +516,49 @@ describe('useRecordingActions', () => {
         }
       );
     });
+
+    test('uses provided transcript override when manual speaker assignment changed local segments', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Pierwszy mowca', timestamp: 0 }],
+      };
+      const assignedSegments = [
+        {
+          id: 's1',
+          speakerId: '99',
+          text: 'Fragment przypisany recznie do Barbary',
+          timestamp: 0,
+          endTimestamp: 5,
+        },
+      ];
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      let enrolled = false;
+      await act(async () => {
+        enrolled = await result.current.autoCreateVoiceProfile('99', 'Barbara', {
+          transcriptSegments: assignedSegments,
+        });
+      });
+
+      expect(enrolled).toBe(true);
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/recording_ready/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          body: {
+            speakerId: '99',
+            speakerName: 'Barbara',
+            segments: assignedSegments,
+          },
+        }
+      );
+    });
   });
 });

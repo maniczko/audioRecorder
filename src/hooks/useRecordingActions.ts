@@ -509,22 +509,52 @@ export default function useRecordingActions({
     );
   }
 
+  function normalizeVoiceProfileTranscriptSegments(segments: any[] | undefined) {
+    if (!Array.isArray(segments)) return [];
+    return segments
+      .map((segment) => {
+        if (!segment) return null;
+        const speakerId = String(segment.speakerId ?? '').trim();
+        const text = String(segment.text || '').trim();
+        if (!speakerId || !text) return null;
+        return {
+          ...segment,
+          speakerId,
+          text,
+        };
+      })
+      .filter(Boolean);
+  }
+
   async function autoCreateVoiceProfile(
     speakerId: string | number,
-    speakerName: string
+    speakerName: string,
+    options: { transcriptSegments?: any[] } = {}
   ): Promise<boolean> {
     if (!selectedRecording?.id || !remoteApiEnabled()) return false;
     const normalizedSpeakerId = String(speakerId ?? '').trim();
     const normalizedSpeakerName = String(speakerName || '').trim();
     if (!normalizedSpeakerId || !normalizedSpeakerName) return false;
     if (!isRecordingReadyForVoiceProfile(selectedRecording)) return false;
-    if (!hasVoiceProfileSpeakerSegment(selectedRecording, normalizedSpeakerId)) return false;
+    const transcriptSegments = normalizeVoiceProfileTranscriptSegments(options.transcriptSegments);
+    const recordingForSpeakerCheck =
+      transcriptSegments.length > 0
+        ? { ...selectedRecording, transcript: transcriptSegments }
+        : selectedRecording;
+    if (!hasVoiceProfileSpeakerSegment(recordingForSpeakerCheck, normalizedSpeakerId)) return false;
     // Don't create profile for generic auto-labels like "Speaker 1"
     if (/^speaker\s*\d+$/i.test(normalizedSpeakerName)) return false;
     try {
+      const body: any = {
+        speakerId: normalizedSpeakerId,
+        speakerName: normalizedSpeakerName,
+      };
+      if (transcriptSegments.length > 0) {
+        body.segments = transcriptSegments;
+      }
       await apiRequest(`/media/recordings/${selectedRecording.id}/voice-profiles/from-speaker`, {
         method: 'POST',
-        body: { speakerId: normalizedSpeakerId, speakerName: normalizedSpeakerName },
+        body,
       });
       return true;
     } catch (_) {

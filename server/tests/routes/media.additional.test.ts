@@ -945,6 +945,48 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
+    it('uses provided transcript segments for manually reassigned speaker samples', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_manual',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcript_json: JSON.stringify([
+          { text: 'old speaker', speakerId: '0', timestamp: 0, endTimestamp: 1 },
+        ]),
+      });
+      mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+        id: 'vp_manual',
+        speaker_name: 'Barbara',
+      });
+      const segments = [
+        {
+          id: 's1',
+          text: 'manual assignment sample',
+          speakerId: '99',
+          timestamp: 1,
+          endTimestamp: 7,
+        },
+      ];
+
+      const res = await app.request('/media/recordings/rec_vp_manual/voice-profiles/from-speaker', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer fake_token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ speakerId: '99', speakerName: 'Barbara', segments }),
+      });
+
+      expect(res.status).toBe(201);
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'rec_vp_manual' }),
+        '99',
+        'Barbara',
+        'user_1',
+        { transcriptSegments: segments }
+      );
+    });
+
     it('returns 404 when asset does not exist', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
 

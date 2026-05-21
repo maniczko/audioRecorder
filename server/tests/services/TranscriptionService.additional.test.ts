@@ -259,6 +259,48 @@ describe('TranscriptionService - Additional Coverage', () => {
       } catch (_) {}
     });
 
+    test('uses transcript segment overrides for manually reassigned speakers', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_override.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Old speaker', speakerId: '1', timestamp: 0, endTimestamp: 1 },
+        ]),
+      };
+      const transcriptSegments = [
+        { text: 'Manual Barbara sample', speakerId: '99', timestamp: 2, endTimestamp: 8 },
+      ];
+
+      await service.createVoiceProfileFromSpeaker(asset, '99', 'Barbara', 'user1', {
+        transcriptSegments,
+      });
+
+      expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledWith(
+        asset,
+        '99',
+        transcriptSegments,
+        expect.any(Object)
+      );
+
+      try {
+        fs.unlinkSync(tempClipPath);
+      } catch (_) {}
+    });
+
     test('throws error when no transcript available', async () => {
       const service = new TranscriptionService(
         mockDb,
