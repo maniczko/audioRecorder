@@ -2,6 +2,20 @@
 
 Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
+## Aktualizacje automatyczne
+
+### GH-AUTO-2026-05-21-1 - Fix Task Queue Auto Assign failure
+
+- Status: `todo`
+- Priorytet: `P1`
+- Zrodlo: `GitHub Actions`
+- Automation: `guarded_fix`
+- Dispatch mode: `branch_pr`
+- Routing reason: code change should be tested and reviewed before merge
+- Opis zadania: GitHub Actions `Task Queue Auto Assign`, job `assign-task-owners`, step `Checkout code` failed.
+- Link: https://github.com/maniczko/audioRecorder/actions/runs/26239687718
+- Created: `2026-05-21T17:54:41.867Z`
+
 ## Status odswiezenia
 
 - `GitHub Actions`: swiezy raport `github-errors/github-errors-2026-04-05T18-25-32-572Z.json` pokazuje `11` failed runow z ostatnich `7` dni; najnowszy fail to `CI/CD Pipeline` dla commitu `c07dd10`
@@ -95,7 +109,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - testy regresji:
     - `server/tests/routes/media.test.ts`
     - `server/tests/regression/regression.test.ts`
- - Notatka:
+- Notatka:
   Lokalnie domkniete 2026-04-04 takze dla `retry-transcribe`: gdy plik lokalny zniknie po redeployu, backend probuje basename oraz kanoniczny klucz `recordingId.ext` zamiast konczyc na samym starym `file_path`.
 - Kryterium zamkniecia:
   Odtwarzanie audio dla wskazanego nagrania dziala bez `404`, takze gdy lokalny `file_path` jest martwy, ale storage nadal ma plik pod odtworzonym kluczem.
@@ -1590,5 +1604,3 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Error:** Job "changelog" step "Generate changelog" failed
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24923058164
   - **Created:** 2026-04-25T05:47:00.614Z
-
-
