@@ -32,8 +32,24 @@ describe('Voice Profiles Routes', () => {
 
   it('GET /voice-profiles - happy path', async () => {
     mockWorkspaceService.getWorkspaceVoiceProfiles.mockResolvedValue([
-      { id: 'vp_1', speaker_name: 'John', user_id: 'u1', created_at: '2024-01-01' },
-      { id: 'vp_2', speaker_name: 'Jane', user_id: 'u1', created_at: '2024-01-02' },
+      {
+        id: 'vp_1',
+        speaker_name: 'John',
+        user_id: 'u1',
+        created_at: '2024-01-01',
+        embedding_json: JSON.stringify([0.1, 0.2, 0.3]),
+        sample_count: 3,
+        threshold: 0.87,
+      },
+      {
+        id: 'vp_2',
+        speaker_name: 'Jane',
+        user_id: 'u1',
+        created_at: '2024-01-02',
+        embedding_json: null,
+        sample_count: 0,
+        threshold: 0.82,
+      },
     ]);
 
     const res = await app.request('/voice-profiles', {
@@ -45,6 +61,18 @@ describe('Voice Profiles Routes', () => {
     const data = await res.json();
     expect(data.profiles).toHaveLength(2);
     expect(data.profiles[0].speakerName).toBe('John');
+    expect(data.profiles[0]).toMatchObject({
+      hasEmbedding: true,
+      sampleCount: 3,
+      threshold: 0.87,
+    });
+    expect(data.profiles[0]).not.toHaveProperty('embedding_json');
+    expect(data.profiles[0]).not.toHaveProperty('embedding');
+    expect(data.profiles[1]).toMatchObject({
+      hasEmbedding: false,
+      sampleCount: 0,
+      threshold: 0.82,
+    });
     expect(mockWorkspaceService.getWorkspaceVoiceProfiles).toHaveBeenCalledWith('w1');
   });
 

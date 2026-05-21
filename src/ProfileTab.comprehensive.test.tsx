@@ -296,7 +296,9 @@ describe('ProfileTab', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Profile głosowe')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument(); // profiles count
+        expect(screen.getByLabelText('Liczba osób z profilem głosowym')).toHaveTextContent('0');
+        expect(screen.getByTestId('voice-profile-person-alice')).toBeInTheDocument();
+        expect(screen.getByTestId('voice-profile-person-bob')).toBeInTheDocument();
       });
     });
 
@@ -344,8 +346,8 @@ describe('ProfileTab', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Profile głosowe')).toBeInTheDocument();
-        // The count badge shows number of profiles from API (mocked as 0)
-        expect(screen.getByText('0')).toBeInTheDocument();
+        // The count badge shows profiled people from API (mocked as 0).
+        expect(screen.getByLabelText('Liczba osób z profilem głosowym')).toHaveTextContent('0');
       });
     });
   });

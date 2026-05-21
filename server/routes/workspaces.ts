@@ -142,6 +142,18 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     }
   });
 
+  const hasVoiceProfileEmbedding = (profile: any) => {
+    const value = profile.embedding_json ?? profile.embeddingJson ?? profile.embedding;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value !== 'string' || !value.trim()) return false;
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
   // --- Voice Profiles ---
   router.use('/voice-profiles', authMiddleware);
   router.use('/voice-profiles/*', authMiddleware);
@@ -154,7 +166,8 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       speakerName: p.speaker_name,
       userId: p.user_id,
       createdAt: p.created_at,
-      sampleCount: p.sample_count || 1,
+      hasEmbedding: hasVoiceProfileEmbedding(p),
+      sampleCount: Number.isFinite(Number(p.sample_count)) ? Number(p.sample_count) : 1,
       threshold: typeof p.threshold === 'number' ? p.threshold : 0.82,
     }));
     const payload: VoiceProfilesListPayload = { profiles };

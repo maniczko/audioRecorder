@@ -5,9 +5,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfileTab from './ProfileTab';
+import { apiRequest } from './services/httpClient';
 
 // Mock modules
 vi.mock('./services/httpClient', () => ({
@@ -125,6 +126,7 @@ const baseProps = {
 describe('ProfileTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(apiRequest).mockResolvedValue({ profiles: [] });
     localStorage.clear();
   });
 
@@ -709,6 +711,88 @@ describe('ProfileTab', () => {
       await userEvent.click(accountBtn);
 
       expect(screen.getByText('Dane podstawowe')).toBeInTheDocument();
+    });
+  });
+
+  describe('Voice Profiles List', () => {
+    it('shows people with and without samples including quality readiness', async () => {
+      vi.mocked(apiRequest).mockResolvedValueOnce({
+        profiles: [
+          {
+            id: 'vp_adam',
+            speakerName: 'Adam',
+            userId: 'u1',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            hasEmbedding: true,
+            sampleCount: 1,
+            threshold: 0.82,
+          },
+        ],
+      });
+
+      render(<ProfileTab {...baseProps} peopleProfiles={[{ name: 'Adam' }, { name: 'Ewa' }]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      const adamRow = await screen.findByTestId('voice-profile-person-adam');
+      expect(within(adamRow).getByTestId('voice-profile-person-name')).toHaveTextContent('Adam');
+      expect(within(adamRow).getByText('Ma próbkę')).toBeInTheDocument();
+      expect(within(adamRow).getByText('1/5')).toBeInTheDocument();
+      expect(within(adamRow).getByText('Niska')).toBeInTheDocument();
+      expect(within(adamRow).getByText('20%')).toBeInTheDocument();
+      expect(within(adamRow).getAllByText('82%').length).toBeGreaterThan(0);
+
+      const ewaRow = screen.getByTestId('voice-profile-person-ewa');
+      expect(within(ewaRow).getByTestId('voice-profile-person-name')).toHaveTextContent('Ewa');
+      expect(within(ewaRow).getByText('Brak próbki')).toBeInTheDocument();
+      expect(within(ewaRow).getByText('0/5')).toBeInTheDocument();
+      expect(within(ewaRow).getByText('Brak')).toBeInTheDocument();
+      expect(within(ewaRow).getByText('0%')).toBeInTheDocument();
+    });
+
+    it('merges people and voice profiles case-insensitively and sorts sampled people first', async () => {
+      vi.mocked(apiRequest).mockResolvedValueOnce({
+        profiles: [
+          {
+            id: 'vp_zenon',
+            speakerName: 'Zenon',
+            userId: 'u1',
+            createdAt: '2026-05-20T10:00:00.000Z',
+            hasEmbedding: true,
+            sampleCount: 3,
+            threshold: 0.86,
+          },
+          {
+            id: 'vp_adam',
+            speakerName: 'adam',
+            userId: 'u1',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            hasEmbedding: true,
+            sampleCount: 2,
+            threshold: 0.82,
+          },
+        ],
+      });
+
+      render(<ProfileTab {...baseProps} peopleProfiles={[{ name: 'Ewa' }, { name: 'Adam' }]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      await screen.findByTestId('voice-profile-person-adam');
+      const names = screen
+        .getAllByTestId('voice-profile-person-row')
+        .map((row) => within(row).getByTestId('voice-profile-person-name').textContent);
+
+      expect(names).toEqual(['Adam', 'Zenon', 'Ewa']);
+      expect(screen.getAllByTestId('voice-profile-person-adam')).toHaveLength(1);
+    });
+
+    it('shows an explicit empty state when there are no people or saved voice samples', async () => {
+      render(<ProfileTab {...baseProps} peopleProfiles={[]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      expect(await screen.findByText('Brak zapisanych próbek głosu')).toBeInTheDocument();
     });
   });
 

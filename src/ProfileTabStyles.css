@@ -574,7 +574,7 @@
 .voice-profiles-grouped {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
   margin-top: 20px;
 }
 
@@ -585,13 +585,23 @@
   padding: 16px;
 }
 
+.voice-profile-person-group.no-sample {
+  background: rgba(255, 255, 255, 0.018);
+  border-style: dashed;
+}
+
 .voice-profile-person-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.voice-profile-avatar-wrap {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .voice-profile-person-avatar {
@@ -607,15 +617,119 @@
   color: #000;
 }
 
+.voice-profile-readiness-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(11, 18, 32, 0.95);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.8);
+}
+
+.voice-profile-readiness-dot.low,
+.voice-profile-confidence-fill.low {
+  background: #f97316;
+}
+
+.voice-profile-readiness-dot.good,
+.voice-profile-confidence-fill.good {
+  background: #facc15;
+}
+
+.voice-profile-readiness-dot.high,
+.voice-profile-confidence-fill.high {
+  background: var(--accent);
+}
+
+.voice-profile-readiness-dot.empty,
+.voice-profile-confidence-fill.empty {
+  background: rgba(148, 163, 184, 0.55);
+}
+
 .voice-profile-person-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .voice-profile-person-info strong {
   font-size: 1.1rem;
   color: var(--text);
+}
+
+.voice-profile-title-row,
+.voice-profile-threshold-header,
+.voice-profile-summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.voice-profile-title-row {
+  flex-wrap: wrap;
+}
+
+.voice-profile-status-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.voice-profile-status-pill.ready {
+  color: var(--accent);
+  background: rgba(117, 214, 196, 0.13);
+}
+
+.voice-profile-status-pill.empty {
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.voice-profile-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.voice-profile-metrics-row span {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 7px 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.2;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.voice-profile-metrics-row strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.voice-profile-confidence-shell {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.voice-profile-confidence-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.2s ease;
 }
 
 .voice-profile-samples-count {
@@ -639,6 +753,10 @@
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
+}
+
+.voice-profile-sample-item.compact {
+  margin-bottom: 12px;
 }
 
 .sample-number {
@@ -674,6 +792,11 @@
   border-radius: 12px;
 }
 
+.sample-status-badge.pending {
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .profile-delete-sample-btn {
   background: transparent;
   border: none;
@@ -694,6 +817,60 @@
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.voice-profile-person-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voice-profile-summary-line {
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.voice-profile-summary-line strong {
+  color: var(--text);
+}
+
+.voice-profile-threshold-value {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.voice-profile-threshold-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.voice-profile-empty-person,
+.voice-profile-empty-state {
+  color: var(--muted);
+  border: 1px dashed rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.voice-profile-empty-person {
+  padding: 12px;
+  font-size: 0.84rem;
+}
+
+.voice-profile-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 20px;
+  padding: 14px;
+  font-size: 0.86rem;
+}
+
+.voice-profile-empty-state strong {
+  color: var(--text);
 }
 
 .profile-samples-info {
@@ -717,6 +894,16 @@
 
 .profile-grid-span-two {
   grid-column: span 2;
+}
+
+@media (max-width: 720px) {
+  .voice-profile-metrics-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .voice-profile-person-header {
+    align-items: stretch;
+  }
 }
 
 /* ================================================================ */

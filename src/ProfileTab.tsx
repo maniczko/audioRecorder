@@ -13,6 +13,139 @@ import './styles/JapaneseFlatDesign.css';
 import TagInput from './shared/TagInput';
 import { ErrorLogSection } from './components/ErrorLogSection';
 
+const MAX_VOICE_PROFILE_SAMPLES = 5;
+
+type VoiceProfileQualityLabel = 'Brak' | 'Niska' | 'Dobra' | 'Wysoka';
+type VoiceProfileQualityTone = 'empty' | 'low' | 'good' | 'high';
+
+interface VoiceProfilePersonRow {
+  key: string;
+  testId: string;
+  name: string;
+  sampleCount: number;
+  processedSamples: number;
+  confidencePct: number;
+  qualityLabel: VoiceProfileQualityLabel;
+  qualityTone: VoiceProfileQualityTone;
+  thresholdPct?: number;
+  lastSampleAt?: string;
+  primaryProfile?: VoiceProfileSummary;
+  profiles: VoiceProfileSummary[];
+}
+
+function normalizeVoicePersonName(name: string) {
+  return String(name || '')
+    .trim()
+    .toLowerCase();
+}
+
+function voicePersonTestId(name: string) {
+  const slug =
+    normalizeVoicePersonName(name)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ł/g, 'l')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'unknown';
+  return `voice-profile-person-${slug}`;
+}
+
+function clampVoiceProfileSamples(value: number) {
+  return Math.max(0, Math.min(MAX_VOICE_PROFILE_SAMPLES, Math.round(value)));
+}
+
+function getVoiceProfileSampleCount(profile: VoiceProfileSummary) {
+  if (typeof profile.sampleCount === 'number') {
+    return clampVoiceProfileSamples(profile.sampleCount);
+  }
+  return 1;
+}
+
+function getVoiceProfileQuality(processedSamples: number): {
+  label: VoiceProfileQualityLabel;
+  tone: VoiceProfileQualityTone;
+} {
+  if (processedSamples <= 0) return { label: 'Brak', tone: 'empty' };
+  if (processedSamples === 1) return { label: 'Niska', tone: 'low' };
+  if (processedSamples <= 3) return { label: 'Dobra', tone: 'good' };
+  return { label: 'Wysoka', tone: 'high' };
+}
+
+function formatVoiceProfileDate(value?: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('pl-PL', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function buildVoiceProfilePersonRows(
+  peopleProfiles: Array<{ name: string }>,
+  profiles: VoiceProfileSummary[]
+): VoiceProfilePersonRow[] {
+  const rows = new Map<string, { name: string; profiles: VoiceProfileSummary[] }>();
+
+  peopleProfiles.forEach((person) => {
+    const name = String(person.name || '').trim();
+    const key = normalizeVoicePersonName(name);
+    if (!key || key === 'nieprzypisane' || key === 'unassigned' || key === 'system') return;
+    if (key.includes('@')) return;
+    rows.set(key, { name, profiles: [] });
+  });
+
+  profiles.forEach((profile) => {
+    const name = String(profile.speakerName || '').trim();
+    const key = normalizeVoicePersonName(name);
+    if (!key) return;
+    const current = rows.get(key) || { name, profiles: [] };
+    current.profiles.push(profile);
+    rows.set(key, current);
+  });
+
+  return Array.from(rows.values())
+    .map((row) => {
+      const sortedProfiles = [...row.profiles].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const sampleCount = clampVoiceProfileSamples(
+        sortedProfiles.reduce((sum, profile) => sum + getVoiceProfileSampleCount(profile), 0)
+      );
+      const processedSamples = clampVoiceProfileSamples(
+        sortedProfiles.reduce(
+          (sum, profile) => sum + (profile.hasEmbedding ? getVoiceProfileSampleCount(profile) : 0),
+          0
+        )
+      );
+      const quality = getVoiceProfileQuality(processedSamples);
+      const primaryProfile = sortedProfiles[0];
+
+      return {
+        key: normalizeVoicePersonName(row.name),
+        testId: voicePersonTestId(row.name),
+        name: row.name,
+        sampleCount,
+        processedSamples,
+        confidencePct: processedSamples * 20,
+        qualityLabel: quality.label,
+        qualityTone: quality.tone,
+        thresholdPct: primaryProfile
+          ? Math.round((primaryProfile.threshold ?? 0.82) * 100)
+          : undefined,
+        lastSampleAt: primaryProfile?.createdAt,
+        primaryProfile,
+        profiles: sortedProfiles,
+      };
+    })
+    .sort((a, b) => {
+      const sampleDelta = Number(b.sampleCount > 0) - Number(a.sampleCount > 0);
+      if (sampleDelta !== 0) return sampleDelta;
+      return a.name.localeCompare(b.name, 'pl', { sensitivity: 'base' });
+    });
+}
+
 function VoiceProfilesSection({
   peopleProfiles = [],
 }: {
@@ -51,20 +184,14 @@ function VoiceProfilesSection({
       .catch(() => {});
   }, [backendApiReady]);
 
-  // Grupowanie profili po osobie
-  const profilesByPerson = useMemo(() => {
-    const groups: Record<string, VoiceProfileSummary[]> = {};
-    profiles.forEach((p) => {
-      const key = p.speakerName;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(p);
-    });
-    // Sortuj próbki wewnątrz grupy po dacie
-    Object.keys(groups).forEach((key) => {
-      groups[key].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    });
-    return groups;
-  }, [profiles]);
+  const voiceProfileRows = useMemo(
+    () => buildVoiceProfilePersonRows(peopleProfiles, profiles),
+    [peopleProfiles, profiles]
+  );
+  const selectedPersonKey = normalizeVoicePersonName(selectedPerson);
+  const selectedPersonRow = voiceProfileRows.find((row) => row.key === selectedPersonKey);
+  const selectedPersonSampleCount = selectedPersonRow?.sampleCount ?? 0;
+  const profiledPeopleCount = voiceProfileRows.filter((row) => row.sampleCount > 0).length;
 
   async function startRecording() {
     if (!backendApiReady) {
@@ -171,7 +298,9 @@ function VoiceProfilesSection({
           <div className="eyebrow">AI</div>
           <h2>Profile głosowe</h2>
         </div>
-        <span className="status-chip">{profiles.length}</span>
+        <span className="status-chip" aria-label="Liczba osób z profilem głosowym">
+          {profiledPeopleCount}
+        </span>
       </div>
       <p className="profile-muted-copy profile-copy-bottom">
         Nagraj 15–30 sekund głosu każdej osoby. Dodaj do 5 próbek dla lepszego rozpoznawania.
@@ -186,12 +315,10 @@ function VoiceProfilesSection({
             placeholder="Wpisz lub wybierz z listy..."
           />
         </label>
-        {selectedPerson && profilesByPerson[selectedPerson] && (
+        {selectedPerson && selectedPersonRow && (
           <div className="profile-samples-info">
-            <span className="profile-samples-count">
-              Próbek: {profilesByPerson[selectedPerson].length}/5
-            </span>
-            {profilesByPerson[selectedPerson].length >= 5 && (
+            <span className="profile-samples-count">Próbek: {selectedPersonSampleCount}/5</span>
+            {selectedPersonSampleCount >= 5 && (
               <span className="profile-samples-max"> (maksimum osiągnięte)</span>
             )}
           </div>
@@ -210,14 +337,12 @@ function VoiceProfilesSection({
               className="primary-button"
               onClick={startRecording}
               disabled={
-                !selectedPerson.trim() ||
-                !backendApiReady ||
-                (profilesByPerson[selectedPerson]?.length || 0) >= 5
+                !selectedPerson.trim() || !backendApiReady || selectedPersonSampleCount >= 5
               }
               title={
                 !backendApiReady
                   ? 'Skonfiguruj backend API, aby nagrywac profile glosowe.'
-                  : (profilesByPerson[selectedPerson]?.length || 0) >= 5
+                  : selectedPersonSampleCount >= 5
                     ? 'Osiągnięto maksymalną liczbę próbek (5) dla tej osoby.'
                     : undefined
               }
@@ -239,156 +364,164 @@ function VoiceProfilesSection({
         ) : null}
       </div>
 
-      {profiles.length > 0 && (
+      {voiceProfileRows.length > 0 ? (
         <div className="voice-profiles-grouped">
-          {Object.entries(profilesByPerson).map(([personName, samples]) => {
-            const processedCount = samples.filter((s) => s.hasEmbedding).length;
-            const threshold = Math.round((samples[0]?.threshold ?? 0.82) * 100);
-            // Confidence: processed samples * 20%, capped at 100%
-            const confidencePct = Math.min(100, Math.round((processedCount / 5) * 100));
-            const confidenceColor =
-              confidencePct >= 80 ? '#22c55e' : confidencePct >= 40 ? '#f59e0b' : '#ef4444';
+          {voiceProfileRows.map((row) => {
+            const lastSampleDate = formatVoiceProfileDate(row.lastSampleAt);
 
             return (
-              <div key={personName} className="voice-profile-person-group">
-                <div className="voice-profile-person-header">
-                  <div style={{ position: 'relative' }}>
-                    <span className="voice-profile-person-avatar">
-                      {personName.slice(0, 2).toUpperCase()}
-                    </span>
-                    {processedCount > 0 && (
+              <div
+                key={row.key}
+                className={`voice-profile-person-group ${row.sampleCount > 0 ? 'has-sample' : 'no-sample'}`}
+                data-testid="voice-profile-person-row"
+              >
+                <div data-testid={row.testId}>
+                  <div className="voice-profile-person-header">
+                    <div className="voice-profile-avatar-wrap">
+                      <span className="voice-profile-person-avatar">
+                        {row.name.slice(0, 2).toUpperCase()}
+                      </span>
                       <span
-                        style={{
-                          position: 'absolute',
-                          bottom: -2,
-                          right: -2,
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
-                          background: confidenceColor,
-                          border: '2px solid var(--bg, #1a1a2e)',
-                        }}
-                        title={`Zatwierdzony profil głosowy (${confidencePct}%)`}
+                        className={`voice-profile-readiness-dot ${row.qualityTone}`}
+                        title={`Gotowość profilu głosowego: ${row.confidencePct}%`}
                       />
-                    )}
-                  </div>
-                  <div className="voice-profile-person-info" style={{ flex: 1 }}>
-                    <strong>{personName}</strong>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="voice-profile-samples-count">{samples.length}/5 próbek</span>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: confidenceColor,
-                        }}
+                    </div>
+                    <div className="voice-profile-person-info">
+                      <div className="voice-profile-title-row">
+                        <strong data-testid="voice-profile-person-name">{row.name}</strong>
+                        <span
+                          className={`voice-profile-status-pill ${
+                            row.sampleCount > 0 ? 'ready' : 'empty'
+                          }`}
+                        >
+                          {row.sampleCount > 0 ? 'Ma próbkę' : 'Brak próbki'}
+                        </span>
+                      </div>
+                      <div className="voice-profile-metrics-row">
+                        <span>
+                          Próbki <strong>{row.sampleCount}/5</strong>
+                        </span>
+                        <span>
+                          Jakość <strong>{row.qualityLabel}</strong>
+                        </span>
+                        <span>
+                          Pewność <strong>{row.confidencePct}%</strong>
+                        </span>
+                        <span>
+                          Próg <strong>{row.thresholdPct ? `${row.thresholdPct}%` : '—'}</strong>
+                        </span>
+                      </div>
+                      <div
+                        className="voice-profile-confidence-shell"
+                        aria-label={`Pewność głosu ${row.confidencePct}%`}
                       >
-                        {confidencePct}% pewności
+                        <span
+                          className={`voice-profile-confidence-fill ${row.qualityTone}`}
+                          style={{ width: `${row.confidencePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="voice-profile-person-body">
+                    <div className="voice-profile-summary-line">
+                      <span>
+                        Przetworzone próbki: <strong>{row.processedSamples}</strong> z{' '}
+                        <strong>{row.sampleCount}</strong>
+                      </span>
+                      <span>
+                        {lastSampleDate
+                          ? `Ostatnia próbka: ${lastSampleDate}`
+                          : 'Dodaj pierwszą próbkę głosu.'}
                       </span>
                     </div>
-                    {/* Confidence bar */}
-                    <div
-                      style={{
-                        marginTop: 4,
-                        height: 4,
-                        borderRadius: 4,
-                        background: 'rgba(255,255,255,0.08)',
-                        overflow: 'hidden',
-                        width: '100%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${confidencePct}%`,
-                          background: confidenceColor,
-                          borderRadius: 4,
-                          transition: 'width 0.4s ease',
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <ul className="voice-profile-samples-list">
-                  {samples.map((p, idx) => (
-                    <li key={p.id} className="voice-profile-sample-item">
-                      <span className="sample-number">{idx + 1}</span>
-                      <div className="voice-profile-sample-info" style={{ flex: 1 }}>
-                        <span className="sample-date">
-                          {new Date(p.createdAt).toLocaleDateString('pl-PL', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                        {p.hasEmbedding ? (
-                          <span className="sample-status-badge">✓ Przetworzono</span>
-                        ) : (
-                          <span
-                            className="sample-status-badge"
-                            style={{ color: 'var(--muted)', background: 'rgba(255,255,255,0.04)' }}
+
+                    {row.primaryProfile ? (
+                      <>
+                        <div className="voice-profile-sample-item compact">
+                          <span className="sample-number">{row.sampleCount}</span>
+                          <div className="voice-profile-sample-info">
+                            <span className="sample-date">
+                              {row.sampleCount === 1
+                                ? '1 próbka przypisana'
+                                : `${row.sampleCount} próbki przypisane`}
+                            </span>
+                            <span
+                              className={`sample-status-badge ${
+                                row.processedSamples > 0 ? 'ready' : 'pending'
+                              }`}
+                            >
+                              {row.processedSamples > 0 ? 'Przetworzono embedding' : 'Oczekuje'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="icon-button profile-delete-sample-btn"
+                            onClick={() => deleteProfile(row.primaryProfile!.id)}
+                            title="Usuń profil głosowy"
+                            aria-label={`Usuń profil głosowy ${row.name}`}
                           >
-                            Oczekuje
-                          </span>
-                        )}
+                            🗑
+                          </button>
+                        </div>
+                        <div className="voice-profile-threshold-container">
+                          <div className="voice-profile-threshold-header">
+                            <span className="vp-threshold-label">Próg rozpoznawania</span>
+                            <span className="voice-profile-threshold-value">
+                              {row.thresholdPct}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            className="vp-threshold-slider"
+                            min="50"
+                            max="99"
+                            step="1"
+                            value={row.thresholdPct}
+                            onChange={(e) => {
+                              const threshold = Number(e.target.value) / 100;
+                              setProfiles((prev) =>
+                                prev.map((profile) =>
+                                  profile.id === row.primaryProfile!.id
+                                    ? { ...profile, threshold }
+                                    : profile
+                                )
+                              );
+                            }}
+                            onMouseUp={(e) =>
+                              updateThreshold(
+                                row.primaryProfile!.id,
+                                Number((e.target as HTMLInputElement).value) / 100
+                              )
+                            }
+                            onTouchEnd={(e) =>
+                              updateThreshold(
+                                row.primaryProfile!.id,
+                                Number((e.target as HTMLInputElement).value) / 100
+                              )
+                            }
+                          />
+                          <p className="voice-profile-threshold-help">
+                            Wyższy próg daje pewniejsze dopasowanie, ale rzadziej aktywuje profil.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="voice-profile-empty-person">
+                        Brak zapisanych próbek dla tej osoby. Wybierz ją powyżej i nagraj 15–30
+                        sekund głosu.
                       </div>
-                      <button
-                        type="button"
-                        className="icon-button profile-delete-sample-btn"
-                        onClick={() => deleteProfile(p.id)}
-                        title="Usuń tę próbkę"
-                      >
-                        🗑️
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <div className="voice-profile-threshold-container">
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span className="vp-threshold-label">Próg rozpoznawania</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent)' }}>
-                      {threshold}%
-                    </span>
+                    )}
                   </div>
-                  <input
-                    type="range"
-                    className="vp-threshold-slider"
-                    min="50"
-                    max="99"
-                    step="1"
-                    value={threshold}
-                    onChange={(e) => {
-                      const t = Number(e.target.value) / 100;
-                      setProfiles((prev) =>
-                        prev.map((x) => (x.id === samples[0].id ? { ...x, threshold: t } : x))
-                      );
-                    }}
-                    onMouseUp={(e) =>
-                      updateThreshold(
-                        samples[0].id,
-                        Number((e.target as HTMLInputElement).value) / 100
-                      )
-                    }
-                    onTouchEnd={(e) =>
-                      updateThreshold(
-                        samples[0].id,
-                        Number((e.target as HTMLInputElement).value) / 100
-                      )
-                    }
-                  />
-                  <p style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: 0 }}>
-                    Im wyższy próg, tym pewniejsze dopasowanie — ale rzadziej aktywowany.
-                  </p>
                 </div>
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="voice-profile-empty-state">
+          <strong>Brak zapisanych próbek głosu</strong>
+          <span>Dodaj osobę i nagraj pierwszą próbkę, aby włączyć rozpoznawanie mówców.</span>
         </div>
       )}
     </section>
