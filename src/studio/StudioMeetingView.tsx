@@ -975,6 +975,7 @@ export default function StudioMeetingView({
   const [voiceStatsOpen, setVoiceStatsOpen] = useState(false);
   const [rediarizing, setRediarizing] = useState(false);
   const [rediarizeMsg, setRediarizeMsg] = useState<string | null>(null);
+  const rediarizeRecordingId = selectedRecording?.id || displayRecording?.id || '';
 
   const autoTaskSyncKeyRef = useRef('');
 
@@ -1379,11 +1380,16 @@ export default function StudioMeetingView({
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
-    if (!selectedRecording?.id || !remoteApiEnabled()) return;
+    if (!remoteApiEnabled()) return;
+    const recordingId = selectedRecording?.id || displayRecording?.id;
+    if (!recordingId) {
+      setRediarizeMsg('Brak zapisanego nagrania do wykrycia mówców.');
+      return;
+    }
     setRediarizing(true);
     setRediarizeMsg(null);
     try {
-      const result = await apiRequest(`/media/recordings/${selectedRecording.id}/rediarize`, {
+      const result = await apiRequest(`/media/recordings/${recordingId}/rediarize`, {
         method: 'POST',
       });
       if (result?.segments && typeof updateTranscriptSegment === 'function') {
@@ -1401,7 +1407,7 @@ export default function StudioMeetingView({
     } finally {
       setRediarizing(false);
     }
-  }, [selectedRecording?.id, updateTranscriptSegment]);
+  }, [displayRecording?.id, selectedRecording?.id, updateTranscriptSegment]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
@@ -3153,7 +3159,7 @@ export default function StudioMeetingView({
                   type="button"
                   className="ff-sidebar-action-btn ff-sidebar-action-btn-centered"
                   onClick={handleRediarize}
-                  disabled={rediarizing}
+                  disabled={rediarizing || !rediarizeRecordingId}
                   title="Wykryj mówców ponownie za pomocą GPT-4o-mini"
                 >
                   {rediarizing ? '…' : 'Wykryj mówców'}

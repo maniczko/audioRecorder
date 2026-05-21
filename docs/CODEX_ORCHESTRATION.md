@@ -18,15 +18,15 @@ Do not treat a green local build as release evidence unless it ran on Node 22.x.
 
 ## Plugin Usage Matrix
 
-| Plugin / tool | Use when | Required evidence |
-| --- | --- | --- |
-| GitHub | Checking CI, publishing branches, reviewing PRs, validating workflow results, opening issues for release blockers. | CI run link, commit SHA, PR checklist, or issue link. |
-| Vercel | Frontend deploys, production URL checks, environment variable review, deployment parity with backend SHA. | Deployment URL, frontend build SHA, production smoke output. |
-| Supabase | Database/storage verification, media asset state, workspace persistence, remote storage evidence. | Query result summary without secrets, asset/workspace IDs, persistence proof. |
-| Sentry | Production error triage, release health, source map/DSN verification, user-impact analysis. | Issue/event IDs, affected release, sanitized error context. |
-| Browser / Playwright | Any UI, layout, auth, recording, upload, queue, modal, mobile, or visual-regression work. | Screenshot, trace, console summary, or Playwright report. |
-| Figma / Canva | Design-system clarification, visual direction, component audits, presentation artifacts. They are not required for every UI fix. | Repo-visible rules, screenshot comparison, or updated design notes. |
-| OpenAI Developers | OpenAI API/Codex documentation, model/API behavior, API key setup flows, provider migration guidance. | Official-doc citation or explicit local verification result. |
+| Plugin / tool        | Use when                                                                                                                         | Required evidence                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| GitHub               | Checking CI, publishing branches, reviewing PRs, validating workflow results, opening issues for release blockers.               | CI run link, commit SHA, PR checklist, or issue link.                         |
+| Vercel               | Frontend deploys, production URL checks, environment variable review, deployment parity with backend SHA.                        | Deployment URL, frontend build SHA, production smoke output.                  |
+| Supabase             | Database/storage verification, media asset state, workspace persistence, remote storage evidence.                                | Query result summary without secrets, asset/workspace IDs, persistence proof. |
+| Sentry               | Production error triage, release health, source map/DSN verification, user-impact analysis.                                      | Issue/event IDs, affected release, sanitized error context.                   |
+| Browser / Playwright | Any UI, layout, auth, recording, upload, queue, modal, mobile, or visual-regression work.                                        | Screenshot, trace, console summary, or Playwright report.                     |
+| Figma / Canva        | Design-system clarification, visual direction, component audits, presentation artifacts. They are not required for every UI fix. | Repo-visible rules, screenshot comparison, or updated design notes.           |
+| OpenAI Developers    | OpenAI API/Codex documentation, model/API behavior, API key setup flows, provider migration guidance.                            | Official-doc citation or explicit local verification result.                  |
 
 ## Fallbacks When A Plugin Is Not Callable
 
@@ -96,6 +96,27 @@ Use this flow for every user-reported bug, runtime error, failed production smok
 - Verify desktop and mobile breakpoints when layout changes.
 - Check console for new errors and repeated warnings.
 - Use `docs/DESIGN_SYSTEM_RULES.md` for spacing, cards, typography, and visual baseline rules.
+
+### UI Action Coverage
+
+Every visible user action must have an automated interaction contract. A button,
+menu item, icon button, tab, command palette item, or row action is release-ready
+only when one of these is true:
+
+- It has a component/store test that clicks or keyboard-activates it and asserts
+  the user-visible result or outbound API request.
+- It is covered by an E2E journey that exercises the real flow and asserts the
+  next state.
+- It is intentionally disabled for the current data state, with a test proving
+  the disabled state or explanatory message.
+- It has a dated exception in the owning test file or release checklist because
+  the action is destructive, provider-bound, or not yet implemented.
+
+Production-only branches must be tested explicitly. For example, actions gated by
+`remoteApiEnabled()`, workspace hydration, Supabase-backed media, or authenticated
+API requests need tests with that mode enabled, not only local/mock-provider tests.
+No enabled button may silently return from its handler; if prerequisites are
+missing, disable it or show a user-facing message.
 
 ### Recorder, Queue, Upload, Transcription
 

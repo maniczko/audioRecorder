@@ -5,6 +5,7 @@ import React from 'react';
 import { vi } from 'vitest';
 
 const apiRequestMock = vi.hoisted(() => vi.fn());
+const remoteApiEnabledMock = vi.hoisted(() => vi.fn(() => false));
 
 // Mock dependencies that we don't need to test for basic rendering
 vi.mock('./RecorderPanel', () => ({ default: () => <div data-testid="recorder-panel" /> }));
@@ -16,7 +17,7 @@ vi.mock('../services/config', () => ({
   MEDIA_PIPELINE_PROVIDER: 'local',
   API_BASE_URL: '',
   apiBaseUrlConfigured: () => false,
-  remoteApiEnabled: () => false,
+  remoteApiEnabled: () => remoteApiEnabledMock(),
 }));
 
 vi.mock('../services/httpClient', async (importOriginal) => {
@@ -32,6 +33,11 @@ function renderWithContext(ui: React.ReactElement) {
 }
 
 describe('StudioMeetingView', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset();
+    remoteApiEnabledMock.mockReturnValue(false);
+  });
+
   const sampleFeedback = {
     overallScore: 8,
     summary: 'Spotkanie było konkretne i dobrze prowadzone.',
@@ -420,6 +426,83 @@ describe('StudioMeetingView', () => {
       'Brak zapisanego nagrania do wygenerowania wizualizacji.'
     );
     alertSpy.mockRestore();
+  });
+
+  test('Regression: rediarize button uses display recording id when selected recording is missing', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    const updateTranscriptSegment = vi.fn();
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') return Promise.resolve({ profiles: [] });
+      return Promise.resolve({
+        speakerCount: 2,
+        segments: [{ id: 'seg-1', speakerId: 'speaker_2', rawSpeakerLabel: 'Speaker 2' }],
+      });
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{
+          id: 'rec-display-only',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'To jest testowy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+        displaySpeakerNames={{ speaker_1: 'Iwo', speaker_2: 'Barbara' }}
+        updateTranscriptSegment={updateTranscriptSegment}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Wykryj m/i }));
+
+    await waitFor(() => {
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/rec-display-only/rediarize',
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+    expect(updateTranscriptSegment).toHaveBeenCalledWith('seg-1', {
+      speakerId: 'speaker_2',
+      rawSpeakerLabel: 'Speaker 2',
+    });
+    expect(await screen.findByText(/Wykryto 2/i)).toBeInTheDocument();
+  });
+
+  test('keeps rediarize button disabled when transcript has no stored recording id', () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') return Promise.resolve({ profiles: [] });
+      return Promise.resolve({});
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'To jest testowy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /Wykryj m/i })).toBeDisabled();
   });
 
   test('opens voice profile enrollment modal after renaming a speaker', async () => {
