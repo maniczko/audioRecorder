@@ -4,7 +4,16 @@
 # This prevents pushing code with failing critical checks
 
 echo "Running release guard before push..."
-pnpm run test:release:guard
+
+NODE_MAJOR=$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "unknown")
+
+if [ "$NODE_MAJOR" = "22" ]; then
+  pnpm run test:release:guard
+else
+  echo "Node $NODE_MAJOR detected; VoiceLog release guard requires Node 22."
+  echo "Running release guard through a temporary Node 22 + pnpm 9 toolchain..."
+  npx -y -p node@22 -p pnpm@9 pnpm run test:release:guard
+fi
 
 if [ $? -ne 0 ]; then
   echo "Release guard failed! Push blocked."

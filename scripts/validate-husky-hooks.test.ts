@@ -17,6 +17,16 @@ describe('husky hooks', () => {
     const content = readFileSync(hookPath, 'utf8');
 
     expect(content).toContain("grep -E '\\.(ts|tsx|js|jsx)$' || true");
+    expect(content).toContain("grep -E '\\.(css|scss)$' || true");
+    expect(content).toContain("grep -E '\\.(ts|tsx|js|jsx|css|scss|json|md|yml|yaml)$' || true");
+  });
+
+  it('runs stylelint for staged css files before commit', () => {
+    const hookPath = path.resolve('.husky/pre-commit');
+    const content = readFileSync(hookPath, 'utf8');
+
+    expect(content).toContain('Running Stylelint on staged CSS files');
+    expect(content).toContain('npx stylelint $STYLE_FILES');
   });
 
   it('runs the release guard from pre-push hook', () => {
@@ -24,5 +34,13 @@ describe('husky hooks', () => {
     const content = readFileSync(hookPath, 'utf8');
 
     expect(content).toContain('pnpm run test:release:guard');
+  });
+
+  it('uses Node 22 for pre-push release guard when local Node differs', () => {
+    const hookPath = path.resolve('.husky/pre-push');
+    const content = readFileSync(hookPath, 'utf8');
+
+    expect(content).toContain('NODE_MAJOR=');
+    expect(content).toContain('npx -y -p node@22 -p pnpm@9 pnpm run test:release:guard');
   });
 });
