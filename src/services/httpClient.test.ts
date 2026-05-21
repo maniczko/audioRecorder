@@ -816,4 +816,34 @@ describe('Regression: Issue #0 - apiRequest preserves structured API error field
       requestId: 'req-voice-1',
     });
   });
+
+  it('does not retry 424 voice profile dependency errors', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 424,
+      json: () =>
+        Promise.resolve({
+          code: 'audio_source_unavailable',
+          message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+          stage: 'audio_source',
+          requestId: 'req-voice-424',
+        }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+    global.fetch = fetchMock as any;
+
+    const error = await apiRequest('/media/recordings/rec/voice-profiles/from-speaker', {
+      method: 'POST',
+      retries: 3,
+    }).catch((e: unknown) => e);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(error).toMatchObject({
+      status: 424,
+      code: 'audio_source_unavailable',
+      stage: 'audio_source',
+      requestId: 'req-voice-424',
+    });
+  });
 });

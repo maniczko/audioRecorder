@@ -1307,11 +1307,38 @@ export default function StudioMeetingView({
     }
   }, []);
 
+  const formatVoiceProfileErrorMessage = (error) => {
+    if (typeof error === 'string') return error;
+
+    const code = String(error?.code || '').trim();
+    const status = Number(error?.status || 0);
+    const rawMessage = String(error?.message || '').trim();
+    const technicalMessages = new Set(['Failed Dependency', 'HTTP 424', 'HTTP 400', 'Bad Request']);
+    const hasActionableMessage = rawMessage && !technicalMessages.has(rawMessage);
+
+    if (code === 'audio_source_unavailable' || status === 424) {
+      return 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.';
+    }
+    if (code === 'speaker_segment_not_found') {
+      return 'Nie znaleziono przypisanego fragmentu wypowiedzi dla tej osoby.';
+    }
+    if (code === 'embedding_failed') {
+      return 'Nie udalo sie utworzyc profilu glosu. Sprobuj ponownie za chwile.';
+    }
+    if (code === 'profile_save_failed') {
+      return 'Nie udalo sie zapisac profilu glosu. Sprobuj ponownie.';
+    }
+    if (code === 'missing_speaker_id' || code === 'missing_speaker_name') {
+      return 'Wybierz mowce i osobe przed zapisaniem probki glosu.';
+    }
+
+    return hasActionableMessage
+      ? rawMessage
+      : 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.';
+  };
+
   const showVoiceProfileError = useCallback((error) => {
-    const message =
-      typeof error === 'string'
-        ? error
-        : String(error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
+    const message = formatVoiceProfileErrorMessage(error);
     setVoiceProfileToast(null);
     setVoiceProfileError(message);
     if (typeof window !== 'undefined') {

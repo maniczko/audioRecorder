@@ -1277,14 +1277,18 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data).toEqual(
         expect.objectContaining({
           code: 'audio_source_unavailable',
+          message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
           stage: 'audio_source',
           recordingId: 'rec_vp_fail',
           speakerId: '99',
           speakerName: 'Nobody',
           segmentCount: 1,
           matchedSegmentCount: 1,
+          requestId: expect.any(String),
         })
       );
+      expect(JSON.stringify(data)).not.toContain('/tmp/audio.webm');
+      expect(JSON.stringify(data)).not.toContain('signed');
     });
 
     it('returns diagnostic embedding_failed instead of a generic 400', async () => {

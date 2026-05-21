@@ -879,6 +879,65 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  test('Regression: maps voice profile 424 to an actionable audio recovery message', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const failedDependency = Object.assign(new Error('Failed Dependency'), {
+      status: 424,
+      code: 'audio_source_unavailable',
+      stage: 'audio_source',
+      requestId: 'req-prod-424',
+    });
+    const autoCreateVoiceProfile = vi.fn(() => Promise.reject(failedDependency));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: false }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+        displayRecording={{
+          id: 'recording_posay27m_mpf8zed7',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'Pierwszy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 'speaker_2',
+              text: 'Fragment Barbary.',
+              timestamp: 6,
+              endTimestamp: 10,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Zapisz do profilu glosu/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Zapisz do profilu glosu/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Audio nie jest dostepne na serwerze\. Zaimportuj nagranie ponownie\./i)
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Failed Dependency/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nie udalo sie zapisac probki glosu/i)).not.toBeInTheDocument();
+  });
+
   test('renders playback scrubber and lets user seek audio', async () => {
     renderWithContext(
       <StudioMeetingView
