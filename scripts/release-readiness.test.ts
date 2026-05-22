@@ -328,6 +328,27 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('SENTRY_AUTH_TOKEN');
   });
 
+  it('keeps Vercel rewrites aligned with backend route prefixes used by the frontend', () => {
+    const vercelConfig = JSON.parse(read('vercel.json')) as {
+      rewrites?: Array<{ source?: string; destination?: string }>;
+    };
+    const rewriteSources = new Set(
+      (vercelConfig.rewrites || []).map((rewrite) => String(rewrite.source || ''))
+    );
+
+    for (const source of [
+      '/health',
+      '/api/:path*',
+      '/auth/:path*',
+      '/media/:path*',
+      '/voice-profiles/:path*',
+      '/transcribe',
+      '/ai/:path*',
+    ]) {
+      expect(rewriteSources).toContain(source);
+    }
+  });
+
   it('keeps the error monitor issue-driven instead of committing root TASK_QUEUE.md', () => {
     const workflow = read('.github/workflows/error-monitor-and-task-creator.yml');
 

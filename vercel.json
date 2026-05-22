@@ -43,6 +43,10 @@
     {
       "source": "/transcribe",
       "destination": "https://audiorecorder-production.up.railway.app/transcribe"
+    },
+    {
+      "source": "/ai/:path*",
+      "destination": "https://audiorecorder-production.up.railway.app/ai/:path*"
     }
   ],
   "headers": [
