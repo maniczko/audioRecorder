@@ -42,6 +42,7 @@ function SpeakerDropdown({
   displaySpeakerNames,
   onReassign,
   onReassignAll,
+  onCreateNewSpeaker,
   onRename,
   onClose,
 }) {
@@ -132,7 +133,13 @@ function SpeakerDropdown({
         type="button"
         role="menuitem"
         className="ff-speaker-dropdown-item"
-        onClick={() => onReassign(nextSpeakerId)}
+        onClick={() => {
+          if (typeof onCreateNewSpeaker === 'function') {
+            onCreateNewSpeaker(nextSpeakerId, seg);
+            return;
+          }
+          onReassign(nextSpeakerId);
+        }}
       >
         <span className="ff-spk-dot" style={{ background: getSpeakerColor(nextSpeakerId) }} />
         <span className="ff-spk-label">+ Nowy mówca</span>
@@ -165,6 +172,7 @@ SpeakerDropdown.propTypes = {
   displaySpeakerNames: PropTypes.object,
   onReassign: PropTypes.func,
   onReassignAll: PropTypes.func,
+  onCreateNewSpeaker: PropTypes.func,
   onRename: PropTypes.func,
   onClose: PropTypes.func,
 };
@@ -956,6 +964,14 @@ export default function StudioMeetingView({
   const [renamingSpeakerId, setRenamingSpeakerId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
+  const [pendingNewSpeakerAssignment, setPendingNewSpeakerAssignment] = useState<{
+    recordingId: string;
+    segmentId: string;
+    speakerId: string;
+    transcriptSegments: any[];
+  } | null>(null);
+  const [newSpeakerName, setNewSpeakerName] = useState('');
+  const [newSpeakerNameDuplicate, setNewSpeakerNameDuplicate] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
   const [voiceProfileError, setVoiceProfileError] = useState<string | null>(null);
   const [verifiedSpeakerNames, setVerifiedSpeakerNames] = useState<string[]>([]);
@@ -1443,6 +1459,30 @@ export default function StudioMeetingView({
     [requestVoiceProfileEnrollment, transcript, updateTranscriptSegment]
   );
 
+  const beginNewSpeakerAssignment = useCallback(
+    (segId, newSpeakerId) => {
+      const segmentId = String(segId ?? '').trim();
+      const speakerId = String(newSpeakerId ?? '').trim();
+      if (!segmentId || !speakerId) return;
+
+      const nextTranscript = transcript.map((segment) =>
+        String(segment.id) === segmentId ? { ...segment, speakerId } : segment
+      );
+
+      setPendingNewSpeakerAssignment({
+        recordingId: String(selectedRecording?.id || displayRecording?.id || '').trim(),
+        segmentId,
+        speakerId,
+        transcriptSegments: nextTranscript,
+      });
+      setNewSpeakerName('');
+      setNewSpeakerNameDuplicate(false);
+      setVoiceProfileError(null);
+      setSpeakerDropdownSegId(null);
+    },
+    [displayRecording?.id, selectedRecording?.id, transcript]
+  );
+
   const commitSpeakerRename = useCallback(
     (speakerId, speakerName) => {
       const nextName = String(speakerName || '').trim();
@@ -1479,6 +1519,53 @@ export default function StudioMeetingView({
       selectedRecording?.id,
     ]
   );
+
+  const commitNewSpeakerAssignment = useCallback(async () => {
+    const pending = pendingNewSpeakerAssignment;
+    if (!pending) return;
+
+    const speakerName = String(newSpeakerName || '').trim();
+    if (!speakerName || newSpeakerNameDuplicate) return;
+
+    if (typeof updateTranscriptSegment === 'function') {
+      updateTranscriptSegment(pending.segmentId, { speakerId: pending.speakerId });
+    }
+    if (typeof renameSpeaker === 'function') {
+      renameSpeaker(pending.speakerId, speakerName);
+    }
+
+    setPendingNewSpeakerAssignment(null);
+    setNewSpeakerName('');
+    setNewSpeakerNameDuplicate(false);
+
+    if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(speakerName)) return;
+
+    const options = {
+      recordingId: pending.recordingId,
+      transcriptSegments: pending.transcriptSegments,
+    };
+
+    if (autoLearnSpeakerProfiles) {
+      await enrollSpeakerProfile(pending.speakerId, speakerName, options);
+      return;
+    }
+
+    setPendingVoiceProfileEnrollment({
+      recordingId: pending.recordingId,
+      speakerId: pending.speakerId,
+      speakerName,
+      transcriptSegments: pending.transcriptSegments,
+    });
+  }, [
+    autoCreateVoiceProfile,
+    autoLearnSpeakerProfiles,
+    enrollSpeakerProfile,
+    newSpeakerName,
+    newSpeakerNameDuplicate,
+    pendingNewSpeakerAssignment,
+    renameSpeaker,
+    updateTranscriptSegment,
+  ]);
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
@@ -3470,6 +3557,9 @@ export default function StudioMeetingView({
                                     onReassignAll={(newId) =>
                                       reassignAllSegmentSpeaker(seg.speakerId, newId)
                                     }
+                                    onCreateNewSpeaker={(newId) =>
+                                      beginNewSpeakerAssignment(seg.id, newId)
+                                    }
                                     onRename={(sid) => {
                                       setSpeakerDropdownSegId(null);
                                       setRenamingSpeakerId(String(sid));
@@ -3974,6 +4064,87 @@ export default function StudioMeetingView({
           )}
         </div>
       )}
+      {pendingNewSpeakerAssignment ? (
+        <Modal
+          isOpen={true}
+          onClose={() => {
+            setPendingNewSpeakerAssignment(null);
+            setNewSpeakerName('');
+            setNewSpeakerNameDuplicate(false);
+          }}
+          title="Nazwij nowego mowce"
+          size="sm"
+        >
+          <div className="ff-modal-body">
+            <p className="ff-enrollment-copy">
+              Najpierw nadaj mowcy nazwe. Dopiero potem przypiszemy fragment i zapiszemy probke
+              glosu do profilu.
+            </p>
+            <label className="ff-modal-field">
+              <span>Nazwa nowego mowcy</span>
+              <input
+                autoFocus
+                className={`todo-detail-unified-field${
+                  newSpeakerNameDuplicate ? ' is-invalid' : ''
+                }`}
+                aria-label="Nazwa nowego mowcy"
+                value={newSpeakerName}
+                placeholder="np. Adam"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const normalized = value.trim().toLowerCase();
+                  setNewSpeakerName(value);
+                  setNewSpeakerNameDuplicate(
+                    Boolean(
+                      normalized &&
+                      Object.entries(displaySpeakerNames).some(
+                        ([id, name]) =>
+                          String(id) !== pendingNewSpeakerAssignment.speakerId &&
+                          String(name).trim().toLowerCase() === normalized
+                      )
+                    )
+                  );
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setPendingNewSpeakerAssignment(null);
+                    setNewSpeakerName('');
+                    setNewSpeakerNameDuplicate(false);
+                    return;
+                  }
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void commitNewSpeakerAssignment();
+                  }
+                }}
+              />
+            </label>
+            {newSpeakerNameDuplicate ? (
+              <p className="ff-enrollment-copy error">Ta nazwa jest juz zajeta.</p>
+            ) : null}
+          </div>
+          <div className="ff-modal-footer">
+            <button
+              className="ghost-button"
+              onClick={() => {
+                setPendingNewSpeakerAssignment(null);
+                setNewSpeakerName('');
+                setNewSpeakerNameDuplicate(false);
+              }}
+            >
+              Anuluj
+            </button>
+            <button
+              className="ff-modal-download-btn"
+              disabled={!newSpeakerName.trim() || newSpeakerNameDuplicate}
+              onClick={() => void commitNewSpeakerAssignment()}
+            >
+              Utworz mowce
+            </button>
+          </div>
+        </Modal>
+      ) : null}
+
       {pendingVoiceProfileEnrollment ? (
         <Modal
           isOpen={true}

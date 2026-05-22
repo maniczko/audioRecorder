@@ -3305,6 +3305,29 @@
   font-size: 0.92rem;
 }
 
+.ff-enrollment-copy.error {
+  margin-top: 10px;
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+.ff-modal-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.ff-modal-field .todo-detail-unified-field {
+  width: 100%;
+}
+
+.ff-modal-field .todo-detail-unified-field.is-invalid {
+  border-color: rgba(248, 113, 113, 0.75);
+}
+
 .ff-modal-format-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

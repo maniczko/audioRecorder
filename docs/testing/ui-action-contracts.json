@@ -44,11 +44,13 @@
     {
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
-      "expectedActionCount": 72,
-      "fingerprint": "cfd10fbe016cf7bf",
+      "expectedActionCount": 75,
+      "fingerprint": "aa862a6957d4ed1c",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
+        "Regression: clicking new speaker asks for a name before saving a voice profile",
+        "Regression: saves a new speaker voice profile only after the speaker is named",
         "Regression: rediarize button uses display recording id when selected recording is missing",
         "Regression: rediarize shows progress feedback while speaker detection is running",
         "Regression: playback controls remain visible for display recording audio without selected recording",

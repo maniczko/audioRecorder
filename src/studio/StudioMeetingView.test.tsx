@@ -723,6 +723,123 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  test('Regression: clicking new speaker asks for a name before saving a voice profile', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: true }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Speaker 2' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Speaker 2/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Nowy m/i }));
+
+    expect(screen.getByRole('dialog', { name: /Nazwij nowego m/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Nazwa nowego m/i)).toBeInTheDocument();
+    expect(updateTranscriptSegment).not.toHaveBeenCalled();
+    expect(autoCreateVoiceProfile).not.toHaveBeenCalled();
+  });
+
+  test('Regression: saves a new speaker voice profile only after the speaker is named', async () => {
+    const updateTranscriptSegment = vi.fn();
+    const renameSpeaker = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: true }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        renameSpeaker={renameSpeaker}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Speaker 2' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Speaker 2/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Nowy m/i }));
+
+    fireEvent.change(screen.getByLabelText(/Nazwa nowego m/i), {
+      target: { value: 'Adam' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Utworz mowce/i }));
+
+    expect(updateTranscriptSegment).toHaveBeenCalledWith('seg-1', { speakerId: '3' });
+    expect(renameSpeaker).toHaveBeenCalledWith('3', 'Adam');
+    await waitFor(() => {
+      expect(autoCreateVoiceProfile).toHaveBeenCalledWith(
+        '3',
+        'Adam',
+        expect.objectContaining({
+          recordingId: 'rec-1',
+          transcriptSegments: [
+            expect.objectContaining({ id: 'seg-1', speakerId: '3', text: 'Fragment nowej osoby.' }),
+          ],
+        })
+      );
+    });
+  });
+
   test('Regression: asks to save a voice profile sample after assigning a segment when auto-learn is off', async () => {
     const updateTranscriptSegment = vi.fn();
     const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
