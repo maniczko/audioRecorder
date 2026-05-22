@@ -84,6 +84,10 @@ function actionLabel(openingElement, node, sourceFile) {
   if (ariaLabel) return ariaLabel;
   const title = attributeValue(getJsxAttribute(attributes, 'title'), sourceFile);
   if (title) return title;
+  const placeholder = attributeValue(getJsxAttribute(attributes, 'placeholder'), sourceFile);
+  if (placeholder) return placeholder;
+  const name = attributeValue(getJsxAttribute(attributes, 'name'), sourceFile);
+  if (name) return name;
   const text = jsxText(node, sourceFile);
   if (text) return text;
   const actionId = attributeValue(getJsxAttribute(attributes, 'data-action-id'), sourceFile);
@@ -92,12 +96,25 @@ function actionLabel(openingElement, node, sourceFile) {
   return className ? `[class:${className}]` : '[unlabeled]';
 }
 
-function isRoleButton(openingElement, sourceFile) {
+function roleKind(openingElement, sourceFile) {
   const role = attributeValue(
     getJsxAttribute(openingElement.attributes.properties, 'role'),
     sourceFile
   );
-  return role === 'button';
+  if (['button', 'menuitem', 'tab'].includes(role)) return role === 'button' ? 'role-button' : role;
+  return '';
+}
+
+function nativeActionKind(tagName) {
+  if (tagName === 'button') return 'button';
+  if (tagName === 'a') return 'link';
+  if (['input', 'select', 'textarea'].includes(tagName)) return tagName;
+  return '';
+}
+
+function actionKind(openingElement, sourceFile) {
+  const tagName = openingElement.tagName.getText(sourceFile);
+  return nativeActionKind(tagName) || roleKind(openingElement, sourceFile);
 }
 
 function hasEventHandler(openingElement, handlerName) {
@@ -114,6 +131,7 @@ function buildAction({ screen, relativeFile, node, openingElement, sourceFile, k
   const actionId = attributeValue(getJsxAttribute(attributes, 'data-action-id'), sourceFile);
   const disabledExpression = attributeValue(getJsxAttribute(attributes, 'disabled'), sourceFile);
   const hasOnClick = hasEventHandler(openingElement, 'onClick');
+  const href = attributeValue(getJsxAttribute(attributes, 'href'), sourceFile);
   const signature = [
     relativeFile,
     line,
@@ -121,6 +139,7 @@ function buildAction({ screen, relativeFile, node, openingElement, sourceFile, k
     actionId || '',
     label,
     hasOnClick ? 'onClick' : 'noOnClick',
+    href ? `href:${href}` : '',
     disabledExpression ? `disabled:${disabledExpression}` : 'enabled-or-dynamic',
   ].join(':');
 
@@ -132,6 +151,7 @@ function buildAction({ screen, relativeFile, node, openingElement, sourceFile, k
     label,
     actionId,
     hasOnClick,
+    href,
     disabledExpression,
     signature,
   };
@@ -156,8 +176,8 @@ export function collectUiActionsFromFiles({ root = rootDir, targets = mainViewTa
     function visit(node) {
       if (ts.isJsxElement(node)) {
         const openingElement = node.openingElement;
-        const tagName = openingElement.tagName.getText(sourceFile);
-        if (tagName === 'button') {
+        const kind = actionKind(openingElement, sourceFile);
+        if (kind) {
           actions.push(
             buildAction({
               screen: target.screen,
@@ -165,24 +185,13 @@ export function collectUiActionsFromFiles({ root = rootDir, targets = mainViewTa
               node,
               openingElement,
               sourceFile,
-              kind: 'button',
-            })
-          );
-        } else if (isRoleButton(openingElement, sourceFile)) {
-          actions.push(
-            buildAction({
-              screen: target.screen,
-              relativeFile,
-              node,
-              openingElement,
-              sourceFile,
-              kind: 'role-button',
+              kind,
             })
           );
         }
       } else if (ts.isJsxSelfClosingElement(node)) {
-        const tagName = node.tagName.getText(sourceFile);
-        if (tagName === 'button' || isRoleButton(node, sourceFile)) {
+        const kind = actionKind(node, sourceFile);
+        if (kind) {
           actions.push(
             buildAction({
               screen: target.screen,
@@ -190,7 +199,7 @@ export function collectUiActionsFromFiles({ root = rootDir, targets = mainViewTa
               node,
               openingElement: node,
               sourceFile,
-              kind: tagName === 'button' ? 'button' : 'role-button',
+              kind,
             })
           );
         }

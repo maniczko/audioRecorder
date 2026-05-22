@@ -1,0 +1,8 @@
+interface:
+  display_name: 'Prompt Engineer'
+  short_description: 'Review and rewrite prompts into executable specs'
+  brand_color: '#66D9C6'
+  default_prompt: 'Use $prompt-engineer to review and rewrite this prompt into Goal, Context, Scope, Acceptance Criteria, Validation, and Final Report.'
+
+policy:
+  allow_implicit_invocation: true

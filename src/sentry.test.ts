@@ -34,6 +34,7 @@ describe('initSentry', () => {
   it('initializes Sentry with the configured DSN and environment', async () => {
     vi.stubEnv('VITE_SENTRY_DSN', 'https://examplePublicKey@o0.ingest.sentry.io/0');
     vi.stubEnv('MODE', 'production');
+    vi.stubEnv('VITE_BUILD_ID', 'ABC123');
 
     const { initSentry } = await import('./sentry');
     initSentry();
@@ -42,6 +43,7 @@ describe('initSentry', () => {
       expect.objectContaining({
         dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0',
         environment: 'production',
+        release: 'abc123',
       })
     );
   });

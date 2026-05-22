@@ -11,6 +11,9 @@ function smallAudioFile(name = 'advanced-import.webm') {
 }
 
 test.describe('Advanced release journeys', () => {
+  const remoteProviderEnabled =
+    process.env.VITE_DATA_PROVIDER === 'remote' || process.env.REACT_APP_DATA_PROVIDER === 'remote';
+
   test('navigates core workspace surfaces from a hydrated workspace', async ({ page }) => {
     await seedLoggedInUser(page);
     await seedMeeting(page, {
@@ -49,9 +52,13 @@ test.describe('Advanced release journeys', () => {
       .getByTestId('recordings-file-input')
       .setInputFiles(smallAudioFile('missing.ws.webm'));
 
-    await expect(
-      page.getByRole('alert').getByText(/robocza nie jest jeszcze gotowa/i)
-    ).toBeVisible();
+    if (remoteProviderEnabled) {
+      await expect(
+        page.getByRole('alert').getByText(/robocza nie jest jeszcze gotowa/i)
+      ).toBeVisible();
+    } else {
+      await expect(page.getByText('Import: missing.ws').first()).toBeVisible();
+    }
     expect(audioUploadSeen).toBe(false);
   });
 

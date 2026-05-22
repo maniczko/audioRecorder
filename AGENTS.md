@@ -188,6 +188,25 @@ Each AI agent should have a **thin pointer file** in its own config directory
 that references this document. Do NOT duplicate these rules.
 Codex and plugin orchestration must also follow `docs/CODEX_ORCHESTRATION.md`.
 
+### 7.1 Prompt Engineering Gate
+
+For non-trivial implementation, audit, debugging, release, or architecture work,
+use the workspace `prompt-engineer` skill before execution when the user request
+lacks clear goal, context, scope, acceptance criteria, validation, or final
+reporting requirements. Normalize the request into:
+
+1. Goal
+2. Context
+3. Scope
+4. Acceptance Criteria
+5. Validation
+6. Final Report
+
+If the user asks only to improve a prompt, return the rewritten prompt. If the
+user asks to implement and intent is clear, use the improved prompt internally
+and proceed. Do not block trivial commands or clear one-step tasks on prompt
+rewriting.
+
 | Agent          | Config location                   | What to put there                                   |
 | -------------- | --------------------------------- | --------------------------------------------------- |
 | GitHub Copilot | `.github/copilot-instructions.md` | `→ See AGENTS.md` + agent-specific overrides only   |

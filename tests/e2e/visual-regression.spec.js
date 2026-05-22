@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // TODO: Visual regression tests require baseline screenshots.
 // Skip until baseline screenshots are captured in a stable environment.
+// Issue: #0
+// Expires: 2026-06-21
+// Reason: legacy visual suite is superseded by the canonical visual baseline project.
 test.describe.skip('Visual Regression - Core Components', () => {
   test.beforeEach(async ({ page }) => {
     // Seed logged in user

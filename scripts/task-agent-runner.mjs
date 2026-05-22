@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 
 import { assignTaskAgents } from './assign-task-agents.mjs';
 
-const TASK_QUEUE_PATH = path.resolve(process.cwd(), 'TASK_QUEUE.md');
+const TASK_QUEUE_PATH = path.resolve(process.cwd(), 'docs/automation/TASK_QUEUE.md');
 const ACTIVE_TASK_HEADING = /^###\s+([A-Z]+(?:-[A-Z0-9]+)*-\d+)\s+-\s+(.*)$/;
 const SNAPSHOT_TASK_HEADING = /^- \*\*([A-Z]+(?:-[A-Z0-9]+)*-\d+)\*\*\s+—\s+(.*)$/;
 
@@ -86,7 +86,10 @@ function extractField(task, fieldName) {
           /\*\*(?:Owner|Wlasciciel):\*\*\s*(?:`([^`]+)`|([^\r\n`]+))\s*$/i,
         ]
       : [
-          new RegExp(`(?:${escapedFieldName}:|\\*\\*${escapedFieldName}:\\*\\*)\\s*(?:\`([^\\\`]+)\`|([^\\r\\n\\\`]+))\\s*$`, 'i'),
+          new RegExp(
+            `(?:${escapedFieldName}:|\\*\\*${escapedFieldName}:\\*\\*)\\s*(?:\`([^\\\`]+)\`|([^\\r\\n\\\`]+))\\s*$`,
+            'i'
+          ),
         ];
 
   for (const line of task.lines) {
@@ -120,7 +123,11 @@ function isDispatchableTask(task) {
     return false;
   }
 
-  return getTaskStatus(task) === 'todo' && Boolean(extractField(task, 'owner')) && !hasDispatchMetadata(task);
+  return (
+    getTaskStatus(task) === 'todo' &&
+    Boolean(extractField(task, 'owner')) &&
+    !hasDispatchMetadata(task)
+  );
 }
 
 function buildTaskPayload(task) {
@@ -138,7 +145,9 @@ function buildTaskPayload(task) {
 }
 
 function resolveAgentTarget(agentName, env = process.env) {
-  const normalized = String(agentName || '').trim().toUpperCase();
+  const normalized = String(agentName || '')
+    .trim()
+    .toUpperCase();
   return {
     webhookUrl: env[`TASK_AGENT_${normalized}_WEBHOOK_URL`] || '',
     command: env[`TASK_AGENT_${normalized}_COMMAND`] || '',
@@ -271,7 +280,9 @@ export async function runTaskAgentCycle(options = {}) {
 }
 
 export async function startTaskAgentRunner(options = {}) {
-  const intervalMs = Number(options.intervalMs || process.env.TASK_RUNNER_INTERVAL_MS || 2 * 60 * 60 * 1000);
+  const intervalMs = Number(
+    options.intervalMs || process.env.TASK_RUNNER_INTERVAL_MS || 2 * 60 * 60 * 1000
+  );
   const once = options.once ?? process.env.TASK_RUNNER_ONCE === 'true';
 
   const runCycle = async () => {
@@ -286,7 +297,10 @@ export async function startTaskAgentRunner(options = {}) {
         );
       }
     } catch (error) {
-      console.error('Task runner cycle failed:', error instanceof Error ? error.message : String(error));
+      console.error(
+        'Task runner cycle failed:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   };
 

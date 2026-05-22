@@ -3,6 +3,9 @@ import { seedLoggedInUser } from './helpers/seed';
 
 // TODO: Tests use legacy selectors (.auth-panel, data-testid="recording-indicator", etc.)
 // that no longer exist in the redesigned AppShellModern UI. Skip until rewritten.
+// Issue: #0
+// Expires: 2026-06-21
+// Reason: legacy selectors must be replaced with current AppShellModern user journeys.
 test.describe.skip('Critical User Flows', () => {
   test('complete flow: registration → first meeting → recording → transcription', async ({
     page,

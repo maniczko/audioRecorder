@@ -16,6 +16,28 @@ Every production-impacting change follows the same path:
 
 Do not treat a green local build as release evidence unless it ran on Node 22.x.
 
+## Prompt Engineering Gate
+
+For non-trivial work, Codex should normalize rough prompts before execution. Use
+the workspace `prompt-engineer` skill when a request lacks a concrete goal,
+context, scope, acceptance criteria, validation, or final-report requirements.
+
+Default flow:
+
+1. Review the prompt for ambiguity, missing context, missing success criteria,
+   overengineering risk, hallucination risk, and secret exposure risk.
+2. Rewrite it into: Goal, Context, Scope, Acceptance Criteria, Validation, and
+   Final Report.
+3. If the user asked only for prompt improvement, return the rewritten prompt.
+4. If the user asked for implementation and the intent is clear, use the
+   rewritten prompt internally and proceed.
+5. If a high-impact requirement is missing, ask one concise clarifying question
+   before changing code.
+
+This gate does not replace the mandatory bug-fix flow, TDD, or release evidence.
+For trivial commands or clear one-step questions, execute normally without
+prompt rewriting overhead.
+
 ## Plugin Usage Matrix
 
 | Plugin / tool        | Use when                                                                                                                         | Required evidence                                                             |
@@ -27,6 +49,10 @@ Do not treat a green local build as release evidence unless it ran on Node 22.x.
 | Browser / Playwright | Any UI, layout, auth, recording, upload, queue, modal, mobile, or visual-regression work.                                        | Screenshot, trace, console summary, or Playwright report.                     |
 | Figma / Canva        | Design-system clarification, visual direction, component audits, presentation artifacts. They are not required for every UI fix. | Repo-visible rules, screenshot comparison, or updated design notes.           |
 | OpenAI Developers    | OpenAI API/Codex documentation, model/API behavior, API key setup flows, provider migration guidance.                            | Official-doc citation or explicit local verification result.                  |
+
+Run `pnpm run audit:tooling` when changing plugin usage, release workflows,
+agent config, prompt-engineer behavior, or design-tooling governance. The
+tooling readiness matrix is documented in `docs/tooling/TOOLING_READINESS.md`.
 
 ## Fallbacks When A Plugin Is Not Callable
 

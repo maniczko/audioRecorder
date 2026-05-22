@@ -17,6 +17,7 @@ describe('sentry.ts', () => {
   beforeEach(() => {
     vi.resetModules();
     delete process.env.SENTRY_DSN;
+    delete process.env.RAILWAY_GIT_COMMIT_SHA;
   });
 
   afterEach(() => {
@@ -31,6 +32,7 @@ describe('sentry.ts', () => {
 
   test('initializes Sentry when DSN is provided', async () => {
     process.env.SENTRY_DSN = 'https://test@o123.ingest.sentry.io/456';
+    process.env.RAILWAY_GIT_COMMIT_SHA = 'sha123';
     // NODE_ENV is 'test' in vitest environment
     const { initSentry } = await import('../sentry.js');
     initSentry();
@@ -39,6 +41,7 @@ describe('sentry.ts', () => {
         dsn: 'https://test@o123.ingest.sentry.io/456',
         tracesSampleRate: 0.1,
         environment: 'test',
+        release: 'sha123',
         integrations: expect.any(Function),
       })
     );

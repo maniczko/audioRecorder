@@ -12,21 +12,6 @@ const criticalTargets = [
   'src/store/uiStore.test.ts',
 ];
 
-const allowedSkips = new Map([
-  [
-    'tests/e2e/critical-flows.spec.js',
-    new Set(['Critical User Flows']),
-  ],
-  [
-    'tests/e2e/meeting.spec.js',
-    new Set(['klikniecie Nowe resetuje formularz']),
-  ],
-  [
-    'tests/e2e/visual-regression.spec.js',
-    new Set(['Visual Regression - Core Components']),
-  ],
-]);
-
 const skipPattern = /\b(?:test|it|describe)\.skip\s*\(\s*(['"`])([^'"`]+)\1/g;
 
 function collectFiles(targetPath, files = []) {
@@ -42,6 +27,17 @@ function collectFiles(targetPath, files = []) {
   return files;
 }
 
+export function isAllowedDocumentedSkip(contextLines, now = new Date()) {
+  const context = contextLines.join('\n');
+  const hasIssue = /Issue:\s*#\d+/i.test(context);
+  const hasReason = /Reason:\s*\S.{10,}/i.test(context);
+  const expiryMatch = context.match(/Expires:\s*(\d{4}-\d{2}-\d{2})/i);
+  if (!hasIssue || !hasReason || !expiryMatch) return false;
+
+  const expiry = new Date(`${expiryMatch[1]}T23:59:59.999Z`);
+  return Number.isFinite(expiry.getTime()) && expiry.getTime() >= now.getTime();
+}
+
 export function findUnexpectedSkips({ root = rootDir } = {}) {
   const files = criticalTargets.flatMap((target) => collectFiles(path.join(root, target)));
   const issues = [];
@@ -49,11 +45,12 @@ export function findUnexpectedSkips({ root = rootDir } = {}) {
   for (const file of files) {
     const relative = path.relative(root, file).replace(/\\/g, '/');
     const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split(/\r?\n/);
     for (const match of content.matchAll(skipPattern)) {
       const title = match[2];
-      const allowedTitles = allowedSkips.get(relative);
-      if (!allowedTitles?.has(title)) {
-        const line = content.slice(0, match.index).split(/\r?\n/).length;
+      const line = content.slice(0, match.index).split(/\r?\n/).length;
+      const contextLines = lines.slice(Math.max(0, line - 7), line - 1);
+      if (!isAllowedDocumentedSkip(contextLines)) {
         issues.push({ file: relative, line, title });
       }
     }

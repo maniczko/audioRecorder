@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const TASK_QUEUE_PATH = path.resolve(process.cwd(), 'TASK_QUEUE.md');
+const TASK_QUEUE_PATH = path.resolve(process.cwd(), 'docs/automation/TASK_QUEUE.md');
 
 const QWEN_PATTERNS = [
   /\bsecurity\b/i,
@@ -27,7 +27,10 @@ function getAgentForTask(taskBlock) {
 }
 
 function isTodoStatus(line) {
-  return /Status:\s*(?:`todo`|todo)\s*$/i.test(line) || /\*\*Status:\*\*\s*(?:`todo`|todo)\s*$/i.test(line);
+  return (
+    /Status:\s*(?:`todo`|todo)\s*$/i.test(line) ||
+    /\*\*Status:\*\*\s*(?:`todo`|todo)\s*$/i.test(line)
+  );
 }
 
 function hasOwnerLine(lines) {
@@ -142,7 +145,7 @@ export function assignTaskAgentsFile(taskQueuePath = TASK_QUEUE_PATH) {
 if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`) {
   const result = assignTaskAgentsFile();
   if (result.assignments.length === 0) {
-    console.log('No new unassigned todo tasks found in TASK_QUEUE.md');
+    console.log('No new unassigned todo tasks found in docs/automation/TASK_QUEUE.md');
   } else {
     result.assignments.forEach((assignment) => {
       console.log(`Assigned ${assignment.taskId} -> ${assignment.agent}`);

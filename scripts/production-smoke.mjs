@@ -145,6 +145,81 @@ export async function runStaleRecordingSmoke({
   );
 }
 
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+export async function runVoiceProfileSmoke({
+  api,
+  authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
+  workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
+  recordingId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID,
+  speakerId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID,
+  speakerName = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME,
+} = {}) {
+  const token = String(authToken || '').trim();
+  const workspace = String(workspaceId || '').trim();
+  const recording = String(recordingId || '').trim();
+  const speaker = String(speakerId || '').trim();
+  const name = String(speakerName || '').trim();
+  if (!token || !workspace || !recording || !speaker || !name) {
+    return false;
+  }
+
+  const enrollResponse = await fetch(
+    `${api}/media/recordings/${encodeURIComponent(recording)}/voice-profiles/from-speaker`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Workspace-Id': workspace,
+      },
+      body: JSON.stringify({ speakerId: speaker, speakerName: name }),
+    }
+  );
+
+  const enrollPayload = await readJsonResponse(enrollResponse);
+  if (!enrollResponse.ok) {
+    const code = enrollPayload?.code ? ` ${enrollPayload.code}` : '';
+    const stage = enrollPayload?.stage ? ` stage=${enrollPayload.stage}` : '';
+    const message = enrollPayload?.message ? ` ${enrollPayload.message}` : '';
+    throw new Error(
+      `Voice profile smoke failed: ${enrollResponse.status}${code}${stage}${message}`.trim()
+    );
+  }
+
+  const profilesResponse = await fetch(`${api}/voice-profiles`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-Workspace-Id': workspace,
+    },
+  });
+  const profilesPayload = await readJsonResponse(profilesResponse);
+  if (!profilesResponse.ok) {
+    throw new Error(`Voice profile refresh smoke failed: ${profilesResponse.status}`);
+  }
+
+  const profiles = Array.isArray(profilesPayload?.profiles) ? profilesPayload.profiles : [];
+  const normalizedName = name.toLowerCase();
+  const hasProfile = profiles.some((profile) =>
+    String(profile?.speakerName || profile?.speaker_name || '')
+      .trim()
+      .toLowerCase()
+      .includes(normalizedName)
+  );
+  if (!hasProfile) {
+    throw new Error(`Voice profile smoke failed: saved profile for "${name}" was not visible.`);
+  }
+
+  return true;
+}
+
 export function evaluateHealthPayload(
   payload,
   {
@@ -207,6 +282,7 @@ export async function runProductionSmoke({
   requireSentryDsn = process.env.PRODUCTION_REQUIRE_SENTRY_DSN === 'true',
   requireAudioUploadSmoke = process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE === 'true',
   requireStaleRecordingSmoke = process.env.PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE === 'true',
+  requireVoiceProfileSmoke = process.env.PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE === 'true',
   persistenceEvidenceUrl = process.env.PRODUCTION_PERSISTENCE_EVIDENCE_URL,
 } = {}) {
   const frontend = normalizeBaseUrl(frontendUrl, 'PRODUCTION_FRONTEND_URL');
@@ -272,6 +348,13 @@ export async function runProductionSmoke({
     );
   }
 
+  const voiceProfileChecked = await runVoiceProfileSmoke({ api });
+  if (requireVoiceProfileSmoke && !voiceProfileChecked) {
+    throw new Error(
+      'Voice profile smoke requires PRODUCTION_SMOKE_AUTH_TOKEN, PRODUCTION_SMOKE_WORKSPACE_ID, PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID, PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID, and PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME.'
+    );
+  }
+
   return {
     frontend,
     api,
@@ -279,6 +362,7 @@ export async function runProductionSmoke({
     gitSha: String(healthPayload.gitSha || ''),
     audioUploadChecked,
     staleRecordingChecked,
+    voiceProfileChecked,
     persistenceEvidenceChecked: Boolean(persistenceEvidenceUrl),
   };
 }
@@ -299,6 +383,7 @@ if (isMainModule) {
             gitSha: result.gitSha,
             audioUploadChecked: result.audioUploadChecked,
             staleRecordingChecked: result.staleRecordingChecked,
+            voiceProfileChecked: result.voiceProfileChecked,
             persistenceEvidenceChecked: result.persistenceEvidenceChecked,
           },
           null,

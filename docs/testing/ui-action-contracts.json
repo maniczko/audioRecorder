@@ -4,8 +4,8 @@
     {
       "screen": "Auth",
       "file": "src/components/auth/AuthCredentialsForm.tsx",
-      "expectedActionCount": 4,
-      "fingerprint": "3e8af17b5cbd7083",
+      "expectedActionCount": 11,
+      "fingerprint": "61136dc0d155d1a4",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
       "testEvidence": ["Zapomniałeś hasła?", "Dołącz z kodu", "Wejd[zź] do aplikacji"],
@@ -15,7 +15,7 @@
       "screen": "Auth",
       "file": "src/components/auth/AuthModeTabs.tsx",
       "expectedActionCount": 2,
-      "fingerprint": "f1a7c6d18e5f2690",
+      "fingerprint": "19ef7c0b6244aeb3",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
       "testEvidence": ["rejestracja", "logowanie"],
@@ -24,8 +24,8 @@
     {
       "screen": "Auth",
       "file": "src/components/auth/PasswordResetForm.tsx",
-      "expectedActionCount": 3,
-      "fingerprint": "7a38406efe1be0f9",
+      "expectedActionCount": 7,
+      "fingerprint": "e8736ee6df3db5ef",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx"],
       "testEvidence": ["Wyślij kod resetu", "Zmień hasło"],
@@ -34,8 +34,8 @@
     {
       "screen": "Topbar",
       "file": "src/Topbar.tsx",
-      "expectedActionCount": 11,
-      "fingerprint": "cf02a2bd665531b6",
+      "expectedActionCount": 12,
+      "fingerprint": "951d9b734683db48",
       "contractStatus": "covered",
       "testFiles": ["src/Topbar.a11y.test.tsx"],
       "testEvidence": ["record button starts ad-hoc recording", "opens command palette on Szukaj click"],
@@ -44,8 +44,8 @@
     {
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
-      "expectedActionCount": 54,
-      "fingerprint": "a120cad4bbae2801",
+      "expectedActionCount": 72,
+      "fingerprint": "cfd10fbe016cf7bf",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -59,8 +59,8 @@
     {
       "screen": "Recordings",
       "file": "src/RecordingsTab.tsx",
-      "expectedActionCount": 7,
-      "fingerprint": "c2c04fadd5e828c1",
+      "expectedActionCount": 8,
+      "fingerprint": "358f4e6d484c19c0",
       "contractStatus": "covered",
       "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
       "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
@@ -69,8 +69,8 @@
     {
       "screen": "Calendar",
       "file": "src/CalendarTab.tsx",
-      "expectedActionCount": 29,
-      "fingerprint": "b66de93a73632bda",
+      "expectedActionCount": 34,
+      "fingerprint": "ad4a13131a3e47ef",
       "contractStatus": "covered",
       "testFiles": ["src/CalendarTab.test.tsx"],
       "testEvidence": ["opens StudioBriefModal when + button is clicked in month view"],
@@ -80,7 +80,7 @@
       "screen": "Tasks",
       "file": "src/TasksTab.tsx",
       "expectedActionCount": 1,
-      "fingerprint": "92222956c2de5318",
+      "fingerprint": "98afb1dc9f358c0e",
       "contractStatus": "covered",
       "testFiles": ["src/TasksTab.test.tsx"],
       "testEvidence": ["moves a task between kanban columns with drag and drop", "creates a task with the group"],
@@ -89,8 +89,8 @@
     {
       "screen": "People",
       "file": "src/PeopleTab.tsx",
-      "expectedActionCount": 26,
-      "fingerprint": "f7cb89c98e22d79c",
+      "expectedActionCount": 31,
+      "fingerprint": "5a44c9564b7ce377",
       "contractStatus": "covered",
       "testFiles": ["src/PeopleTab.test.tsx"],
       "testEvidence": [
@@ -102,8 +102,8 @@
     {
       "screen": "Notes",
       "file": "src/NotesTab.tsx",
-      "expectedActionCount": 14,
-      "fingerprint": "9f4b174bbc40971c",
+      "expectedActionCount": 16,
+      "fingerprint": "de116753edcc226e",
       "contractStatus": "covered",
       "testFiles": ["src/NotesTab.test.tsx"],
       "testEvidence": ["+ Nowa notatka", "Zapisz notatk"],
@@ -112,8 +112,8 @@
     {
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
-      "expectedActionCount": 34,
-      "fingerprint": "c61941b9e3568274",
+      "expectedActionCount": 42,
+      "fingerprint": "85b6cdc8a62b87de",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
       "testEvidence": ["Zapisz profil", "Zmień hasło", "reviewBtn"],
@@ -122,8 +122,8 @@
     {
       "screen": "CommandPalette",
       "file": "src/CommandPalette.tsx",
-      "expectedActionCount": 2,
-      "fingerprint": "30aad752b145e6fe",
+      "expectedActionCount": 3,
+      "fingerprint": "67b98856ba2db17b",
       "contractStatus": "covered",
       "testFiles": ["src/CommandPalette.test.tsx", "src/CommandPalette.a11y.test.tsx"],
       "testEvidence": ["Spotkanie Test", "userEvent.click(btn)"],
@@ -133,7 +133,7 @@
       "screen": "NotificationCenter",
       "file": "src/NotificationCenter.tsx",
       "expectedActionCount": 4,
-      "fingerprint": "e10f6746004b8efd",
+      "fingerprint": "524952e1a72acc95",
       "contractStatus": "covered",
       "testFiles": ["src/NotificationCenter.test.tsx"],
       "testEvidence": ["Powiadomienia", "dismissButtons"],
@@ -149,6 +149,15 @@
       "testFile": "src/studio/StudioMeetingView.test.tsx",
       "testTitle": "Regression: rediarize button uses display recording id when selected recording is missing",
       "reason": "Production bug 2026-05-21: visible speaker detection button silently returned when selectedRecording was missing."
+    },
+    {
+      "id": "studio.save-voice-profile-sample",
+      "screen": "Studio",
+      "file": "src/studio/StudioMeetingView.tsx",
+      "labelPattern": "Zapisz do profilu glosu",
+      "testFile": "src/studio/StudioMeetingView.test.tsx",
+      "testTitle": "Regression: maps voice profile 424 to an actionable audio recovery message",
+      "reason": "Production bug 2026-05-21: saving a voice sample from speaker returned 424 without enough release-gate coverage."
     }
   ]
 }

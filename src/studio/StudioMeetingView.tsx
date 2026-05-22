@@ -3492,13 +3492,17 @@ export default function StudioMeetingView({
                           >
                             {formatDuration(Math.floor(seg.timestamp))}
                           </button>
-                          <label className="fireflies-select" title="Zaznacz">
-                            <input type="checkbox" />
+                          <label className="fireflies-select" title="Zaznacz segment">
+                            <input
+                              type="checkbox"
+                              aria-label={`Zaznacz segment ${formatDuration(Math.floor(seg.timestamp))}`}
+                            />
                           </label>
                         </div>
                         <div className="fireflies-text-area">
                           <textarea
                             className="fireflies-textarea"
+                            aria-label={`Edytuj transkrypcje segmentu ${formatDuration(Math.floor(seg.timestamp))}`}
                             value={seg.text}
                             onChange={(e) =>
                               updateTranscriptSegment(seg.id, { text: e.target.value })

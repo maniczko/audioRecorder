@@ -4,7 +4,7 @@
  * collect-user-errors.js
  *
  * Reads an exported VoiceLog error log JSON file and appends
- * corresponding tasks to TASK_QUEUE.md.
+ * corresponding tasks to docs/automation/TASK_QUEUE.md.
  *
  * Usage:
  *   node scripts/collect-user-errors.js <path-to-errors.json>
@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
-const TASK_QUEUE_PATH = resolve(import.meta.dirname, '..', 'TASK_QUEUE.md');
+const TASK_QUEUE_PATH = resolve(import.meta.dirname, '..', 'docs/automation/TASK_QUEUE.md');
 
 function readInput() {
   const arg = process.argv[2];
@@ -93,13 +93,13 @@ function main() {
   const section = `\n### User-Reported Errors (imported ${new Date().toISOString().slice(0, 10)})\n${taskBlocks.join('')}`;
 
   if (!existsSync(TASK_QUEUE_PATH)) {
-    console.error(`TASK_QUEUE.md not found at: ${TASK_QUEUE_PATH}`);
+    console.error(`docs/automation/TASK_QUEUE.md not found at: ${TASK_QUEUE_PATH}`);
     process.exit(1);
   }
 
   const current = readFileSync(TASK_QUEUE_PATH, 'utf-8');
   writeFileSync(TASK_QUEUE_PATH, current.trimEnd() + '\n' + section + '\n', 'utf-8');
-  console.log(`Added ${grouped.length} task(s) to TASK_QUEUE.md`);
+  console.log(`Added ${grouped.length} task(s) to docs/automation/TASK_QUEUE.md`);
 }
 
 main();

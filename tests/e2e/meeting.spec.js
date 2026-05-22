@@ -71,6 +71,9 @@ test.describe('Studio — tworzenie i edycja spotkania', () => {
 
   // ── New meeting draft button ──────────────────────────────────────────────
   // TODO: '+ Nowe' button removed from UI in AppShellModern redesign — needs reimplementation
+  // Issue: #0
+  // Expires: 2026-06-21
+  // Reason: removed control must be either restored or removed from legacy journey coverage.
   test.skip('klikniecie Nowe resetuje formularz', async ({ page }) => {
     await page.getByRole('button', { name: 'Przygotuj brief' }).click();
 

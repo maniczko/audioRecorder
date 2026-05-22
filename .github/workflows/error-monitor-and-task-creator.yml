@@ -26,7 +26,7 @@ on:
         default: 'true'
         type: boolean
       create_tasks:
-        description: 'Create tasks in TASK_QUEUE.md'
+        description: 'Create tasks in docs/automation/TASK_QUEUE.md'
         required: false
         default: 'true'
         type: boolean
@@ -226,7 +226,7 @@ jobs:
             core.setOutput('total_errors', totalErrors);
             core.setOutput('has_errors', totalErrors > 0 ? 'true' : 'false');
 
-      - name: Create Tasks in TASK_QUEUE.md
+      - name: Create Tasks in docs/automation/TASK_QUEUE.md
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
         uses: actions/github-script@v8
         with:
@@ -236,10 +236,12 @@ jobs:
             const errors = JSON.parse(fs.readFileSync('./error-analysis.json', 'utf8'));
             const timestamp = new Date().toISOString();
             const dateStr = timestamp.split('T')[0];
+            const taskQueuePath = './docs/automation/TASK_QUEUE.md';
+            const taskDonePath = './docs/automation/TASK_DONE.md';
 
             let taskQueue = '';
             try {
-              taskQueue = fs.readFileSync('./TASK_QUEUE.md', 'utf8');
+              taskQueue = fs.readFileSync(taskQueuePath, 'utf8');
             } catch (_) {
               taskQueue =
                 '# TASK_QUEUE\n\nLegenda statusow: `todo`, `in_progress`, `done`, `blocked`\n\n## Otwarta kolejka\n\n### 🔴 Wysoki priorytet\n\n';
@@ -247,7 +249,7 @@ jobs:
 
             let taskDone = '';
             try {
-              taskDone = fs.readFileSync('./TASK_DONE.md', 'utf8');
+              taskDone = fs.readFileSync(taskDonePath, 'utf8');
             } catch (_) {}
 
             function fingerprint(value) {
@@ -386,7 +388,7 @@ jobs:
             }
 
             if (addedCount === 0) {
-              console.log('All errors already tracked in TASK_QUEUE.md or TASK_DONE.md, no new tasks added.');
+              console.log('All errors already tracked in docs/automation task files, no new tasks added.');
               return;
             }
 
@@ -406,23 +408,23 @@ jobs:
               const endOfLine = taskQueue.indexOf('\n', insertIndex + anchorLength);
               const updatedQueue =
                 taskQueue.slice(0, endOfLine + 1) + newTasks + taskQueue.slice(endOfLine + 1);
-              fs.writeFileSync('./TASK_QUEUE.md', updatedQueue);
+              fs.writeFileSync(taskQueuePath, updatedQueue);
             } else {
-              fs.writeFileSync('./TASK_QUEUE.md', taskQueue.trimEnd() + '\n' + newTasks + '\n');
+              fs.writeFileSync(taskQueuePath, taskQueue.trimEnd() + '\n' + newTasks + '\n');
             }
 
-            console.log(`Created ${addedCount} new tasks in TASK_QUEUE.md`);
+            console.log(`Created ${addedCount} new tasks in ${taskQueuePath}`);
 
-      - name: Commit TASK_QUEUE.md changes
+      - name: Commit docs automation task queue changes
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add TASK_QUEUE.md
-          git commit --no-verify -m "chore: auto-create tasks for ${{ steps.analyze.outputs.total_errors }} errors" || echo "No changes to commit"
+          git add docs/automation/TASK_QUEUE.md
+          git commit -m "chore: auto-create tasks for ${{ steps.analyze.outputs.total_errors }} errors" || echo "No changes to commit"
           GIT_TOKEN="${{ github.token }}"
           git remote set-url origin https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }}.git
-          git push origin ${{ github.ref_name }} --no-verify 2>&1 || echo "Push failed or no changes"
+          git push origin ${{ github.ref_name }} 2>&1 || echo "Push failed or no changes"
 
       - name: Create GitHub Issues for Errors
         if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_issues != 'false' }}
@@ -452,6 +454,12 @@ jobs:
 
             let issueBody = `## Automated Error Report\n\n`;
             issueBody += `**Generated:** ${timestamp}\n\n`;
+            issueBody += `## Regression Gate\n\n`;
+            issueBody += `- **Root cause:** _Required before closing._\n`;
+            issueBody += `- **Missing test:** _Required before closing._\n`;
+            issueBody += `- **Regression test path:** _Required before closing._\n`;
+            issueBody += `- **Target command:** _Required before closing._\n`;
+            issueBody += `- **Release impact:** _Required before closing._\n\n`;
 
             if (errors.github.length > 0) {
               issueBody += `### GitHub Actions Errors (${errors.github.length})\n\n`;
@@ -493,7 +501,7 @@ jobs:
             }
 
             issueBody += `---\n\n`;
-            issueBody += `Tasks were added to TASK_QUEUE.md when new unique errors were detected.\n`;
+            issueBody += `Tasks were added to docs/automation/TASK_QUEUE.md when new unique errors were detected.\n`;
 
             const total =
               errors.github.length + errors.railway.length + errors.vercel.length + errors.sentry.length;
@@ -540,7 +548,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.analyze.outputs.has_errors }}" = "true" ]; then
-            echo "Tasks were added to TASK_QUEUE.md when new unique errors were found." >> $GITHUB_STEP_SUMMARY
+            echo "Tasks were added to docs/automation/TASK_QUEUE.md when new unique errors were found." >> $GITHUB_STEP_SUMMARY
           else
             echo "No errors found in monitored systems." >> $GITHUB_STEP_SUMMARY
           fi

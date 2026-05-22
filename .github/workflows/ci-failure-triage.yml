@@ -209,8 +209,8 @@ jobs:
             });
             console.log(`GPT Auto-Fix triggered for issue #${process.env.ISSUE_NUMBER}`);
 
-      # Also update TASK_QUEUE.md so the task is visible in the project board
-      - name: Add entry to TASK_QUEUE.md
+      # Also update docs/automation/TASK_QUEUE.md so the task is visible in the project board
+      - name: Add entry to docs automation task queue
         if: steps.check_dup.outputs.result == 'create'
         uses: actions/github-script@v8
         env:
@@ -220,7 +220,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'TASK_QUEUE.md';
+            const path = 'docs/automation/TASK_QUEUE.md';
             const content = fs.readFileSync(path, 'utf8');
             const sha = process.env.SHA_SHORT;
             if (content.includes(sha)) return;
@@ -240,11 +240,11 @@ jobs:
             if (!content.includes('### Gemini High')) return;
             fs.writeFileSync(path, content.replace('### Gemini High\n', `### Gemini High\n${task}\n`));
 
-      - name: Commit TASK_QUEUE.md update
+      - name: Commit docs automation task queue update
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git diff --quiet TASK_QUEUE.md && echo "No changes" && exit 0
-          git add TASK_QUEUE.md
+          git diff --quiet docs/automation/TASK_QUEUE.md && echo "No changes" && exit 0
+          git add docs/automation/TASK_QUEUE.md
           git commit -m "chore(ci): add Gemini High fix task after CI failure [skip ci]"
           git push origin main

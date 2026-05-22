@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { logger } from './logger.js';
+import { resolveBuildMetadata } from './runtime.js';
 
 export function initSentry() {
   const dsn = process.env.SENTRY_DSN;
@@ -14,6 +15,7 @@ export function initSentry() {
       dsn,
       tracesSampleRate: 0.1, // Reduced sample rate to save memory/bandwidth
       environment: process.env.NODE_ENV || 'development',
+      release: resolveBuildMetadata().gitSha,
       // Disable automatic console capturing — our logger handles Sentry
       // reporting explicitly via { sentry: true/false } options.
       // Without this, console.warn() calls bypass our sentry:false flag

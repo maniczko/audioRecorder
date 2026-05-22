@@ -42,7 +42,16 @@
 - [ ] `pnpm run test:visual:check` for UI/layout changes, with artifacts reviewed
 - [ ] Local frontend/backend smoke when runtime behavior changed
 - [ ] Production smoke: `pnpm run release:prod-smoke`
+- [ ] Strict production smoke includes premium voice-profile journey (`voiceProfileChecked: true`) when release-critical.
+- [ ] Sentry release health: `pnpm run sentry:release-health` or production workflow evidence.
+- [ ] No new unresolved Sentry P0/P1 for this release SHA.
+- [ ] CodeRabbit review requested for changes touching audio pipeline, Studio, media routes, Sentry/release scripts, or Playwright smoke.
 - [ ] Supabase persistence evidence: upload -> restart/redeploy -> recording/transcript still available
+
+## Regression Evidence
+
+- [ ] Bug fixes include a failing regression test first.
+- [ ] Sentry/GitHub/Vercel/Railway incidents have a linked issue with root cause, missing test, regression test path, target command, and release impact.
 
 ## Risk Notes
 

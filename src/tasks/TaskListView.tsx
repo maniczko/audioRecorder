@@ -174,6 +174,11 @@ function TaskListView({
                           className={
                             task.completed ? 'todo-task-circle completed' : 'todo-task-circle'
                           }
+                          aria-label={
+                            task.completed
+                              ? `Otworz ponownie zadanie ${task.title}`
+                              : `Zakoncz zadanie ${task.title}`
+                          }
                           onClick={(event) => {
                             event.stopPropagation();
                             onUpdateTask(task.id, { completed: !task.completed });

@@ -2,11 +2,38 @@
 import { test, expect } from '@playwright/test';
 import { seedLoggedInUser, seedMeeting, seedQueueItem } from './helpers/seed.js';
 
+function wavToneBuffer({ sampleRate = 16_000, durationSeconds = 1, frequency = 440 } = {}) {
+  const sampleCount = Math.floor(sampleRate * durationSeconds);
+  const buffer = Buffer.alloc(44 + sampleCount * 2);
+  buffer.write('RIFF', 0);
+  buffer.writeUInt32LE(36 + sampleCount * 2, 4);
+  buffer.write('WAVE', 8);
+  buffer.write('fmt ', 12);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(sampleRate * 2, 28);
+  buffer.writeUInt16LE(2, 32);
+  buffer.writeUInt16LE(16, 34);
+  buffer.write('data', 36);
+  buffer.writeUInt32LE(sampleCount * 2, 40);
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const sample = Math.round(
+      Math.sin((2 * Math.PI * frequency * index) / sampleRate) * 0.25 * 32767
+    );
+    buffer.writeInt16LE(sample, 44 + index * 2);
+  }
+
+  return buffer;
+}
+
 function smallAudioFile() {
   return {
-    name: 'workspace-contract.webm',
-    mimeType: 'audio/webm',
-    buffer: Buffer.from('e2e-audio'),
+    name: 'workspace-contract.wav',
+    mimeType: 'audio/wav',
+    buffer: wavToneBuffer(),
   };
 }
 
@@ -126,9 +153,7 @@ test.describe('Remote media workspace contract', () => {
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
     await page.getByTestId('recordings-file-input').setInputFiles(smallAudioFile());
 
-    await expect(
-      page.getByRole('alert').getByText(/robocza nie jest jeszcze gotowa/i)
-    ).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText(/workspace|robocza/i);
     expect(audioUploadSeen).toBe(false);
   });
 

@@ -81,14 +81,29 @@ jobs:
           PRODUCTION_REQUIRE_SENTRY_DSN: 'true'
           PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE: 'true'
           PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE: 'true'
+          PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE: 'true'
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           PRODUCTION_SMOKE_AUTH_TOKEN: ${{ secrets.PRODUCTION_SMOKE_AUTH_TOKEN }}
           PRODUCTION_SMOKE_WORKSPACE_ID: ${{ secrets.PRODUCTION_SMOKE_WORKSPACE_ID }}
           PRODUCTION_SMOKE_MEETING_ID: ${{ secrets.PRODUCTION_SMOKE_MEETING_ID }}
           PRODUCTION_SMOKE_STALE_RECORDING_ID: ${{ secrets.PRODUCTION_SMOKE_STALE_RECORDING_ID }}
+          PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID }}
+          PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID }}
+          PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME }}
           PRODUCTION_PERSISTENCE_EVIDENCE_URL: ${{ secrets.PRODUCTION_PERSISTENCE_EVIDENCE_URL }}
-        run: pnpm run release:prod-smoke
+        run: pnpm run release:prod-smoke:strict
+
+      - name: Sentry release health
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SENTRY_ENVIRONMENT: production
+          SENTRY_WINDOW_MINUTES: '20'
+          SENTRY_WARNING_THRESHOLD: '5'
+        run: pnpm run sentry:release-health
 
       - name: Publish deployment summary
         run: |

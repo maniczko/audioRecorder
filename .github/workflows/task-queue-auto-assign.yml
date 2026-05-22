@@ -40,9 +40,9 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git diff --quiet TASK_QUEUE.md && echo "No changes" && exit 0
-          git add TASK_QUEUE.md
-          git commit --no-verify -m "chore: auto-assign task queue owners"
+          git diff --quiet docs/automation/TASK_QUEUE.md && echo "No changes" && exit 0
+          git add docs/automation/TASK_QUEUE.md
+          git commit -m "chore: auto-assign task queue owners"
           GIT_TOKEN="${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}"
           git remote set-url origin https://x-access-token:${GIT_TOKEN}@github.com/${{ github.repository }}.git
-          git push origin ${{ github.ref_name || 'main' }} --no-verify
+          git push origin ${{ github.ref_name || 'main' }}
