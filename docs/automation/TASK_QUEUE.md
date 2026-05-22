@@ -1604,3 +1604,76 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
   - **Error:** Job "changelog" step "Generate changelog" failed
   - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/24923058164
   - **Created:** 2026-04-25T05:47:00.614Z
+
+<!-- Auto-generated on 2026-05-22T14:33:32.362Z -->
+
+### GitHub Actions Errors (1 found)
+
+- **GH-AUTO-2026-05-22-1** — Fix Task Queue Auto Assign failure
+  - **Status:** `todo`
+  - **Source:** `GitHub Actions`
+  - **Automation:** `guarded_fix`
+  - **Dispatch mode:** `branch_pr`
+  - **Priority:** `P1`
+  - **Routing reason:** code change should be tested and reviewed before merge
+  - **Opis zadania:** GitHub Actions: Task Queue Auto Assign. Szczegoly: Job "assign-task-owners" step "Checkout code" failed
+  - **Error:** Job "assign-task-owners" step "Checkout code" failed
+  - **Link:** https://github.com/maniczko/audioRecorder/actions/runs/26287641935
+  - **Created:** 2026-05-22T14:33:32.362Z
+
+### Railway Errors (5 found)
+
+- **RW-AUTO-2026-05-22-2** — Fix Railway error
+  - **Status:** `todo`
+  - **Source:** `Railway`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** Railway: Blad runtime lub deployu. Szczegoly: [matroska,webm @ 0x2da6cd80] EBML header parsing failed
+  - **Error:** [matroska,webm @ 0x2da6cd80] EBML header parsing failed
+  - **Created:** 2026-05-22T14:33:32.362Z
+
+- **RW-AUTO-2026-05-22-3** — Fix Railway error
+  - **Status:** `todo`
+  - **Source:** `Railway`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** Railway: Blad runtime lub deployu. Szczegoly: [in#0 @ 0x2da6ca40] Error opening input: Invalid data found when processing input
+  - **Error:** [in#0 @ 0x2da6ca40] Error opening input: Invalid data found when processing input
+  - **Created:** 2026-05-22T14:33:32.362Z
+
+- **RW-AUTO-2026-05-22-4** — Fix Railway error
+  - **Status:** `todo`
+  - **Source:** `Railway`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** Railway: Blad runtime lub deployu. Szczegoly: Error opening input file /app/server/data/uploads/temp_analyze_b8484620-fc48-4222-91c5-4683383a10d9.webm.
+  - **Error:** Error opening input file /app/server/data/uploads/temp_analyze_b8484620-fc48-4222-91c5-4683383a10d9.webm.
+  - **Created:** 2026-05-22T14:33:32.362Z
+
+- **RW-AUTO-2026-05-22-5** — Fix Railway error
+  - **Status:** `todo`
+  - **Source:** `Railway`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** Railway: Blad runtime lub deployu. Szczegoly: Error opening input files: Invalid data found when processing input
+  - **Error:** Error opening input files: Invalid data found when processing input
+  - **Created:** 2026-05-22T14:33:32.362Z
+
+- **RW-AUTO-2026-05-22-6** — Fix Railway error
+  - **Status:** `todo`
+  - **Source:** `Railway`
+  - **Automation:** `escalate`
+  - **Dispatch mode:** `manual_only`
+  - **Priority:** `P0`
+  - **Routing reason:** requires environment, credential, or production investigation
+  - **Opis zadania:** Railway: Blad runtime lub deployu. Szczegoly: [WARN] [voice-profile] Preferred audio work dir is not writable; using fallback.
+  - **Error:** [WARN] [voice-profile] Preferred audio work dir is not writable; using fallback.
+  - **Created:** 2026-05-22T14:33:32.362Z
