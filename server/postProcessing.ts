@@ -90,6 +90,56 @@ function buildRemoteAudioStorageCandidates(asset: any) {
   return [...candidates];
 }
 
+function readSegmentBoundary(segment: any, keys: string[]) {
+  for (const key of keys) {
+    const value = Number(segment?.[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  return NaN;
+}
+
+function canUseWholeSourceForVoiceProfileFallback(
+  asset: any,
+  speakerId: string | number,
+  validSpeakerSegments: any[],
+  allSegments: any[]
+) {
+  const assetSize = Number(asset?.size_bytes ?? asset?.sizeBytes ?? 0);
+  if (Number.isFinite(assetSize) && assetSize > 20 * 1024 * 1024) return false;
+
+  const timedSegments = allSegments
+    .map((segment) => {
+      const start = readSegmentBoundary(segment, [
+        'timestamp',
+        'start',
+        'startTime',
+        'startTimestamp',
+      ]);
+      const end = readSegmentBoundary(segment, ['endTimestamp', 'end', 'endTime', 'endTimestamp']);
+      return { ...segment, start, end };
+    })
+    .filter((segment) => Number.isFinite(segment.start) && Number.isFinite(segment.end));
+
+  const maxEnd = Math.max(
+    0,
+    ...timedSegments.map((segment) => Number(segment.end)),
+    ...validSpeakerSegments.map((segment) =>
+      Number(segment.endTimestamp ?? segment.end ?? segment.endTime ?? 0)
+    )
+  );
+  if (!Number.isFinite(maxEnd) || maxEnd <= 0 || maxEnd > 120) return false;
+
+  const nonEmptyTimedSegments = timedSegments.filter((segment) =>
+    String(segment.text || '').trim()
+  );
+  const comparableSegments = nonEmptyTimedSegments.length ? nonEmptyTimedSegments : timedSegments;
+  if (!comparableSegments.length) return true;
+
+  return comparableSegments.every(
+    (segment) => String(segment?.speakerId ?? '') === String(speakerId)
+  );
+}
+
 async function resolveSpeakerAudioClipSource(asset: any) {
   const rawPath = String(asset?.file_path || '').trim();
   if (!rawPath) throw new Error('Brak sciezki pliku audio.');
@@ -454,6 +504,17 @@ export async function extractSpeakerAudioClip(
       `"${FFMPEG_BINARY}" -y -i "${source.inputPath}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -t 60 -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
       { timeout: 30000, signal: options.signal }
     );
+  } catch (error) {
+    if (canUseWholeSourceForVoiceProfileFallback(asset, speakerId, validSegs, segments)) {
+      logger.warn('[voice-profile] Falling back to whole short source for voice sample.', {
+        recordingId: asset?.id,
+        speakerId: String(speakerId),
+        segmentCount: validSegs.length,
+      });
+      fs.copyFileSync(source.inputPath, clipPath);
+      return clipPath;
+    }
+    throw error;
   } finally {
     source.cleanup();
   }
