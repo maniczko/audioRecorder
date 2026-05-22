@@ -1655,7 +1655,15 @@ describe('audioPipeline exports', () => {
     vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
-      return { ...actual };
+      const existsSync = vi.fn((filePath: string) => String(filePath) === '/tmp/audio.wav');
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync,
+        },
+        existsSync,
+      };
     });
 
     const pipeline = await import('../audioPipeline.ts');
