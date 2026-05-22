@@ -21,21 +21,31 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
           VOICELOG_DATABASE_URL: ${{ secrets.VOICELOG_DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           test -n "$RAILWAY_TOKEN"
           test -n "$RAILWAY_SERVICE_ID"
           test -n "$VOICELOG_DATABASE_URL"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
           case "$VOICELOG_DATABASE_URL" in
             postgres://*|postgresql://*) ;;
             *) echo "VOICELOG_DATABASE_URL must be a postgres URL" >&2; exit 1 ;;
           esac
+          case "$SUPABASE_URL" in
+            https://*.supabase.co) ;;
+            *) echo "SUPABASE_URL must be a Supabase project URL" >&2; exit 1 ;;
+          esac
 
-      - name: Set Railway VOICELOG_DATABASE_URL
+      - name: Set Railway production database and storage secrets
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
           VOICELOG_DATABASE_URL: ${{ secrets.VOICELOG_DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           railway link \
             --project "$RAILWAY_PROJECT_ID" \
@@ -52,6 +62,16 @@ jobs:
             --environment production \
             --stdin \
             DATABASE_URL
+          printf '%s' "$SUPABASE_URL" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            SUPABASE_URL
+          printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --stdin \
+            SUPABASE_SERVICE_ROLE_KEY
 
       - name: Verify Railway variable names
         env:
@@ -62,7 +82,7 @@ jobs:
             --service "$RAILWAY_SERVICE_ID" \
             --environment production \
             --json \
-            | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{const parsed=JSON.parse(data);const keys=Array.isArray(parsed)?parsed.map(v=>v.name||v.key):Object.keys(parsed);for (const key of keys.sort()) console.log(key);if(!keys.includes('VOICELOG_DATABASE_URL')) process.exit(1);if(!keys.includes('DATABASE_URL')) process.exit(1);});"
+            | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{const parsed=JSON.parse(data);const keys=Array.isArray(parsed)?parsed.map(v=>v.name||v.key):Object.keys(parsed);for (const key of keys.sort()) console.log(key);for (const required of ['VOICELOG_DATABASE_URL','DATABASE_URL','SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY']) if(!keys.includes(required)) process.exit(1);});"
 
       - name: Deploy Railway service
         env:

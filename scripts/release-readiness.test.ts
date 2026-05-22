@@ -360,6 +360,18 @@ describe('release readiness gates', () => {
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
 
+  it('keeps Railway storage secrets synchronized with the production database', () => {
+    const workflow = read('.github/workflows/railway-sync-database-url.yml');
+
+    expect(workflow).toContain('SUPABASE_URL: ${{ secrets.SUPABASE_URL }}');
+    expect(workflow).toContain(
+      'SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}'
+    );
+    expect(workflow).toContain('railway variable set');
+    expect(workflow).toContain('SUPABASE_URL');
+    expect(workflow).toContain('SUPABASE_SERVICE_ROLE_KEY');
+  });
+
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   });
