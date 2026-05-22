@@ -1268,7 +1268,10 @@ describe('audioPipeline exports', () => {
     }));
     vi.doMock('../logger.ts', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
     vi.doMock('../speakerEmbedder.ts', () => ({ matchSpeakerToProfile: vi.fn() }));
-    vi.doMock('../lib/supabaseStorage.js', () => ({ downloadAudioToFile }));
+    vi.doMock('../lib/supabaseStorage.js', () => ({
+      downloadAudioToFile,
+      downloadAudioFromStorage: vi.fn(),
+    }));
     vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
@@ -1305,6 +1308,83 @@ describe('audioPipeline exports', () => {
     expect(ffmpegCommand).toContain('temp_voice_profile_source_');
     expect(ffmpegCommand).not.toContain('-i "recording_remote.webm"');
     expect(unlinkSync).toHaveBeenCalledWith(expect.stringContaining('temp_voice_profile_source_'));
+  }, 10000);
+
+  // -----------------------------------------------------------------
+  // Issue #0 - voice profile extraction fails when signed URL streaming fails
+  // Date: 2026-05-22
+  // Bug: production could download audio through the normal /audio route,
+  //      but voice profile extraction failed because downloadAudioToFile
+  //      had no fallback when signed URL streaming failed.
+  // Fix: fall back to buffered Supabase download and write the temp source.
+  // -----------------------------------------------------------------
+  it('Regression: extractSpeakerAudioClip falls back to buffered storage download', async () => {
+    vi.resetModules();
+    const downloadAudioToFile = vi.fn().mockRejectedValue(new Error('signed URL fetch failed'));
+    const downloadAudioFromStorage = vi
+      .fn()
+      .mockResolvedValue(new Uint8Array([82, 73, 70, 70]).buffer);
+    const writeFileSync = vi.fn();
+    const unlinkSync = vi.fn();
+    const existsSync = vi.fn((filePath: string) => !String(filePath).includes('recording_remote'));
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, '', '');
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+
+    vi.doMock('../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'key-1',
+        OPENAI_API_KEY: 'key-1',
+        FFMPEG_BINARY: 'ffmpeg',
+        PYTHON_BINARY: 'python',
+        VOICELOG_UPLOAD_DIR: '/tmp/voicelog-uploads',
+        DEBUG: false,
+      },
+    }));
+    vi.doMock('../logger.ts', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock('../speakerEmbedder.ts', () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock('../lib/supabaseStorage.js', () => ({
+      downloadAudioToFile,
+      downloadAudioFromStorage,
+    }));
+    vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock('node:fs', async () => {
+      const actual = await vi.importActual<any>('node:fs');
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync,
+          mkdirSync: vi.fn(),
+          unlinkSync,
+          writeFileSync,
+        },
+        existsSync,
+        mkdirSync: vi.fn(),
+        unlinkSync,
+        writeFileSync,
+      };
+    });
+
+    const pipeline = await import('../audioPipeline.ts');
+    const asset = {
+      id: 'recording_remote',
+      file_path: 'recording_remote.wav',
+      content_type: 'audio/wav',
+    };
+
+    await pipeline.extractSpeakerAudioClip(asset, 'speaker_1', [
+      { speakerId: 'speaker_1', timestamp: 0, endTimestamp: 5 },
+    ]);
+
+    expect(downloadAudioToFile).toHaveBeenCalled();
+    expect(downloadAudioFromStorage).toHaveBeenCalledWith('recording_remote.wav');
+    expect(writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('temp_voice_profile_source_'),
+      expect.any(Buffer)
+    );
+    expect(execMock.mock.calls[0][0]).toContain('temp_voice_profile_source_');
   }, 10000);
 
   it('extractSpeakerAudioClip throws error when no valid segments', async () => {

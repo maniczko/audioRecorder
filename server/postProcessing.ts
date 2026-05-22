@@ -115,8 +115,19 @@ async function resolveSpeakerAudioClipSource(asset: any) {
     );
 
     try {
-      const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
-      await downloadAudioToFile(storagePath, sourceTempPath);
+      const { downloadAudioFromStorage, downloadAudioToFile } =
+        await import('./lib/supabaseStorage.js');
+      try {
+        await downloadAudioToFile(storagePath, sourceTempPath);
+      } catch (streamingError) {
+        // Some production runtimes can download storage objects through the
+        // Supabase API but fail while streaming a signed URL. Voice-profile
+        // clips still need a local source file, so use the direct download as
+        // a conservative fallback.
+        const arrayBuffer = await downloadAudioFromStorage(storagePath);
+        fs.writeFileSync(sourceTempPath, Buffer.from(arrayBuffer));
+        lastError = streamingError;
+      }
       return {
         inputPath: sourceTempPath,
         outputDir: workDir,
