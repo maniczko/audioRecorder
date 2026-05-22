@@ -345,6 +345,53 @@ describe('TranscriptionService - Additional Coverage', () => {
       } catch (_) {}
     });
 
+    test('Regression: accepts transcript_json objects keyed by segment index', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_object_segments.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify({
+          0: { text: 'First speaker', speakerId: 0, timestamp: 0, endTimestamp: 4 },
+          1: { text: 'Second speaker', speakerId: 1, timestamp: 5, endTimestamp: 9 },
+        }),
+      };
+
+      await service.createVoiceProfileFromSpeaker(asset, '1', 'Smoke Speaker', 'user1');
+
+      expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalledWith(
+        asset,
+        '1',
+        [
+          expect.objectContaining({
+            text: 'First speaker',
+            speakerId: '0',
+          }),
+          expect.objectContaining({
+            text: 'Second speaker',
+            speakerId: '1',
+          }),
+        ],
+        expect.any(Object)
+      );
+
+      try {
+        fs.unlinkSync(tempClipPath);
+      } catch (_) {}
+    });
+
     test('classifies clip extraction failures as audio_source_unavailable', async () => {
       mockAudioPipeline.extractSpeakerAudioClip.mockRejectedValue(
         new Error('Nie mozna pobrac pliku audio do probki glosu.')

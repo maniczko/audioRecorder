@@ -97,6 +97,22 @@ function normalizeVoiceProfileSegments(segments: any[]) {
     .filter(Boolean);
 }
 
+function parseVoiceProfileTranscriptSegments(value: unknown) {
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed?.segments)) return parsed.segments;
+    if (parsed && typeof parsed === 'object') {
+      return Object.keys(parsed)
+        .filter((key) => /^\d+$/.test(key))
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => parsed[key]);
+    }
+  } catch (_) {}
+  return [];
+}
+
 function classifyClipExtractionError(error: any) {
   const message = String(error?.message || '');
   const lower = message.toLowerCase();
@@ -665,10 +681,7 @@ export default class TranscriptionService extends EventEmitter {
     const path = await import('node:path');
     const crypto = await import('node:crypto');
 
-    let segments = [];
-    try {
-      segments = JSON.parse(asset.transcript_json || '[]');
-    } catch (_) {}
+    let segments = parseVoiceProfileTranscriptSegments(asset.transcript_json);
     if (
       Array.isArray((options as any)?.transcriptSegments) &&
       (options as any).transcriptSegments.length

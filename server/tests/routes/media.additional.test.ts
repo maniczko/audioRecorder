@@ -945,6 +945,44 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
+    it('Regression: accepts production transcript_json objects keyed by segment index', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_object_segments',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/audio.webm',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify({
+          0: { text: 'pierwszy mowca', speakerId: 0, timestamp: 0, endTimestamp: 4 },
+          1: { text: 'drugi mowca', speakerId: 1, timestamp: 5, endTimestamp: 9 },
+        }),
+      });
+      mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+        id: 'vp_object_segments',
+        speaker_name: 'Smoke Speaker',
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_object_segments/voice-profiles/from-speaker',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '1', speakerName: 'Smoke Speaker' }),
+        }
+      );
+
+      expect(res.status).toBe(201);
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'rec_vp_object_segments' }),
+        '1',
+        'Smoke Speaker',
+        'user_1',
+        {}
+      );
+    });
+
     it('uses provided transcript segments for manually reassigned speaker samples', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_vp_manual',

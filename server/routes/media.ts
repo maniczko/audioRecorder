@@ -61,7 +61,15 @@ function parseTranscriptJsonSegments(value: unknown): any[] {
   if (Array.isArray(value)) return value;
   try {
     const parsed = JSON.parse(String(value || '[]'));
-    return Array.isArray(parsed) ? parsed : [];
+    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed?.segments)) return parsed.segments;
+    if (parsed && typeof parsed === 'object') {
+      return Object.keys(parsed)
+        .filter((key) => /^\d+$/.test(key))
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => parsed[key]);
+    }
+    return [];
   } catch (_) {
     return [];
   }
