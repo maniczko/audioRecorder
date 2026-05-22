@@ -579,6 +579,47 @@ describe('useRecordingActions', () => {
       });
     });
 
+    test('preflights voice profile audio availability before creating a sample', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      apiRequestMock.mockResolvedValueOnce({
+        ready: false,
+        code: 'audio_source_unavailable',
+        status: 424,
+        stage: 'audio_source',
+        message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+        requestId: 'req-preflight-424',
+      });
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Dobra probka glosu', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      const error = await result.current.autoCreateVoiceProfile('0', 'Anna').catch((e) => e);
+
+      expect(error).toMatchObject({
+        message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+        status: 424,
+        code: 'audio_source_unavailable',
+        stage: 'audio_source',
+        requestId: 'req-preflight-424',
+      });
+      expect(apiRequestMock).toHaveBeenCalledTimes(1);
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/recording_ready/voice-profiles/from-speaker/preflight',
+        {
+          method: 'POST',
+          body: { speakerId: '0', speakerName: 'Anna' },
+        }
+      );
+    });
+
     test('uses explicit display recording id when selectedRecording is missing', async () => {
       remoteApiEnabledMock.mockReturnValue(true);
       const transcriptSegments = [

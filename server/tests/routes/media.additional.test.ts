@@ -945,6 +945,85 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
+    it('preflights a stale local audio source without creating a voice profile', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_stale_audio',
+        workspace_id: 'ws_1',
+        file_path: path.join(testUploadDir, 'missing-audio.mp3'),
+        content_type: 'audio/mpeg',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify([
+          { text: 'fragment do probki', speakerId: '0', timestamp: 0, endTimestamp: 3 },
+        ]),
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_stale_audio/voice-profiles/from-speaker/preflight',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+        }
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toMatchObject({
+        ready: false,
+        code: 'audio_source_unavailable',
+        stage: 'audio_source',
+        recordingId: 'rec_vp_stale_audio',
+        speakerId: '0',
+        speakerName: 'Anna',
+        segmentCount: 1,
+        matchedSegmentCount: 1,
+      });
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
+    it('preflights an available local audio source before voice profile creation', async () => {
+      const audioPath = path.join(testUploadDir, 'available-audio.mp3');
+      actualFs.writeFileSync(audioPath, Buffer.from('fake-audio'));
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_vp_available_audio',
+        workspace_id: 'ws_1',
+        file_path: audioPath,
+        content_type: 'audio/mpeg',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify([
+          { text: 'fragment do probki', speakerId: '0', timestamp: 0, endTimestamp: 3 },
+        ]),
+      });
+
+      const res = await app.request(
+        '/media/recordings/rec_vp_available_audio/voice-profiles/from-speaker/preflight',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+        }
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toMatchObject({
+        ready: true,
+        stage: 'ready',
+        recordingId: 'rec_vp_available_audio',
+        speakerId: '0',
+        speakerName: 'Anna',
+        segmentCount: 1,
+        matchedSegmentCount: 1,
+      });
+      expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
+    });
+
     it('Regression: accepts production transcript_json objects keyed by segment index', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_vp_object_segments',

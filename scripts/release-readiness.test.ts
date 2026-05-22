@@ -339,6 +339,16 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('Target command');
   });
 
+  it('prevents scheduled error monitoring from committing task queue changes to main', () => {
+    const workflow = read('.github/workflows/error-monitor-and-task-creator.yml');
+
+    expect(workflow).toContain(
+      "github.event_name == 'workflow_dispatch' && github.event.inputs.create_tasks == 'true'"
+    );
+    expect(workflow).not.toContain("github.event.inputs.create_tasks != 'false'");
+    expect(workflow).toContain('Create GitHub Issues for Errors');
+  });
+
   it('keeps production deploys ordered behind Railway verification with exact backend SHA', () => {
     const railwayWorkflow = read('.github/workflows/railway-build-metadata.yml');
     const backendSmokeWorkflow = read('.github/workflows/backend-production-smoke.yml');

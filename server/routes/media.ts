@@ -309,6 +309,46 @@ async function downloadAudioFromStorageCandidates(
   throw lastError ?? new Error('Audio asset not found in remote storage.');
 }
 
+async function findRemoteAudioStoragePath(
+  recordingId: string,
+  asset: Pick<MediaAsset, 'file_path' | 'content_type'>
+): Promise<string> {
+  const { audioExistsInStorage } = await import('../lib/supabaseStorage.js');
+  let lastError: Error | null = null;
+
+  for (const storagePath of buildRemoteAudioStorageCandidates(recordingId, asset)) {
+    try {
+      if (await audioExistsInStorage(storagePath)) {
+        return storagePath;
+      }
+    } catch (error: any) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  throw lastError ?? new Error('Audio asset not found in remote storage.');
+}
+
+async function resolveVoiceProfileAudioSource(
+  recordingId: string,
+  asset: Pick<MediaAsset, 'file_path' | 'content_type'>
+): Promise<{ ready: true; source: 'local' | 'remote'; storagePath?: string } | { ready: false }> {
+  const rawPath = String(asset.file_path || '').trim();
+  if (!rawPath) return { ready: false };
+
+  const isLocalishPath = rawPath.includes('/') || rawPath.includes('\\');
+  if (isLocalishPath && existsSync(rawPath)) {
+    return { ready: true, source: 'local' };
+  }
+
+  try {
+    const storagePath = await findRemoteAudioStoragePath(recordingId, asset);
+    return { ready: true, source: 'remote', storagePath };
+  } catch (_) {
+    return { ready: false };
+  }
+}
+
 /**
  * Checks available disk space and returns true if there's enough space.
  * Returns false if disk space is critically low for accepting new uploads.
@@ -889,6 +929,161 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const status = err?.statusCode || err?.status || 500;
       return c.json({ message: err?.message || 'Blad normalizacji.' }, status);
     }
+  });
+
+  router.post('/recordings/:recordingId/voice-profiles/from-speaker/preflight', async (c) => {
+    const requestId = c.get('reqId') || crypto.randomUUID();
+    const recordingId = c.req.param('recordingId');
+    const body = await c.req.json().catch(() => ({}));
+    const speakerId = String(body?.speakerId ?? '').trim();
+    const speakerName = String(body?.speakerName ?? '').trim();
+    if (!speakerId) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'missing_speaker_id',
+            message: 'Brakuje speakerId.',
+            stage: 'validation',
+            recordingId,
+            speakerName,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+    if (!speakerName) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'missing_speaker_name',
+            message: 'Brakuje speakerName.',
+            stage: 'validation',
+            recordingId,
+            speakerId,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'recording_not_found',
+            message: 'Nie znaleziono nagrania.',
+            stage: 'recording_lookup',
+            recordingId,
+            speakerId,
+            speakerName,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+
+    const transcriptSegments = parseTranscriptJsonSegments(asset.transcript_json);
+    const storedSegments = normalizeVoiceProfileTranscriptSegments(transcriptSegments, {
+      requestedSpeakerId: speakerId,
+      requestedSpeakerName: speakerName,
+    });
+    const overrideSegments = normalizeVoiceProfileTranscriptSegments(body?.segments, {
+      requestedSpeakerId: speakerId,
+      requestedSpeakerName: speakerName,
+    });
+    if (isVoiceProfileTranscriptPending(asset, transcriptSegments)) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'transcription_not_ready',
+            message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.',
+            stage: 'transcript',
+            recordingId,
+            speakerId,
+            speakerName,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+
+    const voiceProfileSegments =
+      overrideSegments.length > 0
+        ? overrideSegments
+        : storedSegments.length > 0
+          ? storedSegments
+          : transcriptSegments;
+    const segmentCount = Array.isArray(voiceProfileSegments) ? voiceProfileSegments.length : 0;
+    const matchedSegmentCount = countVoiceProfileSegmentsForSpeaker(
+      voiceProfileSegments,
+      speakerId,
+      speakerName
+    );
+    if (matchedSegmentCount <= 0) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'speaker_segment_not_found',
+            message: 'Brak wypowiedzi tego mowcy w gotowej transkrypcji.',
+            stage: 'transcript',
+            recordingId,
+            speakerId,
+            speakerName,
+            segmentCount,
+            matchedSegmentCount,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+
+    const audioSource = await resolveVoiceProfileAudioSource(recordingId, asset);
+    if (!audioSource.ready) {
+      return c.json(
+        {
+          ready: false,
+          ...buildVoiceProfileErrorBody({
+            code: 'audio_source_unavailable',
+            message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
+            stage: 'audio_source',
+            recordingId,
+            speakerId,
+            speakerName,
+            segmentCount,
+            matchedSegmentCount,
+            requestId,
+          }),
+        },
+        200
+      );
+    }
+
+    return c.json(
+      {
+        ready: true,
+        code: 'ready',
+        stage: 'ready',
+        recordingId,
+        speakerId,
+        speakerName,
+        segmentCount,
+        matchedSegmentCount,
+        source: audioSource.source,
+      },
+      200
+    );
   });
 
   router.post('/recordings/:recordingId/voice-profiles/from-speaker', async (c) => {

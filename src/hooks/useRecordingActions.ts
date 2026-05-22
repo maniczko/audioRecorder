@@ -563,6 +563,39 @@ export default function useRecordingActions({
       if (transcriptSegments.length > 0) {
         body.segments = transcriptSegments;
       }
+      const buildVoiceProfileApiError = (error: any) => {
+        const voiceProfileError = new Error(
+          error?.message || 'Nie udalo sie zapisac probki glosu. Sprobuj ponownie.'
+        ) as Error & {
+          status?: number;
+          code?: string;
+          stage?: string;
+          requestId?: string;
+        };
+        if (error?.status) voiceProfileError.status = error.status;
+        if (error?.code) voiceProfileError.code = String(error.code);
+        if (error?.stage) voiceProfileError.stage = String(error.stage);
+        if (error?.requestId) voiceProfileError.requestId = String(error.requestId);
+        return voiceProfileError;
+      };
+      try {
+        const readiness = await apiRequest(
+          `/media/recordings/${targetRecordingId}/voice-profiles/from-speaker/preflight`,
+          {
+            method: 'POST',
+            body,
+          }
+        );
+        if (readiness?.ready === false) {
+          throw buildVoiceProfileApiError(readiness);
+        }
+      } catch (error: any) {
+        // Older backends did not expose preflight; fall back to the write path
+        // only when the preflight route itself is missing.
+        if (Number(error?.status) !== 404) {
+          throw buildVoiceProfileApiError(error);
+        }
+      }
       await apiRequest(`/media/recordings/${targetRecordingId}/voice-profiles/from-speaker`, {
         method: 'POST',
         body,

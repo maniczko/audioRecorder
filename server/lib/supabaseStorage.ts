@@ -109,6 +109,19 @@ export async function downloadAudioFromStorage(path: string): Promise<ArrayBuffe
 }
 
 /**
+ * Checks whether an audio object can be addressed in Supabase Storage without
+ * downloading the full recording into memory.
+ */
+export async function audioExistsInStorage(path: string): Promise<boolean> {
+  if (!supabase || !supabase.storage) {
+    throw new Error('Supabase Storage not available (client or storage module missing).');
+  }
+
+  const { data, error } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(path, 60);
+  return Boolean(!error && data?.signedUrl);
+}
+
+/**
  * Downloads a file from Supabase Storage directly to a local file path.
  * Uses signed URL + fetch streaming to avoid buffering entire file into Node.js heap.
  * Critical for large audio files on memory-constrained environments (Railway).

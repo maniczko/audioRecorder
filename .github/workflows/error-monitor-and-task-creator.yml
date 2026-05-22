@@ -227,7 +227,7 @@ jobs:
             core.setOutput('has_errors', totalErrors > 0 ? 'true' : 'false');
 
       - name: Create Tasks in docs/automation/TASK_QUEUE.md
-        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
+        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.create_tasks == 'true' }}
         uses: actions/github-script@v8
         with:
           script: |
@@ -416,7 +416,7 @@ jobs:
             console.log(`Created ${addedCount} new tasks in ${taskQueuePath}`);
 
       - name: Commit docs automation task queue changes
-        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event.inputs.create_tasks != 'false' }}
+        if: ${{ steps.analyze.outputs.has_errors == 'true' && github.event_name == 'workflow_dispatch' && github.event.inputs.create_tasks == 'true' }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
