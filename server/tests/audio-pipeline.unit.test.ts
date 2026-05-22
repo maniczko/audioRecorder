@@ -1464,6 +1464,86 @@ describe('audioPipeline exports', () => {
     );
   }, 10000);
 
+  // -----------------------------------------------------------------
+  // Issue #0 - Railway /data/uploads is not always writable
+  // Date: 2026-05-22
+  // Bug: voice profile clip extraction used VOICELOG_UPLOAD_DIR directly,
+  //      while database/transcription had a writable fallback. On Railway,
+  //      /data/uploads can be mounted but not writable by the app user.
+  // Fix: choose a probed writable work directory before downloading audio.
+  // -----------------------------------------------------------------
+  it('Regression: extractSpeakerAudioClip falls back when preferred work dir is not writable', async () => {
+    vi.resetModules();
+    const downloadAudioToFile = vi.fn().mockImplementation((_storagePath, destPath: string) => {
+      if (/[/\\]data[/\\]uploads/.test(String(destPath))) {
+        throw new Error('EACCES: permission denied, open /data/uploads/temp.wav');
+      }
+      return Promise.resolve();
+    });
+    const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
+      callback?.(null, '', '');
+      return { stdout: { on: vi.fn() }, on: vi.fn() };
+    });
+
+    vi.doMock('../config.ts', () => ({
+      config: {
+        VOICELOG_OPENAI_API_KEY: 'key-1',
+        OPENAI_API_KEY: 'key-1',
+        FFMPEG_BINARY: 'ffmpeg',
+        PYTHON_BINARY: 'python',
+        VOICELOG_UPLOAD_DIR: '/data/uploads',
+        DEBUG: false,
+      },
+    }));
+    vi.doMock('../logger.ts', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
+    vi.doMock('../speakerEmbedder.ts', () => ({ matchSpeakerToProfile: vi.fn() }));
+    vi.doMock('../lib/supabaseStorage.js', () => ({
+      downloadAudioToFile,
+      downloadAudioFromStorage: vi.fn(),
+    }));
+    vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
+    vi.doMock('node:fs', async () => {
+      const actual = await vi.importActual<any>('node:fs');
+      const mkdirSync = vi.fn();
+      const writeFileSync = vi.fn((filePath: string) => {
+        if (/[/\\]data[/\\]uploads/.test(String(filePath))) {
+          throw new Error('EACCES: permission denied');
+        }
+      });
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync: vi.fn(() => false),
+          mkdirSync,
+          unlinkSync: vi.fn(),
+          writeFileSync,
+        },
+        existsSync: vi.fn(() => false),
+        mkdirSync,
+        unlinkSync: vi.fn(),
+        writeFileSync,
+      };
+    });
+
+    const pipeline = await import('../audioPipeline.ts');
+    const asset = {
+      id: 'recording_remote',
+      file_path: 'recording_remote.wav',
+      content_type: 'audio/wav',
+    };
+
+    await pipeline.extractSpeakerAudioClip(asset, 'speaker_1', [
+      { speakerId: 'speaker_1', timestamp: 0, endTimestamp: 5, text: 'Probka glosu.' },
+    ]);
+
+    expect(downloadAudioToFile).toHaveBeenCalledWith(
+      'recording_remote.wav',
+      expect.not.stringMatching(/[/\\]data[/\\]uploads/)
+    );
+    expect(execMock.mock.calls[0][0]).not.toMatch(/[/\\]data[/\\]uploads/);
+  }, 10000);
+
   it('extractSpeakerAudioClip throws error when no valid segments', async () => {
     vi.resetModules();
     vi.doMock('../config.ts', () => ({

@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { spawn, exec } from 'node:child_process';
@@ -67,10 +68,44 @@ function isRemoteAudioStoragePath(filePath: string) {
   return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
 }
 
+let resolvedVoiceProfileAudioWorkDir: string | null = null;
+
 function getVoiceProfileAudioWorkDir() {
+  if (resolvedVoiceProfileAudioWorkDir) return resolvedVoiceProfileAudioWorkDir;
+
   const preferred = config.VOICELOG_UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
-  fs.mkdirSync(preferred, { recursive: true });
-  return preferred;
+  const candidates = [
+    path.resolve(preferred),
+    path.resolve(process.cwd(), 'server', 'data', 'uploads'),
+    path.resolve(process.cwd(), '.tmp', 'uploads'),
+    path.join(os.tmpdir(), 'voicelog', 'uploads'),
+  ];
+
+  let lastError: unknown = null;
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) {
+        fs.mkdirSync(candidate, { recursive: true });
+      }
+      const probe = path.join(candidate, `.voice-profile-write-probe-${process.pid}`);
+      fs.writeFileSync(probe, '');
+      fs.unlinkSync(probe);
+      if (candidate !== path.resolve(preferred)) {
+        logger.warn(
+          '[voice-profile] Preferred audio work dir is not writable; using fallback.',
+          {}
+        );
+      }
+      resolvedVoiceProfileAudioWorkDir = candidate;
+      return candidate;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`No writable voice profile work directory available.`);
 }
 
 function buildRemoteAudioStorageCandidates(asset: any) {
