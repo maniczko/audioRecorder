@@ -1250,6 +1250,7 @@ describe('audioPipeline exports', () => {
     vi.resetModules();
     const downloadAudioToFile = vi.fn().mockResolvedValue(undefined);
     const unlinkSync = vi.fn();
+    const writeFileSync = vi.fn();
     const existsSync = vi.fn((filePath: string) => !String(filePath).includes('recording_remote'));
     const execMock = vi.fn().mockImplementation((_cmd, _opts, callback) => {
       callback?.(null, '', '');
@@ -1282,10 +1283,12 @@ describe('audioPipeline exports', () => {
           existsSync,
           mkdirSync: vi.fn(),
           unlinkSync,
+          writeFileSync,
         },
         existsSync,
         mkdirSync: vi.fn(),
         unlinkSync,
+        writeFileSync,
       };
     });
 
@@ -1560,7 +1563,15 @@ describe('audioPipeline exports', () => {
     vi.doMock('node:child_process', () => ({ exec: vi.fn(), spawn: vi.fn() }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
-      return { ...actual };
+      const existsSync = vi.fn((filePath: string) => String(filePath) === '/tmp/audio.wav');
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync,
+        },
+        existsSync,
+      };
     });
 
     const pipeline = await import('../audioPipeline.ts');
@@ -1595,7 +1606,15 @@ describe('audioPipeline exports', () => {
     vi.doMock('node:child_process', () => ({ exec: execMock, spawn: vi.fn() }));
     vi.doMock('node:fs', async () => {
       const actual = await vi.importActual<any>('node:fs');
-      return { ...actual };
+      const existsSync = vi.fn((filePath: string) => String(filePath) === '/tmp/audio.wav');
+      return {
+        ...actual,
+        default: {
+          ...actual.default,
+          existsSync,
+        },
+        existsSync,
+      };
     });
 
     const pipeline = await import('../audioPipeline.ts');
