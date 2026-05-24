@@ -1,0 +1,109 @@
+name: Production System Audit
+
+on:
+  workflow_run:
+    workflows: ['Production Deployment (Vercel)']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-system-audit
+  cancel-in-progress: true
+
+jobs:
+  production-system-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      PRODUCTION_FRONTEND_URL: https://voicelog-audiorecorder.vercel.app
+      PRODUCTION_API_BASE_URL: https://voicelog-audiorecorder.vercel.app
+      PLAYWRIGHT_BASE_URL: https://voicelog-audiorecorder.vercel.app
+      PRODUCTION_SYSTEM_AUDIT_REQUIRED: 'true'
+      PRODUCTION_REQUIRE_SUPABASE_REMOTE: 'true'
+      PRODUCTION_REQUIRE_KNOWN_GIT_SHA: 'true'
+      PRODUCTION_REQUIRE_SENTRY_DSN: 'true'
+      PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE: 'true'
+      PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE: 'true'
+      PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE: 'true'
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      SENTRY_RELEASE: ${{ github.event.workflow_run.head_sha || github.sha }}
+      SENTRY_ENVIRONMENT: production
+      SENTRY_WINDOW_MINUTES: '20'
+      SENTRY_WARNING_THRESHOLD: '5'
+      PRODUCTION_SMOKE_AUTH_TOKEN: ${{ secrets.PRODUCTION_SMOKE_AUTH_TOKEN }}
+      PRODUCTION_SMOKE_WORKSPACE_ID: ${{ secrets.PRODUCTION_SMOKE_WORKSPACE_ID }}
+      PRODUCTION_SMOKE_MEETING_ID: ${{ secrets.PRODUCTION_SMOKE_MEETING_ID }}
+      PRODUCTION_SMOKE_STALE_RECORDING_ID: ${{ secrets.PRODUCTION_SMOKE_STALE_RECORDING_ID }}
+      PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID }}
+      PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID }}
+      PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME: ${{ secrets.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME }}
+      PRODUCTION_PERSISTENCE_EVIDENCE_URL: ${{ secrets.PRODUCTION_PERSISTENCE_EVIDENCE_URL }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Validate production audit secrets
+        shell: bash
+        run: |
+          missing=()
+          for secret in \
+            PRODUCTION_SMOKE_AUTH_TOKEN \
+            PRODUCTION_SMOKE_WORKSPACE_ID \
+            SENTRY_AUTH_TOKEN \
+            SENTRY_ORG \
+            SENTRY_PROJECT; do
+            [[ -n "${!secret}" ]] || missing+=("${secret}")
+          done
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "## Missing production audit secrets" >> "$GITHUB_STEP_SUMMARY"
+            for secret in "${missing[@]}"; do
+              echo "- ${secret}" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Missing required secret: ${secret}"
+            done
+            exit 1
+          fi
+
+      - name: Audit UI action inventory
+        run: pnpm run audit:ui-actions
+
+      - name: Production browser action audit
+        run: pnpm run test:e2e:production-system
+
+      - name: Strict production smoke
+        run: pnpm run release:prod-smoke:strict
+
+      - name: Sentry release health
+        run: pnpm run sentry:release-health
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-system-audit-artifacts
+          path: |
+            playwright-report/
+            test-results/
+            reports/ui-action-inventory/
+          if-no-files-found: ignore

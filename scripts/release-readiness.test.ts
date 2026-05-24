@@ -286,6 +286,9 @@ describe('release readiness gates', () => {
       'node scripts/audit-ui-action-contracts.mjs --write-report'
     );
     expect(packageJson.scripts?.['test:ui-actions']).toBe('playwright test tests/e2e/ui-actions');
+    expect(packageJson.scripts?.['test:e2e:production-system']).toBe(
+      'playwright test tests/e2e/production-system-audit.spec.js --project=chromium'
+    );
     expect(packageJson.scripts?.['release:prod-smoke']).toBe('node scripts/production-smoke.mjs');
     expect(packageJson.scripts?.['test:stt-corpus']).toBe('node scripts/stt-corpus-gate.mjs');
     expect(packageJson.scripts?.['release:prod-smoke:strict']).toBe(
@@ -401,6 +404,15 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('railway variable set');
     expect(workflow).toContain('SUPABASE_URL');
     expect(workflow).toContain('SUPABASE_SERVICE_ROLE_KEY');
+  });
+
+  it('requires the production system audit to prove write-delete-refresh persistence', () => {
+    const spec = read('tests/e2e/production-system-audit.spec.js');
+
+    expect(spec).toContain('audit_20260524_');
+    expect(spec).toContain('/state/workspaces/');
+    expect(spec).toContain('removeIds');
+    expect(spec).toContain('does not return after refresh');
   });
 
   it('keeps release-critical UI/config surfaces free of mojibake', () => {

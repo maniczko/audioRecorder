@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -131,5 +131,21 @@ describe('GitHub workflows validation', () => {
     expect(workflowContent).toContain('pnpm run changelog');
     expect(packageJson.scripts?.changelog).toContain('conventional-changelog');
     expect(installedPackages).toHaveProperty('conventional-changelog-cli');
+  });
+
+  it('has a production system audit workflow for real-auth click coverage', () => {
+    const workflowPath = path.join(workflowDir, 'production-system-audit.yml');
+
+    expect(existsSync(workflowPath)).toBe(true);
+
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('node-version: 22');
+    expect(content).toContain('PRODUCTION_SMOKE_AUTH_TOKEN');
+    expect(content).toContain('PRODUCTION_SMOKE_WORKSPACE_ID');
+    expect(content).toContain('PRODUCTION_SYSTEM_AUDIT_REQUIRED');
+    expect(content).toContain('pnpm run test:e2e:production-system');
+    expect(content).toContain('pnpm run release:prod-smoke:strict');
+    expect(content).toContain('pnpm run sentry:release-health');
   });
 });

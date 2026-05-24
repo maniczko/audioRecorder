@@ -167,4 +167,34 @@ describe('audit-ui-action-contracts', () => {
       })
     );
   });
+
+  it('requires every critical UI action to define production interaction evidence', () => {
+    const contracts = loadUiActionContracts();
+
+    for (const action of contracts.criticalActions) {
+      expect(action, action.id).toEqual(
+        expect.objectContaining({
+          interactionContract: expect.objectContaining({
+            expectedFeedback: expect.any(String),
+            network: expect.objectContaining({
+              method: expect.any(String),
+              pathPattern: expect.any(String),
+              allowedStatuses: expect.any(Array),
+            }),
+            persistence: expect.objectContaining({
+              checked: expect.any(Boolean),
+              evidence: expect.any(String),
+            }),
+            targetCommand: expect.any(String),
+          }),
+        })
+      );
+      expect(action.interactionContract.expectedFeedback.trim(), action.id).not.toBe('');
+      expect(action.interactionContract.network.allowedStatuses.length, action.id).toBeGreaterThan(
+        0
+      );
+      expect(action.interactionContract.persistence.evidence.trim(), action.id).not.toBe('');
+      expect(action.interactionContract.targetCommand.trim(), action.id).not.toBe('');
+    }
+  });
 });

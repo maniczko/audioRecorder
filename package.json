@@ -135,6 +135,7 @@
     "test:e2e": "playwright test",
     "test:e2e:release": "playwright test tests/e2e/smoke.spec.js tests/e2e/advanced-journeys.spec.js tests/e2e/remote-api.spec.js",
     "test:e2e:remote-api": "node scripts/run-remote-api-playwright.mjs",
+    "test:e2e:production-system": "playwright test tests/e2e/production-system-audit.spec.js --project=chromium",
     "test:ui-actions": "playwright test tests/e2e/ui-actions",
     "test:mutation": "stryker run stryker.config.json",
     "test:mutation:ci": "stryker run stryker.config.json --reporters json,html --jsonReporter.fileName mutation-report.json",

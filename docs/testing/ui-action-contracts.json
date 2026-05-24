@@ -150,6 +150,19 @@
       "labelPattern": "Wykryj m",
       "testFile": "src/studio/StudioMeetingView.test.tsx",
       "testTitle": "Regression: rediarize button uses display recording id when selected recording is missing",
+      "interactionContract": {
+        "expectedFeedback": "Wykrywam... is visible while speaker detection is running, then a success or actionable error message is shown.",
+        "network": {
+          "method": "POST",
+          "pathPattern": "/media/recordings/:recordingId/rediarize",
+          "allowedStatuses": [200, 400, 401, 403, 404, 409, 424]
+        },
+        "persistence": {
+          "checked": true,
+          "evidence": "Speaker labels update in the transcript and remain attached to the display recording after refresh or recovery."
+        },
+        "targetCommand": "pnpm exec vitest run src/studio/StudioMeetingView.test.tsx --coverage.enabled=false && pnpm run test:e2e:production-system"
+      },
       "reason": "Production bug 2026-05-21: visible speaker detection button silently returned when selectedRecording was missing."
     },
     {
@@ -159,6 +172,19 @@
       "labelPattern": "Zapisz do profilu glosu",
       "testFile": "src/studio/StudioMeetingView.test.tsx",
       "testTitle": "Regression: maps voice profile 424 to an actionable audio recovery message",
+      "interactionContract": {
+        "expectedFeedback": "The user sees either a saved profile success message or a specific recovery message for missing audio, missing speaker segment, or embedding failure.",
+        "network": {
+          "method": "POST",
+          "pathPattern": "/media/recordings/:recordingId/voice-profiles/from-speaker",
+          "allowedStatuses": [200, 400, 401, 403, 404, 409, 424, 502, 503]
+        },
+        "persistence": {
+          "checked": true,
+          "evidence": "The Profile tab refreshes and shows sample count/embedding readiness for the named speaker when the save succeeds."
+        },
+        "targetCommand": "pnpm exec vitest run src/studio/StudioMeetingView.test.tsx src/ProfileTab.test.tsx --coverage.enabled=false && pnpm run test:e2e:production-system"
+      },
       "reason": "Production bug 2026-05-21: saving a voice sample from speaker returned 424 without enough release-gate coverage."
     }
   ]
