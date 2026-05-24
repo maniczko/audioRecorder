@@ -415,6 +415,16 @@ describe('release readiness gates', () => {
     expect(spec).toContain('does not return after refresh');
   });
 
+  it('requires the production system audit to cover notes, people, calendar, and recording shell persistence', () => {
+    const spec = read('tests/e2e/production-system-audit.spec.js');
+
+    expect(spec).toContain('note meeting');
+    expect(spec).toContain('people and calendar meeting');
+    expect(spec).toContain('recording shell meeting');
+    expect(spec).toContain('calendarMeta');
+    expect(spec).toContain('recordings:');
+  });
+
   it('prevents production Playwright audits from starting a local web server', () => {
     const playwrightConfig = read('playwright.config.js');
     const workflow = read('.github/workflows/production-system-audit.yml');

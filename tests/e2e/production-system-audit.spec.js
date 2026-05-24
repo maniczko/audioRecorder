@@ -106,6 +106,31 @@ async function patchWorkspaceState(request, delta) {
   return response.json();
 }
 
+function hasItemWithId(items, id) {
+  return Array.isArray(items) && items.some((candidate) => candidate?.id === id);
+}
+
+function createAuditMeeting(id, title, overrides = {}) {
+  const now = new Date().toISOString();
+  return {
+    id,
+    title,
+    context: `${title} context`,
+    startsAt: now,
+    durationMinutes: 30,
+    attendees: [],
+    tags: ['audit'],
+    needs: [],
+    desiredOutputs: [],
+    recordings: [],
+    workspaceId: WORKSPACE_ID,
+    createdByUserId: 'production-audit',
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
 async function installProductionSession(page, request) {
   const sessionPayload = await fetchProductionSession(request);
 
@@ -262,6 +287,115 @@ test.describe('Production system audit', () => {
     } finally {
       await patchWorkspaceState(request, {
         manualTasks: { removeIds: [taskId] },
+      }).catch(() => {});
+    }
+  });
+
+  test('persists note, people/calendar, and recording shell meetings and removes them after refresh', async ({
+    request,
+  }) => {
+    const stamp = Date.now();
+    const noteMeetingId = `${AUDIT_PREFIX}note_meeting_${stamp}`;
+    const peopleCalendarMeetingId = `${AUDIT_PREFIX}people_calendar_meeting_${stamp}`;
+    const recordingShellMeetingId = `${AUDIT_PREFIX}recording_shell_meeting_${stamp}`;
+    const calendarMetaKey = `meeting:${peopleCalendarMeetingId}`;
+
+    const noteMeeting = createAuditMeeting(
+      noteMeetingId,
+      `${AUDIT_PREFIX}note meeting persistence`,
+      {
+        context: 'Production audit note body.',
+        tags: ['audit', 'notatka'],
+        durationMinutes: 0,
+      }
+    );
+    const peopleAndCalendarMeeting = createAuditMeeting(
+      peopleCalendarMeetingId,
+      `${AUDIT_PREFIX}people and calendar meeting persistence`,
+      {
+        attendees: [`${AUDIT_PREFIX}person`],
+        startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        durationMinutes: 45,
+        location: 'production-audit',
+      }
+    );
+    const recordingShellMeeting = createAuditMeeting(
+      recordingShellMeetingId,
+      `${AUDIT_PREFIX}recording shell meeting persistence`,
+      {
+        recordings: [
+          {
+            id: `${AUDIT_PREFIX}recording_shell_${stamp}`,
+            title: `${AUDIT_PREFIX}recording shell`,
+            status: 'completed',
+            transcript: [],
+          },
+        ],
+      }
+    );
+
+    try {
+      await patchWorkspaceState(request, {
+        meetings: {
+          upsert: [noteMeeting, peopleAndCalendarMeeting, recordingShellMeeting],
+        },
+        calendarMeta: {
+          [calendarMetaKey]: {
+            source: 'production-system-audit',
+            reminderMinutes: 15,
+          },
+        },
+      });
+
+      let state = await fetchWorkspaceState(request);
+      expect(hasItemWithId(state.meetings, noteMeetingId), 'note meeting should persist').toBe(
+        true
+      );
+      expect(
+        hasItemWithId(state.meetings, peopleCalendarMeetingId),
+        'people and calendar meeting should persist'
+      ).toBe(true);
+      expect(
+        hasItemWithId(state.meetings, recordingShellMeetingId),
+        'recording shell meeting should persist'
+      ).toBe(true);
+      expect(state.calendarMeta?.[calendarMetaKey], 'calendarMeta should persist').toEqual(
+        expect.objectContaining({ source: 'production-system-audit' })
+      );
+
+      await patchWorkspaceState(request, {
+        meetings: {
+          removeIds: [noteMeetingId, peopleCalendarMeetingId, recordingShellMeetingId],
+        },
+        calendarMeta: {
+          [calendarMetaKey]: null,
+        },
+      });
+
+      state = await fetchWorkspaceState(request);
+      expect(
+        hasItemWithId(state.meetings, noteMeetingId),
+        'deleted note meeting does not return after refresh'
+      ).toBe(false);
+      expect(
+        hasItemWithId(state.meetings, peopleCalendarMeetingId),
+        'deleted people and calendar meeting does not return after refresh'
+      ).toBe(false);
+      expect(
+        hasItemWithId(state.meetings, recordingShellMeetingId),
+        'deleted recording shell meeting does not return after refresh'
+      ).toBe(false);
+      expect(state.calendarMeta?.[calendarMetaKey], 'deleted calendarMeta does not return').toBe(
+        undefined
+      );
+    } finally {
+      await patchWorkspaceState(request, {
+        meetings: {
+          removeIds: [noteMeetingId, peopleCalendarMeetingId, recordingShellMeetingId],
+        },
+        calendarMeta: {
+          [calendarMetaKey]: null,
+        },
       }).catch(() => {});
     }
   });
