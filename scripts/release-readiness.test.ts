@@ -415,6 +415,16 @@ describe('release readiness gates', () => {
     expect(spec).toContain('does not return after refresh');
   });
 
+  it('prevents production Playwright audits from starting a local web server', () => {
+    const playwrightConfig = read('playwright.config.js');
+    const workflow = read('.github/workflows/production-system-audit.yml');
+
+    expect(playwrightConfig).toContain('PLAYWRIGHT_SKIP_WEB_SERVER');
+    expect(playwrightConfig).toContain('isLocalPlaywrightTarget');
+    expect(playwrightConfig).toContain('webServer: shouldStartWebServer');
+    expect(workflow).toContain("PLAYWRIGHT_SKIP_WEB_SERVER: 'true'");
+  });
+
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   });

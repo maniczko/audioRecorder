@@ -20,6 +20,7 @@ jobs:
       PRODUCTION_FRONTEND_URL: https://voicelog-audiorecorder.vercel.app
       PRODUCTION_API_BASE_URL: https://voicelog-audiorecorder.vercel.app
       PLAYWRIGHT_BASE_URL: https://voicelog-audiorecorder.vercel.app
+      PLAYWRIGHT_SKIP_WEB_SERVER: 'true'
       PRODUCTION_SYSTEM_AUDIT_REQUIRED: 'true'
       PRODUCTION_REQUIRE_SUPABASE_REMOTE: 'true'
       PRODUCTION_REQUIRE_KNOWN_GIT_SHA: 'true'

@@ -7,6 +7,18 @@ const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
 const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
 const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
 const includeRemoteApiProject = process.env.PLAYWRIGHT_INCLUDE_REMOTE_API === 'true';
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEB_SERVER === 'true';
+
+function isLocalPlaywrightTarget(url) {
+  try {
+    const parsed = new URL(url);
+    return ['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '::1'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const shouldStartWebServer = !skipWebServer && isLocalPlaywrightTarget(baseURL);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -55,18 +67,20 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: webCommand,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000, // 3 minutes for server startup
-    stdout: 'ignore',
-    stderr: 'pipe',
-    env: {
-      VITE_DATA_PROVIDER: dataProvider,
-      VITE_MEDIA_PROVIDER: mediaProvider,
-      VITE_API_BASE_URL: apiBaseURL,
-      VITE_E2E_TEST: 'true',
-    },
-  },
+  webServer: shouldStartWebServer
+    ? {
+        command: webCommand,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000, // 3 minutes for server startup
+        stdout: 'ignore',
+        stderr: 'pipe',
+        env: {
+          VITE_DATA_PROVIDER: dataProvider,
+          VITE_MEDIA_PROVIDER: mediaProvider,
+          VITE_API_BASE_URL: apiBaseURL,
+          VITE_E2E_TEST: 'true',
+        },
+      }
+    : undefined,
 });
