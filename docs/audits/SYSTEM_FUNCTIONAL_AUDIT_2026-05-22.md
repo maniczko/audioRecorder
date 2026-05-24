@@ -274,3 +274,47 @@ Pozostałe do 9/10:
 - Dodać produkcyjne CRUD/persistence scenariusze dla Notes, People, Calendar i Recordings delete.
 - Dodać pełny Studio voice-profile UI journey przez prawdziwy backend, nie tylko endpoint smoke.
 - Utrzymać osobny production visual baseline z realnym storage state, aby nie mieszać fake tokenów z produkcją.
+
+## Update 2026-05-24, post-deploy evidence
+
+Zamknięto lukę w samym gate: Playwright nie startuje już lokalnego `webServer`
+dla zewnętrznego produkcyjnego URL. `Production System Audit` ustawia
+`PLAYWRIGHT_SKIP_WEB_SERVER=true`, a `playwright.config.js` uruchamia serwer
+tylko dla lokalnych targetów typu `localhost` / `127.0.0.1`.
+
+Commity:
+
+- `17077c6` - `test(release): add production system audit gate`
+- `0ab7ad7` - `fix(test): skip web server for production audit`
+
+Evidence dla `0ab7ad7`:
+
+| Gate                                     | Wynik            |
+| ---------------------------------------- | ---------------- |
+| GitHub CI                                | PASS             |
+| E2E Playwright Tests                     | PASS             |
+| Docker Build                             | PASS             |
+| Railway Build Metadata                   | PASS             |
+| Backend Production Smoke                 | PASS             |
+| Production Deployment (Vercel)           | PASS             |
+| Production System Audit, manual dispatch | PASS, `3 passed` |
+| Production System Audit, auto po deployu | PASS, `3 passed` |
+| Strict production smoke w audit workflow | PASS             |
+| Sentry release health w audit workflow   | PASS             |
+
+Lokalne/Node 22 evidence przed pushem:
+
+- `pnpm run test:workflows`: `124/124` passed.
+- Targeted workflow tests: `35/35` passed.
+- Production-system Playwright z `PLAYWRIGHT_SKIP_WEB_SERVER=true`: `3 skipped`
+  lokalnie bez sekretów, zgodnie z kontraktem; w GitHub z
+  `PRODUCTION_SYSTEM_AUDIT_REQUIRED=true` testy wykonały się realnie i przeszły.
+
+Aktualna decyzja:
+
+**CONDITIONAL+**. Produkcyjny gate działa jako realna bramka po deployu i łapie
+konfigurację, endpoint rewrites, podstawową matrycę zakładek, persistence task
+write/delete/refresh, strict smoke oraz Sentry. Do pełnego `9/10` nadal trzeba
+rozszerzyć tę samą bramkę o pełne CRUD/persistence dla `Nagrania`, `Kalendarz`,
+`Zadania`, `Osoby`, `Notatki` oraz pełny UI journey `Studio -> speaker -> voice
+sample -> profile refresh`.
