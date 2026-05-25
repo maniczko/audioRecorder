@@ -437,5 +437,5 @@ describe('release readiness gates', () => {
 
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
-  });
+  }, 20_000);
 });

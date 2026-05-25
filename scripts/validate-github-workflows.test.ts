@@ -156,6 +156,15 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('secrets.GITHUB_TOKEN');
   });
 
+  it('checks out the task queue workflow with a valid built-in token fallback', () => {
+    const workflowPath = path.join(workflowDir, 'task-queue-auto-assign.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('actions/checkout@v6');
+    expect(content).toContain('github.token');
+    expect(content).not.toContain('secrets.GITHUB_TOKEN');
+  });
+
   it('keeps the changelog CLI installed for tag release automation', () => {
     const workflowPath = path.join(workflowDir, 'changelog.yml');
     const workflowContent = readFileSync(workflowPath, 'utf8');
