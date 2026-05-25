@@ -318,3 +318,71 @@ write/delete/refresh, strict smoke oraz Sentry. Do pełnego `9/10` nadal trzeba
 rozszerzyć tę samą bramkę o pełne CRUD/persistence dla `Nagrania`, `Kalendarz`,
 `Zadania`, `Osoby`, `Notatki` oraz pełny UI journey `Studio -> speaker -> voice
 sample -> profile refresh`.
+
+## Update 2026-05-25, release evidence hardening
+
+Zamknieto dwa falszywe zrodla czerwonego release evidence:
+
+- `Task Queue Auto Assign` nie uzywa juz `GH_PAT` ani `secrets.GITHUB_TOKEN`
+  jako fallbacku. Workflow checkout/push dziala na wbudowanym `github.token`.
+- `Task Queue Auto Assign` nie mutuje juz `main`, gdy aktywne sa release
+  workflows (`ci.yml`, `railway-build-metadata.yml`,
+  `vercel-production.yml`, `backend-production-smoke.yml`,
+  `production-system-audit.yml`). To usuwa race, w ktorym docs-only commit
+  zmienial oczekiwany SHA w czasie deployu.
+- `Backend Production Smoke` nie uzywa juz kruchego
+  `pnpm install --no-frozen-lockfile`. Smoke instaluje zaleznosci przez
+  cache + retry + `pnpm install --frozen-lockfile --ignore-scripts`, bo
+  health smoke nie wymaga natywnych postinstalli audio/ML.
+- Debug Railway curl uruchamia sie tylko po realnej awarii kroku smoke i ma
+  jawny `SMOKE_TEST_URL`, wiec awaria instalacji nie generuje mylacego
+  `Malformed input`.
+
+Root cause poprzedniego czerwonego `Backend Production Smoke` dla `2b1b18a`:
+
+- nie byl to crash aplikacji ani awaria Railway;
+- job padl przed testem health, na instalacji `onnxruntime-node` przez
+  timeout sieciowy (`ETIMEDOUT` / `ENETUNREACH`) podczas postinstall;
+- po zmianie workflow krok `Install dependencies` przeszedl w 15 sekund.
+
+Commity:
+
+- `b7d5e16` - `ci: prevent task queue release races`
+- `2b1b18a` - `fix(media): validate chunks before assembly`
+- `729f6f4` - `ci: harden backend production smoke`
+
+Evidence dla `729f6f4`:
+
+| Gate                         | Run ID        | Wynik |
+| ---------------------------- | ------------- | ----- |
+| GitHub CI                    | `26403040736` | PASS  |
+| E2E Playwright Tests         | `26403040737` | PASS  |
+| Docker Build                 | `26403040735` | PASS  |
+| Railway Build Metadata       | `26403312352` | PASS  |
+| Backend Production Smoke     | `26403336314` | PASS  |
+| Production Deployment Vercel | `26403336312` | PASS  |
+| Production System Audit      | `26403394061` | PASS  |
+
+Backend Production Smoke szczegoly:
+
+- `Resolve pnpm store`: PASS
+- `Cache pnpm store`: PASS
+- `Install dependencies`: PASS
+- `Smoke-check deployed backend health`: PASS
+- `Debug - Log Railway deployment status`: SKIPPED, zgodnie z oczekiwaniem
+- `Create GitHub issue on production crash`: SKIPPED, zgodnie z oczekiwaniem
+
+Lokalne/Node 22 evidence przed pushem:
+
+- Targeted workflow regression:
+  `scripts/validate-github-workflows.test.ts`: `15/15` passed.
+- `pnpm run test:workflows`: `129/129` passed.
+- Pre-push release guard:
+  - `pnpm run test:server:retry`: `1055` passed, `97` skipped.
+  - targeted frontend/workflow tests: `72/72` passed.
+  - `pnpm run audit:build-warnings`: PASS.
+
+GitHub issue:
+
+- `#920` zostalo zamkniete jako false positive. Powod: release evidence race,
+  nie produkcyjny crash backendu.
