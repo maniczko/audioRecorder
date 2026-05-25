@@ -59,6 +59,34 @@ describe('GitHub workflows validation', () => {
     expect(content).toContain('high > 0 || critical > 0');
   });
 
+  it('keeps the main CI install path resilient with Node 22 and pnpm cache', () => {
+    const workflowPath = path.join(workflowDir, 'ci.yml');
+    const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
+      jobs?: Record<
+        string,
+        {
+          steps?: Array<{
+            uses?: string;
+            with?: Record<string, unknown>;
+          }>;
+        }
+      >;
+    } | null;
+    const jobs = parsed?.jobs ?? {};
+
+    for (const [jobName, job] of Object.entries(jobs)) {
+      const setupNodeStep = job.steps?.find((step) => step.uses?.startsWith('actions/setup-node@'));
+
+      expect(setupNodeStep, `${jobName} setup-node step`).toBeTruthy();
+      expect(setupNodeStep?.uses, `${jobName} setup-node action`).toBe('actions/setup-node@v6');
+      expect(setupNodeStep?.with?.['node-version'], `${jobName} node version`).toBe('22');
+      expect(setupNodeStep?.with?.cache, `${jobName} pnpm cache`).toBe('pnpm');
+      expect(setupNodeStep?.with?.['cache-dependency-path'], `${jobName} cache key`).toBe(
+        'pnpm-lock.yaml'
+      );
+    }
+  });
+
   it('gives optimized ci test job extra heap for the large Vitest suite', () => {
     const workflowPath = path.join(workflowDir, 'ci-optimized.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
