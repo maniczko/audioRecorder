@@ -7,6 +7,33 @@ import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/sha
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 
+const workspaceStatePatchLocks = new Map<string, Promise<void>>();
+
+async function withWorkspaceStatePatchLock<T>(
+  workspaceId: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  const key = String(workspaceId || 'default');
+  const previous = workspaceStatePatchLocks.get(key) ?? Promise.resolve();
+  let releaseCurrent: () => void = () => {};
+  const current = new Promise<void>((resolve) => {
+    releaseCurrent = resolve;
+  });
+  const queued = previous.catch(() => undefined).then(() => current);
+
+  workspaceStatePatchLocks.set(key, queued);
+  await previous.catch(() => undefined);
+
+  try {
+    return await operation();
+  } finally {
+    releaseCurrent();
+    if (workspaceStatePatchLocks.get(key) === queued) {
+      workspaceStatePatchLocks.delete(key);
+    }
+  }
+}
+
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
   const { authService, workspaceService, transcriptionService, config } = services;
@@ -61,17 +88,19 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const workspaceId = c.req.param('workspaceId');
     await ensureWorkspaceAccess(c, workspaceId);
     const delta = await c.req.json().catch(() => ({}));
-    const currentState = normalizeWorkspaceState(
-      await workspaceService.getWorkspaceState(workspaceId)
-    );
-    const mergedState = applyWorkspaceStateDelta(currentState, delta);
-    return c.json(
-      {
-        workspaceId,
-        state: await workspaceService.saveWorkspaceState(workspaceId, mergedState),
-      },
-      200
-    );
+    return withWorkspaceStatePatchLock(workspaceId, async () => {
+      const currentState = normalizeWorkspaceState(
+        await workspaceService.getWorkspaceState(workspaceId)
+      );
+      const mergedState = applyWorkspaceStateDelta(currentState, delta);
+      return c.json(
+        {
+          workspaceId,
+          state: await workspaceService.saveWorkspaceState(workspaceId, mergedState),
+        },
+        200
+      );
+    });
   });
 
   // --- Workspaces ---

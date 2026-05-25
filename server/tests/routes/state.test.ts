@@ -191,4 +191,59 @@ describe('State Routes', () => {
       })
     );
   });
+
+  it('PATCH /state/workspaces/:workspaceId - serializes concurrent deltas without losing writes', async () => {
+    const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    let persistedState = {
+      meetings: [],
+      manualTasks: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+      updatedAt: '2026-05-25T00:00:00.000Z',
+    };
+
+    mockWorkspaceService.getWorkspaceState.mockImplementation(async () => clone(persistedState));
+    mockWorkspaceService.saveWorkspaceState.mockImplementation(
+      async (_workspaceId: string, next) => {
+        await delay(40);
+        persistedState = clone({ ...next, updatedAt: '2026-05-25T00:00:01.000Z' });
+        return clone(persistedState);
+      }
+    );
+
+    const [taskResponse, meetingResponse] = await Promise.all([
+      app.request('/state/workspaces/w123', {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer valid_test_token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          manualTasks: { upsert: [{ id: 'task_concurrent', title: 'Concurrent task' }] },
+        }),
+      }),
+      app.request('/state/workspaces/w123', {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer valid_test_token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meetings: { upsert: [{ id: 'meeting_concurrent', title: 'Concurrent meeting' }] },
+        }),
+      }),
+    ]);
+
+    expect(taskResponse.status).toBe(200);
+    expect(meetingResponse.status).toBe(200);
+    expect(persistedState.manualTasks).toEqual([
+      expect.objectContaining({ id: 'task_concurrent' }),
+    ]);
+    expect(persistedState.meetings).toEqual([
+      expect.objectContaining({ id: 'meeting_concurrent' }),
+    ]);
+  });
 });
