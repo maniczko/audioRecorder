@@ -156,13 +156,16 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('secrets.GITHUB_TOKEN');
   });
 
-  it('checks out the task queue workflow with a valid built-in token fallback', () => {
+  it('checks out and pushes the task queue workflow with built-in credentials only', () => {
     const workflowPath = path.join(workflowDir, 'task-queue-auto-assign.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
     expect(content).toContain('actions/checkout@v6');
-    expect(content).toContain('github.token');
+    expect(content).toContain("git push origin HEAD:${{ github.ref_name || 'main' }}");
+    expect(content).not.toContain('secrets.GH_PAT');
     expect(content).not.toContain('secrets.GITHUB_TOKEN');
+    expect(content).not.toContain('GIT_TOKEN=');
+    expect(content).not.toContain('git remote set-url origin https://x-access-token');
   });
 
   it('keeps the changelog CLI installed for tag release automation', () => {
