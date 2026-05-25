@@ -124,6 +124,42 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('steps.scope.outputs.require_exact_git_sha');
   });
 
+  it('keeps backend smoke dependency setup resilient and debugs only smoke failures', () => {
+    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+    const parsed = parse(content) as {
+      jobs?: {
+        'verify-backend-production'?: {
+          steps?: Array<{
+            name?: string;
+            if?: string;
+            run?: string;
+            uses?: string;
+            with?: Record<string, unknown>;
+            env?: Record<string, unknown>;
+          }>;
+        };
+      };
+    } | null;
+    const steps = parsed?.jobs?.['verify-backend-production']?.steps ?? [];
+    const resolveStoreStep = steps.find((step) => step.name === 'Resolve pnpm store');
+    const cacheStep = steps.find((step) => step.name === 'Cache pnpm store');
+    const installStep = steps.find((step) => step.name === 'Install dependencies');
+    const debugStep = steps.find((step) => step.name === 'Debug - Log Railway deployment status');
+
+    expect(content).not.toContain('pnpm install --no-frozen-lockfile');
+    expect(resolveStoreStep?.run).toContain('pnpm store path');
+    expect(cacheStep?.uses).toBe('actions/cache@v4');
+    expect(cacheStep?.with?.path).toBe('${{ env.PNPM_STORE_PATH }}');
+    expect(cacheStep?.with?.key).toContain("hashFiles('pnpm-lock.yaml')");
+    expect(installStep?.run).toContain('for attempt in 1 2 3');
+    expect(installStep?.run).toContain('pnpm install --frozen-lockfile --ignore-scripts');
+    expect(debugStep?.if).toBe("failure() && steps.smoke.outcome == 'failure'");
+    expect(debugStep?.env?.SMOKE_TEST_URL).toBe(
+      'https://audiorecorder-production.up.railway.app/health'
+    );
+  });
+
   it('deploys Railway after CI and deploys Vercel only after Railway verification', () => {
     const railwayWorkflow = readFileSync(
       path.join(workflowDir, 'railway-build-metadata.yml'),

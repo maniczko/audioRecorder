@@ -29,8 +29,30 @@ jobs:
         with:
           node-version: '22'
       - run: corepack enable
+      - name: Resolve pnpm store
+        shell: bash
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: backend-smoke-pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            backend-smoke-pnpm-${{ runner.os }}-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "pnpm install attempt ${attempt}/3..."
+            if pnpm install --frozen-lockfile --ignore-scripts; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 10))
+            fi
+          done
+          echo "pnpm install failed after 3 attempts"
+          exit 1
       - name: Smoke-check deployed backend health
         id: smoke
         run: |
@@ -56,11 +78,13 @@ jobs:
           SMOKE_WAIT_MS: '10000'
 
       - name: Debug - Log Railway deployment status
-        if: failure()
+        if: failure() && steps.smoke.outcome == 'failure'
         run: |
           echo "Smoke test failed!"
           echo "Checking Railway deployment status..."
           curl -v "$SMOKE_TEST_URL" || echo "Railway not responding"
+        env:
+          SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
         continue-on-error: true
 
       - name: Create GitHub issue on production crash
