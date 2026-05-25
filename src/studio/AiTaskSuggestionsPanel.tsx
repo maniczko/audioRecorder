@@ -327,6 +327,9 @@ function AiTaskSuggestionsPanel({
 export default memo(AiTaskSuggestionsPanel, (prevProps, nextProps) => {
   return (
     prevProps.selectedRecording === nextProps.selectedRecording &&
-    prevProps.displaySpeakerNames === nextProps.displaySpeakerNames
+    prevProps.displaySpeakerNames === nextProps.displaySpeakerNames &&
+    prevProps.peopleProfiles === nextProps.peopleProfiles &&
+    prevProps.onCreateTask === nextProps.onCreateTask &&
+    prevProps.canEdit === nextProps.canEdit
   );
 });
