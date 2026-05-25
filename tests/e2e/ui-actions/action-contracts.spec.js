@@ -161,4 +161,48 @@ test.describe('UI action inventory contracts', () => {
       .fill('Zmieniony segment testowy.');
     await expect(page.getByText('Zmieniony segment testowy.')).toBeVisible();
   });
+
+  test('studio new speaker action asks for a name before any voice-profile request', async ({
+    page,
+  }) => {
+    const fromSpeakerRequests = [];
+    await page.route('**/media/recordings/*/voice-profiles/from-speaker', async (route) => {
+      fromSpeakerRequests.push(route.request().url());
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'unexpected_pre_name_save' }),
+      });
+    });
+
+    await page.goto('/');
+    await openShellTab(page, 'Nagrania');
+    await page.getByText('UI action meeting').first().click();
+
+    const speakerButton = page
+      .locator('.ff-speaker-trigger')
+      .filter({ hasText: 'Barbara' })
+      .first();
+    await expect(speakerButton).toBeVisible();
+    await speakerButton.click();
+
+    const newSpeakerOption = page
+      .locator('.ff-speaker-dropdown-item')
+      .filter({ hasText: 'Nowy m' })
+      .first();
+    await expect(newSpeakerOption).toBeVisible();
+    await newSpeakerOption.click();
+
+    await expect(page.getByText('Nazwij nowego mowce')).toBeVisible();
+    await expect(page.getByLabel('Nazwa nowego mowcy')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeDisabled();
+    expect(fromSpeakerRequests, 'clicking + Nowy mówca must not save before naming').toEqual([]);
+
+    await page.getByLabel('Nazwa nowego mowcy').fill('Nowy Audytor');
+    await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeEnabled();
+    expect(
+      fromSpeakerRequests,
+      'typing a speaker name still must wait for explicit submit'
+    ).toEqual([]);
+  });
 });

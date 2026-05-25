@@ -13,8 +13,11 @@ import packageJson from '../package.json';
 describe('Regression: Issue #0 - vitest coverage temp directories exist', () => {
   it('creates frontend and server coverage temp directories when configs load', async () => {
     await import('./ensure-coverage-dirs.mjs');
-    await import('../vitest.config.ts');
-    await import('../server/vitest.config.ts');
+    const frontendConfig = fs.readFileSync(path.resolve(process.cwd(), 'vitest.config.ts'), 'utf8');
+    const serverConfig = fs.readFileSync(
+      path.resolve(process.cwd(), 'server/vitest.config.ts'),
+      'utf8'
+    );
     const setupTestsContent = fs.readFileSync(
       path.resolve(process.cwd(), 'src/setupTests.ts'),
       'utf8'
@@ -22,6 +25,8 @@ describe('Regression: Issue #0 - vitest coverage temp directories exist', () => 
 
     expect(fs.existsSync(path.resolve(process.cwd(), 'coverage/frontend/.tmp'))).toBe(true);
     expect(fs.existsSync(path.resolve(process.cwd(), 'coverage/server/.tmp'))).toBe(true);
+    expect(frontendConfig).toContain('fs.mkdirSync(frontendCoverageTempDir');
+    expect(serverConfig).toContain('fs.mkdirSync(serverCoverageTempDir');
     expect(setupTestsContent).toContain('coverage/frontend/.tmp');
   });
 
