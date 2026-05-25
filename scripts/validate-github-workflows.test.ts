@@ -59,13 +59,15 @@ describe('GitHub workflows validation', () => {
     expect(content).toContain('high > 0 || critical > 0');
   });
 
-  it('keeps the main CI install path resilient with Node 22 and pnpm cache', () => {
+  it('keeps the main CI install path resilient with Node 22, pnpm cache, and install retries', () => {
     const workflowPath = path.join(workflowDir, 'ci.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
       jobs?: Record<
         string,
         {
           steps?: Array<{
+            name?: string;
+            run?: string;
             uses?: string;
             with?: Record<string, unknown>;
           }>;
@@ -75,14 +77,25 @@ describe('GitHub workflows validation', () => {
     const jobs = parsed?.jobs ?? {};
 
     for (const [jobName, job] of Object.entries(jobs)) {
-      const setupNodeStep = job.steps?.find((step) => step.uses?.startsWith('actions/setup-node@'));
+      const steps = job.steps ?? [];
+      const setupNodeStep = steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
+      const resolveStoreStep = steps.find((step) => step.name === 'Resolve pnpm store');
+      const cacheStep = steps.find((step) => step.name === 'Cache pnpm store');
+      const installStep = steps.find((step) => step.name === 'Install dependencies');
 
       expect(setupNodeStep, `${jobName} setup-node step`).toBeTruthy();
       expect(setupNodeStep?.uses, `${jobName} setup-node action`).toBe('actions/setup-node@v6');
       expect(setupNodeStep?.with?.['node-version'], `${jobName} node version`).toBe('22');
-      expect(setupNodeStep?.with?.cache, `${jobName} pnpm cache`).toBe('pnpm');
-      expect(setupNodeStep?.with?.['cache-dependency-path'], `${jobName} cache key`).toBe(
-        'pnpm-lock.yaml'
+      expect(setupNodeStep?.with?.cache, `${jobName} setup-node cache before pnpm exists`).toBe(
+        undefined
+      );
+      expect(resolveStoreStep?.run, `${jobName} pnpm store path`).toContain('pnpm store path');
+      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v4');
+      expect(cacheStep?.with?.path, `${jobName} cache path`).toBe('${{ env.PNPM_STORE_PATH }}');
+      expect(cacheStep?.with?.key, `${jobName} cache key`).toContain("hashFiles('pnpm-lock.yaml')");
+      expect(installStep?.run, `${jobName} install retry loop`).toContain('for attempt in 1 2 3');
+      expect(installStep?.run, `${jobName} frozen lockfile`).toContain(
+        'pnpm install --frozen-lockfile'
       );
     }
   });
