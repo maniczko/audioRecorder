@@ -60,6 +60,19 @@ describe('aiTaskSuggestions', () => {
     expect(console.error).toHaveBeenCalled();
   });
 
+  it('does not log a technical console error when the server proxy route is missing', async () => {
+    const notFound = Object.assign(new Error('The page could not be found\n\nNOT_FOUND'), {
+      status: 404,
+    });
+    mockApiRequest.mockRejectedValue(notFound);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await suggestTasksFromTranscript([{ text: 'test' }]);
+
+    expect(result).toEqual([]);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   it('passes people as empty array by default', async () => {
     mockApiRequest.mockResolvedValue({ tasks: [] });
 

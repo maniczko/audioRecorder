@@ -16,6 +16,12 @@ async function getApiRequest() {
   return _apiRequest;
 }
 
+function isMissingServerProxyError(error: unknown) {
+  const status = Number((error as { status?: number })?.status);
+  const message = error instanceof Error ? error.message : String(error || '');
+  return status === 404 || /NOT_FOUND|page could not be found|could not be found/i.test(message);
+}
+
 export async function suggestTasksFromTranscript(
   transcript: Array<{ speakerName?: string; speakerId?: number | string; text?: string }>,
   people: Array<{ name?: string; email?: string }> = []
@@ -30,6 +36,9 @@ export async function suggestTasksFromTranscript(
       });
       return Array.isArray(result?.tasks) ? result.tasks : [];
     } catch (err) {
+      if (isMissingServerProxyError(err)) {
+        return [];
+      }
       console.error('Server suggest-tasks failed:', err);
       return [];
     }

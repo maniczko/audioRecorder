@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, memo } from 'react';
+import { useEffect, useMemo, useRef, useState, memo } from 'react';
 import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
 import { remoteApiEnabled } from '../services/config';
 import { createId } from '../lib/storage';
@@ -71,7 +71,6 @@ function AiTaskSuggestionsPanel({
   );
   const autoTriggeredRef = useRef<string | null>(null);
 
-  // Auto-generate suggestions when a recording with transcript becomes available
   useEffect(() => {
     const recId = selectedRecording?.id;
     const hasTranscript = (selectedRecording?.transcript?.length ?? 0) > 0;
@@ -117,7 +116,7 @@ function AiTaskSuggestionsPanel({
       setStatus('done');
     } catch (error) {
       console.error('AI suggestion error:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Blad generowania sugestii');
+      setErrorMessage(error instanceof Error ? error.message : 'Błąd generowania sugestii');
       setStatus('error');
     }
   }
@@ -177,7 +176,7 @@ function AiTaskSuggestionsPanel({
       <div className="panel-header compact">
         <div>
           <div className="eyebrow">AI — zadania</div>
-          <h2>Sugestie zadan ze spotkania</h2>
+          <h2>Sugestie zadań ze spotkania</h2>
         </div>
         <button
           type="button"
@@ -193,7 +192,7 @@ function AiTaskSuggestionsPanel({
 
       {status === 'done' && suggestions.length === 0 ? (
         <div className="inline-alert success">
-          Brak nowych sugestii — wszystkie zatwierdzone lub brak zadan w transkrypcji.
+          Brak nowych sugestii — wszystkie zatwierdzone lub brak zadań w transkrypcji.
         </div>
       ) : null}
 
@@ -207,7 +206,7 @@ function AiTaskSuggestionsPanel({
                   className="ai-suggestion-input"
                   value={editDraft.title || ''}
                   onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))}
-                  placeholder="Tytul zadania"
+                  placeholder="Tytuł zadania"
                 />
                 <textarea
                   className="ai-suggestion-textarea"
@@ -262,7 +261,7 @@ function AiTaskSuggestionsPanel({
                   <span
                     className={`task-flag ${PRIORITY_FLAGS[suggestion.priority || 'medium'] || 'in-progress'}`}
                   >
-                    {PRIORITY_LABELS[suggestion.priority || 'medium'] || 'Sredni'}
+                    {PRIORITY_LABELS[suggestion.priority || 'medium'] || 'Średni'}
                   </span>
                   <span className="task-flag neutral ai-badge">AI</span>
                 </div>
@@ -291,7 +290,7 @@ function AiTaskSuggestionsPanel({
                     onClick={() => handleApprove(suggestion)}
                     disabled={!canEdit}
                   >
-                    Zatwierdz
+                    Zatwierdź
                   </button>
                   <button
                     type="button"
@@ -306,7 +305,7 @@ function AiTaskSuggestionsPanel({
                     className="ghost-button small"
                     onClick={() => handleReject(suggestion._id)}
                   >
-                    Odrzuc
+                    Odrzuć
                   </button>
                 </div>
               </article>
@@ -318,7 +317,6 @@ function AiTaskSuggestionsPanel({
   );
 }
 
-// Memoize to prevent unnecessary re-renders when parent updates
 export default memo(AiTaskSuggestionsPanel, (prevProps, nextProps) => {
   return (
     prevProps.selectedRecording === nextProps.selectedRecording &&
