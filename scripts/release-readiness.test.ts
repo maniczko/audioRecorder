@@ -452,4 +452,8 @@ describe('release readiness gates', () => {
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   }, 20_000);
+
+  it('keeps test contracts and UI action docs free of mojibake', () => {
+    expect(findMojibakeIssues({ targets: ['docs/testing', 'docs/ui-actions'] })).toEqual([]);
+  }, 20_000);
 });

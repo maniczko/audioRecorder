@@ -12,6 +12,8 @@ export const defaultMojibakeAuditTargets = [
   'docs/QUALITY_GATES.md',
   'docs/DESIGN_SYSTEM_RULES.md',
   'docs/audits',
+  'docs/testing',
+  'docs/ui-actions',
   'index.html',
   'playwright.config.js',
   'scripts/accessibility-audit.cjs',
