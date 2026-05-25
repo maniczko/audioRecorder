@@ -9,22 +9,58 @@ jobs:
   assign-task-owners:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
 
     steps:
+      - name: Skip while release workflows are active
+        id: release-guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          active_count=0
+          for workflow in \
+            ci.yml \
+            railway-build-metadata.yml \
+            vercel-production.yml \
+            backend-production-smoke.yml \
+            production-system-audit.yml; do
+            count="$(gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow "$workflow" \
+              --branch main \
+              --status in_progress \
+              --json databaseId \
+              --jq 'length')"
+            echo "$workflow: $count active run(s)"
+            active_count=$((active_count + count))
+          done
+
+          if [ "$active_count" -gt 0 ]; then
+            echo "Release workflows are active; skipping task queue mutation."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout code
+        if: steps.release-guard.outputs.skip != 'true'
         uses: actions/checkout@v6
 
       - name: Setup Node.js
+        if: steps.release-guard.outputs.skip != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: '22'
-      - run: corepack enable
+      - if: steps.release-guard.outputs.skip != 'true'
+        run: corepack enable
 
       - name: Assign owners to new TASK_QUEUE items
+        if: steps.release-guard.outputs.skip != 'true'
         run: node scripts/assign-task-agents.mjs
 
       - name: Dispatch assigned tasks
+        if: steps.release-guard.outputs.skip != 'true'
         env:
           TASK_RUNNER_ONCE: 'true'
           TASK_AGENT_CODEX_WEBHOOK_URL: ${{ secrets.TASK_AGENT_CODEX_WEBHOOK_URL }}
@@ -35,6 +71,7 @@ jobs:
         run: node scripts/task-agent-runner.mjs
 
       - name: Commit TASK_QUEUE.md update
+        if: steps.release-guard.outputs.skip != 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"

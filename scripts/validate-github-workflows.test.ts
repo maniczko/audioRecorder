@@ -168,6 +168,20 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('git remote set-url origin https://x-access-token');
   });
 
+  it('prevents task queue automation from racing active production release workflows', () => {
+    const workflowPath = path.join(workflowDir, 'task-queue-auto-assign.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('actions: read');
+    expect(content).toContain('Skip while release workflows are active');
+    expect(content).toContain('ci.yml');
+    expect(content).toContain('railway-build-metadata.yml');
+    expect(content).toContain('vercel-production.yml');
+    expect(content).toContain('backend-production-smoke.yml');
+    expect(content).toContain('production-system-audit.yml');
+    expect(content).toContain("steps.release-guard.outputs.skip != 'true'");
+  });
+
   it('keeps the changelog CLI installed for tag release automation', () => {
     const workflowPath = path.join(workflowDir, 'changelog.yml');
     const workflowContent = readFileSync(workflowPath, 'utf8');
