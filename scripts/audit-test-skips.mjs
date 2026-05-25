@@ -38,6 +38,10 @@ export function isAllowedDocumentedSkip(contextLines, now = new Date()) {
   return Number.isFinite(expiry.getTime()) && expiry.getTime() >= now.getTime();
 }
 
+function isDisallowedCriticalSuiteSkip(relativePath, title) {
+  return relativePath === 'tests/e2e/critical-flows.spec.js' && /critical user flows/i.test(title);
+}
+
 export function findUnexpectedSkips({ root = rootDir } = {}) {
   const files = criticalTargets.flatMap((target) => collectFiles(path.join(root, target)));
   const issues = [];
@@ -50,7 +54,10 @@ export function findUnexpectedSkips({ root = rootDir } = {}) {
       const title = match[2];
       const line = content.slice(0, match.index).split(/\r?\n/).length;
       const contextLines = lines.slice(Math.max(0, line - 7), line - 1);
-      if (!isAllowedDocumentedSkip(contextLines)) {
+      if (
+        isDisallowedCriticalSuiteSkip(relative, title) ||
+        !isAllowedDocumentedSkip(contextLines)
+      ) {
         issues.push({ file: relative, line, title });
       }
     }

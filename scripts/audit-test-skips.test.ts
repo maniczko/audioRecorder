@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { findUnexpectedSkips, isAllowedDocumentedSkip } from './audit-test-skips.mjs';
 
 describe('audit-test-skips', () => {
@@ -23,5 +26,29 @@ describe('audit-test-skips', () => {
         '// Reason: expired skip.',
       ])
     ).toBe(false);
+  });
+
+  test('does not allow skipping an entire critical e2e suite', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-skip-audit-'));
+    const suitePath = path.join(root, 'tests', 'e2e');
+    fs.mkdirSync(suitePath, { recursive: true });
+    fs.writeFileSync(
+      path.join(suitePath, 'critical-flows.spec.js'),
+      [
+        '// Issue: #0',
+        '// Expires: 2099-01-01',
+        '// Reason: documented but too broad for a critical release suite.',
+        "test.describe.skip('Critical User Flows', () => {});",
+      ].join('\n'),
+      'utf8'
+    );
+
+    expect(findUnexpectedSkips({ root })).toEqual([
+      {
+        file: 'tests/e2e/critical-flows.spec.js',
+        line: 4,
+        title: 'Critical User Flows',
+      },
+    ]);
   });
 });
