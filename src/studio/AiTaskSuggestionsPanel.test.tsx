@@ -78,4 +78,31 @@ describe('AiTaskSuggestionsPanel', () => {
       ).toBeInTheDocument();
     });
   });
+
+  it('does not auto-generate costly suggestions when editing is disabled', async () => {
+    suggestTasksFromTranscriptMock.mockResolvedValue([
+      {
+        title: 'Nie powinno się wygenerować',
+        priority: 'medium',
+        tags: [],
+      },
+    ]);
+
+    render(
+      <AiTaskSuggestionsPanel
+        selectedRecording={{
+          id: 'rec-readonly',
+          transcript: [{ speakerId: 'anna', text: 'Anna przygotuje plan.' }],
+        }}
+        displaySpeakerNames={{ anna: 'Anna' }}
+        canEdit={false}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Generuj sugestie AI' })).toBeDisabled();
+    await waitFor(() => {
+      expect(suggestTasksFromTranscriptMock).not.toHaveBeenCalled();
+    });
+    expect(screen.queryByText('Nie powinno się wygenerować')).not.toBeInTheDocument();
+  });
 });

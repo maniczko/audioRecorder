@@ -76,6 +76,7 @@ function AiTaskSuggestionsPanel({
     const hasTranscript = (selectedRecording?.transcript?.length ?? 0) > 0;
     if (
       canUseAiSuggestions &&
+      canEdit &&
       recId &&
       hasTranscript &&
       status === 'idle' &&
@@ -85,14 +86,20 @@ function AiTaskSuggestionsPanel({
       handleGenerate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRecording?.id, selectedRecording?.transcript?.length, canUseAiSuggestions, status]);
+  }, [
+    selectedRecording?.id,
+    selectedRecording?.transcript?.length,
+    canUseAiSuggestions,
+    canEdit,
+    status,
+  ]);
 
   if (!canUseAiSuggestions) {
     return null;
   }
 
   async function handleGenerate() {
-    if (!selectedRecording || status === 'loading') {
+    if (!selectedRecording || status === 'loading' || !canEdit) {
       return;
     }
 
