@@ -169,6 +169,30 @@ async function installProductionSession(page, request) {
   }, sessionPayload);
 }
 
+async function installProductionMeetingSnapshot(page, meeting) {
+  await page.addInitScript(
+    ({ snapshot }) => {
+      const existingRaw = localStorage.getItem('voicelog_meetings_store');
+      const existing = existingRaw ? JSON.parse(existingRaw) : null;
+      const existingState = existing?.state || {};
+      const meetings = Array.isArray(existingState.meetings) ? existingState.meetings : [];
+      const filteredMeetings = meetings.filter((candidate) => candidate?.id !== snapshot.id);
+
+      localStorage.setItem(
+        'voicelog_meetings_store',
+        JSON.stringify({
+          state: {
+            ...existingState,
+            meetings: [snapshot, ...filteredMeetings],
+          },
+          version: 0,
+        })
+      );
+    },
+    { snapshot: meeting }
+  );
+}
+
 function attachRuntimeGuard(page) {
   const failures = [];
 
@@ -477,21 +501,27 @@ test.describe('Production system audit', () => {
       },
     };
 
+    const meeting = createAuditMeeting(meetingId, title, {
+      latestRecordingId: VOICE_PROFILE_RECORDING_ID,
+      durationMinutes: 2,
+      speakerCount: 2,
+      recordings: [recording],
+    });
+
     try {
       await patchWorkspaceState(request, {
         meetings: {
-          upsert: [
-            createAuditMeeting(meetingId, title, {
-              latestRecordingId: VOICE_PROFILE_RECORDING_ID,
-              durationMinutes: 2,
-              speakerCount: 2,
-              recordings: [recording],
-            }),
-          ],
+          upsert: [meeting],
         },
       });
+      const state = await fetchWorkspaceState(request);
+      expect(
+        hasItemWithId(state.meetings, meetingId),
+        'voice-profile UI fixture should persist'
+      ).toBe(true);
 
       await installProductionSession(page, request);
+      await installProductionMeetingSnapshot(page, meeting);
       const guard = attachRuntimeGuard(page);
       const fromSpeakerRequests = [];
       page.on('request', (event) => {
@@ -513,7 +543,10 @@ test.describe('Production system audit', () => {
       await expect(speakerButton).toBeVisible({ timeout: 20_000 });
       await speakerButton.click();
 
-      const newSpeakerOption = page.locator('.ff-spk-row').filter({ hasText: 'Nowy m' }).first();
+      const newSpeakerOption = page
+        .locator('.ff-speaker-dropdown-item')
+        .filter({ hasText: 'Nowy m' })
+        .first();
       await expect(newSpeakerOption).toBeVisible();
       await newSpeakerOption.click();
 
