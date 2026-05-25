@@ -186,6 +186,28 @@
         "targetCommand": "pnpm exec vitest run src/studio/StudioMeetingView.test.tsx src/ProfileTab.test.tsx --coverage.enabled=false && pnpm run test:e2e:production-system"
       },
       "reason": "Production bug 2026-05-21: saving a voice sample from speaker returned 424 without enough release-gate coverage."
+    },
+    {
+      "id": "studio.create-new-speaker",
+      "screen": "Studio",
+      "file": "src/studio/StudioMeetingView.tsx",
+      "labelPattern": "Nowy m",
+      "testFile": "src/studio/StudioMeetingView.test.tsx",
+      "testTitle": "Regression: clicking new speaker asks for a name before saving a voice profile",
+      "interactionContract": {
+        "expectedFeedback": "A naming modal opens, Utworz mowce is disabled until a non-empty name is entered, and no voice-profile save request is sent before submit.",
+        "network": {
+          "method": "NONE_BEFORE_NAME",
+          "pathPattern": "/media/recordings/:recordingId/voice-profiles/from-speaker",
+          "allowedStatuses": ["not-called-before-name"]
+        },
+        "persistence": {
+          "checked": true,
+          "evidence": "The production system audit seeds a voice-profile fixture and asserts no /from-speaker request is sent when + Nowy mowca is clicked before naming."
+        },
+        "targetCommand": "pnpm exec vitest run src/studio/StudioMeetingView.test.tsx --coverage.enabled=false && pnpm run test:e2e:production-system"
+      },
+      "reason": "Production bug 2026-05-25: + Nowy mowca could be confused with an immediate profile save without first naming the new speaker."
     }
   ]
 }

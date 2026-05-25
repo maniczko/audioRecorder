@@ -168,6 +168,22 @@ describe('audit-ui-action-contracts', () => {
     );
   });
 
+  it('requires the new-speaker action to prove it asks for a name before saving', () => {
+    const contracts = loadUiActionContracts();
+    const createNewSpeaker = contracts.criticalActions.find(
+      (action) => action.id === 'studio.create-new-speaker'
+    );
+
+    expect(createNewSpeaker).toEqual(
+      expect.objectContaining({
+        screen: 'Studio',
+        file: 'src/studio/StudioMeetingView.tsx',
+        testFile: 'src/studio/StudioMeetingView.test.tsx',
+        testTitle: 'Regression: clicking new speaker asks for a name before saving a voice profile',
+      })
+    );
+  });
+
   it('requires every critical UI action to define production interaction evidence', () => {
     const contracts = loadUiActionContracts();
 
