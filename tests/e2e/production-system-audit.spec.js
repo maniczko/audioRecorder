@@ -8,6 +8,9 @@ const FRONTEND_URL =
 const API_BASE_URL = process.env.PRODUCTION_API_BASE_URL || FRONTEND_URL;
 const AUTH_TOKEN = process.env.PRODUCTION_SMOKE_AUTH_TOKEN || '';
 const WORKSPACE_ID = process.env.PRODUCTION_SMOKE_WORKSPACE_ID || '';
+const VOICE_PROFILE_RECORDING_ID = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID || '';
+const VOICE_PROFILE_SPEAKER_ID = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID || '';
+const VOICE_PROFILE_SPEAKER_NAME = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME || '';
 const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 const AUDIT_PREFIX = 'audit_20260524_';
 
@@ -20,6 +23,21 @@ function requireProductionAuditConfig() {
 
   if (missing.length > 0 && AUDIT_REQUIRED) {
     throw new Error(`Production system audit is missing required env: ${missing.join(', ')}`);
+  }
+
+  return missing.length === 0;
+}
+
+function requireVoiceProfileFixtureConfig() {
+  const missing = [];
+  if (!VOICE_PROFILE_RECORDING_ID) missing.push('PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID');
+  if (!VOICE_PROFILE_SPEAKER_ID) missing.push('PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID');
+  if (!VOICE_PROFILE_SPEAKER_NAME) missing.push('PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME');
+
+  if (missing.length > 0 && AUDIT_REQUIRED) {
+    throw new Error(
+      `Production voice-profile UI audit is missing required env: ${missing.join(', ')}`
+    );
   }
 
   return missing.length === 0;
@@ -396,6 +414,127 @@ test.describe('Production system audit', () => {
         calendarMeta: {
           [calendarMetaKey]: null,
         },
+      }).catch(() => {});
+    }
+  });
+
+  test('covers the Studio voice-profile UI journey without silently saving unnamed speakers', async ({
+    page,
+    request,
+  }) => {
+    test.skip(
+      !requireVoiceProfileFixtureConfig(),
+      'Studio voice-profile UI audit requires PRODUCTION_SMOKE_VOICE_PROFILE_* evidence.'
+    );
+
+    const preflightResponse = await request.post(
+      apiUrl(
+        `/media/recordings/${encodeURIComponent(
+          VOICE_PROFILE_RECORDING_ID
+        )}/voice-profiles/from-speaker/preflight`
+      ),
+      {
+        headers: authHeaders(),
+        data: {
+          speakerId: VOICE_PROFILE_SPEAKER_ID,
+          speakerName: VOICE_PROFILE_SPEAKER_NAME,
+        },
+      }
+    );
+    expect(preflightResponse.status(), await preflightResponse.text()).not.toBe(404);
+    expect(preflightResponse.status(), await preflightResponse.text()).toBeLessThan(500);
+    expect(preflightResponse.ok(), await preflightResponse.text()).toBe(true);
+
+    const stamp = Date.now();
+    const meetingId = `${AUDIT_PREFIX}voice_profile_ui_${stamp}`;
+    const title = `${AUDIT_PREFIX}voice profile UI journey`;
+    const sourceSpeakerId = `${VOICE_PROFILE_SPEAKER_ID}_source`;
+    const sourceSpeakerName = `${AUDIT_PREFIX}source speaker`;
+    const recording = {
+      id: VOICE_PROFILE_RECORDING_ID,
+      title,
+      createdAt: new Date().toISOString(),
+      duration: 90,
+      pipelineStatus: 'done',
+      transcriptionStatus: 'completed',
+      status: 'completed',
+      transcript: [
+        {
+          id: `${AUDIT_PREFIX}vp_segment_${stamp}`,
+          speakerId: sourceSpeakerId,
+          timestamp: 0,
+          endTimestamp: 12,
+          text: 'To jest kontrolny fragment audytu profili glosowych.',
+        },
+      ],
+      speakerNames: {
+        [sourceSpeakerId]: sourceSpeakerName,
+        [VOICE_PROFILE_SPEAKER_ID]: VOICE_PROFILE_SPEAKER_NAME,
+      },
+      analysis: {
+        summary: 'Voice profile UI audit fixture',
+        actionItems: [],
+      },
+    };
+
+    try {
+      await patchWorkspaceState(request, {
+        meetings: {
+          upsert: [
+            createAuditMeeting(meetingId, title, {
+              latestRecordingId: VOICE_PROFILE_RECORDING_ID,
+              durationMinutes: 2,
+              speakerCount: 2,
+              recordings: [recording],
+            }),
+          ],
+        },
+      });
+
+      await installProductionSession(page, request);
+      const guard = attachRuntimeGuard(page);
+      const fromSpeakerRequests = [];
+      page.on('request', (event) => {
+        if (event.method() === 'POST' && event.url().includes('/voice-profiles/from-speaker')) {
+          fromSpeakerRequests.push(event.url());
+        }
+      });
+
+      await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title).first()).toBeVisible({ timeout: 20_000 });
+      await page.getByText(title).first().click();
+
+      await expect(page.getByText(title).first()).toBeVisible({ timeout: 20_000 });
+      const speakerButton = page
+        .locator('.ff-speaker-trigger')
+        .filter({ hasText: sourceSpeakerName })
+        .first();
+      await expect(speakerButton).toBeVisible({ timeout: 20_000 });
+      await speakerButton.click();
+
+      const newSpeakerOption = page.locator('.ff-spk-row').filter({ hasText: 'Nowy m' }).first();
+      await expect(newSpeakerOption).toBeVisible();
+      await newSpeakerOption.click();
+
+      await expect(page.getByText('Nazwij nowego mowce')).toBeVisible();
+      await expect(page.getByLabel('Nazwa nowego mowcy')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeDisabled();
+      expect(fromSpeakerRequests, 'clicking Nowy mówca must not save a nameless profile').toEqual(
+        []
+      );
+
+      await page.getByLabel('Nazwa nowego mowcy').fill(`${AUDIT_PREFIX}named speaker`);
+      await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeEnabled();
+      expect(fromSpeakerRequests, 'typing a name must not call from-speaker before submit').toEqual(
+        []
+      );
+
+      await page.getByRole('button', { name: 'Anuluj' }).click();
+      await guard.assertClean();
+    } finally {
+      await patchWorkspaceState(request, {
+        meetings: { removeIds: [meetingId] },
       }).catch(() => {});
     }
   });

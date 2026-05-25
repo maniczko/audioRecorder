@@ -425,6 +425,20 @@ describe('release readiness gates', () => {
     expect(spec).toContain('recordings:');
   });
 
+  it('requires the production system audit to cover Studio voice-profile UI controls', () => {
+    const spec = read('tests/e2e/production-system-audit.spec.js');
+    const workflow = read('.github/workflows/production-system-audit.yml');
+
+    expect(workflow).toContain('PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID');
+    expect(workflow).toContain('PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID');
+    expect(workflow).toContain('PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME');
+    expect(spec).toContain('PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID');
+    expect(spec).toContain('from-speaker/preflight');
+    expect(spec).toContain('voice-profile UI journey');
+    expect(spec).toContain('Nowy m');
+    expect(spec).toContain('Nazwa nowego mowcy');
+  });
+
   it('prevents production Playwright audits from starting a local web server', () => {
     const playwrightConfig = read('playwright.config.js');
     const workflow = read('.github/workflows/production-system-audit.yml');
