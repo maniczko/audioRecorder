@@ -796,6 +796,7 @@ describe('Media Routes - Additional Coverage', () => {
       });
 
       it('returns 400 when chunk assembly fails (missing chunks)', async () => {
+        const recordingId = 'rec1';
         const res = await app.request('/media/recordings/rec1/audio/finalize', {
           method: 'POST',
           headers: {
@@ -811,6 +812,7 @@ describe('Media Routes - Additional Coverage', () => {
         expect(res.status).toBe(400);
         const data = await res.json();
         expect(data.message).toBeTruthy(); // Error varies by Node.js stream implementation
+        expect(listAssembledFiles(recordingId)).toEqual([]);
       });
 
       it('returns 200, creates asset, and cleans up chunk files when all chunks are present', async () => {

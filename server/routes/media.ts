@@ -485,17 +485,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   }
 
   async function assembleChunksToTempFile(chunksDir: string, safeId: string, total: number) {
+    const chunkPaths: string[] = [];
+    for (let i = 0; i < total; i += 1) {
+      const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
+      if (!existsSync(chunkPath)) {
+        throw new Error(`Brakuje chunka ${i} z ${total}.`);
+      }
+      chunkPaths.push(chunkPath);
+    }
+
     const tempPath = path.join(chunksDir, `${safeId}_assembled_${crypto.randomUUID()}.bin`);
     mkdirSync(path.dirname(tempPath), { recursive: true });
     const output = createWriteStream(tempPath);
 
     try {
-      for (let i = 0; i < total; i += 1) {
-        const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
-        if (!existsSync(chunkPath)) {
-          throw new Error(`Brakuje chunka ${i} z ${total}.`);
-        }
-
+      for (const chunkPath of chunkPaths) {
         await new Promise<void>((resolve, reject) => {
           const input = createReadStream(chunkPath);
           input.on('error', reject);
