@@ -8,6 +8,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - Status: `todo`
 - Priorytet: `P1`
+- Wlasciciel: `Codex`
 - Zrodlo: `GitHub Actions`
 - Automation: `guarded_fix`
 - Dispatch mode: `branch_pr`
@@ -1611,6 +1612,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **GH-AUTO-2026-05-22-1** — Fix Task Queue Auto Assign failure
   - **Status:** `todo`
+  - **Owner:** `Codex`
   - **Source:** `GitHub Actions`
   - **Automation:** `guarded_fix`
   - **Dispatch mode:** `branch_pr`
@@ -1625,6 +1627,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **RW-AUTO-2026-05-22-2** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
@@ -1636,6 +1639,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **RW-AUTO-2026-05-22-3** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
@@ -1647,6 +1651,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **RW-AUTO-2026-05-22-4** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
@@ -1658,6 +1663,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **RW-AUTO-2026-05-22-5** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
@@ -1669,6 +1675,7 @@ Ostatnie odswiezenie: `2026-04-05 20:03 Europe/Warsaw`
 
 - **RW-AUTO-2026-05-22-6** — Fix Railway error
   - **Status:** `todo`
+  - **Owner:** `Qwen`
   - **Source:** `Railway`
   - **Automation:** `escalate`
   - **Dispatch mode:** `manual_only`
