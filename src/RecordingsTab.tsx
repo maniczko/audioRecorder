@@ -1114,11 +1114,26 @@ export default function RecordingsTab(props) {
         Array.isArray(recordingQueue) ? recordingQueue : []
       );
       const mergedRecordingIds = [...new Set([...recordingIds, ...(options.recordingIds || [])])];
+      const normalizedMeetingId = String(meetingId || '');
 
-      setDeletedMeetingIds((previous) => new Set([...previous, String(meetingId || '')]));
+      setDeletedMeetingIds((previous) => new Set([...previous, normalizedMeetingId]));
       setDeletedRecordingIds((previous) => new Set([...previous, ...mergedRecordingIds]));
 
-      await deleteRecordingAndMeeting?.(meetingId, { recordingIds: mergedRecordingIds });
+      try {
+        await deleteRecordingAndMeeting?.(meetingId, { recordingIds: mergedRecordingIds });
+      } catch (error) {
+        setDeletedMeetingIds((previous) => {
+          const next = new Set(previous);
+          next.delete(normalizedMeetingId);
+          return next;
+        });
+        setDeletedRecordingIds((previous) => {
+          const next = new Set(previous);
+          mergedRecordingIds.forEach((recordingId) => next.delete(recordingId));
+          return next;
+        });
+        throw error;
+      }
     },
     [deleteRecordingAndMeeting, recordingQueue, userMeetings]
   );

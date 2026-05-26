@@ -298,6 +298,48 @@ describe('RecordingsTab', () => {
     });
   });
 
+  test('Regression: failed remote deletion restores the library row instead of hiding it until refresh', async () => {
+    const onDeleteMeeting = vi.fn().mockRejectedValue(new Error('HTTP 502'));
+    const { container } = render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[
+            {
+              id: 'meeting_sync_failed',
+              title: 'Import: Sync failed',
+              startsAt: '2026-05-25T17:17:00.000Z',
+              durationMinutes: 2,
+              workspaceId: 'ws1',
+              recordings: [{ id: 'recording_sync_failed' }],
+            },
+          ]}
+          deleteRecordingAndMeeting={onDeleteMeeting}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getByText('Import: Sync failed')).toBeInTheDocument();
+
+    const deleteButton = container.querySelector('.recordings-library-delete-btn');
+    expect(deleteButton).not.toBeNull();
+    fireEvent.click(deleteButton as HTMLElement);
+
+    const confirmButton = document.querySelector('.danger-button');
+    expect(confirmButton).not.toBeNull();
+    fireEvent.click(confirmButton as HTMLElement);
+
+    await waitFor(() => {
+      expect(onDeleteMeeting).toHaveBeenCalledWith(
+        'meeting_sync_failed',
+        expect.objectContaining({ recordingIds: ['recording_sync_failed'] })
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Import: Sync failed')).toBeInTheDocument();
+    });
+  });
+
   test('Regression: optimistic imports without owner, guests, or tags do not break filtering', () => {
     render(
       <ToastProvider>

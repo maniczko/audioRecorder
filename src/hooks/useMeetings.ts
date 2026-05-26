@@ -4,6 +4,7 @@ import useMeetingLifecycle from './useMeetingLifecycle';
 import useTaskOperations from './useTaskOperations';
 import usePeopleProfiles from './usePeopleProfiles';
 import useRecordingActions from './useRecordingActions';
+import { persistDeletedMeetingRemoteState } from './meetingDeletion';
 import { createMediaService } from '../services/mediaService';
 import { createStateService } from '../services/stateService';
 
@@ -398,23 +399,19 @@ export default function useMeetings() {
 
       // 3. Persist meeting deletion immediately in remote mode instead of waiting
       // for the debounced workspace autosave cycle.
-      if (stateService?.mode === 'remote' && currentWorkspaceId) {
-        try {
-          await stateService.syncWorkspaceState(currentWorkspaceId, {
-            meetings: nextMeetings,
-            manualTasks,
-            taskState,
-            taskBoards,
-            calendarMeta,
-            vocabulary,
-          });
-        } catch (error: any) {
-          console.warn('Immediate workspace sync after delete failed:', error);
-          setWorkspaceMessage(
-            error?.message || 'Nie udalo sie zapisac usuniecia spotkania na backendzie.'
-          );
-        }
-      }
+      await persistDeletedMeetingRemoteState({
+        stateService,
+        currentWorkspaceId,
+        payload: {
+          meetings: nextMeetings,
+          manualTasks,
+          taskState,
+          taskBoards,
+          calendarMeta,
+          vocabulary,
+        },
+        setWorkspaceMessage,
+      });
 
       // 4. Fire-and-forget: clean up server-side recording data
       const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
