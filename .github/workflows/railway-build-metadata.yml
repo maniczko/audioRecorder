@@ -48,24 +48,35 @@ jobs:
             --service "$RAILWAY_SERVICE_ID" \
             || true
           railway status || true
-          printf '%s' "$BUILD_SHA" | railway variable set \
-            --service "$RAILWAY_SERVICE_ID" \
-            --environment production \
-            --skip-deploys \
-            --stdin \
-            RAILWAY_GIT_COMMIT_SHA
-          printf '%s' "$BUILD_SHA" | railway variable set \
-            --service "$RAILWAY_SERVICE_ID" \
-            --environment production \
-            --skip-deploys \
-            --stdin \
-            GITHUB_SHA
-          date -u +%Y-%m-%dT%H:%M:%SZ | railway variable set \
-            --service "$RAILWAY_SERVICE_ID" \
-            --environment production \
-            --skip-deploys \
-            --stdin \
-            APP_BUILD_TIME
+
+          set_railway_variable_with_retry() {
+            name="$1"
+            value="$2"
+
+            for attempt in 1 2 3; do
+              echo "Railway variable set attempt $attempt/3 for $name"
+              if printf '%s' "$value" | railway variable set \
+                --service "$RAILWAY_SERVICE_ID" \
+                --environment production \
+                --skip-deploys \
+                --stdin \
+                "$name"; then
+                return 0
+              fi
+
+              if [ "$attempt" = "3" ]; then
+                echo "Railway variable set failed after 3 attempts for $name" >&2
+                return 1
+              fi
+
+              sleep $((attempt * 10))
+            done
+          }
+
+          build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          set_railway_variable_with_retry RAILWAY_GIT_COMMIT_SHA "$BUILD_SHA"
+          set_railway_variable_with_retry GITHUB_SHA "$BUILD_SHA"
+          set_railway_variable_with_retry APP_BUILD_TIME "$build_time"
 
       - name: Deploy Railway service
         env:

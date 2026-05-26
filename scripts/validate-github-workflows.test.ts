@@ -178,8 +178,23 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).toContain('for attempt in 1 2 3');
     expect(railwayWorkflow).toContain('Railway deploy failed after 3 attempts');
     expect(railwayWorkflow).toContain('seq 1 60');
-    expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
+    expect(railwayWorkflow).toContain('--skip-deploys');
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
+  });
+
+  it('retries Railway metadata variable writes before failing the release gate', () => {
+    const railwayWorkflow = readFileSync(
+      path.join(workflowDir, 'railway-build-metadata.yml'),
+      'utf8'
+    );
+
+    expect(railwayWorkflow).toContain('set_railway_variable_with_retry()');
+    expect(railwayWorkflow).toContain('Railway variable set attempt $attempt/3 for $name');
+    expect(railwayWorkflow).toContain('Railway variable set failed after 3 attempts for $name');
+    expect(railwayWorkflow).toContain('sleep $((attempt * 10))');
+    expect(railwayWorkflow).toContain('set_railway_variable_with_retry RAILWAY_GIT_COMMIT_SHA');
+    expect(railwayWorkflow).toContain('set_railway_variable_with_retry GITHUB_SHA');
+    expect(railwayWorkflow).toContain('set_railway_variable_with_retry APP_BUILD_TIME');
   });
 
   it('checks out the error monitor workflow with the built-in GitHub token', () => {

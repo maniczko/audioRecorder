@@ -388,7 +388,9 @@ describe('release readiness gates', () => {
     expect(railwayWorkflow).toContain('for attempt in 1 2 3');
     expect(railwayWorkflow).toContain('Railway deploy failed after 3 attempts');
     expect(railwayWorkflow).toContain('seq 1 60');
-    expect(railwayWorkflow.match(/--skip-deploys/g)).toHaveLength(3);
+    expect(railwayWorkflow).toContain('--skip-deploys');
+    expect(railwayWorkflow).toContain('set_railway_variable_with_retry()');
+    expect(railwayWorkflow).toContain('Railway variable set failed after 3 attempts for $name');
     expect(backendSmokeWorkflow).toContain("workflows: ['Railway Build Metadata']");
     expect(backendSmokeWorkflow).toContain("REQUIRE_EXACT_GIT_SHA: 'true'");
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
