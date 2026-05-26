@@ -298,8 +298,7 @@ describe('TranscriptionService', () => {
     expect(typeof service.computeEmbedding).toBe('function');
   });
 
-  // TODO: Re-enable when MAX_CONCURRENT_JOBS logic is stabilized
-  it.skip('rejects new transcription jobs when MAX_CONCURRENT_JOBS is reached', async () => {
+  it('queues new transcription jobs when MAX_CONCURRENT_JOBS is reached', async () => {
     const service = new TranscriptionService(
       mockDb,
       mockWorkspaceService,
@@ -314,17 +313,19 @@ describe('TranscriptionService', () => {
     const asset = { id: 'asset_3', file_path: 'test.wav', workspace_id: 'ws_1' };
     await service.ensureTranscriptionJob('rec_c', asset, {});
 
-    // rec_c should have been rejected (markTranscriptionFailure called)
-    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
-      'rec_c',
-      expect.stringContaining('przeciążony'),
-      null,
-      null
-    );
-    // rec_c should NOT be in the job map
+    expect(mockDb.queueTranscription).toHaveBeenCalledWith('rec_c', {});
+    expect(mockDb.markTranscriptionFailure).not.toHaveBeenCalled();
     expect(service.transcriptionJobs.has('rec_c')).toBe(false);
+    expect(service.getTranscriptionRuntimeStatus('rec_c')).toMatchObject({
+      activeJob: true,
+      queuedPosition: 1,
+      processingAgeMs: null,
+      retryAfterMs: 60_000,
+    });
+    expect((service as any)._pendingQueue).toEqual([
+      expect.objectContaining({ recordingId: 'rec_c', asset, options: {} }),
+    ]);
 
-    // Cleanup
     resolveJob1();
   });
 });
