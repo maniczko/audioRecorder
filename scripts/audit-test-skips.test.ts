@@ -51,4 +51,28 @@ describe('audit-test-skips', () => {
       },
     ]);
   });
+
+  test('does not allow keeping the legacy visual suite as a skipped e2e file', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-skip-audit-'));
+    const suitePath = path.join(root, 'tests', 'e2e');
+    fs.mkdirSync(suitePath, { recursive: true });
+    fs.writeFileSync(
+      path.join(suitePath, 'visual-regression.spec.js'),
+      [
+        '// Issue: #0',
+        '// Expires: 2099-01-01',
+        '// Reason: canonical visual-regression.spec.ts exists.',
+        "test.describe.skip('Visual Regression - Core Components', () => {});",
+      ].join('\n'),
+      'utf8'
+    );
+
+    expect(findUnexpectedSkips({ root })).toEqual([
+      {
+        file: 'tests/e2e/visual-regression.spec.js',
+        line: 4,
+        title: 'Visual Regression - Core Components',
+      },
+    ]);
+  });
 });

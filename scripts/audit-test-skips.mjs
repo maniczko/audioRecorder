@@ -39,7 +39,11 @@ export function isAllowedDocumentedSkip(contextLines, now = new Date()) {
 }
 
 function isDisallowedCriticalSuiteSkip(relativePath, title) {
-  return relativePath === 'tests/e2e/critical-flows.spec.js' && /critical user flows/i.test(title);
+  return (
+    (relativePath === 'tests/e2e/critical-flows.spec.js' && /critical user flows/i.test(title)) ||
+    (relativePath === 'tests/e2e/visual-regression.spec.js' &&
+      /visual regression - core components/i.test(title))
+  );
 }
 
 export function findUnexpectedSkips({ root = rootDir } = {}) {
