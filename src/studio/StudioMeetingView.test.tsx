@@ -1048,7 +1048,9 @@ describe('StudioMeetingView', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Audio nie jest dostepne na serwerze\. Zaimportuj nagranie ponownie\./i)
+        screen.getByText(
+          /Dla tego nagrania nie da sie utworzyc probki glosu, bo audio nie jest dostepne na serwerze\. Zaimportuj plik ponownie\./i
+        )
       ).toBeInTheDocument();
     });
     expect(screen.queryByText(/Failed Dependency/i)).not.toBeInTheDocument();

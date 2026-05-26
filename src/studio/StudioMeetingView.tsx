@@ -1333,7 +1333,7 @@ export default function StudioMeetingView({
     const hasActionableMessage = rawMessage && !technicalMessages.has(rawMessage);
 
     if (code === 'audio_source_unavailable' || status === 424) {
-      return 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.';
+      return 'Dla tego nagrania nie da sie utworzyc probki glosu, bo audio nie jest dostepne na serwerze. Zaimportuj plik ponownie.';
     }
     if (code === 'speaker_segment_not_found') {
       return 'Nie znaleziono przypisanego fragmentu wypowiedzi dla tej osoby.';
