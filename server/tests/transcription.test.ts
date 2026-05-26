@@ -111,8 +111,7 @@ describe('TranscriptionService', () => {
     expect(service.isTranscriptionJobActive('rec_missing')).toBe(false);
   });
 
-  // TODO: Re-enable when pipeline deduplication is stabilized
-  it.skip('deduplicates in-flight transcription jobs and persists successful results', async () => {
+  it('deduplicates in-flight transcription jobs and persists successful results', async () => {
     const service = new TranscriptionService(
       mockDb,
       mockWorkspaceService,
@@ -146,25 +145,24 @@ describe('TranscriptionService', () => {
       processingMode: 'fast',
     });
 
-    await service.transcriptionJobs.get('rec_1');
-    await waitForCondition(() => mockAudioPipeline.transcribeRecording.mock.calls.length >= 2);
+    const runningJob = service.transcriptionJobs.get('rec_1');
+    await runningJob;
 
-    expect(mockDb.markTranscriptionProcessing).toHaveBeenCalled();
-    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(2);
-    expect(mockAudioPipeline.transcribeRecording).toHaveBeenNthCalledWith(
-      1,
+    expect(mockDb.markTranscriptionProcessing).toHaveBeenCalledTimes(1);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledWith(
       asset,
       expect.objectContaining({ processingMode: 'fast' })
-    );
-    expect(mockAudioPipeline.transcribeRecording).toHaveBeenNthCalledWith(
-      2,
-      asset,
-      expect.objectContaining({ processingMode: 'full' })
     );
     expect(progressEvents).toEqual(
       expect.arrayContaining([expect.objectContaining({ progress: 55, message: 'mid' })])
     );
-    expect(mockDb.saveTranscriptionResult).toHaveBeenCalled();
+    expect(mockDb.saveTranscriptionResult).toHaveBeenCalledTimes(1);
+    expect(mockDb.saveTranscriptionResult).toHaveBeenCalledWith(
+      'rec_1',
+      expect.objectContaining({ pipelineStatus: 'completed' })
+    );
+    expect(mockDb.queueTranscription).not.toHaveBeenCalled();
     expect(service.transcriptionJobs.has('rec_1')).toBe(false);
   }, 30000);
 
