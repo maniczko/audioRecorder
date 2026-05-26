@@ -234,6 +234,53 @@ describe('useUI', () => {
     expect(result.current.studioAnalysis).toEqual({ summary: 'Recording analysis' });
   });
 
+  it('falls back to meeting analysis when recording analysis is empty', () => {
+    mockMeetings.selectedRecording = {
+      id: 'r1',
+      analysis: { summary: '', decisions: [], actionItems: [], tasks: [] },
+      transcript: [{ speakerId: 0, timestamp: 3, text: 'Dziekuje za uwage.' }],
+    };
+    mockMeetings.selectedMeeting = {
+      id: 'm1',
+      title: 'Import',
+      analysis: {
+        summary: 'Meeting-level summary should remain visible.',
+        decisions: ['Keep the meeting analysis'],
+      },
+    };
+
+    const { result } = renderHook(() => useUI());
+
+    expect(result.current.studioAnalysis).toEqual(mockMeetings.selectedMeeting.analysis);
+  });
+
+  it('builds a transcript fallback when no meaningful analysis exists', () => {
+    mockMeetings.selectedRecording = {
+      id: 'r1',
+      analysis: { summary: '', decisions: [], actionItems: [], tasks: [] },
+      transcript: [
+        {
+          speakerId: 0,
+          timestamp: 3,
+          text: 'Dziekuje za uwage. Omowilismy dalsze kroki i wracamy do tematu po spotkaniu.',
+        },
+      ],
+      speakerNames: { 0: 'iwo' },
+      speakerCount: 1,
+    };
+    mockMeetings.selectedMeeting = {
+      id: 'm1',
+      title: 'Import',
+      analysis: { summary: '', decisions: [], actionItems: [] },
+    };
+
+    const { result } = renderHook(() => useUI());
+
+    expect(result.current.studioAnalysis?.mode).toBe('local-transcript-fallback');
+    expect(result.current.studioAnalysis?.summary).toContain('Dziekuje za uwage');
+    expect(result.current.studioAnalysis?.speakerCount).toBe(1);
+  });
+
   it('returns null studioAnalysis when no recording', () => {
     mockMeetings.selectedRecording = null;
     mockMeetings.selectedMeeting = null;

@@ -12,6 +12,93 @@ import { downloadTextFile, formatDateTime, formatDuration } from '../lib/storage
 import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from '../lib/export';
 import { buildGoogleCalendarUrl } from '../lib/calendar';
 
+function toArray(value: unknown): any[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function hasMeaningfulAnalysis(analysis: any): boolean {
+  if (!analysis || typeof analysis !== 'object') return false;
+
+  const textKeys = ['summary', 'executiveSummary', 'overview'];
+  if (textKeys.some((key) => String(analysis[key] || '').trim().length > 0)) {
+    return true;
+  }
+
+  const listKeys = [
+    'decisions',
+    'actionItems',
+    'tasks',
+    'followUps',
+    'answersToNeeds',
+    'risks',
+    'blockers',
+    'participantInsights',
+    'keyQuotes',
+    'suggestedAgenda',
+  ];
+  if (listKeys.some((key) => toArray(analysis[key]).length > 0)) {
+    return true;
+  }
+
+  const feedback = analysis.feedback;
+  if (feedback && typeof feedback === 'object') {
+    return (
+      String(feedback.summary || '').trim().length > 0 ||
+      toArray(feedback.highlights).length > 0 ||
+      toArray(feedback.decisions).length > 0 ||
+      toArray(feedback.actionItems).length > 0
+    );
+  }
+
+  return false;
+}
+
+function buildTranscriptFallbackAnalysis({
+  recording,
+  speakerNames,
+}: {
+  recording: any;
+  speakerNames: Record<string, string>;
+}) {
+  const transcript = toArray(recording?.transcript)
+    .map((segment) => ({
+      ...segment,
+      text: String(segment?.text || '').trim(),
+    }))
+    .filter((segment) => segment.text.length > 0);
+
+  if (!transcript.length) return null;
+
+  const summary = transcript
+    .slice(0, 3)
+    .map((segment) => segment.text)
+    .join(' ')
+    .trim();
+
+  const speakerIds = new Set(transcript.map((segment) => String(segment.speakerId ?? '0')));
+
+  return {
+    mode: 'local-transcript-fallback',
+    speakerLabels: speakerNames || {},
+    speakerCount: Number(recording?.speakerCount || 0) || speakerIds.size || 1,
+    summary,
+    decisions: [],
+    actionItems: [],
+    tasks: [],
+    followUps: [],
+    answersToNeeds: [],
+    risks: [],
+    blockers: [],
+    participantInsights: [],
+    keyQuotes: [],
+    suggestedTags: [],
+    tensions: [],
+    suggestedAgenda: [],
+    meetingType: 'other',
+    energyLevel: 'medium',
+  };
+}
+
 export default function useUI() {
   type DisplayRecordingLike = {
     id?: string;
@@ -64,17 +151,25 @@ export default function useUI() {
   );
 
   // ── Derived values ──────────────────────────────────────
-  const liveRecording =
-    recorder.isRecording && recorder.recordingMeetingId === meetings.selectedMeeting?.id
-      ? {
-          transcript: recorder.currentSegments,
-          speakerNames: {},
-          speakerCount: new Set(
-            recorder.currentSegments.map((segment: any) => segment.speakerId || 0)
-          ).size,
-          analysis: null,
-        }
-      : null;
+  const liveRecording = useMemo(
+    () =>
+      recorder.isRecording && recorder.recordingMeetingId === meetings.selectedMeeting?.id
+        ? {
+            transcript: recorder.currentSegments,
+            speakerNames: {},
+            speakerCount: new Set(
+              recorder.currentSegments.map((segment: any) => segment.speakerId || 0)
+            ).size,
+            analysis: null,
+          }
+        : null,
+    [
+      meetings.selectedMeeting?.id,
+      recorder.currentSegments,
+      recorder.isRecording,
+      recorder.recordingMeetingId,
+    ]
+  );
 
   const displayRecording = (liveRecording ||
     meetings.selectedRecording ||
@@ -83,8 +178,29 @@ export default function useUI() {
     () => displayRecording?.speakerNames || meetings.selectedMeeting?.speakerNames || {},
     [displayRecording?.speakerNames, meetings.selectedMeeting?.speakerNames]
   );
-  const studioAnalysis =
-    (meetings.selectedRecording as any)?.analysis || meetings.selectedMeeting?.analysis || null;
+  const studioAnalysis = useMemo(() => {
+    const candidates = [
+      (meetings.selectedRecording as any)?.analysis,
+      meetings.selectedMeeting?.analysis,
+      meetings.selectedMeeting?.aiDebrief,
+    ];
+
+    const meaningful = candidates.find(hasMeaningfulAnalysis);
+    if (meaningful) return meaningful;
+
+    if (liveRecording) return null;
+    return buildTranscriptFallbackAnalysis({
+      recording: meetings.selectedRecording || displayRecording,
+      speakerNames: displaySpeakerNames,
+    });
+  }, [
+    displayRecording,
+    displaySpeakerNames,
+    liveRecording,
+    meetings.selectedMeeting?.aiDebrief,
+    meetings.selectedMeeting?.analysis,
+    meetings.selectedRecording,
+  ]);
 
   const selectedRecordingAudioUrl = meetings.selectedRecording
     ? recorder.audioUrls[meetings.selectedRecording.id]
