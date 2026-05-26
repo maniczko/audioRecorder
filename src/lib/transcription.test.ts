@@ -110,7 +110,7 @@ describe('createBrowserTranscriptionController', () => {
     expect(controller!.recognition.stop).toHaveBeenCalled();
   });
 
-  it('setOnEnd sets recognition.onend', () => {
+  it('setOnEnd delegates recognition.onend to the callback while restart is enabled', () => {
     mockSpeechRecognitionClass = createMockSpeechRecognition();
     const controller = createBrowserTranscriptionController({
       startTimeRef: { current: 0 },
@@ -123,7 +123,9 @@ describe('createBrowserTranscriptionController', () => {
 
     const callback = vi.fn();
     controller!.setOnEnd(callback);
-    expect(controller!.recognition.onend).toBe(callback);
+    expect(typeof controller!.recognition.onend).toBe('function');
+    controller!.recognition.onend();
+    expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('clearHandlers nullifies onresult, onend, onerror', () => {
@@ -185,6 +187,48 @@ describe('createBrowserTranscriptionController', () => {
 
       errorSpy.mockRestore();
       warnSpy.mockRestore();
+    });
+
+    it('does not spam console or user messages for repeated network degradation', () => {
+      mockSpeechRecognitionClass = createMockSpeechRecognition();
+      const onError = vi.fn();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const controller = createBrowserTranscriptionController({
+        startTimeRef: { current: 0 },
+        transcriptRef: { current: [] },
+        signatureTimelineRef: { current: [] },
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onError,
+      });
+
+      controller!.recognition.onerror({ error: 'network' });
+      controller!.recognition.onerror({ error: 'network' });
+      controller!.recognition.onerror({ error: 'network' });
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledTimes(1);
+
+      warnSpy.mockRestore();
+    });
+
+    it('prevents automatic SpeechRecognition restart after network degradation', () => {
+      mockSpeechRecognitionClass = createMockSpeechRecognition();
+      const controller = createBrowserTranscriptionController({
+        startTimeRef: { current: 0 },
+        transcriptRef: { current: [] },
+        signatureTimelineRef: { current: [] },
+        onSegmentsChange: vi.fn(),
+        onInterimChange: vi.fn(),
+        onError: vi.fn(),
+      });
+      const restart = vi.fn();
+
+      controller!.setOnEnd(restart);
+      controller!.recognition.onerror({ error: 'network' });
+      controller!.recognition.onend?.();
+
+      expect(restart).not.toHaveBeenCalled();
     });
 
     it('maps not-allowed error to permissions message', () => {

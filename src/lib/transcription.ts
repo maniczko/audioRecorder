@@ -25,10 +25,23 @@ export function createBrowserTranscriptionController({
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = lang;
+  const reportedErrors = new Set<string>();
+  let liveRecognitionRestartEnabled = true;
+
+  function isTerminalLiveRecognitionError(error: string) {
+    return ['network', 'service-not-allowed', 'language-not-supported'].includes(error);
+  }
 
   recognition.onerror = (event) => {
     // "no-speech" is benign (silence); "aborted" happens on programmatic stop; both are expected.
     if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      if (isTerminalLiveRecognitionError(event.error)) {
+        liveRecognitionRestartEnabled = false;
+      }
+      if (reportedErrors.has(event.error)) {
+        return;
+      }
+      reportedErrors.add(event.error);
       console.warn('[SpeechRecognition] Live transcription degraded:', event.error);
       if (typeof onError === 'function') {
         const messages = {
@@ -84,7 +97,11 @@ export function createBrowserTranscriptionController({
       recognition.stop();
     },
     setOnEnd(callback) {
-      recognition.onend = callback;
+      recognition.onend = () => {
+        if (liveRecognitionRestartEnabled) {
+          callback();
+        }
+      };
     },
     clearHandlers() {
       recognition.onresult = null;
