@@ -49,7 +49,9 @@ export async function prepareHostedRuntime({
   if (cachesRef) {
     const cacheKeys = await cachesRef.keys();
     await Promise.all(
-      cacheKeys.filter((key) => key.startsWith('voicelog-os-')).map((key) => cachesRef.delete(key))
+      cacheKeys
+        .filter((key) => key.startsWith('voicelog-os-') || key.startsWith('voicelog-v'))
+        .map((key) => cachesRef.delete(key))
     );
   }
 

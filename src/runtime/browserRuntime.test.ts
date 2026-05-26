@@ -26,7 +26,7 @@ describe('browserRuntime', () => {
   test('cleans preview workers and reloads once when a stale controller exists', async () => {
     const unregister = vi.fn().mockResolvedValue(true);
     const getRegistrations = vi.fn().mockResolvedValue([{ unregister }]);
-    const keys = vi.fn().mockResolvedValue(['voicelog-os-v3', 'other-cache']);
+    const keys = vi.fn().mockResolvedValue(['voicelog-os-v3', 'voicelog-v1', 'other-cache']);
     const deleteCache = vi.fn().mockResolvedValue(true);
     const reload = vi.fn();
     const sessionStorageRef = {
@@ -53,6 +53,8 @@ describe('browserRuntime', () => {
     expect(getRegistrations).toHaveBeenCalledTimes(1);
     expect(unregister).toHaveBeenCalledTimes(1);
     expect(deleteCache).toHaveBeenCalledWith('voicelog-os-v3');
+    expect(deleteCache).toHaveBeenCalledWith('voicelog-v1');
+    expect(deleteCache).not.toHaveBeenCalledWith('other-cache');
     expect(reload).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ cleaned: true, reloaded: true });
   });
