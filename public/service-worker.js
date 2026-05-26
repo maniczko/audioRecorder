@@ -1,9 +1,22 @@
 /* eslint-disable no-restricted-globals */
 // Service Worker for VoiceLog OS
-// Cache-first strategy for assets, network-first for API
+// Cache static assets only. Never cache the HTML shell because it embeds
+// runtime config such as remote/local provider mode.
 
-const CACHE_NAME = 'voicelog-v1';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.svg'];
+const CACHE_NAME = 'voicelog-assets-v2';
+const STATIC_ASSETS = ['/manifest.json', '/favicon.svg'];
+const BACKEND_PREFIXES = [
+  '/api/',
+  '/auth/',
+  '/users/',
+  '/workspaces/',
+  '/state/',
+  '/voice-profiles',
+  '/media/',
+  '/transcribe',
+  '/ai/',
+  '/health',
+];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -27,7 +40,9 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+        cacheNames
+          .filter((name) => name !== CACHE_NAME && name.startsWith('voicelog'))
+          .map((name) => caches.delete(name))
       );
     })
   );
@@ -40,6 +55,16 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  const requestUrl = new URL(url);
+
+  if (
+    event.request.mode === 'navigate' ||
+    requestUrl.pathname === '/' ||
+    requestUrl.pathname === '/index.html'
+  ) {
     return;
   }
 
@@ -60,8 +85,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip API requests and cross origin requests
-  if (url.includes('/api/') || !url.startsWith(self.location.origin)) {
+  // Skip API/backend rewrite requests and cross origin requests.
+  if (
+    !url.startsWith(self.location.origin) ||
+    BACKEND_PREFIXES.some(
+      (prefix) => requestUrl.pathname === prefix || requestUrl.pathname.startsWith(prefix)
+    )
+  ) {
     return;
   }
 
@@ -78,8 +108,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Network failed, return offline page if available
-          return caches.match('/index.html');
+          return cachedResponse;
         });
 
       return cachedResponse || fetchPromise;

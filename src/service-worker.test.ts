@@ -47,6 +47,14 @@ function loadServiceWorkerHarness() {
 }
 
 describe('service-worker', () => {
+  test('does not precache shell html that can preserve stale runtime config', () => {
+    const source = fs.readFileSync(path.resolve('public/service-worker.js'), 'utf8');
+    const staticAssets = source.match(/const STATIC_ASSETS = \[([^\]]*)\]/)?.[1] || '';
+
+    expect(staticAssets).not.toContain("'/index.html'");
+    expect(staticAssets).not.toContain("'/'");
+  });
+
   test('reacts to skip waiting messages', () => {
     const { listeners, selfMock } = loadServiceWorkerHarness();
 
@@ -84,6 +92,22 @@ describe('service-worker', () => {
       request: {
         method: 'GET',
         url: 'https://audiorecorder-production.up.railway.app/voice-profiles',
+        mode: 'cors',
+      },
+      respondWith,
+    });
+
+    expect(respondWith).not.toHaveBeenCalled();
+  });
+
+  test('skips same-origin backend rewrite requests', () => {
+    const { listeners } = loadServiceWorkerHarness();
+    const respondWith = vi.fn();
+
+    listeners.fetch({
+      request: {
+        method: 'GET',
+        url: 'https://app.example.test/state/bootstrap',
         mode: 'cors',
       },
       respondWith,
