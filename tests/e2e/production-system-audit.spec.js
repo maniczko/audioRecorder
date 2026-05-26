@@ -236,6 +236,15 @@ async function openShellTab(page, label) {
   await expect(page.locator('.modern-main, main').first()).toBeVisible();
 }
 
+async function openProfileSurface(page) {
+  const profileButton = page
+    .getByLabel(/profil|ustawienia profilu|otworz profil|otwórz profil/i)
+    .first();
+  await expect(profileButton).toBeVisible({ timeout: 15_000 });
+  await profileButton.click();
+  await expect(page.getByText(/Profil i Styl pracy/i)).toBeVisible({ timeout: 15_000 });
+}
+
 test.describe('Production system audit', () => {
   test.skip(
     !AUDIT_REQUIRED && (!AUTH_TOKEN || !WORKSPACE_ID),
@@ -267,6 +276,7 @@ test.describe('Production system audit', () => {
     for (const tab of coreTabs) {
       await openShellTab(page, tab);
     }
+    await openProfileSurface(page);
 
     await guard.assertClean();
   });

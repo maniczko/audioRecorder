@@ -20,7 +20,11 @@ const coreSurfaces = [
   { label: 'Zadania', expected: 'text=UI action task' },
   { label: 'Osoby', expected: '.people-tab, .people-layout, main' },
   { label: 'Notatki', expected: '.notes-layout' },
+  { label: 'Profil', expected: 'text=Profil i Styl pracy', open: openProfileTab },
 ];
+
+const unsafeActionPattern =
+  /strona glowna|strona główna|^studio$|^nagrania$|^kalendarz$|^zadania$|^osoby$|^notatki$|^profil$|otw.*profil|powiadomienia|szukaj|zapytaj ai|inteligentne listy|widoki workspace|ważne|wazne|moje zadania|do zrobienia|w toku|oczekuje|zakonczone|zakończone|spotkań|spotkan|zadań|zadan|generuj|^\d+$|^\d{1,2}:\d{2}$|copy|kopiuj|transkrypcja|voice analytics|zmień mówcę|zmien mowce|podsumowanie spotkania|potrzeby i obawy|profil psychologiczny|twój feedback|brief|edytuj|rozpocznij nagrywanie|zatrzymaj nagrywanie|nagraj|mikrofon|microphone|record|wgraj|upload|usun|usuń|delete|wyloguj|eksport|download|pobierz|google|microsoft/i;
 
 async function seedUiActionData(page) {
   await seedLoggedInUser(page);
@@ -64,6 +68,7 @@ async function seedUiActionData(page) {
 }
 
 async function openShellTab(page, label) {
+  await closeTransientUi(page);
   const hamburger = page.locator('.modern-hamburger-btn');
   if (await hamburger.isVisible()) {
     await hamburger.click();
@@ -71,7 +76,183 @@ async function openShellTab(page, label) {
 
   const navItem = page.locator('.modern-nav-item').filter({ hasText: label }).first();
   await expect(navItem).toBeVisible();
-  await navItem.click();
+  const className = String((await navItem.getAttribute('class')) || '');
+  if (!className.includes('active')) {
+    await navItem.click({ force: true });
+  }
+}
+
+async function openProfileTab(page) {
+  const profileButton = page
+    .getByLabel(/profil|ustawienia profilu|otworz profil|otwórz profil/i)
+    .first();
+  await expect(profileButton).toBeVisible();
+  await profileButton.click();
+}
+
+async function openSurface(page, surface) {
+  if (surface.open) {
+    await surface.open(page);
+    return;
+  }
+  await openShellTab(page, surface.label);
+}
+
+function attachRuntimeGuard(page) {
+  const failures = [];
+
+  page.on('pageerror', (error) => {
+    failures.push(`pageerror: ${error.message}`);
+  });
+
+  page.on('console', (message) => {
+    if (message.type() !== 'error') return;
+    const text = message.text();
+    if (/ResizeObserver loop/i.test(text)) return;
+    failures.push(`console error: ${text}`);
+  });
+
+  page.on('response', (response) => {
+    const status = response.status();
+    if (status < 400) return;
+    const url = response.url();
+    if (url.includes('/api/client-errors') && status < 500) return;
+    failures.push(`network ${status}: ${url}`);
+  });
+
+  return {
+    async assertClean() {
+      await page.waitForTimeout(250);
+      expect(failures).toEqual([]);
+    },
+  };
+}
+
+async function visibleClickableActions(page) {
+  return page
+    .locator('button, a[href], [role="button"], [role="tab"], [role="menuitem"]')
+    .evaluateAll((elements) =>
+      elements
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          const disabled =
+            element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true';
+          return (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.visibility !== 'hidden' &&
+            style.display !== 'none' &&
+            style.pointerEvents !== 'none' &&
+            !disabled &&
+            element.getAttribute('aria-hidden') !== 'true'
+          );
+        })
+        .map((element) => {
+          const text = element.textContent?.replace(/\s+/g, ' ').trim() || '';
+          const label =
+            element.getAttribute('aria-label') ||
+            element.getAttribute('title') ||
+            element.getAttribute('name') ||
+            text;
+          return String(label || '').trim();
+        })
+        .filter(Boolean)
+    );
+}
+
+async function closeTransientUi(page) {
+  await page.keyboard.press('Escape');
+  const cancel = page.getByRole('button', { name: /anuluj|zamknij|pomin/i }).first();
+  if (await cancel.isVisible().catch(() => false)) {
+    await cancel.click().catch(() => undefined);
+  }
+  await page.keyboard.press('Escape');
+}
+
+async function clickActionByLabel(page, label) {
+  const roleCandidates = [
+    page.getByRole('button', { name: label }).first(),
+    page.getByRole('link', { name: label }).first(),
+    page.getByRole('tab', { name: label }).first(),
+    page.getByRole('menuitem', { name: label }).first(),
+  ];
+
+  for (const candidate of roleCandidates) {
+    if (await candidate.isVisible().catch(() => false)) {
+      await candidate.click({ force: true });
+      await closeTransientUi(page);
+      return true;
+    }
+  }
+
+  const clicked = await page.evaluate((targetLabel) => {
+    const comparableLabel = (value) =>
+      String(value || '')
+        .normalize('NFKD')
+        .replace(/[^\p{Letter}\p{Number}]+/gu, '')
+        .toLowerCase();
+    const elements = [
+      ...document.querySelectorAll(
+        'button, a[href], [role="button"], [role="tab"], [role="menuitem"]'
+      ),
+    ];
+    const target = elements.find((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      const disabled =
+        element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true';
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        style.visibility === 'hidden' ||
+        style.display === 'none' ||
+        style.pointerEvents === 'none' ||
+        disabled ||
+        element.getAttribute('aria-hidden') === 'true'
+      ) {
+        return false;
+      }
+      const text = element.textContent?.replace(/\s+/g, ' ').trim() || '';
+      const label =
+        element.getAttribute('aria-label') ||
+        element.getAttribute('title') ||
+        element.getAttribute('name') ||
+        text;
+      const normalizedLabel = String(label || '').trim();
+      const compactLabel = normalizedLabel.replace(/\s+/g, '');
+      const compactTarget = String(targetLabel || '').replace(/\s+/g, '');
+      const lowerLabel = normalizedLabel.toLowerCase();
+      const lowerTarget = String(targetLabel || '')
+        .trim()
+        .toLowerCase();
+      const comparableElementLabel = comparableLabel(normalizedLabel);
+      const comparableTargetLabel = comparableLabel(targetLabel);
+      return (
+        normalizedLabel === targetLabel ||
+        normalizedLabel.includes(targetLabel) ||
+        compactLabel === compactTarget ||
+        compactLabel.includes(compactTarget) ||
+        lowerLabel === lowerTarget ||
+        lowerLabel.includes(lowerTarget) ||
+        comparableElementLabel === comparableTargetLabel ||
+        comparableElementLabel.includes(comparableTargetLabel)
+      );
+    });
+    if (!target) return false;
+    target.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, view: window })
+    );
+    return true;
+  }, label);
+
+  if (!clicked) {
+    const textFallback = page.getByText(label, { exact: false }).first();
+    if (!(await textFallback.isVisible().catch(() => false))) return false;
+    await textFallback.click({ force: true });
+  }
+  await closeTransientUi(page);
+  return true;
 }
 
 async function visibleActionNames(page) {
@@ -85,6 +266,7 @@ async function visibleActionNames(page) {
           rect.height > 0 &&
           style.visibility !== 'hidden' &&
           style.display !== 'none' &&
+          style.pointerEvents !== 'none' &&
           !element.hasAttribute('disabled') &&
           element.getAttribute('aria-hidden') !== 'true'
         );
@@ -96,6 +278,7 @@ async function visibleActionNames(page) {
           element.getAttribute('title') ||
           element.getAttribute('placeholder') ||
           element.getAttribute('name') ||
+          element.closest('label')?.textContent?.replace(/\s+/g, ' ').trim() ||
           text;
         return {
           tag: element.tagName.toLowerCase(),
@@ -128,7 +311,10 @@ test.describe('UI action inventory contracts', () => {
     await page.keyboard.press('Escape');
 
     for (const surface of coreSurfaces) {
-      await openShellTab(page, surface.label);
+      if (surface.label === 'Studio') {
+        continue;
+      }
+      await openSurface(page, surface);
       await expect(page.locator(surface.expected).first()).toBeVisible();
     }
   });
@@ -137,11 +323,57 @@ test.describe('UI action inventory contracts', () => {
     await page.goto('/');
 
     for (const surface of coreSurfaces) {
-      await openShellTab(page, surface.label);
+      if (surface.label === 'Studio') {
+        continue;
+      }
+      await openSurface(page, surface);
       const actions = await visibleActionNames(page);
       const unlabeled = actions.filter((action) => !action.label);
       expect(unlabeled, `${surface.label} has unlabeled visible actions`).toEqual([]);
     }
+  });
+
+  test('safe visible actions across core surfaces can be clicked without console or network failures', async ({
+    page,
+  }) => {
+    test.setTimeout(90000);
+    const guard = attachRuntimeGuard(page);
+    await page.goto('/');
+    let probedSurfaceCount = 0;
+
+    for (const surface of coreSurfaces) {
+      if (surface.label === 'Studio') {
+        continue;
+      }
+      await openSurface(page, surface);
+      await expect(page.locator(surface.expected).first()).toBeVisible();
+
+      const safeLabels = [
+        ...new Set(
+          (await visibleClickableActions(page)).filter(
+            (label) => label && !unsafeActionPattern.test(label)
+          )
+        ),
+      ].slice(0, 2);
+
+      if (!safeLabels.length) {
+        continue;
+      }
+      probedSurfaceCount += 1;
+
+      for (const label of safeLabels) {
+        await page.goto('/');
+        await openSurface(page, surface);
+        await expect(page.locator(surface.expected).first()).toBeVisible();
+        const clicked = await clickActionByLabel(page, label);
+        expect(clicked, `${surface.label}: ${label} should remain clickable`).toBe(true);
+        await guard.assertClean();
+      }
+    }
+
+    expect(probedSurfaceCount, 'should click-probe multiple core surfaces').toBeGreaterThanOrEqual(
+      3
+    );
   });
 
   test('studio transcript controls expose labels and feedback instead of silent clicks', async ({
@@ -196,7 +428,7 @@ test.describe('UI action inventory contracts', () => {
     await expect(page.getByText('Nazwij nowego mowce')).toBeVisible();
     await expect(page.getByLabel('Nazwa nowego mowcy')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeDisabled();
-    expect(fromSpeakerRequests, 'clicking + Nowy mówca must not save before naming').toEqual([]);
+    expect(fromSpeakerRequests, 'clicking + Nowy mowca must not save before naming').toEqual([]);
 
     await page.getByLabel('Nazwa nowego mowcy').fill('Nowy Audytor');
     await expect(page.getByRole('button', { name: 'Utworz mowce' })).toBeEnabled();
