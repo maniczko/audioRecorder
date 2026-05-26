@@ -75,4 +75,28 @@ describe('audit-test-skips', () => {
       },
     ]);
   });
+
+  test('does not allow keeping the legacy meeting draft reset journey skipped', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-skip-audit-'));
+    const suitePath = path.join(root, 'tests', 'e2e');
+    fs.mkdirSync(suitePath, { recursive: true });
+    fs.writeFileSync(
+      path.join(suitePath, 'meeting.spec.js'),
+      [
+        '// Issue: #0',
+        '// Expires: 2099-01-01',
+        '// Reason: legacy removed control should be covered by current draft UX.',
+        "test.skip('klikniecie Nowe resetuje formularz', () => {});",
+      ].join('\n'),
+      'utf8'
+    );
+
+    expect(findUnexpectedSkips({ root })).toEqual([
+      {
+        file: 'tests/e2e/meeting.spec.js',
+        line: 4,
+        title: 'klikniecie Nowe resetuje formularz',
+      },
+    ]);
+  });
 });

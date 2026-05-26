@@ -42,7 +42,9 @@ function isDisallowedCriticalSuiteSkip(relativePath, title) {
   return (
     (relativePath === 'tests/e2e/critical-flows.spec.js' && /critical user flows/i.test(title)) ||
     (relativePath === 'tests/e2e/visual-regression.spec.js' &&
-      /visual regression - core components/i.test(title))
+      /visual regression - core components/i.test(title)) ||
+    (relativePath === 'tests/e2e/meeting.spec.js' &&
+      /klikniecie Nowe resetuje formularz/i.test(title))
   );
 }
 
