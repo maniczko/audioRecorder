@@ -972,8 +972,10 @@ export default function StudioMeetingView({
   } | null>(null);
   const [newSpeakerName, setNewSpeakerName] = useState('');
   const [newSpeakerNameDuplicate, setNewSpeakerNameDuplicate] = useState(false);
+  const [newSpeakerSubmitting, setNewSpeakerSubmitting] = useState(false);
   const [voiceProfileToast, setVoiceProfileToast] = useState<string | null>(null);
   const [voiceProfileError, setVoiceProfileError] = useState<string | null>(null);
+  const [voiceProfileSavingName, setVoiceProfileSavingName] = useState<string | null>(null);
   const [verifiedSpeakerNames, setVerifiedSpeakerNames] = useState<string[]>([]);
 
   useEffect(() => {
@@ -1317,6 +1319,7 @@ export default function StudioMeetingView({
 
   const showVoiceProfileToast = useCallback((speakerName) => {
     setVoiceProfileError(null);
+    setVoiceProfileSavingName(null);
     setVoiceProfileToast(speakerName);
     if (typeof window !== 'undefined') {
       window.setTimeout(() => setVoiceProfileToast(null), 3500);
@@ -1329,7 +1332,15 @@ export default function StudioMeetingView({
     const code = String(error?.code || '').trim();
     const status = Number(error?.status || 0);
     const rawMessage = String(error?.message || '').trim();
-    const technicalMessages = new Set(['Failed Dependency', 'HTTP 424', 'HTTP 400', 'Bad Request']);
+    const technicalMessages = new Set([
+      'Failed Dependency',
+      'HTTP 424',
+      'HTTP 400',
+      'HTTP 404',
+      'Bad Request',
+      'Not Found',
+      'NOT_FOUND',
+    ]);
     const hasActionableMessage = rawMessage && !technicalMessages.has(rawMessage);
 
     if (code === 'audio_source_unavailable' || status === 424) {
@@ -1355,6 +1366,7 @@ export default function StudioMeetingView({
 
   const showVoiceProfileError = useCallback((error) => {
     const message = formatVoiceProfileErrorMessage(error);
+    setVoiceProfileSavingName(null);
     setVoiceProfileToast(null);
     setVoiceProfileError(message);
     if (typeof window !== 'undefined') {
@@ -1365,6 +1377,10 @@ export default function StudioMeetingView({
   const enrollSpeakerProfile = useCallback(
     async (speakerId, speakerName, options = {}) => {
       if (typeof autoCreateVoiceProfile !== 'function') return false;
+      const visibleName = String(speakerName || '').trim() || 'mowcy';
+      setVoiceProfileToast(null);
+      setVoiceProfileError(null);
+      setVoiceProfileSavingName(visibleName);
       try {
         const enrolled = await autoCreateVoiceProfile(speakerId, speakerName, options);
         if (enrolled) {
@@ -1376,6 +1392,8 @@ export default function StudioMeetingView({
       } catch (error) {
         showVoiceProfileError(error);
         return false;
+      } finally {
+        setVoiceProfileSavingName(null);
       }
     },
     [autoCreateVoiceProfile, showVoiceProfileError, showVoiceProfileToast]
@@ -1477,6 +1495,7 @@ export default function StudioMeetingView({
       });
       setNewSpeakerName('');
       setNewSpeakerNameDuplicate(false);
+      setNewSpeakerSubmitting(false);
       setVoiceProfileError(null);
       setSpeakerDropdownSegId(null);
     },
@@ -1522,10 +1541,12 @@ export default function StudioMeetingView({
 
   const commitNewSpeakerAssignment = useCallback(async () => {
     const pending = pendingNewSpeakerAssignment;
-    if (!pending) return;
+    if (!pending || newSpeakerSubmitting) return;
 
     const speakerName = String(newSpeakerName || '').trim();
     if (!speakerName || newSpeakerNameDuplicate) return;
+
+    setNewSpeakerSubmitting(true);
 
     if (typeof updateTranscriptSegment === 'function') {
       updateTranscriptSegment(pending.segmentId, { speakerId: pending.speakerId });
@@ -1534,11 +1555,17 @@ export default function StudioMeetingView({
       renameSpeaker(pending.speakerId, speakerName);
     }
 
-    setPendingNewSpeakerAssignment(null);
-    setNewSpeakerName('');
-    setNewSpeakerNameDuplicate(false);
+    const closeNewSpeakerModal = () => {
+      setPendingNewSpeakerAssignment(null);
+      setNewSpeakerName('');
+      setNewSpeakerNameDuplicate(false);
+      setNewSpeakerSubmitting(false);
+    };
 
-    if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(speakerName)) return;
+    if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(speakerName)) {
+      closeNewSpeakerModal();
+      return;
+    }
 
     const options = {
       recordingId: pending.recordingId,
@@ -1546,10 +1573,17 @@ export default function StudioMeetingView({
     };
 
     if (autoLearnSpeakerProfiles) {
-      await enrollSpeakerProfile(pending.speakerId, speakerName, options);
+      const enrolled = await enrollSpeakerProfile(pending.speakerId, speakerName, options);
+      setNewSpeakerSubmitting(false);
+      if (enrolled) {
+        setPendingNewSpeakerAssignment(null);
+        setNewSpeakerName('');
+        setNewSpeakerNameDuplicate(false);
+      }
       return;
     }
 
+    closeNewSpeakerModal();
     setPendingVoiceProfileEnrollment({
       recordingId: pending.recordingId,
       speakerId: pending.speakerId,
@@ -1562,10 +1596,38 @@ export default function StudioMeetingView({
     enrollSpeakerProfile,
     newSpeakerName,
     newSpeakerNameDuplicate,
+    newSpeakerSubmitting,
     pendingNewSpeakerAssignment,
     renameSpeaker,
     updateTranscriptSegment,
   ]);
+
+  const formatRediarizeErrorMessage = useCallback((error) => {
+    const code = String(error?.code || '').trim();
+    const status = Number(error?.status || 0);
+    const rawMessage = String(error?.message || error || '').trim();
+    const technicalMessages = new Set([
+      'Failed Dependency',
+      'Bad Request',
+      'Not Found',
+      'NOT_FOUND',
+      'HTTP 400',
+      'HTTP 404',
+      'HTTP 424',
+      'HTTP 500',
+    ]);
+    const looksTechnical =
+      Boolean(code) ||
+      status >= 400 ||
+      technicalMessages.has(rawMessage) ||
+      /request[-_ ]?id|stack|failed dependency|not_found|cle\d+::/i.test(rawMessage);
+
+    if (looksTechnical || !rawMessage) {
+      return 'Nie udało się wykryć mówców. Spróbuj ponownie za chwilę.';
+    }
+
+    return `Nie udało się wykryć mówców. ${rawMessage}`;
+  }, []);
 
   // Re-run GPT-4o-mini speaker detection on stored transcript
   const handleRediarize = useCallback(async () => {
@@ -1597,13 +1659,11 @@ export default function StudioMeetingView({
         setRediarizeMsg('Wykrywanie mówców zakończone, ale nie zwrócono nowych segmentów.');
       }
     } catch (err) {
-      setRediarizeMsg(
-        `Nie udało się wykryć mówców: ${err instanceof Error ? err.message : String(err)}`
-      );
+      setRediarizeMsg(formatRediarizeErrorMessage(err));
     } finally {
       setRediarizing(false);
     }
-  }, [rediarizeRecordingId, updateTranscriptSegment]);
+  }, [formatRediarizeErrorMessage, rediarizeRecordingId, updateTranscriptSegment]);
 
   // Next unused speaker ID for "Add speaker" action
   const nextSpeakerId = useMemo(() => {
@@ -3391,6 +3451,12 @@ export default function StudioMeetingView({
 
           {rediarizeMsg ? <p className="ff-rediarize-msg">{rediarizeMsg}</p> : null}
 
+          {voiceProfileSavingName ? (
+            <p className="ff-voice-profile-toast" role="status" aria-live="polite">
+              Zapisuję próbkę głosu dla <strong>{voiceProfileSavingName}</strong>...
+            </p>
+          ) : null}
+
           {voiceProfileToast ? (
             <p className="ff-voice-profile-toast">
               ✓ Profil głosowy zapisany dla <strong>{voiceProfileToast}</strong>
@@ -3398,7 +3464,7 @@ export default function StudioMeetingView({
           ) : null}
 
           {/* Voice analytics panel — collapsible, shown only when transcript is available */}
-          {voiceProfileError ? (
+          {voiceProfileError && !pendingNewSpeakerAssignment && !pendingVoiceProfileEnrollment ? (
             <p className="ff-voice-profile-toast ff-voice-profile-toast-error" role="status">
               {voiceProfileError}
             </p>
@@ -4068,9 +4134,11 @@ export default function StudioMeetingView({
         <Modal
           isOpen={true}
           onClose={() => {
+            if (newSpeakerSubmitting) return;
             setPendingNewSpeakerAssignment(null);
             setNewSpeakerName('');
             setNewSpeakerNameDuplicate(false);
+            setNewSpeakerSubmitting(false);
           }}
           title="Nazwij nowego mowce"
           size="sm"
@@ -4090,6 +4158,7 @@ export default function StudioMeetingView({
                 aria-label="Nazwa nowego mowcy"
                 value={newSpeakerName}
                 placeholder="np. Adam"
+                disabled={newSpeakerSubmitting}
                 onChange={(event) => {
                   const value = event.target.value;
                   const normalized = value.trim().toLowerCase();
@@ -4107,9 +4176,11 @@ export default function StudioMeetingView({
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
+                    if (newSpeakerSubmitting) return;
                     setPendingNewSpeakerAssignment(null);
                     setNewSpeakerName('');
                     setNewSpeakerNameDuplicate(false);
+                    setNewSpeakerSubmitting(false);
                     return;
                   }
                   if (event.key === 'Enter') {
@@ -4122,24 +4193,31 @@ export default function StudioMeetingView({
             {newSpeakerNameDuplicate ? (
               <p className="ff-enrollment-copy error">Ta nazwa jest juz zajeta.</p>
             ) : null}
+            {voiceProfileError ? (
+              <p className="ff-enrollment-copy error" role="status">
+                {voiceProfileError}
+              </p>
+            ) : null}
           </div>
           <div className="ff-modal-footer">
             <button
               className="ghost-button"
+              disabled={newSpeakerSubmitting}
               onClick={() => {
                 setPendingNewSpeakerAssignment(null);
                 setNewSpeakerName('');
                 setNewSpeakerNameDuplicate(false);
+                setNewSpeakerSubmitting(false);
               }}
             >
               Anuluj
             </button>
             <button
               className="ff-modal-download-btn"
-              disabled={!newSpeakerName.trim() || newSpeakerNameDuplicate}
+              disabled={!newSpeakerName.trim() || newSpeakerNameDuplicate || newSpeakerSubmitting}
               onClick={() => void commitNewSpeakerAssignment()}
             >
-              Utworz mowce
+              {newSpeakerSubmitting ? 'Zapisywanie...' : 'Utworz mowce'}
             </button>
           </div>
         </Modal>
@@ -4148,7 +4226,10 @@ export default function StudioMeetingView({
       {pendingVoiceProfileEnrollment ? (
         <Modal
           isOpen={true}
-          onClose={() => setPendingVoiceProfileEnrollment(null)}
+          onClose={() => {
+            if (voiceProfileSavingName) return;
+            setPendingVoiceProfileEnrollment(null);
+          }}
           title="Zapisac probke glosu?"
           size="sm"
         >
@@ -4161,23 +4242,39 @@ export default function StudioMeetingView({
             <p className="ff-enrollment-copy muted">
               Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.
             </p>
+            {voiceProfileError ? (
+              <p className="ff-enrollment-copy error" role="status">
+                {voiceProfileError}
+              </p>
+            ) : null}
           </div>
           <div className="ff-modal-footer">
-            <button className="ghost-button" onClick={() => setPendingVoiceProfileEnrollment(null)}>
+            <button
+              className="ghost-button"
+              disabled={Boolean(voiceProfileSavingName)}
+              onClick={() => setPendingVoiceProfileEnrollment(null)}
+            >
               Pomin
             </button>
             <button
               className="ff-modal-download-btn"
+              disabled={Boolean(voiceProfileSavingName)}
               onClick={async () => {
                 const pending = pendingVoiceProfileEnrollment;
-                setPendingVoiceProfileEnrollment(null);
-                await enrollSpeakerProfile(pending.speakerId, pending.speakerName, {
-                  recordingId: pending.recordingId,
-                  transcriptSegments: pending.transcriptSegments,
-                });
+                const enrolled = await enrollSpeakerProfile(
+                  pending.speakerId,
+                  pending.speakerName,
+                  {
+                    recordingId: pending.recordingId,
+                    transcriptSegments: pending.transcriptSegments,
+                  }
+                );
+                if (enrolled) {
+                  setPendingVoiceProfileEnrollment(null);
+                }
               }}
             >
-              Zapisz do profilu glosu
+              {voiceProfileSavingName ? 'Zapisywanie...' : 'Zapisz do profilu glosu'}
             </button>
           </div>
         </Modal>

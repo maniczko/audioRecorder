@@ -518,6 +518,53 @@ describe('StudioMeetingView', () => {
     expect(await screen.findByText(/Wykryto 2/i)).toBeInTheDocument();
   });
 
+  test('Regression: rediarize maps technical API errors to user-facing copy', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') return Promise.resolve({ profiles: [] });
+      if (url === '/media/recordings/rec-display-only/rediarize') {
+        return Promise.reject(
+          Object.assign(new Error('Failed Dependency'), {
+            status: 424,
+            code: 'audio_source_unavailable',
+            requestId: 'cle1::technical-request-id',
+          })
+        );
+      }
+      return Promise.resolve({});
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{
+          id: 'rec-display-only',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'To jest testowy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Wykryj m/i }));
+
+    expect(
+      await screen.findByText(
+        /Nie (?:udało|udalo) się wykryć mówców\. Spróbuj ponownie za chwilę\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Failed Dependency/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/cle1::technical-request-id/i)).not.toBeInTheDocument();
+  });
+
   test('keeps rediarize button disabled when transcript has no stored recording id', () => {
     remoteApiEnabledMock.mockReturnValue(true);
     apiRequestMock.mockImplementation((url: string) => {
@@ -840,6 +887,70 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  test('Regression: shows loading feedback while creating a new speaker voice profile', async () => {
+    let resolveEnrollment: ((value: boolean) => void) | undefined;
+    const updateTranscriptSegment = vi.fn();
+    const renameSpeaker = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveEnrollment = resolve;
+        })
+    );
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        currentUser={{ id: 'u1', autoLearnSpeakerProfiles: true }}
+        updateTranscriptSegment={updateTranscriptSegment}
+        renameSpeaker={renameSpeaker}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
+        displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Speaker 2' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_2',
+              text: 'Fragment nowej osoby.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Speaker 2/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Nowy m/i }));
+    fireEvent.change(screen.getByLabelText(/Nazwa nowego m/i), {
+      target: { value: 'Adam' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Utworz mowce/i }));
+
+    expect(await screen.findByRole('button', { name: /Zapisywanie/i })).toBeDisabled();
+    expect(screen.getByText(/Zapisuj(?:ę|e) pr(?:ó|o)bkę g(?:ł|l)osu dla/i)).toBeInTheDocument();
+
+    resolveEnrollment?.(true);
+
+    expect(await screen.findByText(/Profil (?:głosowy|glosowy) zapisany dla/i)).toBeInTheDocument();
+  });
+
   test('Regression: asks to save a voice profile sample after assigning a segment when auto-learn is off', async () => {
     const updateTranscriptSegment = vi.fn();
     const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
@@ -1056,6 +1167,77 @@ describe('StudioMeetingView', () => {
     expect(screen.queryByText(/Failed Dependency/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Nie udalo sie zapisac probki glosu/i)).not.toBeInTheDocument();
   });
+
+  test.each([
+    [
+      'speaker_segment_not_found',
+      422,
+      /Nie znaleziono przypisanego fragmentu wypowiedzi dla tej osoby\./i,
+    ],
+    [
+      'embedding_failed',
+      502,
+      /Nie udalo sie utworzyc profilu glosu\. Sprobuj ponownie za chwile\./i,
+    ],
+    ['profile_save_failed', 500, /Nie udalo sie zapisac profilu glosu\. Sprobuj ponownie\./i],
+  ])(
+    'Regression: maps voice profile error %s to actionable copy',
+    async (code, status, expectedCopy) => {
+      const updateTranscriptSegment = vi.fn();
+      const technicalError = Object.assign(new Error('Bad Request'), {
+        status,
+        code,
+        requestId: 'req-hidden',
+      });
+      const autoCreateVoiceProfile = vi.fn(() => Promise.reject(technicalError));
+
+      renderWithContext(
+        <StudioMeetingView
+          {...defaultProps}
+          currentUser={{ id: 'u1', autoLearnSpeakerProfiles: false }}
+          updateTranscriptSegment={updateTranscriptSegment}
+          autoCreateVoiceProfile={autoCreateVoiceProfile}
+          displaySpeakerNames={{ speaker_1: 'iwo', speaker_2: 'Barbara' }}
+          displayRecording={{
+            id: 'recording_ready',
+            transcript: [
+              {
+                id: 'seg-1',
+                speakerId: 'speaker_1',
+                text: 'Pierwszy fragment rozmowy.',
+                timestamp: 0,
+                endTimestamp: 5,
+              },
+              {
+                id: 'seg-2',
+                speakerId: 'speaker_2',
+                text: 'Fragment Barbary.',
+                timestamp: 6,
+                endTimestamp: 10,
+              },
+            ],
+            duration: 60,
+          }}
+          selectedRecording={null}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /iwo/i }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Barbara/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: /Zapisz do profilu glosu/i })
+        ).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /Zapisz do profilu glosu/i }));
+
+      expect(await screen.findByText(expectedCopy)).toBeInTheDocument();
+      expect(screen.queryByText(/Bad Request/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/req-hidden/i)).not.toBeInTheDocument();
+    }
+  );
 
   test('renders playback scrubber and lets user seek audio', async () => {
     renderWithContext(
