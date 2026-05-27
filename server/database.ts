@@ -462,6 +462,129 @@ export class Database {
     return String(value || '').trim();
   }
 
+  _extractRecordingTombstoneIds(calendarMeta: any = {}): Set<string> {
+    const ids = new Set<string>();
+    const add = (value: any) => {
+      const id = String(value?.id || value?.recordingId || value || '').trim();
+      if (id) ids.add(id);
+    };
+
+    if (Array.isArray(calendarMeta?.recordingTombstones)) {
+      calendarMeta.recordingTombstones.forEach(add);
+    }
+    if (Array.isArray(calendarMeta?.deletedRecordingIds)) {
+      calendarMeta.deletedRecordingIds.forEach(add);
+    }
+
+    return ids;
+  }
+
+  _mergeRecordingTombstones(calendarMeta: any = {}, recordingIds: string[] = []) {
+    const base = calendarMeta && typeof calendarMeta === 'object' ? { ...calendarMeta } : {};
+    const existing = Array.isArray(base.recordingTombstones) ? base.recordingTombstones : [];
+    const byId = new Map<string, any>();
+
+    existing.forEach((item: any) => {
+      const id = String(item?.id || item?.recordingId || item || '').trim();
+      if (!id) return;
+      byId.set(
+        id,
+        typeof item === 'object' && item
+          ? { ...item, id }
+          : { id, deletedAt: this.nowIso(), source: 'legacy' }
+      );
+    });
+
+    recordingIds.forEach((recordingId) => {
+      const id = String(recordingId || '').trim();
+      if (!id || byId.has(id)) return;
+      byId.set(id, { id, deletedAt: this.nowIso(), source: 'media-delete' });
+    });
+
+    return {
+      ...base,
+      recordingTombstones: [...byId.values()].sort((a, b) =>
+        String(a.id).localeCompare(String(b.id))
+      ),
+    };
+  }
+
+  _mergeCalendarMetaTombstones(currentMeta: any = {}, incomingMeta: any = {}) {
+    const currentIds = [...this._extractRecordingTombstoneIds(currentMeta)];
+    const incomingIds = [...this._extractRecordingTombstoneIds(incomingMeta)];
+    return this._mergeRecordingTombstones(incomingMeta, [...currentIds, ...incomingIds]);
+  }
+
+  _normalizeMediaPipelineStatus(value: any): string {
+    const status = String(value || '').trim();
+    if (status === 'completed') return 'done';
+    return status || 'queued';
+  }
+
+  _transcriptTextLength(segments: any[] = []): number {
+    return segments.reduce((sum, segment) => sum + String(segment?.text || '').trim().length, 0);
+  }
+
+  _shouldRestoreTranscript(localTranscript: any, serverTranscript: any[]): boolean {
+    if (!Array.isArray(serverTranscript) || serverTranscript.length === 0) return false;
+    const local = Array.isArray(localTranscript) ? localTranscript : [];
+    if (local.length === 0) return true;
+    if (serverTranscript.length > local.length) return true;
+    return this._transcriptTextLength(serverTranscript) > this._transcriptTextLength(local);
+  }
+
+  _enrichRecordingFromMediaAsset(recording: any = {}, asset: any = {}) {
+    const diarization = this._safeJsonParse(asset?.diarization_json, {});
+    const transcript = this._safeJsonParse(asset?.transcript_json, []);
+    const next: any = {
+      ...recording,
+      id: String(recording?.id || recording?.recordingId || asset?.id || '').trim(),
+    };
+    if (recording?.recordingId) {
+      next.recordingId = String(recording.recordingId).trim();
+    }
+    const pipelineStatus = this._normalizeMediaPipelineStatus(asset?.transcription_status);
+    const currentStatus = String(recording?.pipelineStatus || recording?.transcriptionStatus || '');
+    const authoritativeStatus = ['done', 'failed'].includes(pipelineStatus) || !currentStatus;
+
+    if (pipelineStatus && authoritativeStatus) {
+      next.pipelineStatus = pipelineStatus;
+      next.transcriptionStatus = pipelineStatus;
+    }
+    if (this._shouldRestoreTranscript(next.transcript, transcript)) {
+      next.transcript = transcript;
+    }
+    if (diarization && typeof diarization === 'object') {
+      if (diarization.speakerNames && typeof diarization.speakerNames === 'object') {
+        next.speakerNames = { ...(next.speakerNames || {}), ...diarization.speakerNames };
+      }
+      if (Number.isFinite(Number(diarization.speakerCount))) {
+        next.speakerCount = Number(diarization.speakerCount);
+      } else if (Array.isArray(next.transcript)) {
+        next.speakerCount = new Set(
+          next.transcript.map((segment: any) => String(segment?.speakerId || '')).filter(Boolean)
+        ).size;
+      }
+      if (Number.isFinite(Number(diarization.confidence))) {
+        next.diarizationConfidence = Number(diarization.confidence);
+      }
+      if (diarization.transcriptOutcome) {
+        next.transcriptOutcome = String(diarization.transcriptOutcome);
+      }
+      if (diarization.reviewSummary) {
+        next.reviewSummary = diarization.reviewSummary;
+      }
+      if (diarization.audioQuality) {
+        next.audioQuality = diarization.audioQuality;
+      }
+      if (diarization.qualityMetrics) {
+        next.qualityMetrics = diarization.qualityMetrics;
+      }
+    }
+
+    return next;
+  }
+
   _normalizeEmail(email: any): string {
     return this._clean(email).toLowerCase();
   }
@@ -648,8 +771,13 @@ export class Database {
     );
   }
 
-  async _reconcileWorkspaceMeetingRecordings(workspaceId: string, meetings: any[] = []) {
+  async _reconcileWorkspaceMeetingRecordings(
+    workspaceId: string,
+    meetings: any[] = [],
+    options: { tombstoneIds?: Set<string> } = {}
+  ) {
     const safeMeetings = Array.isArray(meetings) ? meetings : [];
+    const tombstoneIds = options.tombstoneIds || new Set<string>();
     const recordingIds = [
       ...new Set(
         safeMeetings.flatMap((meeting: any) =>
@@ -664,13 +792,18 @@ export class Database {
       return { meetings: safeMeetings, changed: false };
     }
 
-    const placeholders = recordingIds.map(() => '?').join(', ');
-    const rows = await this._query(
-      `SELECT id FROM media_assets WHERE workspace_id = ? AND id IN (${placeholders})`,
-      [workspaceId, ...recordingIds]
-    );
-    const existingIds = new Set(
-      rows.map((row: any) => String(row?.id || '').trim()).filter(Boolean)
+    const candidateIds = recordingIds.filter((id) => !tombstoneIds.has(id));
+    const candidatePlaceholders = candidateIds.map(() => '?').join(', ');
+    const rows = candidateIds.length
+      ? await this._query(
+          `SELECT * FROM media_assets WHERE workspace_id = ? AND id IN (${candidatePlaceholders})`,
+          [workspaceId, ...candidateIds]
+        )
+      : [];
+    const assetsById = new Map(
+      rows
+        .map((row: any) => [String(row?.id || '').trim(), row])
+        .filter(([id]: [string, any]) => Boolean(id))
     );
 
     let changed = false;
@@ -682,22 +815,38 @@ export class Database {
 
       const filteredRecordings = recordings.filter((recording: any) => {
         const recordingId = String(recording?.id || recording?.recordingId || '').trim();
-        return Boolean(recordingId) && existingIds.has(recordingId);
+        return (
+          Boolean(recordingId) && !tombstoneIds.has(recordingId) && assetsById.has(recordingId)
+        );
+      });
+      const reconciledRecordings = filteredRecordings.map((recording: any) => {
+        const recordingId = String(recording?.id || recording?.recordingId || '').trim();
+        const asset = assetsById.get(recordingId);
+        const enriched = this._enrichRecordingFromMediaAsset(recording, asset);
+        if (JSON.stringify(enriched) !== JSON.stringify(recording)) {
+          changed = true;
+        }
+        return enriched;
       });
       const currentLatestRecordingId = String(meeting?.latestRecordingId || '').trim();
       const nextLatestRecordingId =
         currentLatestRecordingId &&
-        filteredRecordings.some(
+        reconciledRecordings.some(
           (recording: any) =>
             String(recording?.id || recording?.recordingId || '').trim() ===
             currentLatestRecordingId
         )
           ? currentLatestRecordingId
-          : String(filteredRecordings[0]?.id || filteredRecordings[0]?.recordingId || '').trim();
+          : String(
+              reconciledRecordings[0]?.id || reconciledRecordings[0]?.recordingId || ''
+            ).trim();
 
       if (
         filteredRecordings.length === recordings.length &&
-        currentLatestRecordingId === nextLatestRecordingId
+        currentLatestRecordingId === nextLatestRecordingId &&
+        reconciledRecordings.every((recording: any, index: number) => {
+          return JSON.stringify(recording) === JSON.stringify(recordings[index]);
+        })
       ) {
         return meeting;
       }
@@ -705,7 +854,7 @@ export class Database {
       changed = true;
       return {
         ...meeting,
-        recordings: filteredRecordings,
+        recordings: reconciledRecordings,
         latestRecordingId: nextLatestRecordingId || null,
       };
     });
@@ -722,7 +871,11 @@ export class Database {
       row = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [workspaceId]);
     }
     const meetings = this._safeJsonParse(row.meetings_json, []);
-    const reconciled = await this._reconcileWorkspaceMeetingRecordings(workspaceId, meetings);
+    const calendarMeta = this._safeJsonParse(row.calendar_meta_json, {});
+    const tombstoneIds = this._extractRecordingTombstoneIds(calendarMeta);
+    const reconciled = await this._reconcileWorkspaceMeetingRecordings(workspaceId, meetings, {
+      tombstoneIds,
+    });
 
     if (reconciled.changed) {
       const timestamp = this.nowIso();
@@ -738,7 +891,7 @@ export class Database {
       manualTasks: this._safeJsonParse(row.manual_tasks_json, []),
       taskState: this._safeJsonParse(row.task_state_json, {}),
       taskBoards: this._safeJsonParse(row.task_boards_json, {}),
-      calendarMeta: this._safeJsonParse(row.calendar_meta_json, {}),
+      calendarMeta,
       vocabulary: this._safeJsonParse(row.vocabulary_json, []),
       updatedAt: row.updated_at,
     };
@@ -756,6 +909,18 @@ export class Database {
     }
   ): Promise<WorkspaceState> {
     await this.ensureWorkspaceState(workspaceId);
+    const currentRow = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [
+      workspaceId,
+    ]);
+    const calendarMeta = this._mergeCalendarMetaTombstones(
+      this._safeJsonParse(currentRow?.calendar_meta_json, {}),
+      payload.calendarMeta && typeof payload.calendarMeta === 'object' ? payload.calendarMeta : {}
+    );
+    const reconciled = await this._reconcileWorkspaceMeetingRecordings(
+      workspaceId,
+      Array.isArray(payload.meetings) ? payload.meetings : [],
+      { tombstoneIds: this._extractRecordingTombstoneIds(calendarMeta) }
+    );
     const timestamp = this.nowIso();
     await this._execute(
       `
@@ -770,7 +935,7 @@ export class Database {
         WHERE workspace_id = ?
       `,
       [
-        JSON.stringify(Array.isArray(payload.meetings) ? payload.meetings : []),
+        JSON.stringify(reconciled.meetings),
         JSON.stringify(Array.isArray(payload.manualTasks) ? payload.manualTasks : []),
         JSON.stringify(
           payload.taskState && typeof payload.taskState === 'object' ? payload.taskState : {}
@@ -778,11 +943,7 @@ export class Database {
         JSON.stringify(
           payload.taskBoards && typeof payload.taskBoards === 'object' ? payload.taskBoards : {}
         ),
-        JSON.stringify(
-          payload.calendarMeta && typeof payload.calendarMeta === 'object'
-            ? payload.calendarMeta
-            : {}
-        ),
+        JSON.stringify(calendarMeta),
         JSON.stringify(Array.isArray(payload.vocabulary) ? payload.vocabulary : []),
         timestamp,
         workspaceId,
@@ -794,6 +955,31 @@ export class Database {
       workspaceId,
     ]);
     return this.getWorkspaceState(workspaceId);
+  }
+
+  async tombstoneWorkspaceRecording(workspaceId: string, recordingId: string): Promise<void> {
+    const safeRecordingId = String(recordingId || '').trim();
+    if (!workspaceId || !safeRecordingId) return;
+
+    await this.ensureWorkspaceState(workspaceId);
+    const row = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [
+      workspaceId,
+    ]);
+    const calendarMeta = this._mergeRecordingTombstones(
+      this._safeJsonParse(row?.calendar_meta_json, {}),
+      [safeRecordingId]
+    );
+    const reconciled = await this._reconcileWorkspaceMeetingRecordings(
+      workspaceId,
+      this._safeJsonParse(row?.meetings_json, []),
+      { tombstoneIds: this._extractRecordingTombstoneIds(calendarMeta) }
+    );
+    const timestamp = this.nowIso();
+
+    await this._execute(
+      'UPDATE workspace_state SET meetings_json = ?, calendar_meta_json = ?, updated_at = ? WHERE workspace_id = ?',
+      [JSON.stringify(reconciled.meetings), JSON.stringify(calendarMeta), timestamp, workspaceId]
+    );
   }
 
   async createSession(
@@ -1405,6 +1591,7 @@ export class Database {
       recordingId,
       workspaceId,
     ]);
+    await this.tombstoneWorkspaceRecording(workspaceId, recordingId);
   }
 
   async saveAudioQualityDiagnostics(

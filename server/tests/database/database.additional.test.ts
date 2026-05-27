@@ -360,6 +360,126 @@ describe('Database - Additional Coverage Tests', () => {
       expect(meeting?.recordings).toEqual([{ id: 'rec_state_valid', pipelineStatus: 'done' }]);
       expect(meeting?.latestRecordingId).toBe('rec_state_valid');
     });
+
+    test('Regression: #0 - deleting a media asset tombstones it so stale workspace saves cannot resurrect it', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_tombstone';
+      const meetingId = 'meeting_state_tombstone';
+      const recordingId = 'rec_state_tombstone';
+      const staleMeetings = [
+        {
+          id: meetingId,
+          workspaceId,
+          title: 'Deleted recording must stay deleted',
+          latestRecordingId: recordingId,
+          recordings: [{ id: recordingId, pipelineStatus: 'done', transcript: [{ text: 'old' }] }],
+        },
+      ];
+
+      await db.upsertMediaAsset({
+        recordingId,
+        workspaceId,
+        meetingId,
+        contentType: 'audio/webm',
+        buffer: Buffer.from('audio'),
+        createdByUserId: 'user1',
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: staleMeetings,
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      await db.deleteMediaAsset(recordingId, workspaceId);
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: staleMeetings,
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.recordings).toEqual([]);
+      expect(meeting?.latestRecordingId).toBeNull();
+      expect(state.calendarMeta?.recordingTombstones).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: recordingId })])
+      );
+    });
+
+    test('Regression: #0 - workspace state restores fuller transcript from media_assets', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_transcript_restore';
+      const meetingId = 'meeting_state_transcript_restore';
+      const recordingId = 'rec_state_transcript_restore';
+      const serverTranscript = [
+        { id: 'seg1', speakerId: '0', timestamp: 0, text: 'Pierwszy fragment rozmowy.' },
+        { id: 'seg2', speakerId: '0', timestamp: 4, text: 'Drugi fragment rozmowy.' },
+      ];
+
+      await db.upsertMediaAsset({
+        recordingId,
+        workspaceId,
+        meetingId,
+        contentType: 'audio/webm',
+        buffer: Buffer.from('audio'),
+        createdByUserId: 'user1',
+      });
+      await db.saveTranscriptionResult(recordingId, {
+        pipelineStatus: 'completed',
+        segments: serverTranscript,
+        diarization: {
+          speakerNames: { '0': 'iwo' },
+          speakerCount: 1,
+          confidence: 0.91,
+          transcriptOutcome: 'normal',
+        },
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Transcript restore',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                transcript: [{ id: 'seg1', text: 'Pierwszy fragment rozmowy.' }],
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+      const recording = meeting?.recordings?.[0];
+
+      expect(recording?.transcript).toEqual(serverTranscript);
+      expect(recording?.pipelineStatus).toBe('done');
+      expect(recording?.transcriptionStatus).toBe('done');
+      expect(recording?.speakerNames).toEqual({ '0': 'iwo' });
+      expect(recording?.speakerCount).toBe(1);
+    });
   });
 
   // NOTE: saveTranscriptionResult test removed - function needs integration with existing database.test.ts
