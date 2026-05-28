@@ -27,6 +27,12 @@ const HOSTED_PREVIEW_RUNTIME_MESSAGE =
 const HOSTED_PREVIEW_STALE_MESSAGE =
   'Hostowany preview jest nieaktualny wzgledem backendu. Odswiez strone lub otworz najnowszy deploy.';
 
+type NormalizedWorkspaceState = ReturnType<typeof normalizeWorkspaceState>;
+type PendingRemoteSync = {
+  state: NormalizedWorkspaceState;
+  snapshot: string;
+};
+
 function isBackendUnavailableMessage(message = '') {
   return (
     String(message || '')
@@ -84,6 +90,8 @@ export default function useWorkspaceData() {
   const lastLoggedRemoteErrorRef = useRef('');
   const isProbingRef = useRef(false);
   const isBootstrappingRef = useRef(false);
+  const remoteSyncInFlightRef = useRef(false);
+  const pendingRemoteSyncRef = useRef<PendingRemoteSync | null>(null);
   const migrationAppliedRef = useRef<string | null>(null);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
@@ -209,6 +217,61 @@ export default function useWorkspaceData() {
       return false;
     }
   }, [logRemoteErrorOnce, pushWorkspaceMessage]);
+
+  const flushRemoteWorkspaceState = useCallback(
+    async (requestedState: NormalizedWorkspaceState, requestedSnapshot: string) => {
+      if (!currentWorkspaceId) {
+        return;
+      }
+
+      if (remoteSyncInFlightRef.current) {
+        pendingRemoteSyncRef.current = {
+          state: requestedState,
+          snapshot: requestedSnapshot,
+        };
+        return;
+      }
+
+      remoteSyncInFlightRef.current = true;
+      let stateToSync: NormalizedWorkspaceState | null = requestedState;
+      let snapshotToSync = requestedSnapshot;
+
+      try {
+        while (stateToSync) {
+          pendingRemoteSyncRef.current = null;
+          const delta = buildWorkspaceStateDelta(remoteStateRef.current, stateToSync);
+          if (Object.keys(delta).length > 0) {
+            await stateService.syncWorkspaceState(currentWorkspaceId, delta);
+          }
+
+          remoteSnapshotRef.current = snapshotToSync;
+          remoteStateRef.current = stateToSync;
+
+          const pending = pendingRemoteSyncRef.current as PendingRemoteSync | null;
+          if (!pending || pending.snapshot === remoteSnapshotRef.current) {
+            stateToSync = null;
+            break;
+          }
+
+          stateToSync = pending.state;
+          snapshotToSync = pending.snapshot;
+        }
+      } catch (error: any) {
+        applyRemoteTransportCooldown(error);
+        logRemoteErrorOnce('Remote workspace sync failed.', error);
+        pushWorkspaceMessage(error?.message || 'Nie udalo sie zapisac workspace na backendzie.');
+      } finally {
+        remoteSyncInFlightRef.current = false;
+      }
+    },
+    [
+      applyRemoteTransportCooldown,
+      currentWorkspaceId,
+      logRemoteErrorOnce,
+      pushWorkspaceMessage,
+      stateService,
+    ]
+  );
 
   // Migration effect - run when source data changes
   useEffect(() => {
@@ -364,17 +427,8 @@ export default function useWorkspaceData() {
     }
 
     const timeout = window.setTimeout(() => {
-      stateService
-        .syncWorkspaceState(currentWorkspaceId, delta)
-        .then(() => {
-          remoteSnapshotRef.current = nextSnapshot;
-          remoteStateRef.current = nextState;
-        })
-        .catch((error: any) => {
-          applyRemoteTransportCooldown(error);
-          logRemoteErrorOnce('Remote workspace sync failed.', error);
-          pushWorkspaceMessage(error?.message || 'Nie udalo sie zapisac workspace na backendzie.');
-        });
+      syncTimerRef.current = null;
+      void flushRemoteWorkspaceState(nextState, nextSnapshot);
     }, 350);
 
     syncTimerRef.current = timeout;
@@ -383,15 +437,13 @@ export default function useWorkspaceData() {
       window.clearTimeout(timeout);
     };
   }, [
-    applyRemoteTransportCooldown,
     safeCalendarMeta,
     safeVocabulary,
     currentWorkspaceId,
+    flushRemoteWorkspaceState,
     isHydratingRemoteState,
-    logRemoteErrorOnce,
     safeManualTasks,
     safeMeetings,
-    pushWorkspaceMessage,
     session?.token,
     stateService,
     safeTaskBoards,

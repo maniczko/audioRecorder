@@ -216,6 +216,76 @@ describe('useWorkspaceData', () => {
     );
   });
 
+  test('Regression: #0 - coalesces remote autosave while a previous sync is in flight', async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
+    workspaceState.currentWorkspaceId = 'ws1';
+    stateServiceMock.bootstrap.mockResolvedValueOnce({
+      workspaceId: 'ws1',
+      state: {
+        meetings: [],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      },
+    });
+
+    let resolveFirstSync!: (value: unknown) => void;
+    stateServiceMock.syncWorkspaceState.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirstSync = resolve;
+        })
+    );
+    stateServiceMock.syncWorkspaceState.mockResolvedValue(null);
+
+    const { rerender, unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+      await Promise.resolve();
+    });
+
+    meetingsState.manualTasks = [{ id: 'task-1', title: 'First' }];
+    rerender();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(351);
+    });
+
+    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledTimes(1);
+
+    meetingsState.manualTasks = [
+      { id: 'task-1', title: 'First' },
+      { id: 'task-2', title: 'Second' },
+    ];
+    rerender();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(351);
+    });
+
+    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveFirstSync(null);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledTimes(2);
+    expect(stateServiceMock.syncWorkspaceState.mock.calls[1][1]).toEqual(
+      expect.objectContaining({
+        manualTasks: {
+          upsert: [expect.objectContaining({ id: 'task-2', title: 'Second' })],
+        },
+      })
+    );
+
+    unmount();
+  });
+
   test('bootstraps remote state and applies it to store', async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = 'remote';
