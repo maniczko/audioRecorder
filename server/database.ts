@@ -868,13 +868,19 @@ export class Database {
   ) {
     const safeMeetings = Array.isArray(meetings) ? meetings : [];
     const tombstoneIds = options.tombstoneIds || new Set<string>();
+    const recordingIdsForMeeting = (meeting: any) => {
+      const ids = new Set<string>();
+      const latestRecordingId = String(meeting?.latestRecordingId || '').trim();
+      if (latestRecordingId) ids.add(latestRecordingId);
+      (Array.isArray(meeting?.recordings) ? meeting.recordings : []).forEach((recording: any) => {
+        const id = String(recording?.id || recording?.recordingId || '').trim();
+        if (id) ids.add(id);
+      });
+      return [...ids];
+    };
     const recordingIds = [
       ...new Set(
-        safeMeetings.flatMap((meeting: any) =>
-          (Array.isArray(meeting?.recordings) ? meeting.recordings : [])
-            .map((recording: any) => String(recording?.id || recording?.recordingId || '').trim())
-            .filter(Boolean)
-        )
+        safeMeetings.flatMap((meeting: any) => recordingIdsForMeeting(meeting).filter(Boolean))
       ),
     ];
 
@@ -898,12 +904,18 @@ export class Database {
 
     let changed = false;
     const nextMeetings = safeMeetings.map((meeting: any) => {
+      const currentLatestRecordingId = String(meeting?.latestRecordingId || '').trim();
       const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
-      if (!recordings.length) {
-        return meeting;
+      let candidateRecordings = recordings;
+
+      if (!candidateRecordings.length && currentLatestRecordingId) {
+        candidateRecordings =
+          !tombstoneIds.has(currentLatestRecordingId) && assetsById.has(currentLatestRecordingId)
+            ? [{ id: currentLatestRecordingId }]
+            : [];
       }
 
-      const filteredRecordings = recordings.filter((recording: any) => {
+      const filteredRecordings = candidateRecordings.filter((recording: any) => {
         const recordingId = String(recording?.id || recording?.recordingId || '').trim();
         return (
           Boolean(recordingId) && !tombstoneIds.has(recordingId) && assetsById.has(recordingId)
@@ -918,7 +930,6 @@ export class Database {
         }
         return enriched;
       });
-      const currentLatestRecordingId = String(meeting?.latestRecordingId || '').trim();
       const nextLatestRecordingId =
         currentLatestRecordingId &&
         reconciledRecordings.some(
@@ -932,6 +943,7 @@ export class Database {
             ).trim();
 
       if (
+        candidateRecordings === recordings &&
         filteredRecordings.length === recordings.length &&
         currentLatestRecordingId === nextLatestRecordingId &&
         reconciledRecordings.every((recording: any, index: number) => {

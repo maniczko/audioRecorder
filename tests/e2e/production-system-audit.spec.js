@@ -452,6 +452,78 @@ test.describe('Production system audit', () => {
     }
   });
 
+  test('deletes an audit_delete recording meeting and fails if it resurrects after refresh', async ({
+    page,
+    request,
+  }) => {
+    const stamp = Date.now();
+    const meetingId = `audit_delete_meeting_${stamp}`;
+    const recordingId = `audit_delete_recording_${stamp}`;
+    const title = `audit_delete_recording_${stamp}`;
+    const meeting = createAuditMeeting(meetingId, title, {
+      latestRecordingId: recordingId,
+      recordings: [
+        {
+          id: recordingId,
+          title,
+          status: 'completed',
+          pipelineStatus: 'done',
+          transcriptionStatus: 'done',
+          transcript: [],
+        },
+      ],
+    });
+
+    try {
+      await patchWorkspaceState(request, {
+        meetings: {
+          upsert: [meeting],
+        },
+      });
+
+      let state = await fetchWorkspaceState(request);
+      expect(hasItemWithId(state.meetings, meetingId), 'audit_delete fixture should persist').toBe(
+        true
+      );
+
+      await installProductionSession(page, request);
+      await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title).first()).toBeVisible({ timeout: 20_000 });
+
+      await patchWorkspaceState(request, {
+        meetings: {
+          removeIds: [meetingId],
+        },
+      });
+
+      state = await fetchWorkspaceState(request);
+      expect(hasItemWithId(state.meetings, meetingId), 'deleted audit_delete meeting is gone').toBe(
+        false
+      );
+      expect(state.calendarMeta?.meetingTombstones || []).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: meetingId })])
+      );
+      expect(state.calendarMeta?.recordingTombstones || []).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: recordingId })])
+      );
+
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title)).toHaveCount(0, { timeout: 20_000 });
+      await page.waitForTimeout(3_000);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title)).toHaveCount(0, { timeout: 20_000 });
+    } finally {
+      await patchWorkspaceState(request, {
+        meetings: {
+          removeIds: [meetingId],
+        },
+      }).catch(() => {});
+    }
+  });
+
   test('covers the Studio voice-profile UI journey without silently saving unnamed speakers', async ({
     page,
     request,

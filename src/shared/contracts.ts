@@ -479,21 +479,97 @@ function applyObjectDelta(
   return next;
 }
 
+function tombstoneEntry(id: string, source: string) {
+  return { id, deletedAt: new Date().toISOString(), source };
+}
+
+function appendTombstones(
+  calendarMeta: Record<string, unknown>,
+  key: 'meetingTombstones' | 'recordingTombstones',
+  ids: string[],
+  source: string
+) {
+  if (!ids.length) return calendarMeta;
+
+  const byId = new Map<string, unknown>();
+  const existing = Array.isArray(calendarMeta[key]) ? calendarMeta[key] : [];
+  existing.forEach((item) => {
+    const id = String(
+      isRecord(item) ? item.id || item.recordingId || item.meetingId || '' : item || ''
+    ).trim();
+    if (id) byId.set(id, item);
+  });
+
+  ids.forEach((rawId) => {
+    const id = String(rawId || '').trim();
+    if (!id || byId.has(id)) return;
+    byId.set(id, tombstoneEntry(id, source));
+  });
+
+  return {
+    ...calendarMeta,
+    [key]: [...byId.values()],
+  };
+}
+
+function recordingIdsFromMeeting(meeting: unknown) {
+  if (!isRecord(meeting)) return [];
+  const ids = new Set<string>();
+  const latestRecordingId = String(meeting.latestRecordingId || '').trim();
+  if (latestRecordingId) ids.add(latestRecordingId);
+
+  const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
+  recordings.forEach((recording) => {
+    const id = String(
+      isRecord(recording) ? recording.id || recording.recordingId || '' : ''
+    ).trim();
+    if (id) ids.add(id);
+  });
+
+  return [...ids];
+}
+
+function calendarMetaWithMeetingDeleteTombstones(
+  currentMeetings: unknown[],
+  calendarMeta: Record<string, unknown>,
+  meetingDelta: WorkspaceCollectionDelta | unknown[] | undefined
+) {
+  if (!meetingDelta || Array.isArray(meetingDelta) || !Array.isArray(meetingDelta.removeIds)) {
+    return calendarMeta;
+  }
+
+  const removeSet = new Set(meetingDelta.removeIds.map((id) => String(id || '').trim()));
+  const removedMeetings = currentMeetings.filter((meeting) => removeSet.has(itemId(meeting)));
+  const removedMeetingIds = removedMeetings.map(itemId).filter(Boolean);
+  const removedRecordingIds = [
+    ...new Set(removedMeetings.flatMap((meeting) => recordingIdsFromMeeting(meeting))),
+  ];
+
+  return appendTombstones(
+    appendTombstones(calendarMeta, 'meetingTombstones', removedMeetingIds, 'meeting-delete'),
+    'recordingTombstones',
+    removedRecordingIds,
+    'meeting-delete'
+  );
+}
+
 export function applyWorkspaceStateDelta(
   previous: Partial<WorkspaceStatePayload> = {},
   delta: WorkspaceStateDeltaPayload = {}
 ) {
   const current = normalizeWorkspaceState(previous);
+  const calendarMeta = calendarMetaWithMeetingDeleteTombstones(
+    current.meetings,
+    applyObjectDelta(current.calendarMeta as Record<string, unknown>, delta.calendarMeta),
+    delta.meetings
+  );
 
   return normalizeWorkspaceState({
     meetings: applyCollectionDelta(current.meetings, delta.meetings),
     manualTasks: applyCollectionDelta(current.manualTasks, delta.manualTasks),
     taskState: applyObjectDelta(current.taskState as Record<string, unknown>, delta.taskState),
     taskBoards: applyObjectDelta(current.taskBoards as Record<string, unknown>, delta.taskBoards),
-    calendarMeta: applyObjectDelta(
-      current.calendarMeta as Record<string, unknown>,
-      delta.calendarMeta
-    ),
+    calendarMeta,
     vocabulary: Array.isArray(delta.vocabulary) ? delta.vocabulary : current.vocabulary,
     updatedAt: current.updatedAt,
   });

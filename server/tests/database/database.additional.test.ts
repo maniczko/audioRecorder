@@ -550,6 +550,95 @@ describe('Database - Additional Coverage Tests', () => {
       expect(recording?.speakerNames).toEqual({ '0': 'iwo' });
       expect(recording?.speakerCount).toBe(1);
     });
+
+    test('Regression: #0 - workspace state rebuilds a missing recording from latestRecordingId when the asset exists', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_latest_rebuild';
+      const meetingId = 'meeting_state_latest_rebuild';
+      const recordingId = 'rec_state_latest_rebuild';
+      const serverTranscript = [
+        { id: 'seg1', speakerId: '0', timestamp: 0, text: 'Odtworzony fragment z assetu.' },
+      ];
+
+      await db.upsertMediaAsset({
+        recordingId,
+        workspaceId,
+        meetingId,
+        contentType: 'audio/webm',
+        buffer: Buffer.from('audio'),
+        createdByUserId: 'user1',
+      });
+      await db.saveTranscriptionResult(recordingId, {
+        pipelineStatus: 'completed',
+        segments: serverTranscript,
+        diarization: {
+          speakerNames: { '0': 'iwo' },
+          speakerCount: 1,
+          confidence: 0.91,
+          transcriptOutcome: 'normal',
+        },
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Latest recording rebuild',
+            latestRecordingId: recordingId,
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.latestRecordingId).toBe(recordingId);
+      expect(meeting?.recordings).toEqual([
+        expect.objectContaining({
+          id: recordingId,
+          pipelineStatus: 'done',
+          transcriptionStatus: 'done',
+          transcript: serverTranscript,
+          speakerNames: { '0': 'iwo' },
+        }),
+      ]);
+    });
+
+    test('Regression: #0 - workspace state clears a latestRecordingId that points to a missing asset', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_latest_missing';
+      const meetingId = 'meeting_state_latest_missing';
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Latest recording missing',
+            latestRecordingId: 'rec_state_latest_missing',
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.latestRecordingId).toBeNull();
+      expect(meeting?.recordings).toEqual([]);
+    });
   });
 
   // NOTE: saveTranscriptionResult test removed - function needs integration with existing database.test.ts

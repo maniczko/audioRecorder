@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import type { AiPersonProfileResponse, AiSuggestTasksResponse } from './contracts';
 import {
+  applyWorkspaceStateDelta,
   normalizeMediaTranscriptionResponse,
   normalizeTranscriptionStatusPayload,
   normalizeWorkspaceState,
@@ -54,6 +55,44 @@ describe('shared contracts', () => {
         { id: 'm3', title: 'Last duplicate wins' },
       ],
     });
+  });
+
+  test('Regression: #0 - meeting remove delta creates meeting and recording tombstones', () => {
+    const next = applyWorkspaceStateDelta(
+      {
+        meetings: [
+          {
+            id: 'meeting_delete_contract',
+            title: 'Delete contract',
+            latestRecordingId: 'rec_latest_contract',
+            recordings: [{ id: 'rec_latest_contract' }, { recordingId: 'rec_legacy_contract' }],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      },
+      {
+        meetings: {
+          removeIds: ['meeting_delete_contract'],
+        },
+      }
+    );
+
+    expect(next.meetings).toEqual([]);
+    expect(next.calendarMeta?.meetingTombstones).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'meeting_delete_contract', source: 'meeting-delete' }),
+      ])
+    );
+    expect(next.calendarMeta?.recordingTombstones).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'rec_latest_contract', source: 'meeting-delete' }),
+        expect.objectContaining({ id: 'rec_legacy_contract', source: 'meeting-delete' }),
+      ])
+    );
   });
 
   test('serializes workspace state into a stable json snapshot', () => {
