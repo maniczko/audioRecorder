@@ -400,6 +400,7 @@ export default function useMeetings() {
       const recordingIds = [
         ...new Set(
           [
+            String((meeting as any).latestRecordingId || '').trim(),
             ...recordings.map((rec: any) => String(rec?.id || rec?.recordingId || '').trim()),
             ...(options.recordingIds || []).map((id) => String(id || '').trim()),
           ].filter(Boolean)

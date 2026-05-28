@@ -40,6 +40,40 @@ describe('persistDeletedMeetingRemoteState', () => {
     });
   });
 
+  test('Regression: #0 - infers tombstones from latestRecordingId when caller omits recordingIds', () => {
+    const now = '2026-05-28T08:45:00.000Z';
+
+    const payload = buildDeletedMeetingRemotePayload({
+      meetingId: 'meeting_latest_only',
+      meetings: [
+        {
+          id: 'meeting_latest_only',
+          title: 'Ad hoc',
+          latestRecordingId: 'recording_latest_only',
+          recordings: [],
+        },
+      ],
+      manualTasks: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+      now,
+    });
+
+    expect(payload.meetings).toEqual([]);
+    expect(payload.calendarMeta).toEqual(
+      expect.objectContaining({
+        meetingTombstones: [
+          { id: 'meeting_latest_only', deletedAt: now, source: 'meeting-delete' },
+        ],
+        recordingTombstones: [
+          { id: 'recording_latest_only', deletedAt: now, source: 'meeting-delete' },
+        ],
+      })
+    );
+  });
+
   test('Regression: #0 - rejects when remote workspace sync fails instead of allowing a false success toast', async () => {
     const error = new Error('HTTP 502');
     const stateService = {

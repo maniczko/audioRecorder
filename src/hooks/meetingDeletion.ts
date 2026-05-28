@@ -52,6 +52,26 @@ function mergeTombstoneList(
   return [...byId.values()].sort((left, right) => String(left.id).localeCompare(String(right.id)));
 }
 
+function collectRecordingIdsFromMeeting(meeting: unknown) {
+  if (!meeting || typeof meeting !== 'object') return [];
+  const source = meeting as Record<string, any>;
+  const ids = new Set<string>();
+  const latestRecordingId = String(source.latestRecordingId || '').trim();
+  if (latestRecordingId) ids.add(latestRecordingId);
+
+  const recordings = Array.isArray(source.recordings) ? source.recordings : [];
+  recordings.forEach((recording) => {
+    const id = String(
+      recording && typeof recording === 'object'
+        ? (recording as any).id || (recording as any).recordingId || ''
+        : ''
+    ).trim();
+    if (id) ids.add(id);
+  });
+
+  return [...ids];
+}
+
 export function buildDeletedMeetingRemotePayload({
   meetingId,
   recordingIds = [],
@@ -64,13 +84,21 @@ export function buildDeletedMeetingRemotePayload({
   now = new Date().toISOString(),
 }: BuildDeletedMeetingRemotePayloadOptions): WorkspaceStatePayload {
   const normalizedMeetingId = String(meetingId || '').trim();
-  const uniqueRecordingIds = [...new Set(recordingIds.map((id) => String(id || '').trim()))].filter(
-    Boolean
+  const safeMeetings = Array.isArray(meetings) ? meetings : [];
+  const deletedMeeting = safeMeetings.find(
+    (meeting: any) => String(meeting?.id || '').trim() === normalizedMeetingId
   );
+  const uniqueRecordingIds = [
+    ...new Set(
+      [...recordingIds, ...collectRecordingIdsFromMeeting(deletedMeeting)].map((id) =>
+        String(id || '').trim()
+      )
+    ),
+  ].filter(Boolean);
   const meta = calendarMeta && typeof calendarMeta === 'object' ? calendarMeta : {};
 
   return {
-    meetings: (Array.isArray(meetings) ? meetings : []).filter(
+    meetings: safeMeetings.filter(
       (meeting: any) => String(meeting?.id || '').trim() !== normalizedMeetingId
     ),
     manualTasks: Array.isArray(manualTasks) ? manualTasks : [],

@@ -169,7 +169,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
   const deleteRecordingAndMeeting = useCallback(
     async (meetingId: string, options: { recordingIds?: string[] } = {}) => {
       recorder.removeQueueItemsForMeeting?.(meetingId, options.recordingIds || []);
-      await meetings.deleteRecordingAndMeeting(meetingId);
+      await meetings.deleteRecordingAndMeeting(meetingId, options);
     },
     [meetings, recorder]
   );
