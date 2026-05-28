@@ -528,10 +528,53 @@ export default function useWorkspaceData() {
     remotePullCooldownUntilRef.current = Date.now() + durationMs;
   }, []);
 
+  const commitRemoteWorkspaceStateNow = useCallback(
+    async (payload: any) => {
+      if (stateService?.mode !== 'remote' || !session?.token || !currentWorkspaceId) {
+        return null;
+      }
+
+      if (syncTimerRef.current !== null) {
+        window.clearTimeout(syncTimerRef.current);
+        syncTimerRef.current = null;
+      }
+
+      const nextState = normalizeWorkspaceState(payload);
+      const nextSnapshot = serializeWorkspaceState(nextState);
+      remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
+
+      const result = await stateService.syncWorkspaceState(currentWorkspaceId, nextState);
+
+      setMeetings(nextState.meetings as any[]);
+      setManualTasks(nextState.manualTasks as any[]);
+      setTaskState(nextState.taskState as any);
+      setTaskBoards(nextState.taskBoards as any);
+      setCalendarMeta(nextState.calendarMeta as any);
+      setVocabulary(nextState.vocabulary);
+      remoteStateRef.current = nextState;
+      remoteSnapshotRef.current = nextSnapshot;
+      lastWorkspaceMessageRef.current = '';
+      lastLoggedRemoteErrorRef.current = '';
+      return result;
+    },
+    [
+      currentWorkspaceId,
+      session?.token,
+      setCalendarMeta,
+      setManualTasks,
+      setMeetings,
+      setTaskBoards,
+      setTaskState,
+      setVocabulary,
+      stateService,
+    ]
+  );
+
   return {
     userMeetings,
     isHydratingRemoteState,
     applyRemoteWorkspaceState,
     pauseRemotePull,
+    commitRemoteWorkspaceStateNow,
   };
 }

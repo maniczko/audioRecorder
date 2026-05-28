@@ -416,6 +416,76 @@ describe('Database - Additional Coverage Tests', () => {
       );
     });
 
+    test('Regression: #0 - meeting tombstones prevent stale workspace saves from resurrecting deleted meetings', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_meeting_tombstone';
+      const deletedMeeting = {
+        id: 'meeting_deleted_tombstone',
+        workspaceId,
+        title: 'Deleted meeting',
+        updatedAt: '2026-05-28T07:00:00.000Z',
+      };
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [deletedMeeting],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {
+          meetingTombstones: [
+            {
+              id: deletedMeeting.id,
+              deletedAt: '2026-05-28T07:01:00.000Z',
+              source: 'meeting-delete',
+            },
+          ],
+        },
+        vocabulary: [],
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [deletedMeeting],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+
+      expect(state.meetings.find((meeting: any) => meeting?.id === deletedMeeting.id)).toBeFalsy();
+      expect(state.calendarMeta?.meetingTombstones).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: deletedMeeting.id })])
+      );
+    });
+
+    test('Regression: #0 - workspace state drops null meetings and keeps newest duplicate by id', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_dedupe';
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          null,
+          { id: 'meeting_dupe', title: 'Old', updatedAt: '2026-05-28T07:00:00.000Z' },
+          { id: 'meeting_dupe', title: 'New', updatedAt: '2026-05-28T07:05:00.000Z' },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+
+      expect(state.meetings).toEqual([
+        expect.objectContaining({ id: 'meeting_dupe', title: 'New' }),
+      ]);
+    });
+
     test('Regression: #0 - workspace state restores fuller transcript from media_assets', async () => {
       if (!(await tablesExist())) return;
 

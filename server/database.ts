@@ -479,6 +479,61 @@ export class Database {
     return ids;
   }
 
+  _extractMeetingTombstoneIds(calendarMeta: any = {}): Set<string> {
+    const ids = new Set<string>();
+    const add = (value: any) => {
+      const id = String(value?.id || value?.meetingId || value || '').trim();
+      if (id) ids.add(id);
+    };
+
+    if (Array.isArray(calendarMeta?.meetingTombstones)) {
+      calendarMeta.meetingTombstones.forEach(add);
+    }
+    if (Array.isArray(calendarMeta?.deletedMeetingIds)) {
+      calendarMeta.deletedMeetingIds.forEach(add);
+    }
+
+    return ids;
+  }
+
+  _normalizeWorkspaceMeetings(
+    meetings: any[] = [],
+    options: { meetingTombstoneIds?: Set<string> } = {}
+  ) {
+    const meetingTombstoneIds = options.meetingTombstoneIds || new Set<string>();
+    const byId = new Map<string, any>();
+    let changed = false;
+
+    const updatedAtMs = (meeting: any) => {
+      const raw = String(meeting?.updatedAt || meeting?.createdAt || '').trim();
+      const parsed = raw ? new Date(raw).getTime() : Number.NaN;
+      return Number.isFinite(parsed) ? parsed : Number.NaN;
+    };
+
+    (Array.isArray(meetings) ? meetings : []).forEach((meeting: any) => {
+      const id = String(meeting?.id || '').trim();
+      if (!id || meetingTombstoneIds.has(id)) {
+        changed = true;
+        return;
+      }
+
+      const existing = byId.get(id);
+      if (!existing) {
+        byId.set(id, meeting);
+        return;
+      }
+
+      changed = true;
+      const existingUpdatedAt = updatedAtMs(existing);
+      const nextUpdatedAt = updatedAtMs(meeting);
+      if (!Number.isFinite(existingUpdatedAt) || nextUpdatedAt >= existingUpdatedAt) {
+        byId.set(id, meeting);
+      }
+    });
+
+    return { meetings: [...byId.values()], changed };
+  }
+
   _mergeRecordingTombstones(calendarMeta: any = {}, recordingIds: string[] = []) {
     const base = calendarMeta && typeof calendarMeta === 'object' ? { ...calendarMeta } : {};
     const existing = Array.isArray(base.recordingTombstones) ? base.recordingTombstones : [];
@@ -509,10 +564,45 @@ export class Database {
     };
   }
 
+  _mergeMeetingTombstones(calendarMeta: any = {}, meetingIds: string[] = []) {
+    const base = calendarMeta && typeof calendarMeta === 'object' ? { ...calendarMeta } : {};
+    const existing = Array.isArray(base.meetingTombstones) ? base.meetingTombstones : [];
+    const byId = new Map<string, any>();
+
+    existing.forEach((item: any) => {
+      const id = String(item?.id || item?.meetingId || item || '').trim();
+      if (!id) return;
+      byId.set(
+        id,
+        typeof item === 'object' && item
+          ? { ...item, id }
+          : { id, deletedAt: this.nowIso(), source: 'legacy' }
+      );
+    });
+
+    meetingIds.forEach((meetingId) => {
+      const id = String(meetingId || '').trim();
+      if (!id || byId.has(id)) return;
+      byId.set(id, { id, deletedAt: this.nowIso(), source: 'meeting-delete' });
+    });
+
+    return {
+      ...base,
+      meetingTombstones: [...byId.values()].sort((a, b) =>
+        String(a.id).localeCompare(String(b.id))
+      ),
+    };
+  }
+
   _mergeCalendarMetaTombstones(currentMeta: any = {}, incomingMeta: any = {}) {
     const currentIds = [...this._extractRecordingTombstoneIds(currentMeta)];
     const incomingIds = [...this._extractRecordingTombstoneIds(incomingMeta)];
-    return this._mergeRecordingTombstones(incomingMeta, [...currentIds, ...incomingIds]);
+    const currentMeetingIds = [...this._extractMeetingTombstoneIds(currentMeta)];
+    const incomingMeetingIds = [...this._extractMeetingTombstoneIds(incomingMeta)];
+    return this._mergeMeetingTombstones(
+      this._mergeRecordingTombstones(incomingMeta, [...currentIds, ...incomingIds]),
+      [...currentMeetingIds, ...incomingMeetingIds]
+    );
   }
 
   _normalizeMediaPipelineStatus(value: any): string {
@@ -870,14 +960,23 @@ export class Database {
       await this.ensureWorkspaceState(workspaceId);
       row = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [workspaceId]);
     }
-    const meetings = this._safeJsonParse(row.meetings_json, []);
     const calendarMeta = this._safeJsonParse(row.calendar_meta_json, {});
+    const normalizedMeetings = this._normalizeWorkspaceMeetings(
+      this._safeJsonParse(row.meetings_json, []),
+      {
+        meetingTombstoneIds: this._extractMeetingTombstoneIds(calendarMeta),
+      }
+    );
     const tombstoneIds = this._extractRecordingTombstoneIds(calendarMeta);
-    const reconciled = await this._reconcileWorkspaceMeetingRecordings(workspaceId, meetings, {
-      tombstoneIds,
-    });
+    const reconciled = await this._reconcileWorkspaceMeetingRecordings(
+      workspaceId,
+      normalizedMeetings.meetings,
+      {
+        tombstoneIds,
+      }
+    );
 
-    if (reconciled.changed) {
+    if (normalizedMeetings.changed || reconciled.changed) {
       const timestamp = this.nowIso();
       await this._execute(
         'UPDATE workspace_state SET meetings_json = ?, updated_at = ? WHERE workspace_id = ?',
@@ -916,9 +1015,15 @@ export class Database {
       this._safeJsonParse(currentRow?.calendar_meta_json, {}),
       payload.calendarMeta && typeof payload.calendarMeta === 'object' ? payload.calendarMeta : {}
     );
+    const normalizedMeetings = this._normalizeWorkspaceMeetings(
+      Array.isArray(payload.meetings) ? payload.meetings : [],
+      {
+        meetingTombstoneIds: this._extractMeetingTombstoneIds(calendarMeta),
+      }
+    );
     const reconciled = await this._reconcileWorkspaceMeetingRecordings(
       workspaceId,
-      Array.isArray(payload.meetings) ? payload.meetings : [],
+      normalizedMeetings.meetings,
       { tombstoneIds: this._extractRecordingTombstoneIds(calendarMeta) }
     );
     const timestamp = this.nowIso();

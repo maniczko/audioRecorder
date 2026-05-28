@@ -4,7 +4,10 @@ import useMeetingLifecycle from './useMeetingLifecycle';
 import useTaskOperations from './useTaskOperations';
 import usePeopleProfiles from './usePeopleProfiles';
 import useRecordingActions from './useRecordingActions';
-import { persistDeletedMeetingRemoteState } from './meetingDeletion';
+import {
+  buildDeletedMeetingRemotePayload,
+  persistDeletedMeetingRemoteState,
+} from './meetingDeletion';
 import { createMediaService } from '../services/mediaService';
 import { createStateService } from '../services/stateService';
 
@@ -31,7 +34,8 @@ export default function useMeetings() {
     useWorkspaceSelectors();
 
   // 1. Core State & Sync
-  const { userMeetings, isHydratingRemoteState, pauseRemotePull } = useWorkspaceData();
+  const { userMeetings, isHydratingRemoteState, pauseRemotePull, commitRemoteWorkspaceStateNow } =
+    useWorkspaceData();
 
   const {
     setMeetings,
@@ -386,41 +390,63 @@ export default function useMeetings() {
     updateMeeting,
     deleteMeeting,
     createManualNote,
-    deleteRecordingAndMeeting: async (meetingId: string) => {
+    deleteRecordingAndMeeting: async (
+      meetingId: string,
+      options: { recordingIds?: string[] } = {}
+    ) => {
       const meeting = userMeetings.find((m) => m.id === meetingId);
       if (!meeting) return;
-      const nextMeetings = userMeetings.filter((m) => m.id !== meetingId);
+      const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
+      const recordingIds = [
+        ...new Set(
+          [
+            ...recordings.map((rec: any) => String(rec?.id || rec?.recordingId || '').trim()),
+            ...(options.recordingIds || []).map((id) => String(id || '').trim()),
+          ].filter(Boolean)
+        ),
+      ];
+      const deletedPayload = buildDeletedMeetingRemotePayload({
+        meetingId,
+        recordingIds,
+        meetings: userMeetings,
+        manualTasks,
+        taskState,
+        taskBoards,
+        calendarMeta,
+        vocabulary,
+      });
 
       // 1. Pause remote polling to prevent race condition
-      pauseRemotePull?.(10000);
+      pauseRemotePull?.(25000);
 
       // 2. Remove from local state IMMEDIATELY so sync push happens fast
       deleteMeeting(meetingId);
 
       // 3. Persist meeting deletion immediately in remote mode instead of waiting
       // for the debounced workspace autosave cycle.
-      await persistDeletedMeetingRemoteState({
-        stateService,
-        currentWorkspaceId,
-        payload: {
-          meetings: nextMeetings,
-          manualTasks,
-          taskState,
-          taskBoards,
-          calendarMeta,
-          vocabulary,
-        },
-        setWorkspaceMessage,
-      });
+      try {
+        if (typeof commitRemoteWorkspaceStateNow === 'function') {
+          await commitRemoteWorkspaceStateNow(deletedPayload);
+        } else {
+          await persistDeletedMeetingRemoteState({
+            stateService,
+            currentWorkspaceId,
+            payload: deletedPayload,
+            setWorkspaceMessage,
+          });
+        }
+      } catch (error) {
+        setMeetings(userMeetings);
+        throw error;
+      }
 
       // 4. Fire-and-forget: clean up server-side recording data
-      const recordings = Array.isArray(meeting.recordings) ? meeting.recordings : [];
-      if (recordings.length > 0) {
+      if (recordingIds.length > 0) {
         const media = createMediaService();
         Promise.allSettled(
-          recordings.map((rec) =>
+          recordingIds.map((recordingId) =>
             media.deleteRecording
-              ? media.deleteRecording(rec.id || rec.recordingId).catch((e) => {
+              ? media.deleteRecording(recordingId).catch((e) => {
                   if ((e as any)?.status !== 404) {
                     console.warn('Delete recording failed:', e);
                   }

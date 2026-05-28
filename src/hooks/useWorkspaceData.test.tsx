@@ -188,6 +188,34 @@ describe('useWorkspaceData', () => {
     expect(workspaceState.setSession).toHaveBeenCalledWith(expect.any(Function));
   });
 
+  test('Regression: #0 - commits delete state immediately through remote sync', async () => {
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
+    workspaceState.currentWorkspaceId = 'ws1';
+
+    const { result } = renderHook(() => useWorkspaceData());
+    const payload = {
+      meetings: [],
+      manualTasks: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {
+        meetingTombstones: [{ id: 'meeting_deleted', deletedAt: '2026-05-28T07:10:00.000Z' }],
+        recordingTombstones: [{ id: 'rec_deleted', deletedAt: '2026-05-28T07:10:00.000Z' }],
+      },
+      vocabulary: [],
+    };
+
+    await act(async () => {
+      await result.current.commitRemoteWorkspaceStateNow(payload);
+    });
+
+    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledWith(
+      'ws1',
+      expect.objectContaining(payload)
+    );
+  });
+
   test('bootstraps remote state and applies it to store', async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = 'remote';

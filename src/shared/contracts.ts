@@ -161,6 +161,61 @@ function itemId(item: unknown) {
   return String((isRecord(item) ? (item as IdentifiedItem).id : '') || '');
 }
 
+function itemUpdatedAtMs(item: unknown) {
+  const raw = isRecord(item) ? String(item.updatedAt || item.createdAt || '') : '';
+  const parsed = raw ? new Date(raw).getTime() : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function extractTombstoneIds(calendarMeta: unknown, key: string, legacyKey = '') {
+  const meta = asRecord(calendarMeta);
+  const ids = new Set<string>();
+  const add = (value: unknown) => {
+    const id = String(
+      isRecord(value) ? value.id || value.recordingId || value.meetingId || '' : value || ''
+    ).trim();
+    if (id) ids.add(id);
+  };
+
+  if (Array.isArray(meta[key])) {
+    meta[key].forEach(add);
+  }
+  if (legacyKey && Array.isArray(meta[legacyKey])) {
+    meta[legacyKey].forEach(add);
+  }
+  return ids;
+}
+
+function normalizeMeetingCollection(meetings: unknown[], calendarMeta: unknown) {
+  const meetingTombstones = extractTombstoneIds(
+    calendarMeta,
+    'meetingTombstones',
+    'deletedMeetingIds'
+  );
+  const byId = new Map<string, unknown>();
+
+  meetings.forEach((meeting) => {
+    const id = itemId(meeting).trim();
+    if (!id || meetingTombstones.has(id)) {
+      return;
+    }
+
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, meeting);
+      return;
+    }
+
+    const existingUpdatedAt = itemUpdatedAtMs(existing);
+    const nextUpdatedAt = itemUpdatedAtMs(meeting);
+    if (!Number.isFinite(existingUpdatedAt) || nextUpdatedAt >= existingUpdatedAt) {
+      byId.set(id, meeting);
+    }
+  });
+
+  return [...byId.values()];
+}
+
 function parseJsonRecord(value: unknown): DiarizationPayload {
   try {
     const parsed = JSON.parse(String(value || '{}'));
@@ -218,12 +273,16 @@ function nullableObject<T extends object>(value: unknown): T | null {
 
 export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
   const source = asRecord(input);
+  const calendarMeta = isRecord(source.calendarMeta) ? source.calendarMeta : {};
   const payload: WorkspaceState = {
-    meetings: Array.isArray(source.meetings) ? source.meetings : [],
+    meetings: normalizeMeetingCollection(
+      Array.isArray(source.meetings) ? source.meetings : [],
+      calendarMeta
+    ),
     manualTasks: Array.isArray(source.manualTasks) ? source.manualTasks : [],
     taskState: isRecord(source.taskState) ? source.taskState : {},
     taskBoards: isRecord(source.taskBoards) ? source.taskBoards : {},
-    calendarMeta: isRecord(source.calendarMeta) ? source.calendarMeta : {},
+    calendarMeta,
     vocabulary: Array.isArray(source.vocabulary) ? source.vocabulary : [],
     updatedAt: String(source.updatedAt || ''),
   };

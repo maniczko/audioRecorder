@@ -28,6 +28,34 @@ describe('shared contracts', () => {
     });
   });
 
+  test('normalizes workspace meetings by dropping nulls, deduplicating ids, and applying meeting tombstones', () => {
+    expect(
+      normalizeWorkspaceState({
+        meetings: [
+          null,
+          { id: 'm1', title: 'Old', updatedAt: '2026-05-28T07:00:00.000Z' },
+          { id: 'm2', title: 'Deleted', updatedAt: '2026-05-28T07:01:00.000Z' },
+          { id: 'm1', title: 'New', updatedAt: '2026-05-28T07:02:00.000Z' },
+          { id: '', title: 'Broken' },
+          { id: 'm3', title: 'First duplicate' },
+          { id: 'm3', title: 'Last duplicate wins' },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {
+          meetingTombstones: [{ id: 'm2', deletedAt: '2026-05-28T07:03:00.000Z' }],
+        },
+        vocabulary: [],
+      })
+    ).toMatchObject({
+      meetings: [
+        { id: 'm1', title: 'New' },
+        { id: 'm3', title: 'Last duplicate wins' },
+      ],
+    });
+  });
+
   test('serializes workspace state into a stable json snapshot', () => {
     expect(
       serializeWorkspaceState({
