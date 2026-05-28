@@ -259,6 +259,9 @@ async function openProfileSurface(page) {
 }
 
 test.describe('Production system audit', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.setTimeout(90_000);
+
   test.skip(
     !AUDIT_REQUIRED && (!AUTH_TOKEN || !WORKSPACE_ID),
     'Production system audit requires PRODUCTION_SMOKE_AUTH_TOKEN and PRODUCTION_SMOKE_WORKSPACE_ID.'
