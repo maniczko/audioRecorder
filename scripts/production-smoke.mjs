@@ -169,23 +169,23 @@ async function assertAudioUploadPersistence({ recordingId, expectedStoragePath }
     );
   }
 
-  const objectResult = await supabase
-    .schema('storage')
-    .from('objects')
-    .select('name,bucket_id')
-    .eq('bucket_id', 'recordings')
-    .eq('name', expectedStoragePath)
-    .maybeSingle();
+  const objectResult = await supabase.storage.from('recordings').list('', {
+    limit: 1,
+    search: expectedStoragePath,
+  });
 
   if (objectResult.error) {
     throw new Error(
-      `Audio upload persistence smoke failed to read storage.objects: ${objectResult.error.message}`
+      `Audio upload persistence smoke failed to list Supabase Storage objects: ${objectResult.error.message}`
     );
   }
 
-  if (!objectResult.data) {
+  const objectExists = Array.isArray(objectResult.data)
+    ? objectResult.data.some((entry) => entry?.name === expectedStoragePath)
+    : false;
+  if (!objectExists) {
     throw new Error(
-      `Audio upload persistence smoke expected storage.objects row for recordings/${expectedStoragePath}.`
+      `Audio upload persistence smoke expected Supabase Storage object recordings/${expectedStoragePath}.`
     );
   }
 }
