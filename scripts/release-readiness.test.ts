@@ -66,7 +66,12 @@ describe('release readiness gates', () => {
   it('rejects production health without remote Supabase persistence', () => {
     expect(
       evaluateHealthPayload(
-        { ok: true, status: 'ok', supabaseRemote: true },
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        },
         { requirePremiumStt: false }
       )
     ).toEqual([]);
@@ -76,6 +81,17 @@ describe('release readiness gates', () => {
         { requirePremiumStt: false }
       )
     ).toContain('health supabaseRemote must be true in production');
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: false, status: 'invalid_url', bucket: 'recordings' },
+        },
+        { requirePremiumStt: false }
+      )
+    ).toContain('health supabaseStorage.ready must be true in production');
   });
 
   it('requires premium OpenAI STT evidence in production health', () => {
@@ -83,6 +99,7 @@ describe('release readiness gates', () => {
       ok: true,
       status: 'ok',
       supabaseRemote: true,
+      supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
       stt: {
         policy: 'premium',
         provider: 'openai',
@@ -102,13 +119,25 @@ describe('release readiness gates', () => {
   it('can require a known backend git SHA for production release evidence', () => {
     expect(
       evaluateHealthPayload(
-        { ok: true, status: 'ok', supabaseRemote: true, gitSha: 'unknown' },
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'unknown',
+        },
         { requireKnownGitSha: true, requirePremiumStt: false }
       )
     ).toContain('health gitSha must be configured and cannot be unknown in production');
     expect(
       evaluateHealthPayload(
-        { ok: true, status: 'ok', supabaseRemote: true, gitSha: 'abc123' },
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
         { requireKnownGitSha: true, requirePremiumStt: false }
       )
     ).toEqual([]);
@@ -233,7 +262,13 @@ describe('release readiness gates', () => {
             ok: true,
             status: 200,
             text: async () =>
-              JSON.stringify({ ok: true, status: 'ok', supabaseRemote: true, gitSha: 'abc123' }),
+              JSON.stringify({
+                ok: true,
+                status: 'ok',
+                supabaseRemote: true,
+                supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+                gitSha: 'abc123',
+              }),
           };
         }
         return {
@@ -326,6 +361,10 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('PRODUCTION_SMOKE_STALE_RECORDING_ID');
     expect(workflow).toContain('PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE');
     expect(workflow).toContain('PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID');
+    expect(workflow).toContain('SUPABASE_URL: ${{ secrets.SUPABASE_URL }}');
+    expect(workflow).toContain(
+      'SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}'
+    );
     expect(workflow).toContain('pnpm run release:prod-smoke:strict');
     expect(workflow).toContain('pnpm run sentry:release-health');
     expect(workflow).toContain('SENTRY_AUTH_TOKEN');

@@ -76,6 +76,7 @@ async function runAudioUploadSmoke({
   authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
   workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
   meetingId = process.env.PRODUCTION_SMOKE_MEETING_ID || 'production-smoke-meeting',
+  requirePersistenceEvidence = process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE === 'true',
 } = {}) {
   const token = String(authToken || '').trim();
   const workspace = String(workspaceId || '').trim();
@@ -100,6 +101,13 @@ async function runAudioUploadSmoke({
     throw new Error(`Audio upload smoke failed: ${response.status} ${await response.text()}`);
   }
 
+  const expectedStoragePath = `${recordingId}.webm`;
+  let persistenceChecked = false;
+  if (requirePersistenceEvidence) {
+    await assertAudioUploadPersistence({ recordingId, expectedStoragePath });
+    persistenceChecked = true;
+  }
+
   await fetch(`${api}/media/recordings/${recordingId}`, {
     method: 'DELETE',
     headers: {
@@ -108,7 +116,78 @@ async function runAudioUploadSmoke({
     },
   }).catch(() => undefined);
 
-  return true;
+  return { checked: true, persistenceChecked };
+}
+
+function isValidSupabaseProjectUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.supabase.co');
+  } catch {
+    return false;
+  }
+}
+
+async function assertAudioUploadPersistence({ recordingId, expectedStoragePath }) {
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').trim();
+  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      'Audio upload persistence smoke requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+    );
+  }
+  if (!isValidSupabaseProjectUrl(supabaseUrl)) {
+    throw new Error(
+      'Audio upload persistence smoke requires SUPABASE_URL to be the Supabase project API URL, not a Postgres connection string.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  const assetResult = await supabase
+    .from('media_assets')
+    .select('file_path')
+    .eq('id', recordingId)
+    .maybeSingle();
+
+  if (assetResult.error) {
+    throw new Error(
+      `Audio upload persistence smoke failed to read media_assets: ${assetResult.error.message}`
+    );
+  }
+
+  const filePath = String(assetResult.data?.file_path || '');
+  if (filePath !== expectedStoragePath) {
+    throw new Error(
+      `Audio upload persistence smoke expected media_assets.file_path=${expectedStoragePath}, received ${filePath || '<missing>'}.`
+    );
+  }
+
+  const objectResult = await supabase
+    .schema('storage')
+    .from('objects')
+    .select('name,bucket_id')
+    .eq('bucket_id', 'recordings')
+    .eq('name', expectedStoragePath)
+    .maybeSingle();
+
+  if (objectResult.error) {
+    throw new Error(
+      `Audio upload persistence smoke failed to read storage.objects: ${objectResult.error.message}`
+    );
+  }
+
+  if (!objectResult.data) {
+    throw new Error(
+      `Audio upload persistence smoke expected storage.objects row for recordings/${expectedStoragePath}.`
+    );
+  }
 }
 
 export async function runStaleRecordingSmoke({
@@ -242,6 +321,18 @@ export function evaluateHealthPayload(
   if (requireSupabaseRemote && payload.supabaseRemote !== true) {
     failures.push('health supabaseRemote must be true in production');
   }
+  if (requireSupabaseRemote && payload.supabaseStorage?.ready !== true) {
+    failures.push('health supabaseStorage.ready must be true in production');
+  }
+  if (
+    requireSupabaseRemote &&
+    payload.supabaseStorage?.status &&
+    payload.supabaseStorage.status !== 'ready'
+  ) {
+    failures.push(
+      `health supabaseStorage.status must be ready in production, received ${payload.supabaseStorage.status}`
+    );
+  }
 
   if (payload.status && !['ok', 'healthy'].includes(String(payload.status))) {
     failures.push(`health status must be ok/healthy, received ${payload.status}`);
@@ -334,7 +425,11 @@ export async function runProductionSmoke({
     }
   }
 
-  const audioUploadChecked = await runAudioUploadSmoke({ api });
+  const audioUploadResult = await runAudioUploadSmoke({ api });
+  const audioUploadChecked = Boolean(audioUploadResult && audioUploadResult.checked);
+  const audioPersistenceChecked = Boolean(
+    audioUploadResult && audioUploadResult.persistenceChecked
+  );
   if (requireAudioUploadSmoke && !audioUploadChecked) {
     throw new Error(
       'Audio upload smoke requires PRODUCTION_SMOKE_AUTH_TOKEN and PRODUCTION_SMOKE_WORKSPACE_ID.'
@@ -361,6 +456,7 @@ export async function runProductionSmoke({
     supabaseRemote: Boolean(healthPayload.supabaseRemote),
     gitSha: String(healthPayload.gitSha || ''),
     audioUploadChecked,
+    audioPersistenceChecked,
     staleRecordingChecked,
     voiceProfileChecked,
     persistenceEvidenceChecked: Boolean(persistenceEvidenceUrl),
@@ -382,6 +478,7 @@ if (isMainModule) {
             supabaseRemote: result.supabaseRemote,
             gitSha: result.gitSha,
             audioUploadChecked: result.audioUploadChecked,
+            audioPersistenceChecked: result.audioPersistenceChecked,
             staleRecordingChecked: result.staleRecordingChecked,
             voiceProfileChecked: result.voiceProfileChecked,
             persistenceEvidenceChecked: result.persistenceEvidenceChecked,

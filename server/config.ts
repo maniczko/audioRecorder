@@ -119,6 +119,16 @@ if (!_env.success) {
 export const config = _env.data;
 export type Config = z.infer<typeof envSchema>;
 
+function isValidSupabaseProjectUrl(value?: string) {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.supabase.co');
+  } catch {
+    return false;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // [104] Runtime validation of required API keys
 // ─────────────────────────────────────────────────────────────
@@ -141,7 +151,13 @@ export function validateRequiredApiKeys() {
   }
 
   // Supabase is recommended for persistent storage on ephemeral platforms like Railway
-  const hasSupabase = Boolean(config.SUPABASE_URL) && Boolean(config.SUPABASE_SERVICE_ROLE_KEY);
+  const hasSupabase =
+    isValidSupabaseProjectUrl(config.SUPABASE_URL) && Boolean(config.SUPABASE_SERVICE_ROLE_KEY);
+  if (config.SUPABASE_URL && !isValidSupabaseProjectUrl(config.SUPABASE_URL)) {
+    errors.push(
+      'SUPABASE_URL must be a Supabase project API URL like https://<project-ref>.supabase.co. Do not use a Postgres connection string for SUPABASE_URL.'
+    );
+  }
   if (!hasSupabase) {
     const isRailway = Boolean(
       process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID

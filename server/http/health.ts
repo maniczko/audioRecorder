@@ -23,8 +23,24 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
       dbStatus = { ok: true, status: 'no_db_required' };
     }
 
-    const hasSupabase =
+    const hasSupabaseEnv =
       Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const supabaseStorage = hasSupabaseEnv
+      ? await import('../lib/supabaseStorage.ts')
+          .then((module) => module.checkSupabaseStorageReadiness())
+          .catch((error: any) => ({
+            configured: true,
+            ready: false,
+            bucket: 'recordings',
+            status: 'bucket_unavailable',
+            error: error?.message || String(error),
+          }))
+      : {
+          configured: false,
+          ready: false,
+          bucket: 'recordings',
+          status: 'missing_config',
+        };
     const hasDiarizationToken = Boolean(process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN);
     const stt = resolveSttRuntimePolicy(config, {
       hasOpenAi: Boolean(process.env.OPENAI_API_KEY || process.env.VOICELOG_OPENAI_API_KEY),
@@ -32,14 +48,19 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
     });
 
     const memory = process.memoryUsage();
-    const status = dbStatus.ok ? 'ok' : 'degraded';
+    const storageRequired =
+      process.env.NODE_ENV === 'production' ||
+      Boolean(process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
+    const storageOk = !storageRequired || Boolean((supabaseStorage as any).ready);
+    const status = dbStatus.ok && storageOk ? 'ok' : 'degraded';
 
     return c.json(
       {
-        ok: dbStatus.ok,
+        ok: dbStatus.ok && storageOk,
         status,
         db: dbStatus.status,
-        supabaseRemote: hasSupabase,
+        supabaseRemote: Boolean((supabaseStorage as any).ready),
+        supabaseStorage,
         uptime: Math.floor(process.uptime()),
         gitSha: build.gitSha,
         buildTime: build.buildTime,
@@ -69,7 +90,7 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
           rss: `${(memory.rss / 1024 / 1024).toFixed(2)} MB`,
         },
       },
-      dbStatus.ok ? 200 : 503
+      dbStatus.ok && storageOk ? 200 : 503
     );
   });
 }

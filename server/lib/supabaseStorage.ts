@@ -21,6 +21,19 @@ export const supabase =
 
 const BUCKET_NAME = 'recordings';
 let bucketEnsured = false;
+let readinessCache: {
+  key: string;
+  expiresAt: number;
+  value: SupabaseStorageReadiness;
+} | null = null;
+
+export type SupabaseStorageReadiness = {
+  configured: boolean;
+  ready: boolean;
+  bucket: string;
+  status: 'ready' | 'missing_config' | 'invalid_url' | 'client_unavailable' | 'bucket_unavailable';
+  error?: string;
+};
 
 async function ensureBucket() {
   if (bucketEnsured || !supabase || !supabase.storage) return;
@@ -31,9 +44,91 @@ async function ensureBucket() {
   bucketEnsured = true;
 }
 
+function isValidSupabaseProjectUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.supabase.co');
+  } catch {
+    return false;
+  }
+}
+
+export async function checkSupabaseStorageReadiness(options: { force?: boolean } = {}) {
+  const cacheKey = `${SUPABASE_URL}|${Boolean(SUPABASE_SERVICE_ROLE_KEY)}`;
+  const now = Date.now();
+  if (!options.force && readinessCache?.key === cacheKey && readinessCache.expiresAt > now) {
+    return readinessCache.value;
+  }
+
+  const finish = (value: SupabaseStorageReadiness) => {
+    readinessCache = {
+      key: cacheKey,
+      expiresAt: Date.now() + 30_000,
+      value,
+    };
+    return value;
+  };
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return finish({
+      configured: false,
+      ready: false,
+      bucket: BUCKET_NAME,
+      status: 'missing_config',
+    });
+  }
+
+  if (!isValidSupabaseProjectUrl(SUPABASE_URL)) {
+    return finish({
+      configured: true,
+      ready: false,
+      bucket: BUCKET_NAME,
+      status: 'invalid_url',
+    });
+  }
+
+  if (!supabase || !supabase.storage) {
+    return finish({
+      configured: true,
+      ready: false,
+      bucket: BUCKET_NAME,
+      status: 'client_unavailable',
+    });
+  }
+
+  try {
+    await ensureBucket();
+    const { error } = await supabase.storage.from(BUCKET_NAME).list('', { limit: 1 });
+    if (error) {
+      return finish({
+        configured: true,
+        ready: false,
+        bucket: BUCKET_NAME,
+        status: 'bucket_unavailable',
+        error: error.message,
+      });
+    }
+    return finish({
+      configured: true,
+      ready: true,
+      bucket: BUCKET_NAME,
+      status: 'ready',
+    });
+  } catch (error: any) {
+    return finish({
+      configured: true,
+      ready: false,
+      bucket: BUCKET_NAME,
+      status: 'bucket_unavailable',
+      error: error?.message || String(error),
+    });
+  }
+}
+
 /**
  * Uploads a buffer to Supabase Storage.
- * Returns null if Supabase is not configured (caller should fall back to local).
+ * Returns null if Supabase is not configured. Production callers must treat
+ * that as a hard configuration failure, not a local filesystem fallback.
  */
 export async function uploadAudioToStorage(
   recordingId: string,

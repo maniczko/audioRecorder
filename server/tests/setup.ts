@@ -10,6 +10,10 @@ process.env.SUPABASE_KEY = 'test-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 
 const createSupabaseStorageBucketMock = () => ({
+  list: vi.fn(async () => ({
+    data: [],
+    error: null,
+  })),
   upload: vi.fn(async () => ({
     data: null,
     error: { message: 'Supabase network disabled in tests' },
@@ -146,6 +150,7 @@ vi.mock('node:fs', async () => {
     existsSync: existsSyncMock,
     createReadStream: createReadStreamMock,
     createWriteStream: (actualFs as any).createWriteStream,
+    promises: (actualFs as any).promises,
     statSync: statSyncMock,
     readFileSync: readFileSyncMock,
     writeFileSync: writeFileSyncMock,

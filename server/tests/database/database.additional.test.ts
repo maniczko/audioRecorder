@@ -18,9 +18,10 @@ describe('Database - Additional Coverage Tests', () => {
   const testUploadDir = path.resolve(__dirname, 'test_uploads_additional');
 
   beforeAll(async () => {
+    const actualFs = await vi.importActual<any>('node:fs');
     // Clean up test directory
-    if (fs.existsSync(testUploadDir)) {
-      fs.rmSync(testUploadDir, { recursive: true, force: true });
+    if (actualFs.existsSync(testUploadDir)) {
+      actualFs.rmSync(testUploadDir, { recursive: true, force: true });
     }
 
     db = initDatabase({ dbPath: ':memory:', uploadDir: testUploadDir });
@@ -31,9 +32,10 @@ describe('Database - Additional Coverage Tests', () => {
     if (db) {
       await db.shutdown();
     }
-    if (fs.existsSync(testUploadDir)) {
+    const actualFs = await vi.importActual<any>('node:fs');
+    if (actualFs.existsSync(testUploadDir)) {
       try {
-        fs.rmSync(testUploadDir, { recursive: true, force: true });
+        actualFs.rmSync(testUploadDir, { recursive: true, force: true });
       } catch (_) {}
     }
   });
@@ -69,6 +71,36 @@ describe('Database - Additional Coverage Tests', () => {
       expect(asset.workspace_id).toBe('ws1');
       expect(asset.content_type).toBe('audio/webm');
       expect(asset.file_path).toContain('rec_new_local.webm');
+    });
+
+    test('Regression: production upload fails instead of falling back to local audio storage', async () => {
+      if (!(await tablesExist())) return; // Skip if migrations haven't run
+      const savedNodeEnv = process.env.NODE_ENV;
+      const savedRailwayProjectId = process.env.RAILWAY_PROJECT_ID;
+
+      try {
+        process.env.NODE_ENV = 'production';
+        process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+
+        await expect(
+          db.upsertMediaAsset({
+            recordingId: 'rec_prod_storage_failure',
+            workspaceId: 'ws1',
+            meetingId: 'm1',
+            contentType: 'audio/webm',
+            buffer: Buffer.from('test-audio-data'),
+            createdByUserId: 'user1',
+          })
+        ).rejects.toThrow(/Supabase Storage/i);
+
+        const asset = await db.getMediaAsset('rec_prod_storage_failure');
+        expect(asset).toBeNull();
+      } finally {
+        if (savedNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = savedNodeEnv;
+        if (savedRailwayProjectId === undefined) delete process.env.RAILWAY_PROJECT_ID;
+        else process.env.RAILWAY_PROJECT_ID = savedRailwayProjectId;
+      }
     });
 
     test('updates existing media asset', async () => {
@@ -149,6 +181,43 @@ describe('Database - Additional Coverage Tests', () => {
           createdByUserId: 'user1',
         })
       ).rejects.toThrow('Nieprawidłowy identyfikator nagrania.');
+    });
+  });
+
+  describe('upsertMediaAssetFromPath()', () => {
+    test('Regression: production path upload fails instead of preserving local Railway path', async () => {
+      if (!(await tablesExist())) return; // Skip if migrations haven't run
+      const savedNodeEnv = process.env.NODE_ENV;
+      const savedRailwayProjectId = process.env.RAILWAY_PROJECT_ID;
+
+      try {
+        process.env.NODE_ENV = 'production';
+        process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+
+        const actualFs = await vi.importActual<any>('node:fs');
+        const sourcePath = path.join(testUploadDir, 'source-prod-failure.webm');
+        actualFs.mkdirSync(testUploadDir, { recursive: true });
+        actualFs.writeFileSync(sourcePath, Buffer.from('audio-from-path'));
+
+        await expect(
+          db.upsertMediaAssetFromPath({
+            recordingId: 'rec_prod_path_storage_failure',
+            workspaceId: 'ws1',
+            meetingId: 'm1',
+            contentType: 'audio/webm',
+            filePath: sourcePath,
+            createdByUserId: 'user1',
+          })
+        ).rejects.toThrow(/Supabase Storage/i);
+
+        const asset = await db.getMediaAsset('rec_prod_path_storage_failure');
+        expect(asset).toBeNull();
+      } finally {
+        if (savedNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = savedNodeEnv;
+        if (savedRailwayProjectId === undefined) delete process.env.RAILWAY_PROJECT_ID;
+        else process.env.RAILWAY_PROJECT_ID = savedRailwayProjectId;
+      }
     });
   });
 

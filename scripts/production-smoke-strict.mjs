@@ -17,6 +17,7 @@ runProductionSmoke()
           supabaseRemote: result.supabaseRemote,
           gitSha: result.gitSha,
           audioUploadChecked: result.audioUploadChecked,
+          audioPersistenceChecked: result.audioPersistenceChecked,
           staleRecordingChecked: result.staleRecordingChecked,
           voiceProfileChecked: result.voiceProfileChecked,
           persistenceEvidenceChecked: result.persistenceEvidenceChecked,

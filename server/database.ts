@@ -134,6 +134,28 @@ function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffe
   }
 }
 
+function _requiresPersistentAudioStorage(): boolean {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
+    Boolean(process.env.RAILWAY_PROJECT_ID)
+  );
+}
+
+function _buildPersistentAudioStorageError(error?: unknown): Error {
+  const details =
+    error instanceof Error
+      ? error.message
+      : error
+        ? String((error as any)?.message || error)
+        : 'Supabase Storage did not return a remote path.';
+  const wrapped = new Error(
+    `Supabase Storage is required for production audio uploads; refusing local filesystem fallback. ${details}`
+  );
+  (wrapped as any).code = 'SUPABASE_STORAGE_REQUIRED';
+  return wrapped;
+}
+
 const WORKER_QUERY_TIMEOUT_MS = 15000;
 
 export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
@@ -1518,6 +1540,7 @@ export class Database {
       }[baseMime] || '.webm';
 
     let storagePath: string;
+    const requirePersistentStorage = _requiresPersistentAudioStorage();
 
     // Try Supabase Storage first, fall back to local fs
     try {
@@ -1525,6 +1548,8 @@ export class Database {
       const result = await uploadAudioToStorage(safeRecordingId, buffer, contentType, extension);
       if (result) {
         storagePath = result;
+      } else if (requirePersistentStorage) {
+        throw _buildPersistentAudioStorageError();
       } else {
         // Supabase not configured — save locally
         storagePath = _writeLocalAudioFile(
@@ -1538,12 +1563,17 @@ export class Database {
         throw err;
       }
       logger.warn(
-        '[database] Supabase upload failed, falling back to local:',
+        requirePersistentStorage
+          ? '[database] Supabase upload failed in production; local fallback is blocked:'
+          : '[database] Supabase upload failed, falling back to local:',
         {
           message: err.message,
         },
         { sentry: false }
       );
+      if (requirePersistentStorage) {
+        throw _buildPersistentAudioStorageError(err);
+      }
       storagePath = _writeLocalAudioFile(this.uploadDir, `${safeRecordingId}${extension}`, buffer);
     }
 
@@ -1616,6 +1646,7 @@ export class Database {
       }[baseMime] || '.webm';
     const fileStats = await fs.promises.stat(filePath);
     let storagePath: string;
+    const requirePersistentStorage = _requiresPersistentAudioStorage();
 
     try {
       const { uploadAudioFileToStorage } = await import('./lib/supabaseStorage.js');
@@ -1627,6 +1658,8 @@ export class Database {
       );
       if (result) {
         storagePath = result;
+      } else if (requirePersistentStorage) {
+        throw _buildPersistentAudioStorageError();
       } else {
         fs.mkdirSync(this.uploadDir, { recursive: true });
         storagePath = path.join(this.uploadDir, `${safeRecordingId}${extension}`);
@@ -1639,12 +1672,17 @@ export class Database {
         throw err;
       }
       logger.warn(
-        '[database] Supabase upload from path failed, falling back to local:',
+        requirePersistentStorage
+          ? '[database] Supabase upload from path failed in production; local fallback is blocked:'
+          : '[database] Supabase upload from path failed, falling back to local:',
         {
           message: err.message,
         },
         { sentry: false }
       );
+      if (requirePersistentStorage) {
+        throw _buildPersistentAudioStorageError(err);
+      }
       fs.mkdirSync(this.uploadDir, { recursive: true });
       storagePath = path.join(this.uploadDir, `${safeRecordingId}${extension}`);
       if (path.resolve(storagePath) !== path.resolve(filePath)) {

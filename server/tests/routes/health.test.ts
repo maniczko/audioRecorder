@@ -135,6 +135,37 @@ describe('http/health.ts', () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = savedKey;
   });
 
+  test('Regression: reports real Supabase Storage readiness, not only env presence', async () => {
+    const app = makeHonoLike();
+    const savedUrl = process.env.SUPABASE_URL;
+    const savedKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'key';
+
+    registerHealthRoute(app, undefined);
+    const route = app._routes.find((r: any) => r.path === '/health');
+
+    let response: any;
+    const mockCtx = makeCtxLike((data: any, status: number) => {
+      response = { data, status };
+    });
+
+    await route.handler(mockCtx);
+
+    expect(response.status).toBe(200);
+    expect(response.data.supabaseRemote).toBe(true);
+    expect(response.data.supabaseStorage).toMatchObject({
+      configured: true,
+      ready: true,
+      bucket: 'recordings',
+    });
+
+    if (savedUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = savedUrl;
+    if (savedKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = savedKey;
+  });
+
   test('reports diarization degraded mode when HF token is missing', async () => {
     const app = makeHonoLike();
     const savedHfToken = process.env.HF_TOKEN;

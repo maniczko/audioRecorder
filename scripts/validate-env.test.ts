@@ -128,6 +128,21 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
     expect(report.blocking).toBe(false);
   });
 
+  it('accepts Supabase new secret key format for production storage', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+      })
+    );
+
+    const keyCheck = report.checks.find((entry) => entry.name === 'SUPABASE_SERVICE_ROLE_KEY');
+    expect(keyCheck?.status).toBe('ok');
+    expect(report.blocking).toBe(false);
+  });
+
   it('blocks production when DATABASE_URL uses an incomplete Supabase host', () => {
     const report = validateEnvironmentSnapshot(
       createBaseEnv({

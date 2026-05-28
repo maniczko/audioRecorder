@@ -16,11 +16,13 @@ vi.unmock('@supabase/supabase-js');
 
 function setupSupabaseMocks() {
   const mockCreateBucket = vi.fn();
+  const mockList = vi.fn();
   const mockUpload = vi.fn();
   const mockDownload = vi.fn();
   const mockCreateSignedUrl = vi.fn();
   const mockRemove = vi.fn();
   const mockFrom = vi.fn().mockReturnValue({
+    list: mockList,
     upload: mockUpload,
     download: mockDownload,
     createSignedUrl: mockCreateSignedUrl,
@@ -33,6 +35,7 @@ function setupSupabaseMocks() {
 
   return {
     mockCreateBucket,
+    mockList,
     mockUpload,
     mockDownload,
     mockCreateSignedUrl,

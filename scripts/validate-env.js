@@ -39,6 +39,7 @@ const GEMINI_KEY_PATTERN = /^AIza[0-9A-Za-z_-]+$/;
 const HF_KEY_PATTERN = /^hf_/;
 const LANGCHAIN_KEY_PATTERN = /^ls(v2)?_/;
 const GITHUB_TOKEN_PATTERN = /^(github_pat_|gh[pousr]_|ghs_)/;
+const SUPABASE_SERVICE_ROLE_KEY_PATTERN = /^(eyJ|sb_secret_)/;
 
 function log(color, message) {
   console.log(`${color}${message}${colors.reset}`);
@@ -230,7 +231,7 @@ export function validateEnvironmentSnapshot(env = process.env) {
       'SUPABASE_SERVICE_ROLE_KEY',
       'Supabase service role key',
       env.SUPABASE_SERVICE_ROLE_KEY,
-      /^eyJ/,
+      SUPABASE_SERVICE_ROLE_KEY_PATTERN,
       productionDeployment ? 'error' : 'warning'
     )
   );
