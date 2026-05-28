@@ -449,11 +449,16 @@ describe('release readiness gates', () => {
 
   it('requires the production system audit to prove write-delete-refresh persistence', () => {
     const spec = read('tests/e2e/production-system-audit.spec.js');
+    const workflow = read('.github/workflows/production-system-audit.yml');
 
     expect(spec).toContain('audit_20260524_');
     expect(spec).toContain('/state/workspaces/');
     expect(spec).toContain('removeIds');
     expect(spec).toContain('does not return after refresh');
+    expect(workflow).toContain('SUPABASE_URL: ${{ secrets.SUPABASE_URL }}');
+    expect(workflow).toContain(
+      'SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}'
+    );
   });
 
   it('requires the production system audit to cover notes, people, calendar, and recording shell persistence', () => {

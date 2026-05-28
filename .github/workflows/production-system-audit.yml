@@ -30,6 +30,8 @@ jobs:
       PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE: 'true'
       VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -71,6 +73,8 @@ jobs:
           for secret in \
             PRODUCTION_SMOKE_AUTH_TOKEN \
             PRODUCTION_SMOKE_WORKSPACE_ID \
+            SUPABASE_URL \
+            SUPABASE_SERVICE_ROLE_KEY \
             SENTRY_AUTH_TOKEN \
             SENTRY_ORG \
             SENTRY_PROJECT; do
