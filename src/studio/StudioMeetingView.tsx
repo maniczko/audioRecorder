@@ -1735,6 +1735,7 @@ export default function StudioMeetingView({
 
   useEffect(() => {
     if (!playbackRecordingId || !hydrateRecordingAudio) return;
+    if (selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false) return;
     if (selectedRecordingAudioUrl) return;
     if (selectedRecordingAudioStatus === 'loading') return;
     if (selectedRecordingAudioStatus === 'error') return;
@@ -1742,6 +1743,8 @@ export default function StudioMeetingView({
   }, [
     hydrateRecordingAudio,
     playbackRecordingId,
+    selectedRecording?.audioAvailable,
+    selectedRecording?.audioUnavailable,
     selectedRecordingAudioStatus,
     selectedRecordingAudioUrl,
   ]);
@@ -1754,14 +1757,18 @@ export default function StudioMeetingView({
     analysisStatus === 'failed';
   const playerState = isRecording
     ? 'recording'
-    : playbackRecordingId && !selectedRecordingAudioUrl
-      ? selectedRecordingAudioStatus === 'error'
-        ? 'audio-error'
-        : 'loading-audio'
-      : (isQueued || analysisStatus === 'error' || analysisStatus === 'failed') &&
-          !selectedRecordingAudioUrl
-        ? 'queued'
-        : 'playback-ready';
+    : playbackRecordingId &&
+        !selectedRecordingAudioUrl &&
+        (selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false)
+      ? 'audio-error'
+      : playbackRecordingId && !selectedRecordingAudioUrl
+        ? selectedRecordingAudioStatus === 'error'
+          ? 'audio-error'
+          : 'loading-audio'
+        : (isQueued || analysisStatus === 'error' || analysisStatus === 'failed') &&
+            !selectedRecordingAudioUrl
+          ? 'queued'
+          : 'playback-ready';
   const playbackDuration = Math.max(0, Number(audioDuration || displayRecording?.duration || 0));
   const scrubberMax = Math.max(playbackDuration, 1);
   const scrubberValue = Math.min(scrubberMax, Math.max(0, Number(currentTime || 0)));
@@ -3934,11 +3941,20 @@ export default function StudioMeetingView({
             </div>
           ) : playerState === 'audio-error' ? (
             <div className="ff-player-status-wrap" data-testid="player-audio-error">
-              <span className="ff-player-time">Nie udalo sie zaladowac audio.</span>
-              {selectedRecordingAudioError ? (
-                <span className="soft-copy ff-audio-error-copy">{selectedRecordingAudioError}</span>
-              ) : null}
-              {playbackRecordingId && hydrateRecordingAudio ? (
+              <span className="ff-player-time">
+                {selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false
+                  ? 'Audio nie jest dostepne na serwerze.'
+                  : 'Nie udalo sie zaladowac audio.'}
+              </span>
+              <span className="soft-copy ff-audio-error-copy">
+                {selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false
+                  ? 'Transkrypt zostaje widoczny, ale odtwarzanie i probki glosu wymagaja ponownego importu pliku audio.'
+                  : selectedRecordingAudioError || 'Sprobuj ponownie za chwile.'}
+              </span>
+              {playbackRecordingId &&
+              hydrateRecordingAudio &&
+              !selectedRecording?.audioUnavailable &&
+              selectedRecording?.audioAvailable !== false ? (
                 <button
                   type="button"
                   className="ghost-button"

@@ -415,6 +415,38 @@ describe('useRecorder', () => {
   //      queueRecording called immediately after couldn't find the meeting.
   // Fix: queueRecording accepts optional meetingHint (3rd arg) as fallback.
   // ─────────────────────────────────────────────────────────────────
+  test('Regression: skips auto-hydration for server-marked unavailable audio', () => {
+    hydrationState.audioUrls = {};
+    hydrationState.audioHydrationErrors = {};
+    hydrationState.audioHydrationStatusByRecordingId = {};
+    hydrationState.hydrateRecordingAudio = vi.fn().mockResolvedValue(null);
+
+    const meeting = {
+      id: 'm1',
+      latestRecordingId: 'rec-unavailable',
+      recordings: [
+        {
+          id: 'rec-unavailable',
+          audioAvailable: false,
+          audioUnavailable: true,
+          audioUnavailableReason: 'audio_source_unavailable',
+        },
+      ],
+    };
+
+    renderHook(() =>
+      useRecorder({
+        selectedMeeting: meeting,
+        userMeetings: [meeting],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    expect(hydrationState.hydrateRecordingAudio).not.toHaveBeenCalled();
+  });
+
   test('Regression: queueRecording uses meetingHint when meeting not in userMeetings', async () => {
     saveAudioBlobMock.mockResolvedValue(undefined);
 

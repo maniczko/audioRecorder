@@ -143,6 +143,11 @@ export default function useRecorder({
     if (isHydratingRemoteState) return;
     const recordingId = selectedMeeting?.latestRecordingId || selectedMeeting?.recordings?.[0]?.id;
     if (!recordingId) return;
+    const selectedRecording = (selectedMeeting?.recordings || []).find(
+      (recording: any) =>
+        String(recording?.id || recording?.recordingId || '').trim() === String(recordingId).trim()
+    );
+    if (selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false) return;
     if (hydration.audioUrls?.[recordingId]) return;
     if (hydration.audioHydrationStatusByRecordingId?.[recordingId] === 'error') return;
     hydration.hydrateRecordingAudio(recordingId, { priority: true }).catch(() => {});

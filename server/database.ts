@@ -645,7 +645,78 @@ export class Database {
     return this._transcriptTextLength(serverTranscript) > this._transcriptTextLength(local);
   }
 
-  _enrichRecordingFromMediaAsset(recording: any = {}, asset: any = {}) {
+  _deriveAudioExtensions(rawPath: string = '', contentType: string = ''): string[] {
+    const candidates = new Set<string>();
+    const ext = path.extname(String(rawPath || '').trim());
+    if (ext) candidates.add(ext);
+    const lowerType = String(contentType || '').toLowerCase();
+    if (lowerType.includes('webm')) candidates.add('.webm');
+    if (lowerType.includes('mpeg') || lowerType.includes('mp3')) candidates.add('.mp3');
+    if (lowerType.includes('wav')) candidates.add('.wav');
+    if (lowerType.includes('ogg')) candidates.add('.ogg');
+    if (lowerType.includes('mp4') || lowerType.includes('m4a')) candidates.add('.m4a');
+    if (!candidates.size) candidates.add('.webm');
+    return [...candidates];
+  }
+
+  _remoteAudioStorageCandidates(recordingId: string, asset: any = {}): string[] {
+    const rawPath = String(asset?.file_path || '').trim();
+    if (!rawPath) return [];
+
+    const candidates = new Set<string>();
+    const leafName = rawPath.split(/[\\/]/).filter(Boolean).pop() || '';
+    if (rawPath && !rawPath.includes('\\') && !rawPath.includes('/')) {
+      candidates.add(rawPath);
+    }
+    if (leafName) {
+      candidates.add(leafName);
+    }
+
+    const safeRecordingId = String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    for (const extension of this._deriveAudioExtensions(rawPath, asset?.content_type)) {
+      candidates.add(`${safeRecordingId}${extension}`);
+    }
+    return [...candidates];
+  }
+
+  async _isMediaAssetAudioAvailable(recordingId: string, asset: any = {}): Promise<boolean | null> {
+    const rawPath = String(asset?.file_path || '').trim();
+    if (!rawPath) return false;
+
+    if ((rawPath.includes('/') || rawPath.includes('\\')) && fs.existsSync(rawPath)) {
+      return true;
+    }
+
+    if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_ROLE_KEY) {
+      return null;
+    }
+
+    try {
+      const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
+      for (const storagePath of this._remoteAudioStorageCandidates(recordingId, asset)) {
+        if (await audioExistsInStorage(storagePath)) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      logger.warn(
+        '[database] Unable to verify media asset audio availability.',
+        {
+          recordingId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        { sentry: false }
+      );
+      return null;
+    }
+  }
+
+  _enrichRecordingFromMediaAsset(
+    recording: any = {},
+    asset: any = {},
+    options: { audioAvailable?: boolean | null } = {}
+  ) {
     const diarization = this._safeJsonParse(asset?.diarization_json, {});
     const transcript = this._safeJsonParse(asset?.transcript_json, []);
     const next: any = {
@@ -692,6 +763,12 @@ export class Database {
       if (diarization.qualityMetrics) {
         next.qualityMetrics = diarization.qualityMetrics;
       }
+    }
+
+    if (options.audioAvailable === false) {
+      next.audioAvailable = false;
+      next.audioUnavailable = true;
+      next.audioUnavailableReason = 'audio_source_unavailable';
     }
 
     return next;
@@ -923,6 +1000,14 @@ export class Database {
         .map((row: any) => [String(row?.id || '').trim(), row])
         .filter(([id]: [string, any]) => Boolean(id))
     );
+    const audioAvailabilityById = new Map<string, boolean | null>();
+    await Promise.all(
+      rows.map(async (row: any) => {
+        const id = String(row?.id || '').trim();
+        if (!id) return;
+        audioAvailabilityById.set(id, await this._isMediaAssetAudioAvailable(id, row));
+      })
+    );
 
     let changed = false;
     const nextMeetings = safeMeetings.map((meeting: any) => {
@@ -946,7 +1031,9 @@ export class Database {
       const reconciledRecordings = filteredRecordings.map((recording: any) => {
         const recordingId = String(recording?.id || recording?.recordingId || '').trim();
         const asset = assetsById.get(recordingId);
-        const enriched = this._enrichRecordingFromMediaAsset(recording, asset);
+        const enriched = this._enrichRecordingFromMediaAsset(recording, asset, {
+          audioAvailable: audioAvailabilityById.get(recordingId),
+        });
         if (JSON.stringify(enriched) !== JSON.stringify(recording)) {
           changed = true;
         }

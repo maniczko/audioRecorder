@@ -708,6 +708,67 @@ describe('Database - Additional Coverage Tests', () => {
       expect(meeting?.latestRecordingId).toBeNull();
       expect(meeting?.recordings).toEqual([]);
     });
+
+    test('Regression: #0 - workspace state marks recordings with missing storage audio as unavailable', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_audio_unavailable';
+      const meetingId = 'meeting_state_audio_unavailable';
+      const recordingId = 'rec_state_audio_unavailable';
+      const availabilitySpy = vi
+        .spyOn(db, '_isMediaAssetAudioAvailable')
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(false);
+
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          transcription_status, transcript_json, diarization_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          recordingId,
+          workspaceId,
+          meetingId,
+          'user1',
+          'missing-audio.webm',
+          'audio/webm',
+          'completed',
+          JSON.stringify([{ id: 'seg1', speakerId: '0', text: 'Test transcript' }]),
+          JSON.stringify({ speakerCount: 1 }),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ]
+      );
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Audio unavailable',
+            latestRecordingId: recordingId,
+            recordings: [{ id: recordingId }],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.recordings?.[0]).toMatchObject({
+        id: recordingId,
+        audioAvailable: false,
+        audioUnavailable: true,
+        audioUnavailableReason: 'audio_source_unavailable',
+        transcript: [{ id: 'seg1', speakerId: '0', text: 'Test transcript' }],
+      });
+      availabilitySpy.mockRestore();
+    });
   });
 
   // NOTE: saveTranscriptionResult test removed - function needs integration with existing database.test.ts
