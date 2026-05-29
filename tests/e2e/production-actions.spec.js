@@ -24,6 +24,8 @@ const shellOrUtilityAction = /strona glowna|voicebobr|workspace|ctrl|command|esc
 function normalizeActionLabel(label) {
   return String(label || '')
     .normalize('NFD')
+    .replace(/\u0142/g, 'l')
+    .replace(/\u0141/g, 'l')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 }
