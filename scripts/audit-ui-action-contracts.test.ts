@@ -213,4 +213,77 @@ describe('audit-ui-action-contracts', () => {
       expect(action.interactionContract.targetCommand.trim(), action.id).not.toBe('');
     }
   });
+
+  it('fails critical UI actions without feedback, network, persistence, or target command contracts', () => {
+    const issues = findUiActionContractIssues(
+      [
+        {
+          screen: 'Studio',
+          file: 'src/studio/StudioMeetingView.tsx',
+          line: 10,
+          kind: 'button',
+          label: 'Wykryj mowcow',
+          actionId: '',
+          hasOnClick: true,
+          href: '',
+          disabledExpression: '',
+          signature: 'sig',
+        },
+      ],
+      {
+        schemaVersion: 1,
+        screens: [
+          {
+            screen: 'Studio',
+            file: 'src/studio/StudioMeetingView.tsx',
+            expectedActionCount: 1,
+            fingerprint: '4e9aeb513a7f8026',
+            contractStatus: 'covered',
+            testFiles: ['scripts/audit-ui-action-contracts.test.ts'],
+            testEvidence: ['fails critical UI actions without feedback'],
+            owner: 'frontend-studio',
+          },
+        ],
+        criticalActions: [
+          {
+            id: 'studio.rediarize-speakers',
+            screen: 'Studio',
+            file: 'src/studio/StudioMeetingView.tsx',
+            labelPattern: 'Wykryj',
+            testFile: 'scripts/audit-ui-action-contracts.test.ts',
+            testTitle: 'fails critical UI actions without feedback',
+          },
+        ],
+      }
+    );
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'missing-critical-interaction-contract' }),
+      ])
+    );
+  });
+
+  it('requires ignored screen contracts to document an ignore reason', () => {
+    const issues = findUiActionContractIssues([], {
+      schemaVersion: 1,
+      screens: [
+        {
+          screen: 'Legacy',
+          file: 'src/Legacy.tsx',
+          expectedActionCount: 0,
+          fingerprint: '',
+          contractStatus: 'ignored',
+          testFiles: [],
+          testEvidence: [],
+          owner: 'frontend',
+        },
+      ],
+      criticalActions: [],
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'missing-ignore-reason' })])
+    );
+  });
 });

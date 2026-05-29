@@ -312,6 +312,31 @@ export function findUiActionContractIssues(actions, contracts, { root = rootDir 
   }
 
   for (const contract of contracts.screens) {
+    if (!contract.owner || !String(contract.owner).trim()) {
+      issues.push({
+        type: 'missing-screen-owner',
+        screen: contract.screen,
+        file: contract.file,
+      });
+    }
+
+    if (!['covered', 'ignored'].includes(contract.contractStatus)) {
+      issues.push({
+        type: 'invalid-screen-contract-status',
+        screen: contract.screen,
+        file: contract.file,
+        status: contract.contractStatus,
+      });
+    }
+
+    if (contract.contractStatus === 'ignored' && !String(contract.ignoreReason || '').trim()) {
+      issues.push({
+        type: 'missing-ignore-reason',
+        screen: contract.screen,
+        file: contract.file,
+      });
+    }
+
     if (!summariesByKey.has(`${contract.screen}::${contract.file}`)) {
       issues.push({
         type: 'stale-screen-contract',
@@ -340,6 +365,47 @@ export function findUiActionContractIssues(actions, contracts, { root = rootDir 
   }
 
   for (const criticalAction of contracts.criticalActions ?? []) {
+    const interactionContract = criticalAction.interactionContract;
+    const network = interactionContract?.network;
+    const persistence = interactionContract?.persistence;
+
+    if (!interactionContract) {
+      issues.push({
+        type: 'missing-critical-interaction-contract',
+        screen: criticalAction.screen,
+        id: criticalAction.id,
+      });
+    } else {
+      if (!String(interactionContract.expectedFeedback || '').trim()) {
+        issues.push({
+          type: 'missing-critical-feedback-contract',
+          screen: criticalAction.screen,
+          id: criticalAction.id,
+        });
+      }
+      if (!network?.method || !network?.pathPattern || !Array.isArray(network.allowedStatuses)) {
+        issues.push({
+          type: 'invalid-critical-network-contract',
+          screen: criticalAction.screen,
+          id: criticalAction.id,
+        });
+      }
+      if (!persistence || typeof persistence.checked !== 'boolean' || !persistence.evidence) {
+        issues.push({
+          type: 'invalid-critical-persistence-contract',
+          screen: criticalAction.screen,
+          id: criticalAction.id,
+        });
+      }
+      if (!String(interactionContract.targetCommand || '').trim()) {
+        issues.push({
+          type: 'missing-critical-target-command',
+          screen: criticalAction.screen,
+          id: criticalAction.id,
+        });
+      }
+    }
+
     const matchingAction = actions.find((action) => matchesCriticalAction(action, criticalAction));
     if (!matchingAction) {
       issues.push({

@@ -262,8 +262,8 @@ describe('GitHub workflows validation', () => {
     expect(content).toContain('PRODUCTION_SMOKE_AUTH_TOKEN');
     expect(content).toContain('PRODUCTION_SMOKE_WORKSPACE_ID');
     expect(content).toContain('PRODUCTION_SYSTEM_AUDIT_REQUIRED');
+    expect(content).toContain('pnpm run test:ui-actions:contract');
     expect(content).toContain('pnpm run test:e2e:production-system');
-    expect(content).toContain('pnpm run release:prod-smoke:strict');
-    expect(content).toContain('pnpm run sentry:release-health');
+    expect(content).toContain('pnpm run release:prod-gate:strict');
   });
 });

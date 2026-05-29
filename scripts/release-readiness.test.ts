@@ -13,6 +13,11 @@ import {
   runStaleRecordingSmoke,
   runVoiceProfileSmoke,
 } from './production-smoke.mjs';
+import {
+  productionGateCommands,
+  productionGateRequiredEnv,
+  validateProductionGateEnv,
+} from './release-prod-gate-strict.mjs';
 import { assertNode22, releaseGateCommands } from './release-rehearsal.mjs';
 
 const rootDir = process.cwd();
@@ -39,6 +44,7 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run lint:css');
     expect(commandText).toContain('pnpm run audit:tooling');
     expect(commandText).toContain('pnpm run audit:ui-actions');
+    expect(commandText).toContain('pnpm run test:ui-actions:contract');
     expect(commandText).toContain('pnpm run audit:build-warnings');
     expect(commandText).toContain('pnpm run test:server:retry');
     expect(commandText).toContain('pnpm run test:stt-corpus');
@@ -51,6 +57,45 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run test:e2e');
     expect(commandText).toContain('pnpm run test:e2e:advanced');
     expect(commandText).toContain('pnpm run test:e2e:remote-api');
+  });
+
+  it('keeps the strict production gate focused on real production actions, persistence, smoke, and Sentry', () => {
+    const commandText = productionGateCommands.map(([command, args]) =>
+      [command, ...args].join(' ')
+    );
+
+    expect(commandText).toEqual([
+      'pnpm run test:e2e:production-actions',
+      'pnpm run test:e2e:production-persistence',
+      'pnpm run release:prod-smoke:strict',
+      'pnpm run sentry:release-health',
+    ]);
+    expect(productionGateRequiredEnv).toEqual(
+      expect.arrayContaining([
+        'PRODUCTION_SMOKE_AUTH_TOKEN',
+        'PRODUCTION_SMOKE_WORKSPACE_ID',
+        'PRODUCTION_FRONTEND_URL',
+        'PRODUCTION_API_BASE_URL',
+        'SENTRY_AUTH_TOKEN',
+        'SENTRY_ORG',
+        'SENTRY_PROJECT',
+      ])
+    );
+  });
+
+  it('fails strict production gate config when required production secrets are missing', () => {
+    expect(() => validateProductionGateEnv({})).toThrow('release:prod-gate:strict missing');
+    expect(() =>
+      validateProductionGateEnv({
+        PRODUCTION_SMOKE_AUTH_TOKEN: 'token',
+        PRODUCTION_SMOKE_WORKSPACE_ID: 'workspace',
+        PRODUCTION_FRONTEND_URL: 'https://front.example',
+        PRODUCTION_API_BASE_URL: 'https://api.example',
+        SENTRY_AUTH_TOKEN: 'sentry',
+        SENTRY_ORG: 'org',
+        SENTRY_PROJECT: 'project',
+      })
+    ).not.toThrow();
   });
 
   it('detects Vite and Rollup build warnings that block a 9/10 release', () => {

@@ -91,16 +91,13 @@ jobs:
           fi
 
       - name: Audit UI action inventory
-        run: pnpm run audit:ui-actions
+        run: pnpm run test:ui-actions:contract
 
       - name: Production browser action audit
         run: pnpm run test:e2e:production-system
 
-      - name: Strict production smoke
-        run: pnpm run release:prod-smoke:strict
-
-      - name: Sentry release health
-        run: pnpm run sentry:release-health
+      - name: Strict production action/persistence gate
+        run: pnpm run release:prod-gate:strict
 
       - name: Upload Playwright artifacts
         if: always()
