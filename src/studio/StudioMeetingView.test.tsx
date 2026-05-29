@@ -518,6 +518,51 @@ describe('StudioMeetingView', () => {
     expect(await screen.findByText(/Wykryto 2/i)).toBeInTheDocument();
   });
 
+  test('Regression: rediarize no_changes keeps transcript intact and shows non-terminal feedback', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    const updateTranscriptSegment = vi.fn();
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') return Promise.resolve({ profiles: [] });
+      if (url === '/media/recordings/rec-display-only/rediarize') {
+        return Promise.resolve({
+          status: 'no_changes',
+          code: 'rediarization_unavailable',
+          message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+          speakerCount: 0,
+          segments: [],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={null}
+        displayRecording={{
+          id: 'rec-display-only',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              text: 'To jest testowy fragment rozmowy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+          ],
+          duration: 60,
+        }}
+        updateTranscriptSegment={updateTranscriptSegment}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Wykryj m/i }));
+
+    expect(await screen.findByText(/Transkrypt pozostaje bez zmian/i)).toBeInTheDocument();
+    expect(updateTranscriptSegment).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Wykryto 0/i)).not.toBeInTheDocument();
+  });
+
   test('Regression: rediarize maps technical API errors to user-facing copy', async () => {
     remoteApiEnabledMock.mockReturnValue(true);
     apiRequestMock.mockImplementation((url: string) => {

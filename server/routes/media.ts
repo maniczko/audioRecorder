@@ -1278,7 +1278,19 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         .map((s) => ({ text: s.text, start: s.timestamp, end: s.endTimestamp || s.timestamp }))
         .filter((s) => s.text);
       const diarization = await transcriptionService.diarizeFromTranscript(whisperLike);
-      if (!diarization) return c.json({ message: 'Diaryzacja nie powiodla sie.' }, 422);
+      if (!diarization) {
+        return c.json(
+          {
+            status: 'no_changes',
+            code: 'rediarization_unavailable',
+            message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+            speakerCount: 0,
+            speakerNames: {},
+            segments: [],
+          },
+          200
+        );
+      }
 
       const updated = diarization.segments.map((seg: any, idx: number) => ({
         ...(stored[idx] || {}),

@@ -1646,6 +1646,12 @@ export default function StudioMeetingView({
       const result = await apiRequest(`/media/recordings/${recordingId}/rediarize`, {
         method: 'POST',
       });
+      if (result?.status === 'no_changes' || result?.code === 'rediarization_unavailable') {
+        setRediarizeMsg(
+          result?.message || 'Wykrywanie mówców zakończone. Transkrypt pozostaje bez zmian.'
+        );
+        return;
+      }
       if (result?.segments && typeof updateTranscriptSegment === 'function') {
         for (const seg of result.segments) {
           if (seg.id)

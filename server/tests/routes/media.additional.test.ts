@@ -350,7 +350,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data.message).toContain('Brak transkrypcji');
     });
 
-    it('returns 422 when diarization fails', async () => {
+    it('returns 200 no_changes when diarization cannot produce updated speakers', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_fail',
         workspace_id: 'ws_1',
@@ -364,9 +364,17 @@ describe('Media Routes - Additional Coverage', () => {
         headers: { Authorization: 'Bearer fake_token' },
       });
 
-      expect(res.status).toBe(422);
+      expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.message).toContain('Diaryzacja nie powiodla sie');
+      expect(data).toEqual({
+        status: 'no_changes',
+        code: 'rediarization_unavailable',
+        message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+        speakerCount: 0,
+        speakerNames: {},
+        segments: [],
+      });
+      expect(mockTranscriptionService.saveTranscriptionResult).not.toHaveBeenCalled();
     });
 
     it('returns 404 when asset does not exist', async () => {

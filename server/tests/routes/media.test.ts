@@ -865,7 +865,7 @@ describe('Media Routes', () => {
     );
   });
 
-  it('POST /media/recordings/:recordingId/rediarize returns 422 when diarization fails', async () => {
+  it('POST /media/recordings/:recordingId/rediarize returns no_changes when diarization fails', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_rediarize_fail',
       workspace_id: 'ws_1',
@@ -878,7 +878,16 @@ describe('Media Routes', () => {
       headers: { Authorization: 'Bearer fake_token' },
     });
 
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      status: 'no_changes',
+      code: 'rediarization_unavailable',
+      message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+      speakerCount: 0,
+      speakerNames: {},
+      segments: [],
+    });
+    expect(mockTranscriptionService.saveTranscriptionResult).not.toHaveBeenCalled();
   });
 
   it('POST /media/analyze returns fallback when analysis service returns null', async () => {
