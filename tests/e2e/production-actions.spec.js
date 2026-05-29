@@ -17,7 +17,16 @@ const coreTabs = [
 ];
 
 const destructiveOrCostly =
-  /usun|usuń|delete|wyloguj|rozpocznij|zatrzymaj|nagraj|wgraj|upload|eksport|pobierz|google|microsoft|wykryj|generuj|zapisz/i;
+  /usun|usun|delete|wyloguj|rozpocznij|zatrzymaj|nagraj|wgraj|upload|eksport|pobierz|google|microsoft|wykryj|generuj|zapisz/i;
+
+const shellOrUtilityAction = /strona glowna|voicebobr|workspace|ctrl|command|escape/i;
+
+function normalizeActionLabel(label) {
+  return String(label || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
 
 async function openShellTab(page, label) {
   const hamburger = page.locator('.modern-hamburger-btn');
@@ -110,6 +119,8 @@ test.describe('production action crawler', () => {
 
       const safeLabels = [...new Set(await visibleActions(page))]
         .filter((label) => !destructiveOrCostly.test(label))
+        .filter((label) => !shellOrUtilityAction.test(normalizeActionLabel(label)))
+        .filter((label) => !coreTabs.some((item) => item.label === label))
         .slice(0, 3);
 
       for (const label of safeLabels) {
