@@ -160,6 +160,52 @@ describe('attachRecording', () => {
     const result = attachRecording(meeting, recording);
     expect(result.aiDebrief).toEqual({ summary: 'Custom debrief' });
   });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - completed transcript overwritten by a shorter retry result
+  // Date: 2026-05-28
+  // Bug: attaching the same recording again could prepend an empty/short
+  // transcript and make the completed transcript disappear from the UI.
+  // Fix: upsert by recording id and preserve the richer transcript payload.
+  // -----------------------------------------------------------------
+  it('preserves richer completed transcript when reattaching the same recording', () => {
+    const fullTranscript = [
+      { id: 's1', text: 'Pierwszy segment.' },
+      { id: 's2', text: 'Drugi segment.' },
+      { id: 's3', text: 'Trzeci segment.' },
+    ];
+    const meeting = {
+      id: 'm1',
+      title: 'Test',
+      recordings: [
+        {
+          id: 'rec1',
+          transcript: fullTranscript,
+          transcriptOutcome: 'normal',
+          analysis: { summary: 'Pelne podsumowanie' },
+          speakerNames: { 0: 'Iwo' },
+          speakerCount: 1,
+        },
+      ],
+      latestRecordingId: 'rec1',
+    };
+    const shorterRetryResult = {
+      id: 'rec1',
+      transcript: [{ id: 'short', text: 'Skrocony wynik.' }],
+      transcriptOutcome: 'partial',
+      analysis: { summary: 'Skrocone podsumowanie' },
+      speakerNames: { 0: 'Iwo' },
+      speakerCount: 1,
+    };
+
+    const result = attachRecording(meeting, shorterRetryResult);
+
+    expect(result.recordings).toHaveLength(1);
+    expect(result.recordings[0].id).toBe('rec1');
+    expect(result.recordings[0].transcript).toEqual(fullTranscript);
+    expect(result.recordings[0].transcriptOutcome).toBe('normal');
+    expect(result.latestRecordingId).toBe('rec1');
+  });
 });
 
 describe('buildMeetingAIDebrief', () => {

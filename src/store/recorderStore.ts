@@ -115,6 +115,22 @@ function buildFallbackAnalysis(message, diarization) {
   };
 }
 
+function hasCompletedTranscript(recording) {
+  const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
+  if (transcript.length === 0) {
+    return false;
+  }
+
+  const pipelineStatus = String(
+    recording?.pipelineStatus || recording?.transcriptionStatus || recording?.status || ''
+  ).toLowerCase();
+  const transcriptOutcome = String(recording?.transcriptOutcome || '').toLowerCase();
+
+  return (
+    pipelineStatus === 'done' || pipelineStatus === 'completed' || transcriptOutcome === 'normal'
+  );
+}
+
 type ExtendedMediaTranscriptionResponse = MediaTranscriptionResponse & {
   verifiedSegments?: TranscriptionStatusPayload['segments'];
   providerId?: string;
@@ -327,8 +343,19 @@ export const useRecorderStore = create<any>()(
         });
       },
 
-      retryStoredRecording: (meeting, recording) => {
+      retryStoredRecording: (meeting, recording, options: { force?: boolean } = {}) => {
         if (!meeting?.id || !recording?.id) return null;
+        if (hasCompletedTranscript(recording) && !options?.force) {
+          set({
+            lastQueueErrorKey: '',
+            recordingMessage:
+              'To nagranie ma juz gotowa transkrypcje. Potwierdz ponowne przetworzenie, zeby ja zastapic.',
+            analysisStatus: 'done',
+            pipelineProgressPercent: 100,
+            pipelineStageLabel: 'Transkrypcja jest juz gotowa',
+          });
+          return null;
+        }
         const createdAt = recording.createdAt || new Date().toISOString();
         const queueItem = {
           id: recording.id,

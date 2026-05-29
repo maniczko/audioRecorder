@@ -73,6 +73,10 @@ export const CHUNK_OVERLAP_SECONDS = Math.max(
  */
 export const MAX_FILE_SIZE_BYTES = 24 * 1024 * 1024;
 
+const MAX_REASONABLE_SPEAKER_LABELS = 16;
+const SUSPICIOUS_NUMERIC_SPEAKER_LABEL = 32;
+const NOISY_SINGLE_TURN_LABEL_RATIO = 0.7;
+
 // ==================== TEXT UTILITIES ====================
 
 /**
@@ -624,6 +628,39 @@ export function normalizeDiarizedSegments(payload: any): {
       };
     })
     .filter(Boolean);
+
+  const uniqueLabels = [...speakerOrder.keys()];
+  const suspiciousNumericLabels = uniqueLabels.filter(
+    (label) => /^\d+$/.test(label) && Number(label) >= SUSPICIOUS_NUMERIC_SPEAKER_LABEL
+  ).length;
+  const singleTurnLabels = new Map<string, number>();
+  for (const segment of segments) {
+    const label = String(segment.rawSpeakerLabel || '');
+    singleTurnLabels.set(label, (singleTurnLabels.get(label) || 0) + 1);
+  }
+  const singleTurnLabelCount = [...singleTurnLabels.values()].filter((count) => count <= 1).length;
+  const shouldCollapseNoisyLabels =
+    uniqueLabels.length > MAX_REASONABLE_SPEAKER_LABELS &&
+    (suspiciousNumericLabels / uniqueLabels.length >= NOISY_SINGLE_TURN_LABEL_RATIO ||
+      singleTurnLabelCount / uniqueLabels.length >= NOISY_SINGLE_TURN_LABEL_RATIO);
+
+  if (shouldCollapseNoisyLabels) {
+    for (const segment of segments) {
+      segment.speakerId = 0;
+      segment.rawSpeakerLabel = segment.rawSpeakerLabel || 'unknown';
+    }
+    return {
+      segments,
+      speakerNames: { '0': 'Speaker 1' },
+      speakerCount: 1,
+      text: clean(
+        payload?.text ||
+          payload?.transcript ||
+          synthesized?.text ||
+          segments.map((segment: any) => segment.text).join(' ')
+      ),
+    };
+  }
 
   return {
     segments,

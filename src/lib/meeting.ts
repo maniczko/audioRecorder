@@ -142,16 +142,57 @@ export function upsertMeeting(meetings, nextMeeting) {
   return meetings.map((meeting) => (meeting.id === nextMeeting.id ? nextMeeting : meeting));
 }
 
+function transcriptSegmentCount(recording) {
+  return Array.isArray(recording?.transcript) ? recording.transcript.length : 0;
+}
+
+function mergeRecordingWithoutTranscriptRegression(existingRecording, incomingRecording) {
+  if (!existingRecording) {
+    return incomingRecording;
+  }
+
+  const existingTranscriptCount = transcriptSegmentCount(existingRecording);
+  const incomingTranscriptCount = transcriptSegmentCount(incomingRecording);
+  const shouldPreserveExistingTranscript =
+    existingTranscriptCount > 0 && incomingTranscriptCount < existingTranscriptCount;
+
+  if (!shouldPreserveExistingTranscript) {
+    return {
+      ...existingRecording,
+      ...incomingRecording,
+    };
+  }
+
+  return {
+    ...existingRecording,
+    ...incomingRecording,
+    transcript: existingRecording.transcript,
+    transcriptOutcome: existingRecording.transcriptOutcome || incomingRecording.transcriptOutcome,
+    analysis: existingRecording.analysis || incomingRecording.analysis,
+    aiDebrief: existingRecording.aiDebrief || incomingRecording.aiDebrief,
+    reviewSummary: existingRecording.reviewSummary || incomingRecording.reviewSummary,
+    speakerNames: existingRecording.speakerNames || incomingRecording.speakerNames,
+    speakerCount: existingRecording.speakerCount || incomingRecording.speakerCount,
+  };
+}
+
 export function attachRecording(meeting, recording) {
-  const aiDebrief = recording.aiDebrief || buildMeetingAIDebrief(meeting, recording.analysis);
+  const previousRecordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  const existingRecording = previousRecordings.find((item) => item?.id === recording?.id);
+  const nextRecording = mergeRecordingWithoutTranscriptRegression(existingRecording, recording);
+  const aiDebrief =
+    nextRecording.aiDebrief || buildMeetingAIDebrief(meeting, nextRecording.analysis);
   return {
     ...meeting,
-    recordings: [recording, ...meeting.recordings],
-    latestRecordingId: recording.id,
-    analysis: recording.analysis,
+    recordings: [
+      nextRecording,
+      ...previousRecordings.filter((item) => item?.id !== nextRecording?.id),
+    ],
+    latestRecordingId: nextRecording.id,
+    analysis: nextRecording.analysis,
     aiDebrief,
-    speakerNames: recording.speakerNames,
-    speakerCount: recording.speakerCount,
+    speakerNames: nextRecording.speakerNames,
+    speakerCount: nextRecording.speakerCount,
     updatedAt: new Date().toISOString(),
   };
 }

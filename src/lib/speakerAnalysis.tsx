@@ -48,6 +48,35 @@ interface SpeakerStat {
   avgTurnSeconds: number;
 }
 
+const MAX_REASONABLE_SPEAKERS = 16;
+const SUSPICIOUS_NUMERIC_SPEAKER_ID = 32;
+const NOISY_SINGLE_TURN_RATIO = 0.7;
+
+function isSuspiciousNumericSpeakerId(raw: string) {
+  if (!/^\d+$/.test(raw)) return false;
+  return Number(raw) >= SUSPICIOUS_NUMERIC_SPEAKER_ID;
+}
+
+function shouldCollapseNoisySpeakerIds(bySpeaker: Map<string, any[]>) {
+  if (bySpeaker.size <= MAX_REASONABLE_SPEAKERS) return false;
+
+  const ids = [...bySpeaker.keys()];
+  const suspiciousIds = ids.filter(isSuspiciousNumericSpeakerId).length;
+  const singleTurnIds = ids.filter((id) => (bySpeaker.get(id)?.length || 0) <= 1).length;
+
+  return (
+    suspiciousIds / ids.length >= NOISY_SINGLE_TURN_RATIO ||
+    singleTurnIds / ids.length >= NOISY_SINGLE_TURN_RATIO
+  );
+}
+
+function displayNameForSpeaker(speakerId: string, displaySpeakerNames: Record<string, string>) {
+  return (
+    displaySpeakerNames?.[speakerId] ||
+    (speakerId === 'unknown' ? 'Speaker do weryfikacji' : `Speaker ${speakerId}`)
+  );
+}
+
 export function analyzeSpeakingStyle(
   transcript: any,
   displaySpeakerNames: Record<string, string> = {}
@@ -60,6 +89,16 @@ export function analyzeSpeakingStyle(
     const sid = String(seg.speakerId ?? 'unknown');
     if (!bySpeaker.has(sid)) bySpeaker.set(sid, []);
     bySpeaker.get(sid)!.push(seg);
+  }
+
+  if (shouldCollapseNoisySpeakerIds(bySpeaker)) {
+    const collapsed = new Map<string, any[]>();
+    for (const [speakerId, segs] of bySpeaker) {
+      const normalizedId = displaySpeakerNames?.[speakerId] ? speakerId : 'unknown';
+      collapsed.set(normalizedId, [...(collapsed.get(normalizedId) || []), ...segs]);
+    }
+    bySpeaker.clear();
+    for (const [speakerId, segs] of collapsed) bySpeaker.set(speakerId, segs);
   }
 
   const results: SpeakerStat[] = [];
@@ -102,7 +141,7 @@ export function analyzeSpeakingStyle(
 
     results.push({
       speakerId,
-      speakerName: displaySpeakerNames?.[speakerId] || `Speaker ${speakerId}`,
+      speakerName: displayNameForSpeaker(speakerId, displaySpeakerNames),
       totalWords,
       speakingSeconds: Math.round(speakingSeconds),
       wpm,

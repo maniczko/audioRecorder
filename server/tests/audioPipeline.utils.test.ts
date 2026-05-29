@@ -550,6 +550,31 @@ describe('audioPipeline.utils', () => {
       expect(result.speakerCount).toBe(2);
     });
 
+    // -----------------------------------------------------------------
+    // Issue #0 - noisy STT speaker ids created hundreds of fake speakers
+    // Date: 2026-05-29
+    // Bug: per-segment numeric speakerId values were trusted as speakers.
+    // Fix: collapse high-cardinality segment-like ids to one fallback speaker.
+    // -----------------------------------------------------------------
+    it('collapses high-cardinality segment-like speaker ids to one fallback speaker', () => {
+      const payload = {
+        segments: Array.from({ length: 40 }, (_, index) => ({
+          text: `Segment ${index}`,
+          speakerId: 300 + index,
+          start: index,
+          end: index + 0.8,
+        })),
+      };
+
+      const result = utils.normalizeDiarizedSegments(payload);
+
+      expect(result.speakerCount).toBe(1);
+      expect(result.speakerNames).toEqual({ '0': 'Speaker 1' });
+      expect(new Set(result.segments.map((segment: any) => segment.speakerId))).toEqual(
+        new Set([0])
+      );
+    });
+
     it('synthesizes segments from words if no segments', () => {
       const payload = {
         words: [{ word: 'Hello', start: 0, end: 1 }],

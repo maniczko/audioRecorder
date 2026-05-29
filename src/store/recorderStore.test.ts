@@ -152,6 +152,62 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('queued');
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - retry could reset a completed transcript without confirmation
+  // Date: 2026-05-28
+  // Bug: retryStoredRecording always queued a remote retry, even when the
+  // recording already had a completed transcript that could be overwritten.
+  // Fix: require an explicit destructive retry for completed transcripts.
+  // -----------------------------------------------------------------
+  test('does not queue retry for completed recording with transcript by default', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    const meeting = { id: 'm1', workspaceId: 'ws1', title: 'Test' };
+    const recording = {
+      id: 'rec_completed',
+      createdAt: '2026-01-01T00:00:00Z',
+      duration: 60,
+      mimeType: 'audio/webm',
+      pipelineStatus: 'done',
+      transcriptOutcome: 'normal',
+      transcript: [{ id: 's1', text: 'Gotowa transkrypcja.' }],
+    };
+
+    const result = useRecorderStore.getState().retryStoredRecording(meeting, recording);
+
+    expect(result).toBeNull();
+    expect(useRecorderStore.getState().recordingQueue).toEqual([]);
+    expect(useRecorderStore.getState().recordingMessage).toBe(
+      'To nagranie ma juz gotowa transkrypcje. Potwierdz ponowne przetworzenie, zeby ja zastapic.'
+    );
+    expect(useRecorderStore.getState().analysisStatus).toBe('done');
+  });
+
+  test('allows explicit destructive retry for completed recording with transcript', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    const meeting = { id: 'm1', workspaceId: 'ws1', title: 'Test' };
+    const recording = {
+      id: 'rec_completed_force',
+      createdAt: '2026-01-01T00:00:00Z',
+      duration: 60,
+      mimeType: 'audio/webm',
+      pipelineStatus: 'done',
+      transcriptOutcome: 'normal',
+      transcript: [{ id: 's1', text: 'Gotowa transkrypcja.' }],
+    };
+
+    const result = useRecorderStore
+      .getState()
+      .retryStoredRecording(meeting, recording, { force: true });
+
+    expect(result).toBe('rec_completed_force');
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      recordingId: 'rec_completed_force',
+      meetingId: 'm1',
+      status: 'queued',
+      uploaded: true,
+    });
+  });
+
   test('does not auto-reconcile permanent missing remote recordings', async () => {
     const { useRecorderStore } = await import('./recorderStore');
     useRecorderStore.setState({
