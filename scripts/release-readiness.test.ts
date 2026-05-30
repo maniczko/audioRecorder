@@ -68,6 +68,7 @@ describe('release readiness gates', () => {
       'pnpm run test:e2e:production-actions',
       'pnpm run test:e2e:production-persistence',
       'pnpm run release:prod-smoke:strict',
+      'pnpm run verify:supabase:workspace',
       'pnpm run sentry:release-health',
     ]);
     expect(productionGateRequiredEnv).toEqual(
@@ -76,6 +77,8 @@ describe('release readiness gates', () => {
         'PRODUCTION_SMOKE_WORKSPACE_ID',
         'PRODUCTION_FRONTEND_URL',
         'PRODUCTION_API_BASE_URL',
+        'SUPABASE_URL',
+        'SUPABASE_SERVICE_ROLE_KEY',
         'SENTRY_AUTH_TOKEN',
         'SENTRY_ORG',
         'SENTRY_PROJECT',
@@ -91,6 +94,8 @@ describe('release readiness gates', () => {
         PRODUCTION_SMOKE_WORKSPACE_ID: 'workspace',
         PRODUCTION_FRONTEND_URL: 'https://front.example',
         PRODUCTION_API_BASE_URL: 'https://api.example',
+        SUPABASE_URL: 'https://project.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
         SENTRY_AUTH_TOKEN: 'sentry',
         SENTRY_ORG: 'org',
         SENTRY_PROJECT: 'project',
@@ -369,10 +374,16 @@ describe('release readiness gates', () => {
     expect(packageJson.scripts?.['test:e2e:production-system']).toBe(
       'playwright test tests/e2e/production-system-audit.spec.js --project=chromium'
     );
+    expect(packageJson.scripts?.['test:e2e:production-actions']).toBe(
+      'playwright test tests/e2e/production-actions.spec.js --project=chromium'
+    );
     expect(packageJson.scripts?.['release:prod-smoke']).toBe('node scripts/production-smoke.mjs');
     expect(packageJson.scripts?.['test:stt-corpus']).toBe('node scripts/stt-corpus-gate.mjs');
     expect(packageJson.scripts?.['release:prod-smoke:strict']).toBe(
       'node scripts/production-smoke-strict.mjs'
+    );
+    expect(packageJson.scripts?.['verify:supabase:workspace']).toBe(
+      'node scripts/verify-supabase-workspace-consistency.mjs --strict --write-report'
     );
     expect(packageJson.scripts?.['sentry:release-health']).toBe(
       'node scripts/sentry-release-health.mjs'
@@ -413,6 +424,19 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('pnpm run release:prod-smoke:strict');
     expect(workflow).toContain('pnpm run sentry:release-health');
     expect(workflow).toContain('SENTRY_AUTH_TOKEN');
+  });
+
+  it('keeps production action crawler evidence as uploaded CI artifacts', () => {
+    const workflow = read('.github/workflows/production-system-audit.yml');
+    const productionActionsSpec = read('tests/e2e/production-actions.spec.js');
+
+    expect(workflow).toContain('pnpm run test:e2e:production-system');
+    expect(workflow).toContain('pnpm run release:prod-gate:strict');
+    expect(workflow).toContain('reports/production-action-crawler/');
+    expect(productionActionsSpec).toContain('production-action-crawler-report.json');
+    expect(productionActionsSpec).toContain('production-action-crawler');
+    expect(productionActionsSpec).toContain('missing-feedback');
+    expect(productionActionsSpec).toContain('runtime-failure');
   });
 
   it('keeps Vercel rewrites aligned with backend route prefixes used by the frontend', () => {

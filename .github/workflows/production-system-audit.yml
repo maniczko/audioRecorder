@@ -108,4 +108,5 @@ jobs:
             playwright-report/
             test-results/
             reports/ui-action-inventory/
+            reports/production-action-crawler/
           if-no-files-found: ignore

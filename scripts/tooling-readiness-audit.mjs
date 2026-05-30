@@ -13,6 +13,7 @@ export const requiredToolingIds = [
   'railway',
   'playwright-browser',
   'codex-skills',
+  'subagent-orchestration',
   'prompt-engineer',
   'coderabbit',
   'figma-canva',
@@ -84,7 +85,8 @@ const toolingDefinitions = [
       {
         id: 'release-gates',
         description: 'Canonical release rehearsal is a package script and workflow contract.',
-        test: (root) => scriptEquals(root, 'release:rehearsal', 'node scripts/release-rehearsal.mjs'),
+        test: (root) =>
+          scriptEquals(root, 'release:rehearsal', 'node scripts/release-rehearsal.mjs'),
       },
       {
         id: 'prod-secrets',
@@ -120,7 +122,11 @@ const toolingDefinitions = [
         id: 'supabase-smoke',
         description: 'Production smoke requires remote Supabase persistence evidence.',
         test: (root) =>
-          contains(root, '.github/workflows/vercel-production.yml', 'PRODUCTION_REQUIRE_SUPABASE_REMOTE'),
+          contains(
+            root,
+            '.github/workflows/vercel-production.yml',
+            'PRODUCTION_REQUIRE_SUPABASE_REMOTE'
+          ),
       },
     ],
   },
@@ -140,12 +146,17 @@ const toolingDefinitions = [
         id: 'release-health-workflow',
         description: 'Production deploy runs Sentry release health for the release SHA.',
         test: (root) =>
-          contains(root, '.github/workflows/vercel-production.yml', 'pnpm run sentry:release-health'),
+          contains(
+            root,
+            '.github/workflows/vercel-production.yml',
+            'pnpm run sentry:release-health'
+          ),
       },
       {
         id: 'sentry-script',
         description: 'Package script exposes sentry:release-health.',
-        test: (root) => scriptEquals(root, 'sentry:release-health', 'node scripts/sentry-release-health.mjs'),
+        test: (root) =>
+          scriptEquals(root, 'sentry:release-health', 'node scripts/sentry-release-health.mjs'),
       },
     ],
   },
@@ -158,13 +169,21 @@ const toolingDefinitions = [
         id: 'vercel-workflow',
         description: 'Vercel production workflow deploys from the Railway-verified SHA.',
         test: (root) =>
-          contains(root, '.github/workflows/vercel-production.yml', "workflows: ['Railway Build Metadata']"),
+          contains(
+            root,
+            '.github/workflows/vercel-production.yml',
+            "workflows: ['Railway Build Metadata']"
+          ),
       },
       {
         id: 'vercel-strict-smoke',
         description: 'Vercel deploy runs strict production smoke.',
         test: (root) =>
-          contains(root, '.github/workflows/vercel-production.yml', 'pnpm run release:prod-smoke:strict'),
+          contains(
+            root,
+            '.github/workflows/vercel-production.yml',
+            'pnpm run release:prod-smoke:strict'
+          ),
       },
       {
         id: 'vercel-validator',
@@ -190,7 +209,12 @@ const toolingDefinitions = [
         id: 'railway-retry-health',
         description: 'Railway deploy has retry and health verification.',
         test: (root) =>
-          contains(root, '.github/workflows/railway-build-metadata.yml', 'Railway deploy attempt', '/health'),
+          contains(
+            root,
+            '.github/workflows/railway-build-metadata.yml',
+            'Railway deploy attempt',
+            '/health'
+          ),
       },
       {
         id: 'railway-status-tests',
@@ -210,20 +234,56 @@ const toolingDefinitions = [
         id: 'ui-action-inventory',
         description: 'UI action inventory is audited and tested.',
         test: (root) =>
-          scriptEquals(root, 'audit:ui-actions', 'node scripts/audit-ui-action-contracts.mjs --write-report') &&
-          scriptEquals(root, 'test:ui-actions', 'playwright test tests/e2e/ui-actions'),
+          scriptEquals(
+            root,
+            'audit:ui-actions',
+            'node scripts/audit-ui-action-contracts.mjs --write-report'
+          ) && scriptEquals(root, 'test:ui-actions', 'playwright test tests/e2e/ui-actions'),
       },
       {
         id: 'visual-and-remote',
         description: 'Visual and remote API Playwright checks are release gates.',
         test: (root) =>
-          contains(root, 'scripts/release-rehearsal.mjs', 'test:visual:check', 'test:e2e:remote-api'),
+          contains(
+            root,
+            'scripts/release-rehearsal.mjs',
+            'test:visual:check',
+            'test:e2e:remote-api'
+          ),
       },
       {
         id: 'browser-policy',
         description: 'Codex orchestration requires Browser/Playwright evidence for UI work.',
         test: (root) =>
-          contains(root, 'docs/CODEX_ORCHESTRATION.md', 'Browser / Playwright', 'UI Action Coverage'),
+          contains(
+            root,
+            'docs/CODEX_ORCHESTRATION.md',
+            'Browser / Playwright',
+            'UI Action Coverage'
+          ),
+      },
+      {
+        id: 'production-action-crawler',
+        description:
+          'Production Browser/Playwright crawler clicks safe actions and uploads failure artifacts.',
+        test: (root) =>
+          scriptEquals(
+            root,
+            'test:e2e:production-actions',
+            'playwright test tests/e2e/production-actions.spec.js --project=chromium'
+          ) &&
+          contains(
+            root,
+            'tests/e2e/production-actions.spec.js',
+            'missing-feedback',
+            'production-action-crawler-report.json',
+            'runtime-failure'
+          ) &&
+          contains(
+            root,
+            '.github/workflows/production-system-audit.yml',
+            'reports/production-action-crawler/'
+          ),
       },
     ],
   },
@@ -234,9 +294,15 @@ const toolingDefinitions = [
     evidence: [
       {
         id: 'project-codex-config',
-        description: 'Project Codex config prevents secret inheritance and keeps sandbox conservative.',
+        description:
+          'Project Codex config prevents secret inheritance and keeps sandbox conservative.',
         test: (root) =>
-          contains(root, '.codex/config.toml', 'approval_policy', 'exclude = ["*TOKEN*", "*SECRET*", "*KEY*", "*PASSWORD*"]'),
+          contains(
+            root,
+            '.codex/config.toml',
+            'approval_policy',
+            'exclude = ["*TOKEN*", "*SECRET*", "*KEY*", "*PASSWORD*"]'
+          ),
       },
       {
         id: 'orchestration-doc',
@@ -247,10 +313,57 @@ const toolingDefinitions = [
       },
       {
         id: 'qwen-safety',
-        description: 'Qwen permissions allow test/build commands but not broad destructive commands.',
+        description:
+          'Qwen permissions allow test/build commands but not broad destructive commands.',
         test: (root) =>
           contains(root, '.qwen/settings.json', 'Bash(pnpm run *)') &&
           !contains(root, '.qwen/settings.json', 'Bash(rm *)', 'Bash(del *)'),
+      },
+    ],
+  },
+  {
+    id: 'subagent-orchestration',
+    label: 'Subagent Orchestration',
+    score: 9.1,
+    evidence: [
+      {
+        id: 'parallel-investigation-doc',
+        description: 'Codex orchestration defines when to split work across independent agents.',
+        test: (root) =>
+          contains(
+            root,
+            'docs/CODEX_ORCHESTRATION.md',
+            'Parallel Investigation / Subagents',
+            'Default VoiceLog split'
+          ),
+      },
+      {
+        id: 'domain-split',
+        description:
+          'Subagent playbook covers frontend, backend, DB, tests, and observability domains.',
+        test: (root) =>
+          contains(
+            root,
+            'docs/CODEX_ORCHESTRATION.md',
+            'Frontend / UI',
+            'Backend / API',
+            'DB / Supabase',
+            'Tests / CI',
+            'Sentry / GitHub'
+          ),
+      },
+      {
+        id: 'coordination-safety',
+        description:
+          'Subagent playbook requires coordination, focused prompts, no secrets, and final verification.',
+        test: (root) =>
+          contains(
+            root,
+            'docs/CODEX_ORCHESTRATION.md',
+            'no-secrets reminder',
+            'coordinator integrates changes',
+            'gate pass together'
+          ),
       },
     ],
   },
@@ -273,7 +386,12 @@ const toolingDefinitions = [
         id: 'prompt-flow',
         description: 'Orchestration doc requires Prompt -> Review -> Rewrite -> Execute.',
         test: (root) =>
-          contains(root, 'docs/CODEX_ORCHESTRATION.md', 'Prompt Engineering Gate', 'Review the prompt'),
+          contains(
+            root,
+            'docs/CODEX_ORCHESTRATION.md',
+            'Prompt Engineering Gate',
+            'Review the prompt'
+          ),
       },
     ],
   },
@@ -285,11 +403,13 @@ const toolingDefinitions = [
       {
         id: 'pr-template',
         description: 'PR checklist explicitly requests CodeRabbit review for critical areas.',
-        test: (root) => contains(root, '.github/pull_request_template.md', 'CodeRabbit review requested'),
+        test: (root) =>
+          contains(root, '.github/pull_request_template.md', 'CodeRabbit review requested'),
       },
       {
         id: 'review-doc',
-        description: 'CodeRabbit review gate defines when review is required and what evidence it checks.',
+        description:
+          'CodeRabbit review gate defines when review is required and what evidence it checks.',
         test: (root) =>
           contains(root, 'docs/tooling/CODERABBIT_REVIEW_GATE.md', 'CodeRabbit', 'test red/green'),
       },
@@ -297,7 +417,13 @@ const toolingDefinitions = [
         id: 'review-workflow',
         description: 'GitHub review workflow runs automated eslint/coverage/security checks.',
         test: (root) =>
-          contains(root, '.github/workflows/code-review.yml', 'reviewdog/action-eslint', 'coverage-check', 'security-scan'),
+          contains(
+            root,
+            '.github/workflows/code-review.yml',
+            'reviewdog/action-eslint',
+            'coverage-check',
+            'security-scan'
+          ),
       },
     ],
   },
@@ -308,7 +434,8 @@ const toolingDefinitions = [
     evidence: [
       {
         id: 'design-workflow',
-        description: 'Design tooling workflow defines when Figma/Canva/Browser/Playwright are used.',
+        description:
+          'Design tooling workflow defines when Figma/Canva/Browser/Playwright are used.',
         test: (root) =>
           contains(root, 'docs/tooling/DESIGN_TOOLING_WORKFLOW.md', 'Figma', 'Canva', 'Playwright'),
       },
@@ -337,7 +464,11 @@ const toolingDefinitions = [
         id: 'scope-policy',
         description: 'Twilio is explicitly governed as not-applicable until product code uses it.',
         test: (root) =>
-          contains(root, 'docs/tooling/TWILIO_SCOPE_POLICY.md', 'not a VoiceLog runtime dependency'),
+          contains(
+            root,
+            'docs/tooling/TWILIO_SCOPE_POLICY.md',
+            'not a VoiceLog runtime dependency'
+          ),
       },
       {
         id: 'no-runtime-dependency',
@@ -348,7 +479,12 @@ const toolingDefinitions = [
         id: 'activation-rule',
         description: 'Policy requires tests and compliance review before Twilio code is added.',
         test: (root) =>
-          contains(root, 'docs/tooling/TWILIO_SCOPE_POLICY.md', 'activation checklist', 'regression tests'),
+          contains(
+            root,
+            'docs/tooling/TWILIO_SCOPE_POLICY.md',
+            'activation checklist',
+            'regression tests'
+          ),
       },
     ],
   },
@@ -365,7 +501,8 @@ const toolingDefinitions = [
       {
         id: 'premium-stt',
         description: 'Production health smoke requires premium OpenAI STT evidence.',
-        test: (root) => contains(root, 'scripts/production-smoke.mjs', 'gpt-4o-transcribe', 'provider'),
+        test: (root) =>
+          contains(root, 'scripts/production-smoke.mjs', 'gpt-4o-transcribe', 'provider'),
       },
       {
         id: 'no-browser-keys',
@@ -384,20 +521,30 @@ const toolingDefinitions = [
     evidence: [
       {
         id: 'env-example',
-        description: '.env.example documents required production and provider variables without values.',
+        description:
+          '.env.example documents required production and provider variables without values.',
         test: (root) =>
-          contains(root, '.env.example', 'VOICELOG_ALLOWED_ORIGINS', 'SUPABASE_URL', 'OPENAI_API_KEY'),
+          contains(
+            root,
+            '.env.example',
+            'VOICELOG_ALLOWED_ORIGINS',
+            'SUPABASE_URL',
+            'OPENAI_API_KEY'
+          ),
       },
       {
         id: 'env-validator',
         description: 'Environment validator checks required local/production variables.',
-        test: (root) => fileExists(root, 'scripts/validate-env.js') && fileExists(root, 'scripts/validate-env.test.ts'),
+        test: (root) =>
+          fileExists(root, 'scripts/validate-env.js') &&
+          fileExists(root, 'scripts/validate-env.test.ts'),
       },
       {
         id: 'env-secret-safety',
         description: 'Local .env is ignored and excluded from Codex shell environment policy.',
         test: (root) =>
-          contains(root, '.gitignore', '.env') && contains(root, '.codex/config.toml', '*SECRET*', '*PASSWORD*'),
+          contains(root, '.gitignore', '.env') &&
+          contains(root, '.codex/config.toml', '*SECRET*', '*PASSWORD*'),
       },
     ],
   },
@@ -421,7 +568,10 @@ export function evaluateToolingReadiness({ rootDir: currentRoot = rootDir } = {}
     });
 
     const missing = evidence.filter((item) => !item.passed);
-    const score = missing.length === 0 ? tool.score : Math.max(1, Number((tool.score - missing.length * 1.5).toFixed(1)));
+    const score =
+      missing.length === 0
+        ? tool.score
+        : Math.max(1, Number((tool.score - missing.length * 1.5).toFixed(1)));
 
     return {
       id: tool.id,
@@ -443,7 +593,9 @@ export function evaluateToolingReadiness({ rootDir: currentRoot = rootDir } = {}
         description: evidence.description,
       }))
   );
-  const averageScore = Number((tools.reduce((sum, tool) => sum + tool.score, 0) / tools.length).toFixed(2));
+  const averageScore = Number(
+    (tools.reduce((sum, tool) => sum + tool.score, 0) / tools.length).toFixed(2)
+  );
 
   return {
     generatedAt: new Date().toISOString(),
@@ -463,7 +615,9 @@ export function formatToolingReadinessMarkdown(report) {
     report.blockers.length === 0
       ? '- None.'
       : report.blockers
-          .map((blocker) => `- ${blocker.toolLabel}: ${blocker.evidenceId} - ${blocker.description}`)
+          .map(
+            (blocker) => `- ${blocker.toolLabel}: ${blocker.evidenceId} - ${blocker.description}`
+          )
           .join('\n');
 
   return [
@@ -508,7 +662,9 @@ export function runToolingReadinessAudit({ rootDir: currentRoot = rootDir, write
   return report;
 }
 
-const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.join(rootDir, 'scripts', 'tooling-readiness-audit.mjs');
+const isMainModule =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === path.join(rootDir, 'scripts', 'tooling-readiness-audit.mjs');
 
 if (isMainModule) {
   try {

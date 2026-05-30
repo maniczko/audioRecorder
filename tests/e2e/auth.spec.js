@@ -135,4 +135,53 @@ test.describe('Auth - rejestracja i logowanie', () => {
       /ENOTFOUND|postgres|tenant/i
     );
   });
+
+  test('reset hasla pozwala zalogowac sie nowym haslem bez technicznych komunikatow', async ({
+    page,
+  }) => {
+    const email = uniqueEmail('reset');
+    const oldPassword = 'stare_haslo_123';
+    const newPassword = 'nowe_haslo_456';
+
+    await openRegister(page);
+    await fillRegisterForm(page, {
+      name: 'Reset Tester',
+      email,
+      password: oldPassword,
+      workspace: 'Reset Workspace',
+    });
+    await submitRegister(page);
+    await expectMainApp(page);
+
+    await page.locator('[title="Ustawienia profilu"]').click();
+    await page.getByRole('button', { name: 'Wyloguj' }).click();
+    await expect(page.locator('.auth-shell')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Logowanie' }).click();
+    await page.getByRole('button', { name: /Zapomnia/i }).click();
+    await expect(page.getByRole('heading', { name: /Zresetuj/i })).toBeVisible();
+
+    await page.locator('#reset-email').fill(email);
+    await page.getByRole('button', { name: /kod resetu/i }).click();
+    const resetCodeAlert = page
+      .locator('.inline-alert.info')
+      .filter({ hasText: /lokalny kod resetu/i });
+    await expect(resetCodeAlert).toBeVisible();
+
+    const previewCode = (await resetCodeAlert.locator('strong').innerText()).trim();
+    expect(previewCode, 'local reset flow should expose a deterministic preview code').toBeTruthy();
+
+    await page.locator('#reset-code').fill(previewCode);
+    await page.locator('#new-password').fill(newPassword);
+    await page.locator('#confirm-password').fill(newPassword);
+    await page.getByRole('button', { name: /Zmien|Zmie/i }).click();
+
+    await expect(page.locator('.auth-shell')).toBeVisible();
+    await page.getByLabel('Adres email').fill(email);
+    await page.getByLabel(/Has/i).fill(newPassword);
+    await page.getByRole('button', { name: /Zaloguj/i }).click();
+
+    await expectMainApp(page);
+    await expect(page.locator('.inline-alert.error')).toHaveCount(0);
+  });
 });

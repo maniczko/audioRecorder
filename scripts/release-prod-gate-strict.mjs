@@ -9,6 +9,8 @@ export const productionGateRequiredEnv = [
   'PRODUCTION_SMOKE_WORKSPACE_ID',
   'PRODUCTION_FRONTEND_URL',
   'PRODUCTION_API_BASE_URL',
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY',
   'SENTRY_AUTH_TOKEN',
   'SENTRY_ORG',
   'SENTRY_PROJECT',
@@ -18,6 +20,7 @@ export const productionGateCommands = [
   ['pnpm', ['run', 'test:e2e:production-actions']],
   ['pnpm', ['run', 'test:e2e:production-persistence']],
   ['pnpm', ['run', 'release:prod-smoke:strict']],
+  ['pnpm', ['run', 'verify:supabase:workspace']],
   ['pnpm', ['run', 'sentry:release-health']],
 ];
 

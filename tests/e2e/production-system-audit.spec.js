@@ -312,6 +312,44 @@ test.describe('Production system audit', () => {
     expect(voiceProfilesResponse.status(), await voiceProfilesResponse.text()).toBeLessThan(500);
   });
 
+  test('keeps production auth endpoints routed and validates bad payloads without 500s', async ({
+    request,
+  }) => {
+    const authContracts = [
+      {
+        path: '/auth/login',
+        data: { email: 'not-an-email', password: '' },
+      },
+      {
+        path: '/auth/register',
+        data: { email: 'not-an-email', password: '123', name: '' },
+      },
+      {
+        path: '/auth/password/reset/request',
+        data: { email: 'not-an-email' },
+      },
+      {
+        path: '/auth/password/reset/confirm',
+        data: {
+          email: 'not-an-email',
+          code: '',
+          newPassword: '123',
+          confirmPassword: '456',
+        },
+      },
+    ];
+
+    for (const contract of authContracts) {
+      const response = await request.post(apiUrl(contract.path), { data: contract.data });
+      const body = await response.text();
+      expect(response.status(), `${contract.path}: ${body}`).not.toBe(404);
+      expect(response.status(), `${contract.path}: ${body}`).toBeLessThan(500);
+      expect(body, `${contract.path} must not leak infra details`).not.toMatch(
+        /NOT_FOUND|ENOTFOUND|postgres|tenant\/user|stack/i
+      );
+    }
+  });
+
   test('persists an audit task and confirms it does not return after refresh once deleted', async ({
     request,
   }) => {

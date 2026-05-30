@@ -1,4 +1,7 @@
 // @ts-check
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { expect, test } from '@playwright/test';
 
 import {
@@ -20,6 +23,24 @@ const destructiveOrCostly =
   /usun|usun|delete|wyloguj|rozpocznij|zatrzymaj|nagraj|wgraj|upload|eksport|pobierz|google|microsoft|wykryj|generuj|zapisz/i;
 
 const shellOrUtilityAction = /strona glowna|voicebobr|workspace|ctrl|command|escape/i;
+const feedbackSelector = [
+  '[role="alert"]',
+  '[role="status"]',
+  '[role="dialog"]',
+  '[aria-busy="true"]',
+  '.toast-container',
+  '.toast',
+  '.command-palette',
+  '.notification-panel',
+  '.notification-center',
+  '.modal',
+  '.dialog',
+  '.popover',
+  '[data-state="open"]',
+  '[data-loading="true"]',
+].join(',');
+
+const actionSelector = 'button, a[href], [role="button"], [role="tab"], [role="menuitem"]';
 
 function normalizeActionLabel(label) {
   return String(label || '')
@@ -42,36 +63,132 @@ async function openShellTab(page, label) {
 }
 
 async function visibleActions(page) {
-  return page
-    .locator('button, a[href], [role="button"], [role="tab"], [role="menuitem"]')
-    .evaluateAll((elements) =>
-      elements
-        .filter((element) => {
-          const rect = element.getBoundingClientRect();
-          const style = window.getComputedStyle(element);
-          const disabled =
-            element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true';
-          return (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            style.visibility !== 'hidden' &&
-            style.display !== 'none' &&
-            style.pointerEvents !== 'none' &&
-            !disabled &&
-            element.getAttribute('aria-hidden') !== 'true'
-          );
-        })
-        .map((element) => {
-          const text = element.textContent?.replace(/\s+/g, ' ').trim() || '';
-          const label =
-            element.getAttribute('aria-label') ||
-            element.getAttribute('title') ||
-            element.getAttribute('name') ||
-            text;
-          return String(label || '').trim();
-        })
-        .filter(Boolean)
-    );
+  return page.locator(actionSelector).evaluateAll((elements) =>
+    elements
+      .map((element, index) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        const disabled =
+          element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true';
+        const visible =
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none' &&
+          style.pointerEvents !== 'none' &&
+          !disabled &&
+          element.getAttribute('aria-hidden') !== 'true';
+        const text = element.textContent?.replace(/\s+/g, ' ').trim() || '';
+        const label =
+          element.getAttribute('aria-label') ||
+          element.getAttribute('title') ||
+          element.getAttribute('name') ||
+          text;
+        return {
+          index,
+          tag: element.tagName.toLowerCase(),
+          role: element.getAttribute('role') || '',
+          type: element.getAttribute('type') || '',
+          label: String(label || '').trim(),
+          actionId: element.getAttribute('data-action-id') || '',
+          visible,
+        };
+      })
+      .filter((action) => action.visible && action.label)
+  );
+}
+
+function classifyAction(action) {
+  const normalized = normalizeActionLabel(action.label);
+  if (destructiveOrCostly.test(normalized)) return 'skipped-destructive-or-costly';
+  if (shellOrUtilityAction.test(normalized)) return 'skipped-shell-or-utility';
+  if (coreTabs.some((item) => normalizeActionLabel(item.label) === normalized)) {
+    return 'skipped-core-navigation';
+  }
+  return 'click';
+}
+
+function slug(value) {
+  return (
+    normalizeActionLabel(value)
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'action'
+  );
+}
+
+async function collectUiState(page) {
+  return page.evaluate((selector) => {
+    const text = document.body.innerText.replace(/\s+/g, ' ').trim();
+    const feedbackCount = [...document.querySelectorAll(selector)].filter((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.visibility !== 'hidden' &&
+        style.display !== 'none' &&
+        element.getAttribute('aria-hidden') !== 'true'
+      );
+    }).length;
+    return {
+      url: window.location.href,
+      text,
+      feedbackCount,
+      activeElementLabel:
+        document.activeElement?.getAttribute('aria-label') ||
+        document.activeElement?.textContent?.replace(/\s+/g, ' ').trim() ||
+        '',
+    };
+  }, feedbackSelector);
+}
+
+function hasActionFeedback(before, after) {
+  if (before.url !== after.url) return true;
+  if (after.feedbackCount > before.feedbackCount) return true;
+  if (before.text !== after.text) return true;
+  if (before.activeElementLabel !== after.activeElementLabel) return true;
+  return false;
+}
+
+async function captureFailureScreenshot(page, testInfo, tabLabel, actionLabel, reason) {
+  const filePath = testInfo.outputPath(
+    `production-action-${slug(tabLabel)}-${slug(actionLabel)}-${slug(reason)}.png`
+  );
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  await page.screenshot({ path: filePath, fullPage: true });
+  await testInfo.attach(`failure-${tabLabel}-${actionLabel}`, {
+    path: filePath,
+    contentType: 'image/png',
+  });
+  return filePath;
+}
+
+async function writeCrawlerReport(testInfo, report) {
+  const reportJson = JSON.stringify(report, null, 2);
+  const outputPath = testInfo.outputPath('production-action-crawler-report.json');
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, reportJson);
+  await testInfo.attach('production-action-crawler-report', {
+    body: Buffer.from(reportJson),
+    contentType: 'application/json',
+  });
+
+  const reportDir = path.resolve(process.cwd(), 'reports', 'production-action-crawler');
+  fs.mkdirSync(reportDir, { recursive: true });
+  fs.writeFileSync(path.join(reportDir, 'latest.json'), reportJson);
+}
+
+async function closeTransientUi(page) {
+  await page.keyboard.press('Escape').catch(() => undefined);
+  const closeButtons = [/zamknij|anuluj|pomin/i, /close|cancel|dismiss/i];
+  for (const pattern of closeButtons) {
+    const button = page.getByRole('button', { name: pattern }).first();
+    if (await button.isVisible().catch(() => false)) {
+      await button.click({ force: true }).catch(() => undefined);
+    }
+  }
+  await page.keyboard.press('Escape').catch(() => undefined);
 }
 
 async function clickByLabel(page, label) {
@@ -85,7 +202,6 @@ async function clickByLabel(page, label) {
   for (const candidate of candidates) {
     if (await candidate.isVisible().catch(() => false)) {
       await candidate.click({ force: true });
-      await page.keyboard.press('Escape').catch(() => undefined);
       return true;
     }
   }
@@ -100,9 +216,9 @@ test.describe('production action crawler', () => {
     await installProductionSession(page, request);
   });
 
-  test('core tabs load and safe actions are clickable without unhandled runtime failures', async ({
+  test('core tabs load and all safe actions provide feedback without runtime failures', async ({
     page,
-  }) => {
+  }, testInfo) => {
     test.setTimeout(120_000);
     const guard = attachRuntimeGuard(page, {
       allow: [
@@ -111,26 +227,120 @@ test.describe('production action crawler', () => {
         /network 404: .*\/logo192\.png/,
       ],
     });
+    const report = {
+      generatedAt: new Date().toISOString(),
+      frontendUrl: page.url(),
+      tabs: [],
+      failures: [],
+    };
 
-    await page.goto('/');
-    await expect(page.locator('.modern-main, main').first()).toBeVisible();
+    try {
+      await page.goto('/');
+      await expect(page.locator('.modern-main, main').first()).toBeVisible();
 
-    for (const tab of coreTabs) {
-      await openShellTab(page, tab.label);
-      await expect(page.locator(tab.expected).first()).toBeVisible();
-
-      const safeLabels = [...new Set(await visibleActions(page))]
-        .filter((label) => !destructiveOrCostly.test(label))
-        .filter((label) => !shellOrUtilityAction.test(normalizeActionLabel(label)))
-        .filter((label) => !coreTabs.some((item) => item.label === label))
-        .slice(0, 3);
-
-      for (const label of safeLabels) {
+      for (const tab of coreTabs) {
         await openShellTab(page, tab.label);
-        const clicked = await clickByLabel(page, label);
-        expect(clicked, `${tab.label}: ${label} should be clickable`).toBe(true);
-        await guard.assertClean();
+        await expect(page.locator(tab.expected).first()).toBeVisible();
+
+        const tabReport = {
+          label: tab.label,
+          actionCount: 0,
+          clicked: [],
+          skipped: [],
+          failures: [],
+        };
+        report.tabs.push(tabReport);
+
+        const actions = await visibleActions(page);
+        const seen = new Set();
+        const uniqueActions = actions.filter((action) => {
+          const key = `${normalizeActionLabel(action.label)}:${action.tag}:${action.role}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        tabReport.actionCount = uniqueActions.length;
+
+        for (const action of uniqueActions) {
+          const policy = classifyAction(action);
+          if (policy !== 'click') {
+            tabReport.skipped.push({ ...action, policy });
+            continue;
+          }
+
+          await openShellTab(page, tab.label);
+          await expect(page.locator(tab.expected).first()).toBeVisible();
+
+          const before = await collectUiState(page);
+          const failuresBeforeClick = guard.failures.length;
+          const clicked = await clickByLabel(page, action.label);
+          if (!clicked) {
+            const screenshot = await captureFailureScreenshot(
+              page,
+              testInfo,
+              tab.label,
+              action.label,
+              'not-clickable'
+            );
+            const failure = {
+              tab: tab.label,
+              action,
+              reason: 'not-clickable',
+              screenshot,
+            };
+            tabReport.failures.push(failure);
+            report.failures.push(failure);
+            continue;
+          }
+
+          await page.waitForTimeout(500);
+          const after = await collectUiState(page);
+          const hasFeedback = hasActionFeedback(before, after);
+          const newRuntimeFailures = guard.failures.slice(failuresBeforeClick);
+
+          const actionResult = {
+            ...action,
+            feedback: hasFeedback,
+            runtimeFailures: newRuntimeFailures,
+            before: {
+              url: before.url,
+              feedbackCount: before.feedbackCount,
+            },
+            after: {
+              url: after.url,
+              feedbackCount: after.feedbackCount,
+            },
+          };
+          tabReport.clicked.push(actionResult);
+
+          if (!hasFeedback || newRuntimeFailures.length > 0) {
+            const screenshot = await captureFailureScreenshot(
+              page,
+              testInfo,
+              tab.label,
+              action.label,
+              !hasFeedback ? 'missing-feedback' : 'runtime-failure'
+            );
+            const failure = {
+              tab: tab.label,
+              action,
+              reason: !hasFeedback ? 'missing-feedback' : 'runtime-failure',
+              runtimeFailures: newRuntimeFailures,
+              screenshot,
+            };
+            tabReport.failures.push(failure);
+            report.failures.push(failure);
+          }
+
+          await closeTransientUi(page);
+        }
       }
+
+      await guard.assertClean();
+      expect(report.failures, JSON.stringify(report.failures, null, 2)).toEqual([]);
+    } finally {
+      await writeCrawlerReport(testInfo, report);
     }
   });
 

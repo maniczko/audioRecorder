@@ -38,6 +38,35 @@ This gate does not replace the mandatory bug-fix flow, TDD, or release evidence.
 For trivial commands or clear one-step questions, execute normally without
 prompt rewriting overhead.
 
+## Parallel Investigation / Subagents
+
+For broad incidents, failing release gates, or repeated production regressions,
+Codex should split investigation by independent ownership domains when subagent
+or multi-agent tools are available. The coordinator keeps the user-facing plan,
+reviews all findings, resolves conflicts, and runs the final verification.
+
+Default VoiceLog split:
+
+| Agent | Domain          | Typical evidence                                                               |
+| ----- | --------------- | ------------------------------------------------------------------------------ |
+| 1     | Frontend / UI   | Component/store owner, user-visible state, Playwright trace, console summary.  |
+| 2     | Backend / API   | Route contract, status codes, auth/workspace guard, server regression test.    |
+| 3     | DB / Supabase   | `workspace_state`, `media_assets`, tombstones, storage object verification.    |
+| 4     | Tests / CI      | Missing regression, unstable/skipped test, Node 22 gate, workflow failure.     |
+| 5     | Sentry / GitHub | Runtime issue, affected release SHA, duplicate issue grouping, release impact. |
+
+Use subagents only when the domains are genuinely independent. Do not dispatch
+parallel agents when the root cause is shared, when agents would edit the same
+files, or when a single system trace is needed first. Each agent prompt must be
+self-contained: scope, known IDs/logs, files to inspect, constraints, expected
+output, and a no-secrets reminder. Subagents should return findings, proposed
+tests, and minimal patch recommendations; the coordinator integrates changes
+and never treats subagent output as verified until focused tests and the release
+gate pass together.
+
+If subagent tooling is not callable in the current session, emulate the split by
+running independent local reads/checks in parallel and report the limitation.
+
 ## Plugin Usage Matrix
 
 | Plugin / tool        | Use when                                                                                                                         | Required evidence                                                             |
@@ -144,6 +173,14 @@ API requests need tests with that mode enabled, not only local/mock-provider tes
 No enabled button may silently return from its handler; if prerequisites are
 missing, disable it or show a user-facing message.
 
+Before production handoff, `pnpm run test:e2e:production-actions` must run in the
+test workspace as part of `release:prod-gate:strict`. It inventories visible
+actions, clicks every safe enabled action, fails on unallowlisted
+`400/404/424/500`, requires visible feedback after clicks, captures screenshots
+on failure, and writes `reports/production-action-crawler/latest.json`.
+Destructive, provider-bound, or costly actions may be skipped by the crawler only
+when explicitly classified and covered by a separate journey or contract test.
+
 ### Recorder, Queue, Upload, Transcription
 
 - Always test persisted queue state and recovery after reload.
@@ -153,6 +190,12 @@ missing, disable it or show a user-facing message.
 ### Backend, Supabase, Or Storage
 
 - Verify `/health` and `supabaseRemote`.
+- For production workspace/data fixes, run
+  `pnpm run verify:supabase:workspace` with `SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, and `PRODUCTION_SMOKE_WORKSPACE_ID`/`WORKSPACE_ID`.
+  The verifier checks `workspace_state`, `media_assets`, Supabase Storage
+  objects, tombstones, asset-to-meeting references, and transcript restoration
+  without printing secrets.
 - Check auth/workspace guards before costly operations.
 - Never log or paste service-role keys, database passwords, bearer tokens, or API keys.
 - Prefer idempotent cleanup for stale remote assets.
@@ -189,5 +232,6 @@ Before handing a build to the user for testing:
 - [ ] `pnpm run release:rehearsal` passed or a scoped exception is documented.
 - [ ] Production smoke passed for the deployed URL.
 - [ ] Supabase persistence evidence is present for media/storage changes.
+- [ ] Supabase workspace consistency verifier passed for production data fixes.
 - [ ] Browser console checked for repeated errors.
 - [ ] No secrets printed in logs, reports, screenshots, or documentation.

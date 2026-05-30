@@ -22,6 +22,7 @@ describe('tooling-readiness-audit', () => {
       'railway',
       'playwright-browser',
       'codex-skills',
+      'subagent-orchestration',
       'prompt-engineer',
       'coderabbit',
       'figma-canva',

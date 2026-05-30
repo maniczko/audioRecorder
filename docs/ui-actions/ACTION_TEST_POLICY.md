@@ -11,6 +11,11 @@ Required path for every UI action change:
 5. Run `pnpm run audit:ui-actions`.
 6. Run `pnpm run test:ui-actions`.
 7. For visual/layout changes, capture Playwright screenshots or update the visual baseline.
+8. Before production handoff, run the production browser crawler through
+   `pnpm run test:e2e:production-actions` or `pnpm run release:prod-gate:strict`
+   with production audit secrets. The crawler inventories visible actions, clicks
+   every safe enabled action, fails on unallowlisted `4xx/5xx`, requires visible
+   feedback, and writes screenshot/JSON artifacts on failure.
 
 Action categories:
 
@@ -23,6 +28,9 @@ Test expectation:
 - P0 actions need a business-result assertion and a failure-state assertion.
 - P1 actions need visible feedback and no console error.
 - P2 actions need at least state-change coverage.
+- Production crawler skips destructive/costly/provider-bound actions only when
+  they are explicitly classified; those actions still need a separate journey or
+  contract test.
 
 Skip policy:
 

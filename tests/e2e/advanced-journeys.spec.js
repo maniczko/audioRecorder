@@ -10,6 +10,114 @@ function smallAudioFile(name = 'advanced-import.webm') {
   };
 }
 
+async function installFakeAudioCapture(page) {
+  await page.addInitScript(() => {
+    const createFakeStream = () => ({
+      id: `fake_stream_${Date.now()}`,
+      active: true,
+      getTracks: () => [{ kind: 'audio', enabled: true, stop() {} }],
+      getAudioTracks: () => [{ kind: 'audio', enabled: true, stop() {} }],
+    });
+
+    class FakeAudioNode {
+      connect() {
+        return this;
+      }
+      disconnect() {}
+    }
+
+    class FakeAnalyserNode extends FakeAudioNode {
+      constructor() {
+        super();
+        this.fftSize = 256;
+        this.frequencyBinCount = 32;
+      }
+      getByteFrequencyData(target) {
+        for (let index = 0; index < target.length; index += 1) {
+          target[index] = index % 3 === 0 ? 24 : 8;
+        }
+      }
+    }
+
+    class FakeAudioContext {
+      constructor() {
+        this.state = 'running';
+      }
+      createMediaStreamSource() {
+        return new FakeAudioNode();
+      }
+      createAnalyser() {
+        return new FakeAnalyserNode();
+      }
+      createMediaStreamDestination() {
+        return {
+          stream: createFakeStream(),
+        };
+      }
+      close() {
+        this.state = 'closed';
+        return Promise.resolve();
+      }
+    }
+
+    class FakeMediaRecorder {
+      static isTypeSupported() {
+        return true;
+      }
+      constructor(_stream, options = {}) {
+        this.stream = _stream;
+        this.mimeType = options.mimeType || 'audio/webm';
+        this.state = 'inactive';
+        this.ondataavailable = null;
+        this.onstop = null;
+      }
+      start() {
+        this.state = 'recording';
+      }
+      stop() {
+        if (this.state === 'inactive') return;
+        this.state = 'inactive';
+        const blob = new Blob(['e2e recorded audio'], { type: this.mimeType || 'audio/webm' });
+        this.ondataavailable?.({ data: blob });
+        this.onstop?.();
+      }
+      pause() {
+        this.state = 'paused';
+      }
+      resume() {
+        this.state = 'recording';
+      }
+    }
+
+    Object.defineProperty(navigator, 'permissions', {
+      configurable: true,
+      value: {
+        query: async () => ({ state: 'granted', onchange: null }),
+      },
+    });
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async () => createFakeStream(),
+      },
+    });
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    Object.defineProperty(window, 'webkitAudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    Object.defineProperty(window, 'MediaRecorder', {
+      configurable: true,
+      value: FakeMediaRecorder,
+    });
+    delete window.SpeechRecognition;
+    delete window.webkitSpeechRecognition;
+  });
+}
+
 test.describe('Advanced release journeys', () => {
   const remoteProviderEnabled =
     process.env.VITE_DATA_PROVIDER === 'remote' || process.env.REACT_APP_DATA_PROVIDER === 'remote';
@@ -174,6 +282,34 @@ test.describe('Advanced release journeys', () => {
     await expect(page.getByText(/Dostep do mikrofonu zablokowany/i)).toBeVisible();
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
     await expect(page.getByText(/Blad przetwarzania/i)).toHaveCount(0);
+  });
+
+  test('start and stop ad-hoc recording produce a queued recording without hardware dependency', async ({
+    page,
+  }) => {
+    await installFakeAudioCapture(page);
+    await seedLoggedInUser(page);
+
+    await page.goto('/');
+    const startButton = page.getByRole('button', { name: /Rozpocznij nagrywanie|Nagraj ad hoc/i });
+    await expect(startButton.first()).toBeVisible();
+    await startButton.first().click();
+
+    const stopButton = page.getByRole('button', { name: /Zatrzymaj nagrywanie/i }).first();
+    await expect(stopButton).toBeVisible({ timeout: 10_000 });
+    await stopButton.click();
+
+    await expect(
+      page.getByText(
+        /Nagranie trafilo do kolejki|Nagranie zostało przetworzone|Transkrypcja gotowa/i
+      )
+    ).toBeVisible({ timeout: 15_000 });
+
+    await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
+    await expect(page.getByText(/Ad hoc/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Blad finalizacji|Dostep do mikrofonu zablokowany/i)).toHaveCount(
+      0
+    );
   });
 
   test('command palette navigation and task creation stay functional together', async ({
