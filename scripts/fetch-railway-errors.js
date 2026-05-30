@@ -12,6 +12,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { isActionableRailwayLogEntry } from './monitoring-error-groups.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Configuration
@@ -129,7 +131,8 @@ function fetchErrorLogs() {
             } catch {
               return { message: line, timestamp: new Date().toISOString() };
             }
-          });
+          })
+          .filter(isActionableRailwayLogEntry);
       } catch (error) {
         console.error('⚠️  Could not parse logs as JSON');
       }
@@ -194,21 +197,12 @@ ${deploymentInfo}
 
   // Always write JSON report so the workflow Parse step can read it
   // Filter logs to only error-related lines (since we can't use --filter flag)
-  const errorKeywords = [
-    'error',
-    'Error',
-    'ERROR',
-    'fatal',
-    'FATAL',
-    'warn',
-    'WARN',
-    'failed',
-    'Failed',
-  ];
-  const isErrorLine = (line) => errorKeywords.some((k) => line.includes(k));
   const errorLines = logs
     .split('\n')
-    .filter((line) => line.trim() && !line.startsWith('#') && isErrorLine(line));
+    .filter((line) => line.trim() && !line.startsWith('#'))
+    .filter((line) =>
+      isActionableRailwayLogEntry({ message: line, timestamp: new Date().toISOString() })
+    );
 
   const errorsToSave =
     jsonLogs.length > 0

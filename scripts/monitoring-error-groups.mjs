@@ -189,6 +189,53 @@ function railwayMessage(entry) {
   );
 }
 
+function railwayLevel(entry) {
+  if (!entry || typeof entry === 'string') {
+    return '';
+  }
+
+  return toText(entry.level || entry.severity || entry.status || '', '').toLowerCase();
+}
+
+export function isActionableRailwayLogEntry(entry) {
+  const message = railwayMessage(entry).trim();
+  const lowerMessage = message.toLowerCase();
+  const level = railwayLevel(entry);
+
+  if (!message) {
+    return false;
+  }
+
+  if (level && !['error', 'fatal'].includes(level)) {
+    return false;
+  }
+
+  if (/^[{}\[\],\s]+$/.test(message)) {
+    return false;
+  }
+
+  if (/^(requestid|method|route|status|durationms)\s*:/i.test(message)) {
+    return false;
+  }
+
+  if (/^\[info\]\s+/i.test(message)) {
+    return false;
+  }
+
+  if (/periodic:\s+triggered garbage collection/i.test(message)) {
+    return false;
+  }
+
+  if (
+    /route:\s*['"]\/state\/bootstrap['"]/i.test(message) ||
+    /\bget\s+\/state\/bootstrap\s+-\s+401\b/i.test(message)
+  ) {
+    return false;
+  }
+
+  return /\b(error|fatal|exception|failed|failure|unhandled|crash|timeout)\b/i.test(lowerMessage);
+}
+
 function railwayArea(entry) {
   if (!entry || typeof entry === 'string') {
     return 'railway-runtime';
@@ -210,6 +257,10 @@ export function extractRailwayLogGroups(entries) {
   const logs = Array.isArray(entries) ? entries : [];
 
   for (const entry of logs) {
+    if (!isActionableRailwayLogEntry(entry)) {
+      continue;
+    }
+
     const message = railwayMessage(entry);
     const area = railwayArea(entry);
 

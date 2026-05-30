@@ -135,6 +135,46 @@ describe('monitoring error groups', () => {
     expect(groups[0].source).toBe('railway');
   });
 
+  it('ignores Railway runtime noise fragments from multiline info logs', () => {
+    const groups = extractRailwayLogGroups([
+      { message: "  requestId: 'a3263a1c-329a-423b-9473-84649ac53c92'," },
+      { message: "  method: 'GET'," },
+      { message: "  route: '/state/bootstrap'," },
+      { message: '  status: 401,' },
+      { message: "  durationMs: '181.05'" },
+      { message: '[INFO] [REQ] GET /health - 200 [1885.9ms] {' },
+      { message: '[INFO] [Cleanup] Periodic: triggered garbage collection.' },
+      { message: '}' },
+    ]);
+
+    expect(groups).toHaveLength(0);
+  });
+
+  it('keeps real Railway runtime errors actionable after noise filtering', () => {
+    const groups = extractRailwayLogGroups([
+      { level: 'info', message: '[INFO] [REQ] GET /health - 200 [40ms]' },
+      {
+        level: 'error',
+        service: 'api',
+        message: 'Unhandled exception while saving workspace state',
+      },
+      {
+        level: 'error',
+        service: 'api',
+        message: 'Unhandled exception while saving workspace state',
+      },
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toEqual(
+      expect.objectContaining({
+        source: 'railway',
+        area: 'api',
+      })
+    );
+    expect(groups[0].occurrences).toHaveLength(2);
+  });
+
   it('formats issue metadata with stable labels and body marker', () => {
     const group = extractRailwayLogGroups([
       {
