@@ -997,6 +997,9 @@ export default function StudioMeetingView({
   const [rediarizeMsg, setRediarizeMsg] = useState<string | null>(null);
   const rediarizeRecordingId = selectedRecording?.id || displayRecording?.id || '';
   const playbackRecordingId = selectedRecording?.id || displayRecording?.id || '';
+  const playbackRecording = selectedRecording || displayRecording || null;
+  const playbackAudioUnavailable =
+    Boolean(playbackRecording?.audioUnavailable) || playbackRecording?.audioAvailable === false;
 
   const autoTaskSyncKeyRef = useRef('');
 
@@ -1741,16 +1744,15 @@ export default function StudioMeetingView({
 
   useEffect(() => {
     if (!playbackRecordingId || !hydrateRecordingAudio) return;
-    if (selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false) return;
+    if (playbackAudioUnavailable) return;
     if (selectedRecordingAudioUrl) return;
     if (selectedRecordingAudioStatus === 'loading') return;
     if (selectedRecordingAudioStatus === 'error') return;
     hydrateRecordingAudio(playbackRecordingId, { priority: true }).catch(() => {});
   }, [
     hydrateRecordingAudio,
+    playbackAudioUnavailable,
     playbackRecordingId,
-    selectedRecording?.audioAvailable,
-    selectedRecording?.audioUnavailable,
     selectedRecordingAudioStatus,
     selectedRecordingAudioUrl,
   ]);
@@ -1763,9 +1765,7 @@ export default function StudioMeetingView({
     analysisStatus === 'failed';
   const playerState = isRecording
     ? 'recording'
-    : playbackRecordingId &&
-        !selectedRecordingAudioUrl &&
-        (selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false)
+    : playbackRecordingId && !selectedRecordingAudioUrl && playbackAudioUnavailable
       ? 'audio-error'
       : playbackRecordingId && !selectedRecordingAudioUrl
         ? selectedRecordingAudioStatus === 'error'
@@ -3948,19 +3948,16 @@ export default function StudioMeetingView({
           ) : playerState === 'audio-error' ? (
             <div className="ff-player-status-wrap" data-testid="player-audio-error">
               <span className="ff-player-time">
-                {selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false
+                {playbackAudioUnavailable
                   ? 'Audio nie jest dostepne na serwerze.'
                   : 'Nie udalo sie zaladowac audio.'}
               </span>
               <span className="soft-copy ff-audio-error-copy">
-                {selectedRecording?.audioUnavailable || selectedRecording?.audioAvailable === false
+                {playbackAudioUnavailable
                   ? 'Transkrypt zostaje widoczny, ale odtwarzanie i probki glosu wymagaja ponownego importu pliku audio.'
                   : selectedRecordingAudioError || 'Sprobuj ponownie za chwile.'}
               </span>
-              {playbackRecordingId &&
-              hydrateRecordingAudio &&
-              !selectedRecording?.audioUnavailable &&
-              selectedRecording?.audioAvailable !== false ? (
+              {playbackRecordingId && hydrateRecordingAudio && !playbackAudioUnavailable ? (
                 <button
                   type="button"
                   className="ghost-button"

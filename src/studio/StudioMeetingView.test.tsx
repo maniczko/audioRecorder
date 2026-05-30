@@ -1319,6 +1319,42 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - Display-only unavailable audio still requested /audio
+  // Date: 2026-05-30
+  // Bug: production audit seeded a display recording with audioUnavailable=true,
+  //      but the Studio view only checked selectedRecording flags and still
+  //      requested /media/recordings/:id/audio, producing a 404.
+  // Fix: player hydration uses the active playback recording, including
+  //      displayRecording when selectedRecording is missing.
+  // -----------------------------------------------------------------
+  test('Regression: does not hydrate display recording audio when it is marked unavailable', async () => {
+    const hydrateRecordingAudio = vi.fn(() => Promise.resolve(null));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-display-unavailable',
+          transcript: [],
+          duration: 120,
+          audioAvailable: false,
+          audioUnavailable: true,
+          audioUnavailableReason: 'production_audit_ui_fixture',
+        }}
+        selectedRecording={null}
+        selectedRecordingAudioStatus="idle"
+        hydrateRecordingAudio={hydrateRecordingAudio}
+      />
+    );
+
+    expect(screen.getByTestId('player-audio-error')).toBeInTheDocument();
+    expect(screen.getByText(/Audio nie jest dostepne/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(hydrateRecordingAudio).not.toHaveBeenCalled();
+    });
+  });
+
   test('Regression: playback controls remain visible for display recording audio without selected recording', () => {
     renderWithContext(
       <StudioMeetingView
