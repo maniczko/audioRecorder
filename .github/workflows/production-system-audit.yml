@@ -109,4 +109,5 @@ jobs:
             test-results/
             reports/ui-action-inventory/
             reports/production-action-crawler/
+            reports/supabase-workspace-consistency/
           if-no-files-found: ignore

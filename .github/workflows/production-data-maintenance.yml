@@ -1,0 +1,87 @@
+name: Production Data Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply the repair plan. Keep false for dry-run.'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      workspace_id:
+        description: 'Optional workspace id override. Empty uses PRODUCTION_SMOKE_WORKSPACE_ID.'
+        required: false
+        default: ''
+
+concurrency:
+  group: production-data-maintenance
+  cancel-in-progress: false
+
+jobs:
+  repair-workspace-consistency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PRODUCTION_SMOKE_WORKSPACE_ID: ${{ secrets.PRODUCTION_SMOKE_WORKSPACE_ID }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate maintenance secrets
+        shell: bash
+        run: |
+          missing=()
+          for secret in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+            [[ -n "${!secret}" ]] || missing+=("${secret}")
+          done
+
+          if [[ -z "${WORKSPACE_ID}" && -z "${PRODUCTION_SMOKE_WORKSPACE_ID}" ]]; then
+            missing+=("WORKSPACE_ID or PRODUCTION_SMOKE_WORKSPACE_ID")
+          fi
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "## Missing production maintenance secrets" >> "$GITHUB_STEP_SUMMARY"
+            for secret in "${missing[@]}"; do
+              echo "- ${secret}" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Missing required secret: ${secret}"
+            done
+            exit 1
+          fi
+
+      - name: Dry-run workspace consistency repair
+        if: ${{ inputs.apply != 'true' }}
+        run: pnpm run repair:supabase:workspace
+
+      - name: Apply workspace consistency repair
+        if: ${{ inputs.apply == 'true' }}
+        run: pnpm run repair:supabase:workspace -- --apply
+
+      - name: Verify workspace consistency after repair
+        if: ${{ inputs.apply == 'true' }}
+        run: pnpm run verify:supabase:workspace
+
+      - name: Upload maintenance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-data-maintenance-reports
+          path: |
+            reports/supabase-workspace-repair/
+            reports/supabase-workspace-consistency/
+          if-no-files-found: ignore

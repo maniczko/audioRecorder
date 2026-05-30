@@ -40,6 +40,25 @@ function transcriptTextLength(value) {
   );
 }
 
+function isIntentionalTranscriptOnlyRecording(ref) {
+  const recording = ref?.rawRecording;
+  if (!recording || typeof recording !== 'object') return false;
+  const reason = clean(recording.audioUnavailableReason);
+  const unavailable =
+    recording.audioUnavailable === true ||
+    recording.audioAvailable === false ||
+    reason === 'legacy_local_audio_unavailable';
+  const intentionalReason =
+    reason === 'legacy_local_audio_unavailable' || reason === 'audio_source_unavailable';
+  return (
+    unavailable &&
+    intentionalReason &&
+    transcriptTextLength(
+      Array.isArray(recording.transcript) ? recording.transcript : ref.transcript
+    ) > 0
+  );
+}
+
 function normalizeStoragePath(value) {
   return clean(value).replace(/^recordings\//, '');
 }
@@ -246,6 +265,9 @@ export function buildWorkspaceConsistencyReport({
 
     const asset = assetsById.get(ref.recordingId);
     if (!asset) {
+      if (isIntentionalTranscriptOnlyRecording(ref)) {
+        continue;
+      }
       issues.push(
         issue(
           'P1',
