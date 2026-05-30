@@ -45,7 +45,7 @@
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
       "expectedActionCount": 75,
-      "fingerprint": "74001d1d370d7481",
+      "fingerprint": "98aa01317d8f5600",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -53,6 +53,7 @@
         "Regression: saves a new speaker voice profile only after the speaker is named",
         "Regression: rediarize button uses display recording id when selected recording is missing",
         "Regression: rediarize shows progress feedback while speaker detection is running",
+        "Regression: does not hydrate display recording audio when it is marked unavailable",
         "Regression: playback controls remain visible for display recording audio without selected recording",
         "fireEvent.click(screen.getByRole('button', { name: /Zadania/i }))"
       ],
