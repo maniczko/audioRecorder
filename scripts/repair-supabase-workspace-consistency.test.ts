@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildWorkspaceRepairPlan,
+  toPublicRepairReport,
   validateRepairPlanForApply,
 } from './repair-supabase-workspace-consistency.mjs';
 import { buildWorkspaceConsistencyReport } from './verify-supabase-workspace-consistency.mjs';
@@ -143,6 +144,13 @@ describe('Supabase workspace consistency repair plan', () => {
           transcript_json: '[]',
         },
         {
+          id: 'recording_smoke_voice_profile_20260522',
+          workspace_id: 'workspace_1',
+          meeting_id: 'meeting_smoke_voice_profile_20260522',
+          file_path: 'recording_smoke_voice_profile_20260522.webm',
+          transcript_json: '[]',
+        },
+        {
           id: 'recording_user_orphan',
           workspace_id: 'workspace_1',
           meeting_id: 'meeting_user_missing',
@@ -152,8 +160,14 @@ describe('Supabase workspace consistency repair plan', () => {
       ],
     });
 
-    expect(plan.operations.mediaAssetIdsToDelete).toEqual(['production_smoke_audio_1']);
-    expect(plan.operations.storagePathsToRemove).toEqual(['production_smoke_audio_1.webm']);
+    expect(plan.operations.mediaAssetIdsToDelete).toEqual([
+      'production_smoke_audio_1',
+      'recording_smoke_voice_profile_20260522',
+    ]);
+    expect(plan.operations.storagePathsToRemove).toEqual([
+      'production_smoke_audio_1.webm',
+      'recording_smoke_voice_profile_20260522.webm',
+    ]);
     expect(plan.mediaAssetsToKeep.map((asset) => asset.id)).toEqual(['recording_user_orphan']);
     expect(plan.actions).toEqual(
       expect.arrayContaining([
@@ -218,5 +232,48 @@ describe('Supabase workspace consistency repair plan', () => {
 
     expect(() => validateRepairPlanForApply(noop)).toThrow('nothing to apply');
     expect(() => validateRepairPlanForApply(changed)).not.toThrow();
+  });
+
+  it('redacts transcript text from logs and persisted maintenance reports', () => {
+    const plan = buildWorkspaceRepairPlan({
+      workspaceId: 'workspace_1',
+      now: NOW,
+      workspaceRow: row({
+        meetings: [
+          {
+            id: 'meeting_private',
+            latestRecordingId: 'recording_private',
+            recordings: [{ id: 'recording_private' }],
+          },
+        ],
+      }),
+      mediaAssets: [
+        {
+          id: 'recording_private',
+          workspace_id: 'workspace_1',
+          meeting_id: 'meeting_private',
+          file_path: '/app/server/data/uploads/private.mp3',
+          transcription_status: 'completed',
+          transcript_json: JSON.stringify([{ text: 'bardzo prywatna tresc rozmowy' }]),
+        },
+      ],
+    });
+
+    const publicReport = toPublicRepairReport({ ...plan, applied: false });
+    const serialized = JSON.stringify(publicReport);
+
+    expect(serialized).not.toContain('bardzo prywatna tresc rozmowy');
+    expect(publicReport.updatedWorkspaceState.meetings).toMatchObject([
+      expect.objectContaining({
+        id: 'meeting_private',
+        recordings: [
+          expect.objectContaining({
+            id: 'recording_private',
+            transcriptSegments: 1,
+            transcriptTextLength: 29,
+          }),
+        ],
+      }),
+    ]);
   });
 });

@@ -9,7 +9,12 @@ import {
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUCKET = 'recordings';
-const DEFAULT_AUDIT_PREFIXES = ['audit_', 'production_smoke_'];
+const DEFAULT_AUDIT_PREFIXES = [
+  'audit_',
+  'production_smoke_',
+  'recording_smoke_',
+  'meeting_smoke_',
+];
 const LEGACY_AUDIO_REASON = 'legacy_local_audio_unavailable';
 
 function readArg(name, fallback = '') {
@@ -396,6 +401,79 @@ export function validateRepairPlanForApply(plan) {
   }
 }
 
+function filePathKind(value) {
+  const raw = clean(value);
+  if (!raw) return 'missing';
+  if (isLikelyLocalAudioPath(raw)) return 'local';
+  return 'remote';
+}
+
+function redactRecording(recording) {
+  const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
+  return {
+    id: itemId(recording),
+    audioAvailable: recording?.audioAvailable,
+    audioUnavailable: recording?.audioUnavailable,
+    audioUnavailableReason: clean(recording?.audioUnavailableReason),
+    pipelineStatus: clean(recording?.pipelineStatus),
+    transcriptionStatus: clean(recording?.transcriptionStatus),
+    transcriptSegments: transcript.length,
+    transcriptTextLength: transcriptTextLength(transcript),
+  };
+}
+
+function redactMeeting(meeting) {
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  return {
+    id: clean(meeting?.id),
+    latestRecordingId: clean(meeting?.latestRecordingId),
+    recordingCount: recordings.length,
+    recordings: recordings.map(redactRecording),
+  };
+}
+
+function redactAction(action) {
+  return {
+    code: action.code,
+    recordingId: action.recordingId,
+    meetingId: action.meetingId,
+    filePathKind: filePathKind(action.filePath),
+    index: action.index,
+    keptIndex: action.keptIndex,
+    removedIndex: action.removedIndex,
+  };
+}
+
+export function toPublicRepairReport(report) {
+  return {
+    ok: report.ok,
+    workspaceId: report.workspaceId,
+    applied: Boolean(report.applied),
+    bucket: report.bucket,
+    workspaceStateChanged: Boolean(report.workspaceStateChanged),
+    summary: report.summary,
+    operations: report.operations,
+    actions: Array.isArray(report.actions) ? report.actions.map(redactAction) : [],
+    updatedWorkspaceState: {
+      meetings: Array.isArray(report.updatedWorkspaceState?.meetings)
+        ? report.updatedWorkspaceState.meetings.map(redactMeeting)
+        : [],
+      calendarMeta: {
+        meetingTombstones: Array.isArray(
+          report.updatedWorkspaceState?.calendarMeta?.meetingTombstones
+        )
+          ? report.updatedWorkspaceState.calendarMeta.meetingTombstones.length
+          : 0,
+        recordingTombstones: Array.isArray(
+          report.updatedWorkspaceState?.calendarMeta?.recordingTombstones
+        )
+          ? report.updatedWorkspaceState.calendarMeta.recordingTombstones.length
+          : 0,
+      },
+    },
+  };
+}
+
 function writeReport(report) {
   const dir = path.join(rootDir, 'reports', 'supabase-workspace-repair');
   fs.mkdirSync(dir, { recursive: true });
@@ -403,7 +481,7 @@ function writeReport(report) {
     dir,
     `${new Date().toISOString().replace(/[:.]/g, '-')}-${report.workspaceId || 'workspace'}.json`
   );
-  fs.writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`);
+  fs.writeFileSync(file, `${JSON.stringify(toPublicRepairReport(report), null, 2)}\n`);
   return file;
 }
 
@@ -500,7 +578,7 @@ const isMainModule =
 if (isMainModule) {
   runSupabaseWorkspaceConsistencyRepair()
     .then((report) => {
-      console.log(JSON.stringify(report, null, 2));
+      console.log(JSON.stringify(toPublicRepairReport(report), null, 2));
     })
     .catch((error) => {
       console.error(error.message);
