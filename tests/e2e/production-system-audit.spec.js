@@ -615,6 +615,9 @@ test.describe('Production system audit', () => {
       pipelineStatus: 'done',
       transcriptionStatus: 'completed',
       status: 'completed',
+      audioAvailable: false,
+      audioUnavailable: true,
+      audioUnavailableReason: 'production_audit_ui_fixture',
       transcript: [
         {
           id: `${AUDIT_PREFIX}vp_segment_${stamp}`,
