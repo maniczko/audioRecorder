@@ -232,23 +232,149 @@ async function readJsonResponse(response) {
   }
 }
 
-export async function runVoiceProfileSmoke({
-  api,
-  authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
-  workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
-  recordingId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID,
-  speakerId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID,
-  speakerName = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME,
-} = {}) {
-  const token = String(authToken || '').trim();
-  const workspace = String(workspaceId || '').trim();
-  const recording = String(recordingId || '').trim();
-  const speaker = String(speakerId || '').trim();
-  const name = String(speakerName || '').trim();
-  if (!token || !workspace || !recording || !speaker || !name) {
-    return false;
+function createSyntheticWavBuffer({ durationSeconds = 2.5, sampleRate = 16000 } = {}) {
+  const channels = 1;
+  const bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const sampleCount = Math.max(1, Math.floor(durationSeconds * sampleRate));
+  const dataSize = sampleCount * channels * bytesPerSample;
+  const buffer = Buffer.alloc(44 + dataSize);
+
+  buffer.write('RIFF', 0);
+  buffer.writeUInt32LE(36 + dataSize, 4);
+  buffer.write('WAVE', 8);
+  buffer.write('fmt ', 12);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(channels, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(sampleRate * channels * bytesPerSample, 28);
+  buffer.writeUInt16LE(channels * bytesPerSample, 32);
+  buffer.writeUInt16LE(bitsPerSample, 34);
+  buffer.write('data', 36);
+  buffer.writeUInt32LE(dataSize, 40);
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const time = index / sampleRate;
+    const envelope = Math.min(
+      1,
+      index / (sampleRate * 0.08),
+      (sampleCount - index) / (sampleRate * 0.08)
+    );
+    const sample =
+      Math.sin(2 * Math.PI * 220 * time) * 0.28 * envelope +
+      Math.sin(2 * Math.PI * 440 * time) * 0.12 * envelope;
+    buffer.writeInt16LE(Math.round(Math.max(-1, Math.min(1, sample)) * 32767), 44 + index * 2);
   }
 
+  return buffer;
+}
+
+async function createSupabaseSmokeClient(client) {
+  if (client) return client;
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || '').trim();
+  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      'Voice profile smoke dynamic fixture requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+    );
+  }
+  if (!isValidSupabaseProjectUrl(supabaseUrl)) {
+    throw new Error(
+      'Voice profile smoke dynamic fixture requires SUPABASE_URL to be the Supabase project API URL, not a Postgres connection string.'
+    );
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+async function seedVoiceProfileSmokeTranscript({
+  supabaseClient,
+  recordingId,
+  workspaceId,
+  speakerId,
+  speakerName,
+}) {
+  const segment = {
+    id: `${recordingId}_segment_1`,
+    speakerId,
+    speakerName,
+    text: 'To jest testowy fragment audytu profilu glosu.',
+    timestamp: 0.15,
+    endTimestamp: 2.15,
+  };
+  const nowIso = new Date().toISOString();
+  const updateResult = await supabaseClient
+    .from('media_assets')
+    .update({
+      transcription_status: 'completed',
+      transcript_json: JSON.stringify([segment]),
+      diarization_json: JSON.stringify({
+        speakerCount: 1,
+        speakerNames: { [speakerId]: speakerName },
+        segments: [segment],
+        source: 'production_smoke_dynamic_fixture',
+      }),
+      updated_at: nowIso,
+    })
+    .eq('id', recordingId)
+    .eq('workspace_id', workspaceId)
+    .select('id,file_path')
+    .maybeSingle();
+
+  if (updateResult.error) {
+    throw new Error(
+      `Voice profile smoke failed to seed media_assets transcript: ${updateResult.error.message}`
+    );
+  }
+  if (!updateResult.data?.id) {
+    throw new Error(
+      `Voice profile smoke failed to find uploaded media_assets row for ${recordingId}.`
+    );
+  }
+  return updateResult.data;
+}
+
+async function assertVoiceProfilePreflightReady({
+  api,
+  token,
+  workspace,
+  recording,
+  speaker,
+  name,
+}) {
+  const response = await fetch(
+    `${api}/media/recordings/${encodeURIComponent(recording)}/voice-profiles/from-speaker/preflight`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Workspace-Id': workspace,
+      },
+      body: JSON.stringify({ speakerId: speaker, speakerName: name }),
+    }
+  );
+  const payload = await readJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(`Voice profile preflight smoke failed: ${response.status}`);
+  }
+  if (payload?.ready !== true) {
+    const code = payload?.code ? ` ${payload.code}` : '';
+    const stage = payload?.stage ? ` stage=${payload.stage}` : '';
+    const message = payload?.message ? ` ${payload.message}` : '';
+    throw new Error(`Voice profile preflight smoke failed:${code}${stage}${message}`.trim());
+  }
+}
+
+async function enrollVoiceProfileFromSpeaker({ api, token, workspace, recording, speaker, name }) {
   const enrollResponse = await fetch(
     `${api}/media/recordings/${encodeURIComponent(recording)}/voice-profiles/from-speaker`,
     {
@@ -286,17 +412,153 @@ export async function runVoiceProfileSmoke({
 
   const profiles = Array.isArray(profilesPayload?.profiles) ? profilesPayload.profiles : [];
   const normalizedName = name.toLowerCase();
-  const hasProfile = profiles.some((profile) =>
-    String(profile?.speakerName || profile?.speaker_name || '')
+  const profile = profiles.find((candidate) =>
+    String(candidate?.speakerName || candidate?.speaker_name || '')
       .trim()
       .toLowerCase()
       .includes(normalizedName)
   );
-  if (!hasProfile) {
+  if (!profile) {
     throw new Error(`Voice profile smoke failed: saved profile for "${name}" was not visible.`);
   }
 
-  return true;
+  return {
+    profileId: String(profile.id || enrollPayload?.id || '').trim(),
+  };
+}
+
+async function cleanupVoiceProfileSmokeFixture({ api, token, workspace, recording, profileIds }) {
+  for (const profileId of [...new Set(profileIds.filter(Boolean))]) {
+    const response = await fetch(`${api}/voice-profiles/${encodeURIComponent(profileId)}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Workspace-Id': workspace,
+      },
+    });
+    if (![204, 404].includes(response.status)) {
+      throw new Error(
+        `Voice profile smoke cleanup failed for profile ${profileId}: ${response.status}`
+      );
+    }
+  }
+
+  if (recording) {
+    const response = await fetch(`${api}/media/recordings/${encodeURIComponent(recording)}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Workspace-Id': workspace,
+      },
+    });
+    if (![204, 404].includes(response.status)) {
+      throw new Error(
+        `Voice profile smoke cleanup failed for recording ${recording}: ${response.status}`
+      );
+    }
+  }
+}
+
+export async function runVoiceProfileSmoke({
+  api,
+  authToken = process.env.PRODUCTION_SMOKE_AUTH_TOKEN,
+  workspaceId = process.env.PRODUCTION_SMOKE_WORKSPACE_ID,
+  recordingId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID,
+  speakerId = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID,
+  speakerName = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME,
+  mode = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_MODE || 'dynamic',
+  now = () => Date.now(),
+  supabaseClient,
+} = {}) {
+  const token = String(authToken || '').trim();
+  const workspace = String(workspaceId || '').trim();
+  if (!token || !workspace) {
+    return false;
+  }
+
+  if (
+    String(mode || '')
+      .trim()
+      .toLowerCase() === 'static'
+  ) {
+    const recording = String(recordingId || '').trim();
+    const speaker = String(speakerId || '').trim();
+    const name = String(speakerName || '').trim();
+    if (!recording || !speaker || !name) {
+      return false;
+    }
+    await assertVoiceProfilePreflightReady({ api, token, workspace, recording, speaker, name });
+    await enrollVoiceProfileFromSpeaker({ api, token, workspace, recording, speaker, name });
+    return true;
+  }
+
+  const runId = String(now()).replace(/[^a-zA-Z0-9_-]/g, '') || String(Date.now());
+  const recording = `production_smoke_voice_profile_${runId}`;
+  const meeting = `production_smoke_voice_profile_meeting_${runId}`;
+  const speaker = `speaker_smoke_${runId}`;
+  const name = `production_smoke_voice_${runId}`;
+  const profileIds = [];
+  let primaryError = null;
+
+  try {
+    const uploadResponse = await fetch(`${api}/media/recordings/${recording}/audio`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'audio/wav',
+        'X-Workspace-Id': workspace,
+        'X-Meeting-Id': meeting,
+      },
+      body: createSyntheticWavBuffer(),
+    });
+    if (!uploadResponse.ok) {
+      throw new Error(
+        `Voice profile fixture upload failed: ${uploadResponse.status} ${await uploadResponse.text()}`
+      );
+    }
+
+    const client = await createSupabaseSmokeClient(supabaseClient);
+    await seedVoiceProfileSmokeTranscript({
+      supabaseClient: client,
+      recordingId: recording,
+      workspaceId: workspace,
+      speakerId: speaker,
+      speakerName: name,
+    });
+
+    await assertVoiceProfilePreflightReady({ api, token, workspace, recording, speaker, name });
+    const result = await enrollVoiceProfileFromSpeaker({
+      api,
+      token,
+      workspace,
+      recording,
+      speaker,
+      name,
+    });
+    if (result.profileId) profileIds.push(result.profileId);
+    return true;
+  } catch (error) {
+    primaryError = error;
+    throw error;
+  } finally {
+    try {
+      await cleanupVoiceProfileSmokeFixture({
+        api,
+        token,
+        workspace,
+        recording,
+        profileIds,
+      });
+    } catch (cleanupError) {
+      if (!primaryError) {
+        throw cleanupError;
+      }
+      console.warn(
+        '[production-smoke] Voice profile cleanup failed after primary error:',
+        cleanupError?.message || cleanupError
+      );
+    }
+  }
 }
 
 export function evaluateHealthPayload(
@@ -446,7 +708,7 @@ export async function runProductionSmoke({
   const voiceProfileChecked = await runVoiceProfileSmoke({ api });
   if (requireVoiceProfileSmoke && !voiceProfileChecked) {
     throw new Error(
-      'Voice profile smoke requires PRODUCTION_SMOKE_AUTH_TOKEN, PRODUCTION_SMOKE_WORKSPACE_ID, PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID, PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID, and PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME.'
+      'Voice profile smoke requires PRODUCTION_SMOKE_AUTH_TOKEN and PRODUCTION_SMOKE_WORKSPACE_ID. Dynamic fixture seeding also requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
     );
   }
 

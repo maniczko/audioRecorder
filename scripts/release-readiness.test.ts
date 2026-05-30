@@ -247,6 +247,18 @@ describe('release readiness gates', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
+        status: 200,
+        json: async () => ({
+          ready: true,
+          code: 'ready',
+          speakerId: 'speaker_2',
+          speakerName: 'Barbara',
+        }),
+        text: async () => '',
+        headers: new Headers({ 'content-type': 'application/json' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
         status: 201,
         json: async () => ({
           id: 'vp_1',
@@ -273,6 +285,7 @@ describe('release readiness gates', () => {
         api: 'https://voicelog.example.com',
         authToken: 'token',
         workspaceId: 'workspace_1',
+        mode: 'static',
         recordingId: 'recording_voice_1',
         speakerId: 'speaker_2',
         speakerName: 'Barbara',
@@ -295,6 +308,163 @@ describe('release readiness gates', () => {
       'https://voicelog.example.com/voice-profiles',
       expect.objectContaining({
         method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token',
+          'X-Workspace-Id': 'workspace_1',
+        }),
+      })
+    );
+  });
+
+  it('creates a dynamic voice-profile fixture when no static recording fixture is configured', async () => {
+    const mediaAssetsTable: any = {
+      update: vi.fn(() => mediaAssetsTable),
+      eq: vi.fn(() => mediaAssetsTable),
+      select: vi.fn(() => mediaAssetsTable),
+      maybeSingle: vi.fn(async () => ({
+        data: {
+          id: 'production_smoke_voice_profile_1780000000000',
+          file_path: 'production_smoke_voice_profile_1780000000000.wav',
+        },
+        error: null,
+      })),
+    };
+    const supabaseClient = {
+      from: vi.fn((table: string) => {
+        expect(table).toBe('media_assets');
+        return mediaAssetsTable;
+      }),
+    };
+
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/media/recordings/production_smoke_voice_profile_1780000000000/audio')) {
+        return {
+          ok: true,
+          status: 201,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/from-speaker/preflight')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ready: true,
+            code: 'ready',
+            speakerId: 'speaker_smoke_1780000000000',
+            speakerName: 'production_smoke_voice_1780000000000',
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/from-speaker')) {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            id: 'vp_smoke_1',
+            speakerName: 'production_smoke_voice_1780000000000',
+            sampleCount: 1,
+            hasEmbedding: true,
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles') && init?.method === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            profiles: [
+              {
+                id: 'vp_smoke_1',
+                speakerName: 'production_smoke_voice_1780000000000',
+                sampleCount: 1,
+                hasEmbedding: true,
+              },
+            ],
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/vp_smoke_1')) {
+        return {
+          ok: true,
+          status: 204,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers(),
+        };
+      }
+      if (url.endsWith('/media/recordings/production_smoke_voice_profile_1780000000000')) {
+        return {
+          ok: true,
+          status: 204,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers(),
+        };
+      }
+      throw new Error(`Unexpected fetch in dynamic voice-profile smoke: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      runVoiceProfileSmoke({
+        api: 'https://voicelog.example.com',
+        authToken: 'token',
+        workspaceId: 'workspace_1',
+        recordingId: 'stale_recording_from_secret',
+        speakerId: 'stale_speaker_from_secret',
+        speakerName: 'Stale Secret Name',
+        now: () => 1780000000000,
+        supabaseClient,
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://voicelog.example.com/media/recordings/production_smoke_voice_profile_1780000000000/audio',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token',
+          'Content-Type': 'audio/wav',
+          'X-Workspace-Id': 'workspace_1',
+          'X-Meeting-Id': 'production_smoke_voice_profile_meeting_1780000000000',
+        }),
+      })
+    );
+    expect(mediaAssetsTable.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcription_status: 'completed',
+        transcript_json: expect.stringContaining('speaker_smoke_1780000000000'),
+        diarization_json: expect.stringContaining('production_smoke_voice_1780000000000'),
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://voicelog.example.com/media/recordings/production_smoke_voice_profile_1780000000000/voice-profiles/from-speaker',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token',
+          'X-Workspace-Id': 'workspace_1',
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify({
+          speakerId: 'speaker_smoke_1780000000000',
+          speakerName: 'production_smoke_voice_1780000000000',
+        }),
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://voicelog.example.com/voice-profiles/vp_smoke_1',
+      expect.objectContaining({
+        method: 'DELETE',
         headers: expect.objectContaining({
           Authorization: 'Bearer token',
           'X-Workspace-Id': 'workspace_1',
@@ -338,9 +508,7 @@ describe('release readiness gates', () => {
         requirePremiumStt: false,
         requireVoiceProfileSmoke: true,
       })
-    ).rejects.toThrow(
-      'Voice profile smoke requires PRODUCTION_SMOKE_AUTH_TOKEN, PRODUCTION_SMOKE_WORKSPACE_ID, PRODUCTION_SMOKE_VOICE_PROFILE_RECORDING_ID, PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_ID, and PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME.'
-    );
+    ).rejects.toThrow('Voice profile smoke requires PRODUCTION_SMOKE_AUTH_TOKEN');
   });
 
   it('skips stale recording smoke only when auth or workspace evidence is missing', async () => {
