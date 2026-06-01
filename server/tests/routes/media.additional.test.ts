@@ -855,6 +855,64 @@ describe('Media Routes - Additional Coverage', () => {
         expect(listAssembledFiles(recordingId)).toEqual([]);
       });
 
+      it('Regression: #0 - finalizes large normalized audio as segmented storage', async () => {
+        const recordingId = 'rec_finalize_segmented';
+        const total = 5;
+        let capturedInput: any = null;
+
+        mockTranscriptionService.upsertMediaAssetFromPreparedAudio = vi.fn(async (input: any) => {
+          capturedInput = input;
+          return {
+            id: input.recordingId,
+            workspace_id: input.workspaceId,
+            size_bytes: input.normalizedSizeBytes,
+            file_path: 'ws_1/rec_finalize_segmented/manifest.json',
+            content_type: 'audio/webm',
+            storage_mode: 'segmented',
+            media_manifest_json: JSON.stringify({
+              version: 1,
+              storageMode: 'segmented',
+              parts: input.parts.map((part: any) => ({
+                index: part.index,
+                path: `ws_1/rec_finalize_segmented/part-${String(part.index).padStart(3, '0')}.webm`,
+                sizeBytes: part.sizeBytes,
+              })),
+            }),
+            transcription_status: 'queued',
+          };
+        });
+
+        const chunk = Buffer.alloc(5 * 1024 * 1024 + 1, 1);
+        for (let index = 0; index < total; index += 1) {
+          await uploadChunk(recordingId, index, total, chunk);
+        }
+
+        const res = await finalizeUpload(recordingId, total);
+        const data = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(data).toMatchObject({
+          id: recordingId,
+          workspaceId: 'ws_1',
+          storageMode: 'segmented',
+          partCount: 2,
+        });
+        expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
+        expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).toHaveBeenCalledOnce();
+        expect(capturedInput).toMatchObject({
+          recordingId,
+          workspaceId: 'ws_1',
+          meetingId: 'meeting_1',
+          contentType: 'audio/webm',
+          createdByUserId: 'user_1',
+        });
+        expect(capturedInput.normalizedSizeBytes).toBeGreaterThan(24 * 1024 * 1024);
+        expect(capturedInput.parts).toHaveLength(2);
+        expect(capturedInput.parts.every((part: any) => part.sizeBytes <= 20 * 1024 * 1024)).toBe(
+          true
+        );
+      });
+
       it('keeps uploaded chunks retryable and removes assembled temp file after storage error', async () => {
         const recordingId = 'rec_finalize_retry';
         const total = 2;

@@ -184,6 +184,55 @@ export async function uploadAudioFileToStorage(
   return data.path;
 }
 
+export async function uploadBufferToStoragePath(
+  storagePath: string,
+  buffer: Buffer | Uint8Array | string,
+  contentType: string
+): Promise<string | null> {
+  if (!supabase || !supabase.storage) {
+    return null;
+  }
+
+  await ensureBucket();
+
+  const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(storagePath, buffer, {
+    contentType,
+    upsert: true,
+  });
+
+  if (error) {
+    throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+  }
+
+  return data.path;
+}
+
+export async function uploadAudioFileToStoragePath(
+  storagePath: string,
+  filePath: string,
+  contentType: string
+): Promise<string | null> {
+  if (!supabase || !supabase.storage) {
+    return null;
+  }
+
+  await ensureBucket();
+
+  const body = fs.createReadStream(filePath);
+  const { data, error } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(storagePath, body as any, {
+      contentType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+  }
+
+  return data.path;
+}
+
 /**
  * Downloads a file from Supabase Storage.
  * @param path The storage path of the file.
@@ -265,5 +314,19 @@ export async function deleteAudioFromStorage(path: string): Promise<void> {
   if (error) {
     // We log but don't throw to prevent blocking the DB deletion if the file is already gone
     console.warn(`[Supabase Storage] Failed to delete file ${path}:`, error.message);
+  }
+}
+
+export async function deleteAudioPathsFromStorage(paths: string[]): Promise<void> {
+  if (!paths.length) return;
+  if (!supabase || !supabase.storage) {
+    throw new Error('Supabase Storage not available (client or storage module missing).');
+  }
+
+  const uniquePaths = [...new Set(paths.filter(Boolean))];
+  const { error } = await supabase.storage.from(BUCKET_NAME).remove(uniquePaths);
+
+  if (error) {
+    console.warn(`[Supabase Storage] Failed to delete ${uniquePaths.length} files:`, error.message);
   }
 }

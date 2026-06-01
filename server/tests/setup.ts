@@ -8,6 +8,9 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_KEY = 'test-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
+process.env.NODE_ENV = 'test';
+delete process.env.RAILWAY_ENVIRONMENT_NAME;
+delete process.env.RAILWAY_PROJECT_ID;
 
 const createSupabaseStorageBucketMock = () => ({
   list: vi.fn(async () => ({

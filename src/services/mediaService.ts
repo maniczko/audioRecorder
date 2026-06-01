@@ -20,6 +20,14 @@ const CHUNK_UPLOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000];
 const TRANSCRIPTION_STATUS_RETRIES = 5;
 const PROGRESS_MAX_RECONNECT_ERRORS = 20;
 let chunkStatusEndpointSupported: 'unknown' | 'yes' | 'no' = 'unknown';
+const DEFAULT_UPLOAD_POLICY = {
+  maxRawUploadBytes: 200 * 1024 * 1024,
+  clientChunkBytes: 4 * 1024 * 1024,
+  singleObjectMaxBytes: 24 * 1024 * 1024,
+  segmentPartMaxBytes: 20 * 1024 * 1024,
+  storageContentType: 'audio/webm',
+};
+let uploadPolicyPromise: Promise<typeof DEFAULT_UPLOAD_POLICY> | null = null;
 
 export function buildTranscriptionProgressRequest(recordingId: string, token = '') {
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
@@ -32,6 +40,21 @@ export function buildTranscriptionProgressRequest(recordingId: string, token = '
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function getUploadPolicy() {
+  if (!uploadPolicyPromise) {
+    uploadPolicyPromise = apiRequest('/media/upload-policy', {
+      method: 'GET',
+      retries: 0,
+    })
+      .then((policy: any) => ({
+        ...DEFAULT_UPLOAD_POLICY,
+        ...(policy && typeof policy === 'object' ? policy : {}),
+      }))
+      .catch(() => DEFAULT_UPLOAD_POLICY);
+  }
+  return uploadPolicyPromise;
 }
 
 function isRetryableChunkUploadError(error: any) {
@@ -230,13 +253,15 @@ function createRemoteMediaService() {
           'Nie można rozpocząć uploadu, bo przestrzeń robocza nie jest jeszcze gotowa. Odśwież lub wybierz workspace.'
         );
       }
-      const CHUNKED_THRESHOLD = 10 * 1024 * 1024; // 10 MB
-      const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB — must stay under Vercel's ~4.5 MB serverless payload limit
-      const MAX_UPLOAD_SIZE = 500 * 1024 * 1024; // 500 MB — matches server finalize limit
+      const uploadPolicy = await getUploadPolicy();
+      const CHUNKED_THRESHOLD = Math.min(10 * 1024 * 1024, uploadPolicy.singleObjectMaxBytes);
+      const CHUNK_SIZE = uploadPolicy.clientChunkBytes || DEFAULT_UPLOAD_POLICY.clientChunkBytes;
+      const MAX_UPLOAD_SIZE =
+        uploadPolicy.maxRawUploadBytes || DEFAULT_UPLOAD_POLICY.maxRawUploadBytes;
 
       if (blob && blob.size > MAX_UPLOAD_SIZE) {
         throw new Error(
-          `Plik audio jest zbyt duży (${Math.round(blob.size / 1024 / 1024)}MB). Maksymalny rozmiar to 500MB. Skompresuj nagranie do formatu WebM lub MP3.`
+          `Plik audio jest zbyt duzy (${Math.round(blob.size / 1024 / 1024)}MB). Maksymalny rozmiar to ${Math.round(MAX_UPLOAD_SIZE / 1024 / 1024)}MB.`
         );
       }
 
@@ -320,7 +345,8 @@ function createRemoteMediaService() {
         });
         onProgress?.(100);
         return {
-          storageMode: 'remote',
+          storageMode: response?.storageMode || 'remote',
+          partCount: response?.partCount || 0,
           audioQuality:
             response?.audioQuality && typeof response.audioQuality === 'object'
               ? response.audioQuality
@@ -338,7 +364,8 @@ function createRemoteMediaService() {
         },
       });
       return {
-        storageMode: 'remote',
+        storageMode: response?.storageMode || 'remote',
+        partCount: response?.partCount || 0,
         audioQuality:
           response?.audioQuality && typeof response.audioQuality === 'object'
             ? response.audioQuality

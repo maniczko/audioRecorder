@@ -16,6 +16,10 @@ import { logger } from './logger.ts';
 import { matchSpeakerToProfile } from './speakerEmbedder.ts';
 import { MetricsService } from './services/MetricsService.ts';
 import { getSttModelForProcessingMode } from './stt/modelSelector.ts';
+import {
+  isRemoteStoragePath,
+  materializeAssetToLocal as materializeStoredAudio,
+} from './lib/mediaStoragePipeline.ts';
 
 // ── Sub-module imports ────────────────────────────────────────────────────────
 import {
@@ -98,7 +102,7 @@ const DEBUG = process.env.VOICELOG_DEBUG === 'true';
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 function isRemoteAudioPath(filePath: string) {
-  return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
+  return isRemoteStoragePath(filePath);
 }
 
 type AudioPreprocessProfile = 'standard' | 'enhanced' | 'noisy' | 'long-meeting';
@@ -667,10 +671,7 @@ async function runTranscriptionAttempt(
           const totalSpeakerTime = segs.reduce((sum, s) => sum + (s.endTimestamp - s.timestamp), 0);
           if (totalSpeakerTime < 2) continue;
 
-          const clipPath = path.join(
-            path.dirname(asset.file_path),
-            `spk_${asset.id}_${speakerId}_clip.wav`
-          );
+          const clipPath = path.join(getUploadDir(), `spk_${asset.id}_${speakerId}_clip.wav`);
           try {
             const safeSegments = segs.slice(0, 8).filter((s) => {
               const t = Number(s.timestamp);
@@ -689,7 +690,7 @@ async function runTranscriptionAttempt(
             const execP = promisify(execFn);
             const FFMPEG_BINARY = config.FFMPEG_BINARY;
             await execP(
-              `"${FFMPEG_BINARY}" -y -i "${asset.file_path}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
+              `"${FFMPEG_BINARY}" -y -i "${workingFilePath}" -af "aselect='${selectFilter}',asetpts=N/SR/TB" -threads 4 -ar 16000 -ac 1 "${clipPath}"`,
               { timeout: 30000, signal: options.signal }
             );
             const matchResult = await matchSpeakerToProfile(clipPath, voiceProfiles);
@@ -890,14 +891,29 @@ async function runTranscriptionAttempt(
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
+export async function materializeAssetToLocal(asset: any, options: any = {}) {
+  return materializeStoredAudio(asset, {
+    workDir: getUploadDir(),
+    signal: options.signal,
+    purpose: 'transcribe',
+  });
+}
+
 export async function transcribeRecording(asset: any, options: any = {}) {
+  const effectiveAsset = options.localSourcePath
+    ? {
+        ...asset,
+        file_path: options.localSourcePath,
+        content_type: asset.content_type || 'audio/webm',
+      }
+    : asset;
   let audioQuality = resolveStoredAudioQuality(asset);
 
   if (!audioQuality) {
     try {
       audioQuality = await Promise.race([
-        analyzeAudioQuality(asset.file_path, {
-          contentType: asset.content_type,
+        analyzeAudioQuality(effectiveAsset.file_path, {
+          contentType: effectiveAsset.content_type,
           signal: options.signal,
         }),
         new Promise((resolve) => setTimeout(() => resolve(null), 250)),
@@ -922,14 +938,14 @@ export async function transcribeRecording(asset: any, options: any = {}) {
     initialProfile === 'standard' ? ['standard', 'noisy'] : [initialProfile];
   const preprocessPlan = new Map(
     attemptProfiles.map((profile) => {
-      const cacheKey = buildAudioPreprocessCacheKey(asset, profile);
+      const cacheKey = buildAudioPreprocessCacheKey(effectiveAsset, profile);
       return [profile, { cacheKey, cachePath: getPreprocessCachePath(cacheKey, profile) }];
     })
   );
 
   let sourceTempPath = '';
-  let sourceFilePath = asset.file_path;
-  const remoteSource = isRemoteAudioPath(asset.file_path);
+  let sourceFilePath = options.localSourcePath || asset.file_path;
+  const remoteSource = !options.localSourcePath && isRemoteAudioPath(asset.file_path);
   const needsSourceMaterialization =
     remoteSource &&
     (!config.AUDIO_PREPROCESS ||

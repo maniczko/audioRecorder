@@ -1,5 +1,10 @@
 import { EventEmitter } from 'node:events';
 import { config } from '../config.ts';
+import {
+  getManifestPartProgress,
+  normalizePartTranscriptionCheckpoint,
+  parseMediaManifest,
+} from '../lib/mediaStoragePolicy.ts';
 
 type VoiceProfileEnrollmentCode =
   | 'speaker_segment_not_found'
@@ -253,6 +258,17 @@ export default class TranscriptionService extends EventEmitter {
     });
   }
 
+  async upsertMediaAssetFromPreparedAudio(data: any) {
+    if (typeof this.db.upsertMediaAssetFromPreparedAudio === 'function') {
+      return await this.db.upsertMediaAssetFromPreparedAudio(data);
+    }
+    return await this.upsertMediaAssetFromPath({
+      ...data,
+      filePath: data.normalizedFilePath,
+      contentType: data.contentType || 'audio/webm',
+    });
+  }
+
   async getMediaAsset(recordingId: string) {
     return await this.db.getMediaAsset(recordingId);
   }
@@ -324,6 +340,147 @@ export default class TranscriptionService extends EventEmitter {
 
   async saveTranscriptionResult(recordingId: string, result: any) {
     return await this.db.saveTranscriptionResult(recordingId, result);
+  }
+
+  private _offsetSegments(segments: any[], offsetMs: number) {
+    const offsetSeconds = Number(offsetMs || 0) / 1000;
+    return (Array.isArray(segments) ? segments : []).map((segment) => {
+      const next = { ...segment };
+      for (const key of ['timestamp', 'start', 'end']) {
+        if (typeof next[key] === 'number') next[key] += offsetSeconds;
+      }
+      if (typeof next.startMs === 'number') next.startMs += offsetMs;
+      if (typeof next.endMs === 'number') next.endMs += offsetMs;
+      return next;
+    });
+  }
+
+  private _mergeSegmentedResults(
+    partResults: Array<{ part: any; result: any }>,
+    failedParts: number
+  ) {
+    const segments = partResults.flatMap(({ part, result }) =>
+      this._offsetSegments(result?.segments || [], Number(part.startMs || 0))
+    );
+    const speakerNames = partResults.reduce((acc: Record<string, string>, { result }) => {
+      const names = result?.diarization?.speakerNames || {};
+      for (const [key, value] of Object.entries(names)) acc[key] = String(value);
+      return acc;
+    }, {});
+    const confidences = partResults
+      .map(({ result }) => Number(result?.diarization?.confidence))
+      .filter((value) => Number.isFinite(value));
+    const confidence = confidences.length
+      ? confidences.reduce((sum, value) => sum + value, 0) / confidences.length
+      : 0;
+    return {
+      segments,
+      diarization: {
+        speakerNames,
+        speakerCount: Object.keys(speakerNames).length,
+        confidence,
+      },
+      transcriptionDiagnostics: {
+        segmentedStorage: true,
+        partCount: partResults.length + failedParts,
+        completedParts: partResults.length,
+        failedParts,
+      },
+    };
+  }
+
+  private async transcribeSegmentedAsset(
+    recordingId: string,
+    asset: any,
+    manifest: any,
+    sharedOptions: any
+  ) {
+    const sortedParts = [...(manifest.parts || [])].sort((a, b) => a.index - b.index);
+    const partResults: Array<{ part: any; result: any }> = [];
+    let failedParts = 0;
+
+    for (const part of sortedParts) {
+      const checkpoint = normalizePartTranscriptionCheckpoint(part);
+      if (checkpoint.status === 'completed' && checkpoint.payloadPath) {
+        const savedPayload =
+          typeof this.db.loadMediaPartTranscript === 'function'
+            ? await this.db.loadMediaPartTranscript(recordingId, part.index)
+            : null;
+        if (savedPayload) {
+          partResults.push({ part, result: savedPayload });
+          continue;
+        }
+      }
+
+      const attempts = Number(checkpoint.attempts || 0) + 1;
+      if (typeof this.db.markMediaPartTranscription === 'function') {
+        await this.db.markMediaPartTranscription(recordingId, part.index, {
+          status: 'processing',
+          attempts,
+          startedAt: new Date().toISOString(),
+          errorCode: '',
+        });
+      }
+      this.emit(`progress-${recordingId}`, {
+        progress: Math.min(
+          95,
+          35 + Math.round((part.index / Math.max(1, sortedParts.length)) * 55)
+        ),
+        message: `Transkrypcja czesci ${part.index + 1}/${sortedParts.length}`,
+        partProgress: {
+          ...(getManifestPartProgress(manifest) || {
+            total: sortedParts.length,
+            completed: partResults.length,
+            failed: failedParts,
+          }),
+          processingIndex: part.index,
+        },
+      });
+
+      try {
+        const partAsset = {
+          ...asset,
+          file_path: part.path,
+          content_type: part.contentType || asset.content_type || 'audio/webm',
+          storage_mode: 'single',
+          media_manifest_json: '{}',
+          size_bytes: part.sizeBytes || asset.size_bytes || 0,
+        };
+        const result = await this.pipeline.transcribeRecording(partAsset, {
+          ...sharedOptions,
+          segmentedPart: part,
+          skipEarlyPyannote: true,
+          skipVoiceProfileMatch: true,
+        });
+        if (typeof this.db.saveMediaPartTranscript === 'function') {
+          await this.db.saveMediaPartTranscript(recordingId, part.index, result, {
+            status: 'completed',
+            attempts,
+            provider:
+              result?.transcriptionDiagnostics?.sttProviderInfo?.providerId ||
+              result?.transcriptionDiagnostics?.sttProviderInfo?.provider ||
+              '',
+            model: result?.transcriptionDiagnostics?.sttProviderInfo?.model || '',
+          });
+        }
+        partResults.push({ part, result });
+      } catch (error: any) {
+        failedParts += 1;
+        if (typeof this.db.markMediaPartTranscription === 'function') {
+          await this.db.markMediaPartTranscription(recordingId, part.index, {
+            status: 'failed',
+            attempts,
+            errorCode: error?.code || 'stt_part_failed',
+            completedAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    if (!partResults.length) {
+      throw new Error('Transkrypcja STT nie powiodla sie dla zadnej czesci audio.');
+    }
+    return this._mergeSegmentedResults(partResults, failedParts);
   }
 
   async markTranscriptionFailure(
@@ -400,7 +557,10 @@ export default class TranscriptionService extends EventEmitter {
         ]);
         await markProcessingPromise;
 
-        if (typeof this.pipeline.materializeAssetToLocal === 'function') {
+        const segmentedManifest =
+          asset.storage_mode === 'segmented' ? parseMediaManifest(asset.media_manifest_json) : null;
+
+        if (!segmentedManifest && typeof this.pipeline.materializeAssetToLocal === 'function') {
           const materialized = await this.pipeline.materializeAssetToLocal(asset, {
             signal: options.signal,
           });
@@ -424,12 +584,19 @@ export default class TranscriptionService extends EventEmitter {
           },
         };
 
-        const result = await this.pipeline.transcribeRecording(asset, {
-          ...sharedOptions,
-          skipEarlyPyannote: processingMode !== 'full',
-          skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
-          skipVoiceProfileMatch: processingMode !== 'full',
-        });
+        const result = segmentedManifest
+          ? await this.transcribeSegmentedAsset(
+              recordingId,
+              asset,
+              segmentedManifest,
+              sharedOptions
+            )
+          : await this.pipeline.transcribeRecording(asset, {
+              ...sharedOptions,
+              skipEarlyPyannote: processingMode !== 'full',
+              skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
+              skipVoiceProfileMatch: processingMode !== 'full',
+            });
 
         const isEmptyTranscript = result?.transcriptOutcome === 'empty';
         this.emit(`progress-${recordingId}`, {
@@ -446,7 +613,7 @@ export default class TranscriptionService extends EventEmitter {
           pipelineStatus: 'completed',
         });
 
-        if (shouldRunPostprocess && !isEmptyTranscript) {
+        if (shouldRunPostprocess && !isEmptyTranscript && !segmentedManifest) {
           this.runEnhancementPostProcess(
             recordingId,
             asset,

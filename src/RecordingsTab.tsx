@@ -1195,8 +1195,8 @@ export default function RecordingsTab(props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024 * 1024) {
-      toast.error('Rozmiar pliku przekracza limit 500MB.');
+    if (file.size > 200 * 1024 * 1024) {
+      toast.error('Rozmiar pliku przekracza limit 200MB.');
       if (e.target) e.target.value = '';
       return;
     }

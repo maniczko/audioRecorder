@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TranscriptionService from '../services/TranscriptionService.ts';
+import { buildSegmentedMediaManifest } from '../lib/mediaStoragePolicy.ts';
 
 async function waitForCondition(
   predicate: () => boolean,
@@ -28,6 +29,9 @@ describe('TranscriptionService', () => {
       queueTranscription: vi.fn(),
       markTranscriptionProcessing: vi.fn(),
       saveTranscriptionResult: vi.fn(),
+      loadMediaPartTranscript: vi.fn(),
+      markMediaPartTranscription: vi.fn(),
+      saveMediaPartTranscript: vi.fn(),
       updateTranscriptionMetadata: vi.fn(),
       markTranscriptionFailure: vi.fn(),
       saveRagChunk: vi.fn(),
@@ -164,6 +168,102 @@ describe('TranscriptionService', () => {
     );
     expect(mockDb.queueTranscription).not.toHaveBeenCalled();
     expect(service.transcriptionJobs.has('rec_1')).toBe(false);
+  }, 30000);
+
+  it('resumes segmented transcription from completed part checkpoints', async () => {
+    const service = new TranscriptionService(
+      mockDb,
+      mockWorkspaceService,
+      mockAudioPipeline,
+      mockSpeakerEmbedder
+    );
+    const completedPartResult = {
+      segments: [{ id: 'part0_seg', timestamp: 1, start: 1, end: 3, text: 'Gotowa czesc.' }],
+      diarization: { speakerNames: { '0': 'Anna' }, speakerCount: 1, confidence: 0.9 },
+    };
+    const pendingPartResult = {
+      segments: [{ id: 'part1_seg', timestamp: 2, start: 2, end: 4, text: 'Nowa czesc.' }],
+      diarization: { speakerNames: { '0': 'Anna' }, speakerCount: 1, confidence: 0.8 },
+      transcriptionDiagnostics: {
+        sttProviderInfo: { providerId: 'openai', model: 'gpt-4o-transcribe' },
+      },
+    };
+    const manifest = buildSegmentedMediaManifest({
+      recordingId: 'rec_segmented',
+      workspaceId: 'ws_1',
+      sourceSizeBytes: 180 * 1024 * 1024,
+      normalizedSizeBytes: 45 * 1024 * 1024,
+      durationMs: 20 * 60 * 1000,
+      parts: [
+        {
+          index: 0,
+          path: 'ws_1/rec_segmented/part-000.webm',
+          startMs: 0,
+          endMs: 10 * 60 * 1000,
+          sizeBytes: 18 * 1024 * 1024,
+          contentType: 'audio/webm',
+          transcription: {
+            status: 'completed',
+            attempts: 1,
+            payloadPath: 'ws_1/rec_segmented/transcripts/part-000.json',
+          },
+        },
+        {
+          index: 1,
+          path: 'ws_1/rec_segmented/part-001.webm',
+          startMs: 10 * 60 * 1000,
+          endMs: 20 * 60 * 1000,
+          sizeBytes: 17 * 1024 * 1024,
+          contentType: 'audio/webm',
+          transcription: { status: 'pending', attempts: 0 },
+        },
+      ],
+    });
+    const asset = {
+      id: 'rec_segmented',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: 'ws_1/rec_segmented/manifest.json',
+      content_type: 'audio/webm',
+      storage_mode: 'segmented',
+      media_manifest_json: JSON.stringify(manifest),
+    };
+
+    mockDb.loadMediaPartTranscript.mockImplementation(
+      async (_recordingId: string, index: number) => (index === 0 ? completedPartResult : null)
+    );
+    mockAudioPipeline.transcribeRecording.mockResolvedValue(pendingPartResult);
+
+    service.ensureTranscriptionJob('rec_segmented', asset, { processingMode: 'full' });
+    await service.transcriptionJobs.get('rec_segmented');
+
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledWith(
+      expect.objectContaining({ file_path: 'ws_1/rec_segmented/part-001.webm' }),
+      expect.objectContaining({ segmentedPart: expect.objectContaining({ index: 1 }) })
+    );
+    expect(mockDb.saveMediaPartTranscript).toHaveBeenCalledWith(
+      'rec_segmented',
+      1,
+      pendingPartResult,
+      expect.objectContaining({ status: 'completed', attempts: 1 })
+    );
+    expect(mockDb.saveTranscriptionResult).toHaveBeenCalledWith(
+      'rec_segmented',
+      expect.objectContaining({
+        pipelineStatus: 'completed',
+        segments: expect.arrayContaining([
+          expect.objectContaining({ id: 'part0_seg', timestamp: 1 }),
+          expect.objectContaining({ id: 'part1_seg', timestamp: 602 }),
+        ]),
+        transcriptionDiagnostics: expect.objectContaining({
+          segmentedStorage: true,
+          partCount: 2,
+          completedParts: 2,
+          failedParts: 0,
+        }),
+      })
+    );
   }, 30000);
 
   it('marks transcription failure and clears the job map on pipeline error', async () => {

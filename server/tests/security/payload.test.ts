@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApp } from '../../app.ts';
+import { MAX_RAW_UPLOAD_BYTES } from '../../lib/mediaStoragePolicy.ts';
 
 process.env.RATE_LIMIT_MAX = '20';
 
@@ -51,13 +52,16 @@ describe('Security & Payload Limits', () => {
     expect(res.status).toBe(413);
   });
 
-  it('PUT /media/recordings/:id/audio - 413 Payload Too Large if > 100MB', async () => {
-    const giantBuffer = Buffer.alloc(101 * 1024 * 1024, 'x'); // 101MB
-
+  it('PUT /media/recordings/:id/audio - 413 Payload Too Large if > 200MB', async () => {
     const res = await app.request('/media/recordings/test_rec/audio', {
       method: 'PUT',
-      headers: { Authorization: 'Bearer fake', 'X-Workspace-Id': 'ws1' },
-      body: giantBuffer,
+      headers: {
+        Authorization: 'Bearer fake',
+        'Content-Type': 'audio/webm',
+        'Content-Length': String(MAX_RAW_UPLOAD_BYTES + 1),
+        'X-Workspace-Id': 'ws1',
+      },
+      body: Buffer.from('oversized-by-header'),
     });
     expect(res.status).toBe(413);
   });

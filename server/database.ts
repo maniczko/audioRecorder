@@ -10,6 +10,16 @@ import { config } from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
 import type { SessionPayload, WorkspaceStatePayload } from '../src/shared/contracts.ts';
 import {
+  STORAGE_CONTENT_TYPE,
+  buildManifestStoragePath,
+  buildPartStoragePath,
+  buildPartTranscriptPath,
+  buildSegmentedMediaManifest,
+  buildSingleStoragePath,
+  parseMediaManifest,
+  updateManifestPartTranscription,
+} from './lib/mediaStoragePolicy.ts';
+import {
   UserProfile,
   UserDraft,
   MeetingUpdates,
@@ -135,6 +145,12 @@ function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffe
 }
 
 function _requiresPersistentAudioStorage(): boolean {
+  if (process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE === 'true') {
+    return true;
+  }
+  if (process.env.VITEST) {
+    return false;
+  }
   return (
     process.env.NODE_ENV === 'production' ||
     Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
@@ -665,7 +681,9 @@ export class Database {
 
     const candidates = new Set<string>();
     const leafName = rawPath.split(/[\\/]/).filter(Boolean).pop() || '';
-    if (rawPath && !rawPath.includes('\\') && !rawPath.includes('/')) {
+    const looksLocal =
+      fs.existsSync(rawPath) || path.isAbsolute(rawPath) || /^[a-zA-Z]:[\\/]/.test(rawPath);
+    if (rawPath && !rawPath.includes('\\') && !looksLocal) {
       candidates.add(rawPath);
     }
     if (leafName) {
@@ -682,6 +700,30 @@ export class Database {
   async _isMediaAssetAudioAvailable(recordingId: string, asset: any = {}): Promise<boolean | null> {
     const rawPath = String(asset?.file_path || '').trim();
     if (!rawPath) return false;
+
+    const manifest = parseMediaManifest(asset?.media_manifest_json);
+    if (manifest?.parts?.length) {
+      if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_ROLE_KEY) return null;
+      try {
+        const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
+        for (const part of manifest.parts) {
+          if (!(await audioExistsInStorage(part.path))) {
+            return false;
+          }
+        }
+        return true;
+      } catch (error) {
+        logger.warn(
+          '[database] Unable to verify segmented media asset audio availability.',
+          {
+            recordingId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          { sentry: false }
+        );
+        return null;
+      }
+    }
 
     if ((rawPath.includes('/') || rawPath.includes('\\')) && fs.existsSync(rawPath)) {
       return true;
@@ -1669,12 +1711,18 @@ export class Database {
 
     if (existing) {
       await this._execute(
-        'UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?',
+        `UPDATE media_assets
+         SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?,
+             storage_mode = 'single', media_manifest_json = '{}', source_size_bytes = ?,
+             normalized_size_bytes = ?, updated_at = ?
+         WHERE id = ?`,
         [
           workspaceId,
           meetingId,
           storagePath,
           contentType,
+          buffer.byteLength,
+          buffer.byteLength,
           buffer.byteLength,
           timestamp,
           recordingId,
@@ -1685,9 +1733,10 @@ export class Database {
         `
         INSERT INTO media_assets (
           id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
-          size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes, normalized_size_bytes,
+          transcription_status, transcript_json, diarization_json, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'single', '{}', ?, ?, 'queued', '[]', '{}', ?, ?)`,
         [
           recordingId,
           workspaceId,
@@ -1695,6 +1744,8 @@ export class Database {
           createdByUserId,
           storagePath,
           contentType || 'application/octet-stream',
+          buffer.byteLength,
+          buffer.byteLength,
           buffer.byteLength,
           timestamp,
           timestamp,
@@ -1782,17 +1833,32 @@ export class Database {
 
     if (existing) {
       await this._execute(
-        'UPDATE media_assets SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?, updated_at = ? WHERE id = ?',
-        [workspaceId, meetingId, storagePath, contentType, fileStats.size, timestamp, recordingId]
+        `UPDATE media_assets
+         SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?,
+             storage_mode = 'single', media_manifest_json = '{}', source_size_bytes = ?,
+             normalized_size_bytes = ?, updated_at = ?
+         WHERE id = ?`,
+        [
+          workspaceId,
+          meetingId,
+          storagePath,
+          contentType,
+          fileStats.size,
+          fileStats.size,
+          fileStats.size,
+          timestamp,
+          recordingId,
+        ]
       );
     } else {
       await this._execute(
         `
         INSERT INTO media_assets (
           id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
-          size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes, normalized_size_bytes,
+          transcription_status, transcript_json, diarization_json, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'single', '{}', ?, ?, 'queued', '[]', '{}', ?, ?)`,
         [
           recordingId,
           workspaceId,
@@ -1801,6 +1867,193 @@ export class Database {
           storagePath,
           contentType || 'application/octet-stream',
           fileStats.size,
+          fileStats.size,
+          fileStats.size,
+          timestamp,
+          timestamp,
+        ]
+      );
+    }
+
+    return this.getMediaAsset(recordingId);
+  }
+
+  async upsertMediaAssetFromPreparedAudio({
+    recordingId,
+    workspaceId,
+    meetingId = '',
+    normalizedFilePath,
+    sourceSizeBytes = 0,
+    normalizedSizeBytes = 0,
+    durationMs = 0,
+    parts = [],
+    createdByUserId,
+  }: any): Promise<MediaAsset | null> {
+    const safeRecordingId = String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (!safeRecordingId) throw new Error('Nieprawidlowy identyfikator nagrania.');
+    if (!normalizedFilePath || !fs.existsSync(normalizedFilePath)) {
+      throw new Error('Znormalizowany plik audio nie istnieje.');
+    }
+
+    const timestamp = this.nowIso();
+    const requirePersistentStorage = _requiresPersistentAudioStorage();
+    const normalizedStats = await fs.promises.stat(normalizedFilePath);
+    const effectiveNormalizedSize = Number(normalizedSizeBytes || normalizedStats.size);
+    const storageMode = Array.isArray(parts) && parts.length > 0 ? 'segmented' : 'single';
+    let storagePath = '';
+    let manifestJson = '{}';
+
+    try {
+      const { uploadAudioFileToStoragePath, uploadBufferToStoragePath } =
+        await import('./lib/supabaseStorage.js');
+
+      if (storageMode === 'single') {
+        const targetPath = buildSingleStoragePath(workspaceId, recordingId);
+        const uploadedPath = await uploadAudioFileToStoragePath(
+          targetPath,
+          normalizedFilePath,
+          STORAGE_CONTENT_TYPE
+        );
+        if (uploadedPath) {
+          storagePath = uploadedPath;
+        } else if (requirePersistentStorage) {
+          throw _buildPersistentAudioStorageError();
+        }
+      } else {
+        const uploadedParts = [];
+        for (const part of parts) {
+          const partPath = buildPartStoragePath(workspaceId, recordingId, part.index);
+          const uploadedPath = await uploadAudioFileToStoragePath(
+            partPath,
+            part.localPath,
+            STORAGE_CONTENT_TYPE
+          );
+          if (!uploadedPath) {
+            if (requirePersistentStorage) throw _buildPersistentAudioStorageError();
+            break;
+          }
+          uploadedParts.push({ ...part, path: uploadedPath, contentType: STORAGE_CONTENT_TYPE });
+        }
+
+        if (uploadedParts.length === parts.length) {
+          const manifest = buildSegmentedMediaManifest({
+            recordingId,
+            workspaceId,
+            sourceSizeBytes: Number(sourceSizeBytes || 0),
+            normalizedSizeBytes: effectiveNormalizedSize,
+            durationMs: Number(durationMs || 0),
+            parts: uploadedParts,
+          });
+          const manifestPath = buildManifestStoragePath(workspaceId, recordingId);
+          const uploadedManifestPath = await uploadBufferToStoragePath(
+            manifestPath,
+            Buffer.from(JSON.stringify(manifest)),
+            'application/json'
+          );
+          storagePath = uploadedManifestPath || manifestPath;
+          manifestJson = JSON.stringify(manifest);
+        } else if (requirePersistentStorage) {
+          throw _buildPersistentAudioStorageError();
+        }
+      }
+    } catch (err: any) {
+      if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
+        throw err;
+      }
+      logger.warn(
+        requirePersistentStorage
+          ? '[database] Prepared audio upload failed in production; local fallback is blocked:'
+          : '[database] Prepared audio upload failed, falling back to local:',
+        { message: err.message },
+        { sentry: false }
+      );
+      if (requirePersistentStorage) {
+        throw _buildPersistentAudioStorageError(err);
+      }
+    }
+
+    if (!storagePath) {
+      const localDir = path.join(this.uploadDir, safeRecordingId);
+      fs.mkdirSync(localDir, { recursive: true });
+      if (storageMode === 'single') {
+        storagePath = path.join(localDir, 'audio.webm');
+        if (path.resolve(storagePath) !== path.resolve(normalizedFilePath)) {
+          await fs.promises.copyFile(normalizedFilePath, storagePath);
+        }
+      } else {
+        const localManifestParts = [];
+        for (const part of parts) {
+          const localPartPath = path.join(
+            localDir,
+            `part-${String(part.index).padStart(3, '0')}.webm`
+          );
+          await fs.promises.copyFile(part.localPath, localPartPath);
+          localManifestParts.push({
+            ...part,
+            path: localPartPath,
+            contentType: STORAGE_CONTENT_TYPE,
+          });
+        }
+        const manifest = buildSegmentedMediaManifest({
+          recordingId,
+          workspaceId,
+          sourceSizeBytes: Number(sourceSizeBytes || 0),
+          normalizedSizeBytes: effectiveNormalizedSize,
+          durationMs: Number(durationMs || 0),
+          parts: localManifestParts,
+        });
+        storagePath = path.join(localDir, 'manifest.json');
+        manifestJson = JSON.stringify(manifest);
+        await fs.promises.writeFile(storagePath, manifestJson);
+      }
+    }
+
+    const existing = await this._get('SELECT id FROM media_assets WHERE id = ?', [recordingId]);
+    const params = [
+      workspaceId,
+      meetingId,
+      storagePath,
+      STORAGE_CONTENT_TYPE,
+      effectiveNormalizedSize,
+      storageMode,
+      manifestJson,
+      Number(sourceSizeBytes || 0),
+      effectiveNormalizedSize,
+      timestamp,
+      recordingId,
+    ];
+
+    if (existing) {
+      await this._execute(
+        `UPDATE media_assets
+         SET workspace_id = ?, meeting_id = ?, file_path = ?, content_type = ?, size_bytes = ?,
+             storage_mode = ?, media_manifest_json = ?, source_size_bytes = ?,
+             normalized_size_bytes = ?, updated_at = ?
+         WHERE id = ?`,
+        params
+      );
+    } else {
+      await this._execute(
+        `
+        INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`,
+        [
+          recordingId,
+          workspaceId,
+          meetingId,
+          createdByUserId,
+          storagePath,
+          STORAGE_CONTENT_TYPE,
+          effectiveNormalizedSize,
+          storageMode,
+          manifestJson,
+          Number(sourceSizeBytes || 0),
+          effectiveNormalizedSize,
           timestamp,
           timestamp,
         ]
@@ -1820,13 +2073,47 @@ export class Database {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
 
-    if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
-      // If it has no path separator, it's a Supabase storage path
-      const { deleteAudioFromStorage } = await import('./lib/supabaseStorage.js');
-      await deleteAudioFromStorage(asset.file_path);
+    const manifest = parseMediaManifest(asset.media_manifest_json);
+    if (manifest?.parts?.length) {
+      const manifestPaths = manifest.parts
+        .flatMap((part) => [part.path, part.transcription?.payloadPath])
+        .filter(Boolean);
+      const remotePaths = [...manifestPaths, asset.file_path].filter((filePath) => {
+        const rawPath = String(filePath || '').trim();
+        return rawPath && !fs.existsSync(rawPath) && !path.isAbsolute(rawPath);
+      });
+      const localPaths = [...manifestPaths, asset.file_path].filter((filePath) => {
+        const rawPath = String(filePath || '').trim();
+        return rawPath && fs.existsSync(rawPath);
+      });
+
+      if (remotePaths.length) {
+        const { deleteAudioPathsFromStorage } = await import('./lib/supabaseStorage.js');
+        await deleteAudioPathsFromStorage(remotePaths);
+      }
+      for (const localPath of localPaths) {
+        _deleteFileIfPresent(localPath, '[database] Failed to delete segmented audio file');
+        if (fs.existsSync(localPath)) {
+          fs.rmSync(localPath, { force: true });
+        }
+      }
+      const localManifestPath = String(asset.file_path || '').trim();
+      if (localManifestPath && fs.existsSync(localManifestPath)) {
+        fs.rmSync(localManifestPath, { force: true });
+      }
     } else if (asset.file_path) {
-      // Legacy local file path cleanup
-      _deleteFileIfPresent(asset.file_path, '[database] Failed to delete legacy audio file');
+      const rawPath = String(asset.file_path || '').trim();
+      const isRemoteStoragePath =
+        rawPath &&
+        !fs.existsSync(rawPath) &&
+        !path.isAbsolute(rawPath) &&
+        !/^[a-zA-Z]:[\\/]/.test(rawPath);
+      if (isRemoteStoragePath) {
+        const { deleteAudioFromStorage } = await import('./lib/supabaseStorage.js');
+        await deleteAudioFromStorage(rawPath);
+      } else {
+        _deleteFileIfPresent(rawPath, '[database] Failed to delete legacy audio file');
+      }
     }
 
     await this._execute('DELETE FROM media_assets WHERE id = ? AND workspace_id = ?', [
@@ -1855,6 +2142,98 @@ export class Database {
       [JSON.stringify(nextPayload), this.nowIso(), recordingId]
     );
     return this.getMediaAsset(recordingId);
+  }
+
+  async saveMediaManifest(recordingId: string, manifest: any): Promise<MediaAsset | null> {
+    await this._execute(
+      'UPDATE media_assets SET media_manifest_json = ?, updated_at = ? WHERE id = ?',
+      [JSON.stringify(manifest || {}), this.nowIso(), recordingId]
+    );
+    return this.getMediaAsset(recordingId);
+  }
+
+  async markMediaPartTranscription(
+    recordingId: string,
+    partIndex: number,
+    patch: Record<string, any> = {}
+  ): Promise<any | null> {
+    const asset = await this.getMediaAsset(recordingId);
+    const manifest = parseMediaManifest(asset?.media_manifest_json);
+    if (!manifest) return null;
+    const nextManifest = updateManifestPartTranscription(manifest, partIndex, patch as any);
+    await this.saveMediaManifest(recordingId, nextManifest);
+    return nextManifest;
+  }
+
+  async saveMediaPartTranscript(
+    recordingId: string,
+    partIndex: number,
+    payload: any,
+    checkpoint: Record<string, any> = {}
+  ): Promise<any | null> {
+    const asset = await this.getMediaAsset(recordingId);
+    const manifest = parseMediaManifest(asset?.media_manifest_json);
+    if (!asset || !manifest) return null;
+
+    const payloadBuffer = Buffer.from(JSON.stringify(payload || {}));
+    let payloadPath = buildPartTranscriptPath(
+      manifest.workspaceId,
+      manifest.recordingId,
+      partIndex
+    );
+    const manifestPath = String(asset.file_path || '').trim();
+    const isRemoteManifest =
+      manifestPath && !fs.existsSync(manifestPath) && !path.isAbsolute(manifestPath);
+
+    if (isRemoteManifest) {
+      const { uploadBufferToStoragePath } = await import('./lib/supabaseStorage.js');
+      payloadPath =
+        (await uploadBufferToStoragePath(payloadPath, payloadBuffer, 'application/json')) ||
+        payloadPath;
+    } else {
+      const baseDir =
+        manifestPath && fs.existsSync(manifestPath)
+          ? path.dirname(manifestPath)
+          : path.join(this.uploadDir, 'media', recordingId);
+      const localDir = path.join(baseDir, 'transcripts');
+      await fs.promises.mkdir(localDir, { recursive: true });
+      payloadPath = path.join(localDir, `part-${String(partIndex).padStart(3, '0')}.json`);
+      await fs.promises.writeFile(payloadPath, payloadBuffer);
+    }
+
+    const segments = Array.isArray(payload?.segments) ? payload.segments : [];
+    const textLength = segments.reduce(
+      (sum: number, segment: any) => sum + String(segment?.text || '').length,
+      0
+    );
+    return this.markMediaPartTranscription(recordingId, partIndex, {
+      ...checkpoint,
+      status: checkpoint.status || 'completed',
+      payloadPath,
+      segmentCount:
+        typeof checkpoint.segmentCount === 'number' ? checkpoint.segmentCount : segments.length,
+      textLength: typeof checkpoint.textLength === 'number' ? checkpoint.textLength : textLength,
+      completedAt: checkpoint.completedAt || this.nowIso(),
+    });
+  }
+
+  async loadMediaPartTranscript(recordingId: string, partIndex: number): Promise<any | null> {
+    const asset = await this.getMediaAsset(recordingId);
+    const manifest = parseMediaManifest(asset?.media_manifest_json);
+    const part = manifest?.parts?.find((item) => item.index === partIndex);
+    const payloadPath = String(part?.transcription?.payloadPath || '').trim();
+    if (!payloadPath) return null;
+
+    try {
+      if (fs.existsSync(payloadPath)) {
+        return JSON.parse(await fs.promises.readFile(payloadPath, 'utf8'));
+      }
+      const { downloadAudioFromStorage } = await import('./lib/supabaseStorage.js');
+      const arrayBuffer = await downloadAudioFromStorage(payloadPath);
+      return JSON.parse(Buffer.from(arrayBuffer).toString('utf8'));
+    } catch {
+      return null;
+    }
   }
 
   async updateTranscriptionMetadata(recordingId: string, updates: Record<string, unknown> = {}) {

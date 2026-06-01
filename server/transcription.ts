@@ -16,6 +16,7 @@ import { config } from './config.ts';
 import { resolveConfiguredSttProviders, transcribeWithProviders } from './stt/providers.ts';
 import { resolveSttRuntimePolicy } from './stt/policy.ts';
 import { addBreadcrumb } from './sentry.ts';
+import { isRemoteStoragePath } from './lib/mediaStoragePipeline.ts';
 import {
   clean,
   getRawWords,
@@ -227,7 +228,7 @@ export async function analyzeAudioQuality(filePath: string, options: any = {}) {
 
   let tempFilePath = '';
   try {
-    if (filePath && !filePath.includes(path.sep) && !filePath.includes('/')) {
+    if (filePath && isRemoteStoragePath(filePath)) {
       const { downloadAudioToFile } = await import('./lib/supabaseStorage.js');
       const baseMime = String(options.contentType || '')
         .toLowerCase()

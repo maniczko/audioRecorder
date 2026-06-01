@@ -2,6 +2,7 @@ import type { Hono } from 'hono';
 import { resolveBuildMetadata } from '../runtime.ts';
 import { config } from '../config.ts';
 import { resolveSttRuntimePolicy } from '../stt/policy.ts';
+import { createUploadPolicy } from '../lib/mediaStoragePolicy.ts';
 
 export function registerHealthRoute(app: Hono<any>, db?: any) {
   app.get('/health', async (c) => {
@@ -61,6 +62,10 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
         db: dbStatus.status,
         supabaseRemote: Boolean((supabaseStorage as any).ready),
         supabaseStorage,
+        mediaUpload: {
+          ...createUploadPolicy(),
+          storageModeSupport: ['single', 'segmented'],
+        },
         uptime: Math.floor(process.uptime()),
         gitSha: build.gitSha,
         buildTime: build.buildTime,

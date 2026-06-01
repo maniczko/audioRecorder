@@ -18,6 +18,21 @@ import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.
 import type { MediaAsset } from '../lib/types.ts';
 import { getMemoryPressure } from '../lib/serverUtils.ts';
 import { DISK_SPACE_BLOCK_UPLOAD_BYTES } from '../lib/diskSpace.ts';
+import {
+  MAX_RAW_UPLOAD_BYTES,
+  createUploadPolicy,
+  getManifestPartProgress,
+  parseMediaManifest,
+  shouldUseSegmentedStorage,
+  validateAudioMimeType,
+  validateRawUploadSize,
+} from '../lib/mediaStoragePolicy.ts';
+import {
+  MediaStoragePipelineError,
+  materializeAssetToLocal,
+  normalizeAudioForStorage,
+  splitNormalizedAudioIntoParts,
+} from '../lib/mediaStoragePipeline.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -273,8 +288,10 @@ export function buildRemoteAudioStorageCandidates(
 
   const candidates = new Set<string>();
   const leafName = extractLeafPathSegment(rawPath);
+  const looksLocal =
+    existsSync(rawPath) || path.isAbsolute(rawPath) || /^[a-zA-Z]:[\\/]/.test(rawPath);
 
-  if (rawPath && !rawPath.includes('\\') && !rawPath.includes('/')) {
+  if (rawPath && !rawPath.includes('\\') && !looksLocal) {
     candidates.add(rawPath);
   }
 
@@ -469,6 +486,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   }
 
   function scheduleAudioQuality(recordingId: string, asset: MediaAsset) {
+    if (asset.storage_mode === 'segmented') {
+      return;
+    }
     Promise.resolve()
       .then(async () => {
         const audioQuality = await transcriptionService.analyzeAudioQuality(asset.file_path, {
@@ -521,6 +541,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   }
 
+  async function cleanupChunkFiles(chunksDir: string, safeId: string, total: number) {
+    for (let i = 0; i < total; i++) {
+      try {
+        await unlink(path.join(chunksDir, `${safeId}_${i}.chunk`));
+      } catch (_) {}
+    }
+  }
+
+  router.get('/upload-policy', (c) => c.json(createUploadPolicy(), 200));
+
   // --- Media & Processing ---
   router.use('/recordings', authMiddleware);
   router.use('/recordings/*', authMiddleware);
@@ -536,8 +566,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
     // Early rejection based on Content-Length to avoid buffering oversized uploads
     const contentLength = parseInt(c.req.header('content-length') || '0', 10);
-    if (contentLength > 100 * 1024 * 1024) {
-      return c.json({ message: 'Przesłany plik przekracza maksymalny rozmiar.' }, 413);
+    if (contentLength > MAX_RAW_UPLOAD_BYTES) {
+      const sizeValidation = validateRawUploadSize(contentLength);
+      if (sizeValidation.ok !== false) {
+        return c.json({ code: 'audio_too_large', message: 'Plik audio przekracza limit.' }, 413);
+      }
+      return c.json(
+        {
+          code: sizeValidation.code,
+          message: sizeValidation.message,
+        },
+        413
+      );
     }
 
     // Reject when memory pressure is too high to safely buffer the upload
@@ -553,8 +593,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
 
     const arrayBuf = await c.req.arrayBuffer();
-    if (arrayBuf.byteLength > 100 * 1024 * 1024)
-      return c.json({ message: 'Przesłany plik przekracza maksymalny rozmiar.' }, 413);
+    const sizeValidation = validateRawUploadSize(arrayBuf.byteLength);
+    if (sizeValidation.ok === false) {
+      return c.json(
+        { code: sizeValidation.code, message: sizeValidation.message },
+        sizeValidation.status
+      );
+    }
+    const mimeValidation = validateAudioMimeType(c.req.header('content-type') || '');
+    if (!mimeValidation.ok) {
+      return c.json(
+        { code: mimeValidation.code, message: mimeValidation.message },
+        mimeValidation.status
+      );
+    }
 
     // Wrap without copying — Buffer.from(ArrayBuffer) shares memory when possible
     const buffer = Buffer.from(arrayBuf);
@@ -565,7 +617,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         recordingId,
         workspaceId,
         meetingId,
-        contentType: c.req.header('content-type') || 'application/octet-stream',
+        contentType: mimeValidation.normalized.contentType,
         buffer,
         createdByUserId: session.user_id,
       });
@@ -603,6 +655,39 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     );
   });
 
+  router.get('/recordings/:recordingId/audio/manifest', async (c) => {
+    const recordingId = c.req.param('recordingId');
+    const asset = await transcriptionService.getMediaAsset(recordingId);
+    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+    await ensureWorkspaceAccess(c, asset.workspace_id);
+
+    const manifest =
+      asset.storage_mode === 'segmented' && asset.media_manifest_json
+        ? JSON.parse(asset.media_manifest_json)
+        : {
+            version: 1,
+            storageMode: 'single',
+            recordingId: asset.id,
+            workspaceId: asset.workspace_id,
+            sourceSizeBytes: asset.source_size_bytes || asset.size_bytes,
+            normalizedSizeBytes: asset.normalized_size_bytes || asset.size_bytes,
+            durationMs: 0,
+            contentType: asset.content_type,
+            parts: [
+              {
+                index: 0,
+                path: asset.file_path,
+                startMs: 0,
+                endMs: 0,
+                sizeBytes: asset.size_bytes,
+                contentType: asset.content_type,
+              },
+            ],
+          };
+
+    return c.json(manifest, 200);
+  });
+
   router.get('/recordings/:recordingId/audio', async (c) => {
     try {
       const recordingId = c.req.param('recordingId');
@@ -625,6 +710,35 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const safeType = ALLOWED.has(String(asset.content_type || '').toLowerCase())
         ? asset.content_type
         : 'application/octet-stream';
+
+      if (asset.storage_mode === 'segmented') {
+        try {
+          const materialized = await materializeAssetToLocal(asset, {
+            workDir: path.join(uploadDir, '.materialized'),
+            signal: c.req.raw.signal,
+            purpose: 'download',
+          });
+          const stream = createReadStream(materialized.localPath);
+          const cleanup = () => {
+            Promise.resolve(materialized.cleanup()).catch(() => {});
+          };
+          stream.on('close', cleanup);
+          stream.on('error', cleanup);
+          c.header(
+            'Content-Type',
+            safeType === 'application/octet-stream' ? 'audio/webm' : safeType
+          );
+          c.header('Content-Length', String(statSync(materialized.localPath).size));
+          c.header('Content-Disposition', 'attachment');
+          return c.body(stream as any, 200);
+        } catch (err: any) {
+          console.error('[media] Segmented audio materialization failed', {
+            recordingId,
+            error: err.message,
+          });
+          return c.json({ message: 'Nie udalo sie przygotowac nagrania do odtworzenia.' }, 500);
+        }
+      }
 
       // Supabase remote path — no OS path separator means it's a short Supabase key
       if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
@@ -862,7 +976,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         }
       }
 
-      return c.json({ ...normalizeTranscriptionStatusPayload(asset), ...runtimeStatus }, 200);
+      const manifest =
+        asset.storage_mode === 'segmented' ? parseMediaManifest(asset.media_manifest_json) : null;
+      const partProgress = getManifestPartProgress(manifest);
+
+      return c.json(
+        {
+          ...normalizeTranscriptionStatusPayload(asset),
+          ...runtimeStatus,
+          ...(partProgress ? { partProgress } : {}),
+        },
+        200
+      );
     } catch (err: any) {
       console.error(`[transcribe-status] Error:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
@@ -1638,33 +1763,98 @@ Important:
     }
 
     const fullStats = await stat(assembledPath);
-    if (fullStats.size > 500 * 1024 * 1024) {
+    const sizeValidation = validateRawUploadSize(fullStats.size);
+    if (sizeValidation.ok === false) {
       try {
         await unlink(assembledPath);
       } catch (_) {}
+      await cleanupChunkFiles(chunksDir, safeId, total);
       return c.json(
-        {
-          message:
-            'Złożony plik przekracza maksymalny rozmiar 500MB. Skompresuj nagranie do formatu WebM lub MP3.',
-        },
-        413
+        { code: sizeValidation.code, message: sizeValidation.message },
+        sizeValidation.status
       );
     }
 
+    const mimeValidation = validateAudioMimeType(contentType);
+    if (!mimeValidation.ok) {
+      try {
+        await unlink(assembledPath);
+      } catch (_) {}
+      await cleanupChunkFiles(chunksDir, safeId, total);
+      return c.json(
+        { code: mimeValidation.code, message: mimeValidation.message },
+        mimeValidation.status
+      );
+    }
+
+    let normalizedAudio: Awaited<ReturnType<typeof normalizeAudioForStorage>> | null = null;
+    let localParts: Awaited<ReturnType<typeof splitNormalizedAudioIntoParts>> = [];
     let asset: MediaAsset;
     try {
-      asset = await transcriptionService.upsertMediaAssetFromPath({
+      normalizedAudio = await normalizeAudioForStorage({
+        sourcePath: assembledPath,
+        workDir: path.join(config.uploadDir, 'normalized'),
         recordingId,
-        workspaceId,
-        meetingId,
-        contentType,
-        filePath: assembledPath,
-        createdByUserId: session.user_id,
+        signal: c.req.raw.signal,
       });
+
+      if (shouldUseSegmentedStorage(normalizedAudio.sizeBytes)) {
+        localParts = await splitNormalizedAudioIntoParts({
+          normalizedPath: normalizedAudio.path,
+          workDir: path.join(config.uploadDir, 'parts'),
+          recordingId,
+          durationMs: normalizedAudio.durationMs,
+          signal: c.req.raw.signal,
+        });
+      }
+
+      const upsertPrepared =
+        typeof transcriptionService.upsertMediaAssetFromPreparedAudio === 'function'
+          ? transcriptionService.upsertMediaAssetFromPreparedAudio.bind(transcriptionService)
+          : null;
+
+      asset = upsertPrepared
+        ? await upsertPrepared({
+            recordingId,
+            workspaceId,
+            meetingId,
+            contentType: mimeValidation.normalized.contentType,
+            normalizedFilePath: normalizedAudio.path,
+            sourceSizeBytes: fullStats.size,
+            normalizedSizeBytes: normalizedAudio.sizeBytes,
+            durationMs: normalizedAudio.durationMs,
+            parts: localParts,
+            createdByUserId: session.user_id,
+          })
+        : await transcriptionService.upsertMediaAssetFromPath({
+            recordingId,
+            workspaceId,
+            meetingId,
+            contentType: mimeValidation.normalized.contentType,
+            filePath: normalizedAudio.path,
+            createdByUserId: session.user_id,
+          });
     } catch (err: any) {
       try {
         await unlink(assembledPath);
       } catch (_) {}
+      if (normalizedAudio?.path) {
+        try {
+          await unlink(normalizedAudio.path);
+        } catch (_) {}
+      }
+      for (const part of localParts) {
+        try {
+          await unlink(part.localPath);
+        } catch (_) {}
+      }
+      if (err instanceof MediaStoragePipelineError || err?.code === 'audio_normalization_failed') {
+        await cleanupChunkFiles(chunksDir, safeId, total);
+        return c.json(
+          { code: err.code || 'audio_normalization_failed', message: err.message },
+          err.status || 422
+        );
+      }
       if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
         return c.json(
           { message: 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.' },
@@ -1674,15 +1864,20 @@ Important:
       throw err;
     }
 
-    // Cleanup chunks after successful assembly
-    for (let i = 0; i < total; i++) {
-      try {
-        await unlink(path.join(chunksDir, `${safeId}_${i}.chunk`));
-      } catch (_) {}
-    }
+    await cleanupChunkFiles(chunksDir, safeId, total);
     try {
       await unlink(assembledPath);
     } catch (_) {}
+    if (normalizedAudio?.path) {
+      try {
+        await unlink(normalizedAudio.path);
+      } catch (_) {}
+    }
+    for (const part of localParts) {
+      try {
+        await unlink(part.localPath);
+      } catch (_) {}
+    }
 
     scheduleAudioQuality(recordingId, asset);
 
@@ -1691,6 +1886,10 @@ Important:
         id: asset.id,
         workspaceId: asset.workspace_id,
         sizeBytes: asset.size_bytes,
+        storageMode: asset.storage_mode || (localParts.length ? 'segmented' : 'single'),
+        partCount: localParts.length,
+        sourceSizeBytes: fullStats.size,
+        normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
         audioQuality: null,
       },
       200

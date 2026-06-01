@@ -16,9 +16,42 @@ const __dirname = path.dirname(__filename);
 describe('Database - Additional Coverage Tests', () => {
   let db: any;
   const testUploadDir = path.resolve(__dirname, 'test_uploads_additional');
+  const savedProductionEnv = {
+    NODE_ENV: process.env.NODE_ENV,
+    RAILWAY_ENVIRONMENT_NAME: process.env.RAILWAY_ENVIRONMENT_NAME,
+    RAILWAY_PROJECT_ID: process.env.RAILWAY_PROJECT_ID,
+  };
 
   beforeAll(async () => {
+    delete process.env.RAILWAY_ENVIRONMENT_NAME;
+    delete process.env.RAILWAY_PROJECT_ID;
+    process.env.NODE_ENV = 'test';
+
     const actualFs = await vi.importActual<any>('node:fs');
+    const fsMock = (globalThis as any).__mockFs;
+    if (fsMock) {
+      fsMock.existsSync.mockImplementation((filePath?: string) =>
+        typeof filePath === 'string' ? actualFs.existsSync(filePath) : false
+      );
+      fsMock.mkdirSync.mockImplementation((...args: any[]) =>
+        actualFs.mkdirSync(...(args as Parameters<typeof actualFs.mkdirSync>))
+      );
+      fsMock.writeFileSync.mockImplementation((...args: any[]) =>
+        actualFs.writeFileSync(...(args as Parameters<typeof actualFs.writeFileSync>))
+      );
+      fsMock.readFileSync.mockImplementation((...args: any[]) =>
+        actualFs.readFileSync(...(args as Parameters<typeof actualFs.readFileSync>))
+      );
+      fsMock.readdirSync.mockImplementation((...args: any[]) =>
+        actualFs.readdirSync(...(args as Parameters<typeof actualFs.readdirSync>))
+      );
+      fsMock.unlinkSync.mockImplementation((...args: any[]) =>
+        actualFs.unlinkSync(...(args as Parameters<typeof actualFs.unlinkSync>))
+      );
+      fsMock.rmSync.mockImplementation((...args: any[]) =>
+        actualFs.rmSync(...(args as Parameters<typeof actualFs.rmSync>))
+      );
+    }
     // Clean up test directory
     if (actualFs.existsSync(testUploadDir)) {
       actualFs.rmSync(testUploadDir, { recursive: true, force: true });
@@ -38,6 +71,15 @@ describe('Database - Additional Coverage Tests', () => {
         actualFs.rmSync(testUploadDir, { recursive: true, force: true });
       } catch (_) {}
     }
+    if (savedProductionEnv.NODE_ENV === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = savedProductionEnv.NODE_ENV;
+    if (savedProductionEnv.RAILWAY_ENVIRONMENT_NAME === undefined) {
+      delete process.env.RAILWAY_ENVIRONMENT_NAME;
+    } else {
+      process.env.RAILWAY_ENVIRONMENT_NAME = savedProductionEnv.RAILWAY_ENVIRONMENT_NAME;
+    }
+    if (savedProductionEnv.RAILWAY_PROJECT_ID === undefined) delete process.env.RAILWAY_PROJECT_ID;
+    else process.env.RAILWAY_PROJECT_ID = savedProductionEnv.RAILWAY_PROJECT_ID;
   });
 
   // Helper to check if tables exist
@@ -77,10 +119,12 @@ describe('Database - Additional Coverage Tests', () => {
       if (!(await tablesExist())) return; // Skip if migrations haven't run
       const savedNodeEnv = process.env.NODE_ENV;
       const savedRailwayProjectId = process.env.RAILWAY_PROJECT_ID;
+      const savedForcePersistent = process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE;
 
       try {
         process.env.NODE_ENV = 'production';
         process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+        process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE = 'true';
 
         await expect(
           db.upsertMediaAsset({
@@ -100,6 +144,11 @@ describe('Database - Additional Coverage Tests', () => {
         else process.env.NODE_ENV = savedNodeEnv;
         if (savedRailwayProjectId === undefined) delete process.env.RAILWAY_PROJECT_ID;
         else process.env.RAILWAY_PROJECT_ID = savedRailwayProjectId;
+        if (savedForcePersistent === undefined) {
+          delete process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE;
+        } else {
+          process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE = savedForcePersistent;
+        }
       }
     });
 
@@ -189,10 +238,12 @@ describe('Database - Additional Coverage Tests', () => {
       if (!(await tablesExist())) return; // Skip if migrations haven't run
       const savedNodeEnv = process.env.NODE_ENV;
       const savedRailwayProjectId = process.env.RAILWAY_PROJECT_ID;
+      const savedForcePersistent = process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE;
 
       try {
         process.env.NODE_ENV = 'production';
         process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+        process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE = 'true';
 
         const actualFs = await vi.importActual<any>('node:fs');
         const sourcePath = path.join(testUploadDir, 'source-prod-failure.webm');
@@ -217,7 +268,72 @@ describe('Database - Additional Coverage Tests', () => {
         else process.env.NODE_ENV = savedNodeEnv;
         if (savedRailwayProjectId === undefined) delete process.env.RAILWAY_PROJECT_ID;
         else process.env.RAILWAY_PROJECT_ID = savedRailwayProjectId;
+        if (savedForcePersistent === undefined) {
+          delete process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE;
+        } else {
+          process.env.VOICELOG_FORCE_PERSISTENT_AUDIO_STORAGE = savedForcePersistent;
+        }
       }
+    });
+  });
+
+  describe('upsertMediaAssetFromPreparedAudio()', () => {
+    test('stores segmented manifests and delete cleans up all local parts', async () => {
+      if (!(await tablesExist())) return;
+
+      const actualFs = await vi.importActual<any>('node:fs');
+      const recordingId = 'rec_segmented_local';
+      const normalizedPath = path.join(testUploadDir, `${recordingId}-normalized.webm`);
+      const part0 = path.join(testUploadDir, `${recordingId}-part-0.webm`);
+      const part1 = path.join(testUploadDir, `${recordingId}-part-1.webm`);
+      actualFs.mkdirSync(testUploadDir, { recursive: true });
+      actualFs.writeFileSync(normalizedPath, Buffer.alloc(1024, 1));
+      actualFs.writeFileSync(part0, Buffer.from('part-0'));
+      actualFs.writeFileSync(part1, Buffer.from('part-1'));
+
+      const asset = await db.upsertMediaAssetFromPreparedAudio({
+        recordingId,
+        workspaceId: 'ws1',
+        meetingId: 'm1',
+        normalizedFilePath: normalizedPath,
+        sourceSizeBytes: 200 * 1024 * 1024,
+        normalizedSizeBytes: 50 * 1024 * 1024,
+        durationMs: 20 * 60 * 1000,
+        parts: [
+          {
+            index: 0,
+            localPath: part0,
+            startMs: 0,
+            endMs: 600000,
+            sizeBytes: 6,
+            contentType: 'audio/webm',
+          },
+          {
+            index: 1,
+            localPath: part1,
+            startMs: 600000,
+            endMs: 1200000,
+            sizeBytes: 6,
+            contentType: 'audio/webm',
+          },
+        ],
+        createdByUserId: 'user1',
+      });
+
+      expect(asset.storage_mode).toBe('segmented');
+      const manifest = JSON.parse(asset.media_manifest_json);
+      expect(manifest.parts).toHaveLength(2);
+      for (const part of manifest.parts) {
+        expect(actualFs.existsSync(part.path)).toBe(true);
+      }
+
+      await db.deleteMediaAsset(recordingId, 'ws1');
+
+      expect(await db.getMediaAsset(recordingId)).toBeNull();
+      for (const part of manifest.parts) {
+        expect(actualFs.existsSync(part.path)).toBe(false);
+      }
+      expect(actualFs.existsSync(asset.file_path)).toBe(false);
     });
   });
 

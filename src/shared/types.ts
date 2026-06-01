@@ -155,6 +155,10 @@ export interface MeetingAsset {
   file_path: string;
   content_type: string;
   size_bytes: number;
+  storage_mode?: 'single' | 'segmented';
+  media_manifest_json?: string;
+  source_size_bytes?: number;
+  normalized_size_bytes?: number;
   transcription_status: string;
   transcript_json?: string;
   diarization_json?: string;

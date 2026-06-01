@@ -19,6 +19,11 @@ import { matchSpeakerToProfile } from './speakerEmbedder.ts';
 import { buildMeetingFeedbackSchemaExample } from '../src/shared/meetingFeedback.ts';
 import { clean } from './audioPipeline.utils.ts';
 import { httpClient } from './lib/httpClient.ts';
+import {
+  isRemoteStoragePath,
+  materializeAssetToLocal,
+  parseAssetMediaManifest,
+} from './lib/mediaStoragePipeline.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,7 +70,7 @@ function deriveAudioExtensions(filePath: string, contentType?: string) {
 }
 
 function isRemoteAudioStoragePath(filePath: string) {
-  return Boolean(filePath && !filePath.includes(path.sep) && !filePath.includes('/'));
+  return isRemoteStoragePath(filePath);
 }
 
 let resolvedVoiceProfileAudioWorkDir: string | null = null;
@@ -189,6 +194,18 @@ async function resolveSpeakerAudioClipSource(asset: any) {
   }
 
   const workDir = getVoiceProfileAudioWorkDir();
+  if (parseAssetMediaManifest(asset)?.parts?.length) {
+    const materialized = await materializeAssetToLocal(asset, {
+      workDir,
+      purpose: 'voice_profile',
+    });
+    return {
+      inputPath: materialized.localPath,
+      outputDir: workDir,
+      cleanup: materialized.cleanup,
+    };
+  }
+
   const tempExt = deriveAudioExtensions(rawPath, asset?.content_type)[0] || '.webm';
   const candidates = buildRemoteAudioStorageCandidates(asset);
   let lastError: any = null;

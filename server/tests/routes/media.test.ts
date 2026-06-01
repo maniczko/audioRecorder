@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { createApp } from '../../app.ts';
+import { MAX_RAW_UPLOAD_BYTES, buildSegmentedMediaManifest } from '../../lib/mediaStoragePolicy.ts';
 
 // Helper to control fs mock state between tests
 function setFsState(overrides?: { existsSync?: boolean; statSyncSize?: number }) {
@@ -696,10 +697,11 @@ describe('Media Routes', () => {
       headers: {
         Authorization: 'Bearer fake_token',
         'Content-Type': 'audio/webm',
+        'Content-Length': String(MAX_RAW_UPLOAD_BYTES + 1),
         'X-Workspace-Id': 'ws_1',
         Origin: previewOrigin,
       },
-      body: Buffer.alloc(100 * 1024 * 1024 + 1, 1),
+      body: Buffer.from('oversized-by-header'),
     });
 
     expect(oversize.status).toBe(413);
@@ -1091,6 +1093,69 @@ describe('Media Routes', () => {
         activeJob: true,
         queuedPosition: 2,
         retryAfterMs: 60_000,
+      });
+    });
+
+    it('returns segmented transcription part progress from manifest checkpoints', async () => {
+      const manifest = buildSegmentedMediaManifest({
+        recordingId: 'rec_parts',
+        workspaceId: 'ws_1',
+        sourceSizeBytes: 180 * 1024 * 1024,
+        normalizedSizeBytes: 42 * 1024 * 1024,
+        durationMs: 20 * 60 * 1000,
+        parts: [
+          {
+            index: 0,
+            path: 'ws_1/rec_parts/part-000.webm',
+            startMs: 0,
+            endMs: 10 * 60 * 1000,
+            sizeBytes: 18 * 1024 * 1024,
+            contentType: 'audio/webm',
+            transcription: { status: 'completed', attempts: 1 },
+          },
+          {
+            index: 1,
+            path: 'ws_1/rec_parts/part-001.webm',
+            startMs: 10 * 60 * 1000,
+            endMs: 20 * 60 * 1000,
+            sizeBytes: 17 * 1024 * 1024,
+            contentType: 'audio/webm',
+            transcription: { status: 'processing', attempts: 2 },
+          },
+          {
+            index: 2,
+            path: 'ws_1/rec_parts/part-002.webm',
+            startMs: 20 * 60 * 1000,
+            endMs: 30 * 60 * 1000,
+            sizeBytes: 16 * 1024 * 1024,
+            contentType: 'audio/webm',
+            transcription: { status: 'failed', attempts: 2 },
+          },
+        ],
+      });
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_parts',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        media_manifest_json: JSON.stringify(manifest),
+        storage_mode: 'segmented',
+        updated_at: new Date().toISOString(),
+      });
+
+      const res = await app.request('/media/recordings/rec_parts/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.partProgress).toEqual({
+        total: 3,
+        completed: 1,
+        failed: 1,
+        processingIndex: 1,
       });
     });
 
