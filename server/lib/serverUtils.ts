@@ -121,6 +121,11 @@ export function corsHeaders(requestOrigin: string, allowedOrigins = 'http://loca
   const allowAny = allowed.includes('*');
   const src = String(requestOrigin || '');
   const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(src);
+  const matchesAllowedWildcard = allowed.some((originPattern) => {
+    if (!originPattern.includes('*')) return false;
+    const escaped = originPattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^.]+');
+    return new RegExp(`^${escaped}$`, 'i').test(src);
+  });
   const runtimeEnv = String(process.env.NODE_ENV || 'development').toLowerCase();
   const allowVercelPreview =
     process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS === 'true' ||
@@ -129,7 +134,10 @@ export function corsHeaders(requestOrigin: string, allowedOrigins = 'http://loca
     runtimeEnv === 'test';
   const isVercel = allowVercelPreview && /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(src);
 
-  const origin = isLocalhost || isVercel || allowAny || allowed.includes(src) ? src : allowed[0];
+  const origin =
+    isLocalhost || isVercel || allowAny || allowed.includes(src) || matchesAllowedWildcard
+      ? src
+      : allowed[0];
 
   return {
     'Access-Control-Allow-Origin': origin,

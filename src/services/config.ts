@@ -16,6 +16,10 @@ function readEnv(key: string, fallback = '') {
       return env.VITE_API_BASE_URL;
     if (key === 'REACT_APP_API_BASE_URL' && env.REACT_APP_API_BASE_URL !== undefined)
       return env.REACT_APP_API_BASE_URL;
+    if (key === 'VITE_MEDIA_API_BASE_URL' && env.VITE_MEDIA_API_BASE_URL !== undefined)
+      return env.VITE_MEDIA_API_BASE_URL;
+    if (key === 'REACT_APP_MEDIA_API_BASE_URL' && env.REACT_APP_MEDIA_API_BASE_URL !== undefined)
+      return env.REACT_APP_MEDIA_API_BASE_URL;
   }
   return fallback;
 }
@@ -84,6 +88,11 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
 const RAW_API_BASE_URL = String(resolveApiBaseUrl()).trim();
 
 export const API_BASE_URL = RAW_API_BASE_URL;
+export const MEDIA_API_BASE_URL = String(
+  readEnv('VITE_MEDIA_API_BASE_URL') ||
+    readEnv('REACT_APP_MEDIA_API_BASE_URL') ||
+    (isHostedPreviewRuntime() ? 'https://audiorecorder-production.up.railway.app' : API_BASE_URL)
+).trim();
 
 export function apiBaseUrlConfigured() {
   return Boolean(API_BASE_URL);

@@ -17,6 +17,7 @@ const m = vi.hoisted(() => ({
 vi.mock('./config', () => ({
   MEDIA_PIPELINE_PROVIDER: 'local',
   API_BASE_URL: 'http://test-api.local',
+  MEDIA_API_BASE_URL: 'http://media-api.local',
 }));
 
 // Mock all dependencies
@@ -84,7 +85,7 @@ describe('mediaService', () => {
   it('builds transcription progress request without leaking token in URL', () => {
     const request = buildTranscriptionProgressRequest('rec 1', 'session-token');
 
-    expect(request.url).toBe('http://test-api.local/media/recordings/rec%201/progress');
+    expect(request.url).toBe('http://media-api.local/media/recordings/rec%201/progress');
     expect(request.url).not.toContain('session-token');
     expect(request.headers).toEqual({ Authorization: 'Bearer session-token' });
   });

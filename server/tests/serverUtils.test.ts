@@ -80,6 +80,20 @@ describe('serverUtils', () => {
     });
   });
 
+  it('allows configured wildcard origins for direct Vercel-to-Railway media requests', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+
+    expect(
+      corsHeaders(
+        'https://voicelog-audiorecorder.vercel.app',
+        'https://*.vercel.app,http://localhost:3000'
+      )
+    ).toMatchObject({
+      'Access-Control-Allow-Origin': 'https://voicelog-audiorecorder.vercel.app',
+    });
+  });
+
   it('returns bearer token only for proper authorization header', () => {
     expect(getBearerToken({ headers: { authorization: 'Bearer token-123' } })).toBe('token-123');
     expect(getBearerToken({ headers: { authorization: 'Basic abc' } })).toBe('');

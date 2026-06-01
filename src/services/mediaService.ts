@@ -3,7 +3,7 @@ import { getAudioBlob, saveAudioBlob } from '../lib/audioStore';
 import { createBrowserTranscriptionController, TRANSCRIPTION_PROVIDER } from '../lib/transcription';
 import { getSpeechRecognitionClass } from '../lib/recording';
 import { apiRequest } from './httpClient';
-import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL } from './config';
+import { MEDIA_PIPELINE_PROVIDER, API_BASE_URL, MEDIA_API_BASE_URL } from './config';
 import { resolvePersistedSession } from '../lib/sessionStorage';
 import {
   normalizeMediaTranscriptionResponse,
@@ -28,12 +28,13 @@ const DEFAULT_UPLOAD_POLICY = {
   storageContentType: 'audio/webm',
 };
 let uploadPolicyPromise: Promise<typeof DEFAULT_UPLOAD_POLICY> | null = null;
+const mediaApiOptions = MEDIA_API_BASE_URL ? { baseUrl: MEDIA_API_BASE_URL } : {};
 
 export function buildTranscriptionProgressRequest(recordingId: string, token = '') {
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   return {
-    url: `${API_BASE_URL}/media/recordings/${encodeURIComponent(recordingId)}/progress`,
+    url: `${MEDIA_API_BASE_URL || API_BASE_URL}/media/recordings/${encodeURIComponent(recordingId)}/progress`,
     headers,
   };
 }
@@ -45,6 +46,7 @@ function sleep(ms: number) {
 async function getUploadPolicy() {
   if (!uploadPolicyPromise) {
     uploadPolicyPromise = apiRequest('/media/upload-policy', {
+      ...mediaApiOptions,
       method: 'GET',
       retries: 0,
     })
@@ -103,6 +105,7 @@ async function uploadChunkWithRetry({
       await apiRequest(
         `/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${total}`,
         {
+          ...mediaApiOptions,
           method: 'PUT',
           body: chunk,
           retries: 0,
@@ -274,6 +277,7 @@ function createRemoteMediaService() {
             const status = await apiRequest(
               `/media/recordings/${recordingId}/audio/chunk-status?total=${total}`,
               {
+                ...mediaApiOptions,
                 method: 'GET',
                 retries: 0,
                 headers: {
@@ -334,6 +338,7 @@ function createRemoteMediaService() {
           onProgress?.((uploaded / total) * 90);
         }
         const response = await apiRequest(`/media/recordings/${recordingId}/audio/finalize`, {
+          ...mediaApiOptions,
           method: 'POST',
           retries: 1,
           body: {
@@ -355,6 +360,7 @@ function createRemoteMediaService() {
       }
 
       const response = await apiRequest(`/media/recordings/${recordingId}/audio`, {
+        ...mediaApiOptions,
         method: 'PUT',
         body: blob,
         headers: {

@@ -66,6 +66,27 @@ describe('httpClient retry logic', () => {
     expect(mockFetch).toHaveBeenCalledTimes(3); // initial + 2 retries
   });
 
+  it('can send a request to an explicit baseUrl for direct media uploads', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+      text: () => Promise.resolve(''),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+    global.fetch = mockFetch as any;
+
+    const result = await apiRequest('/media/upload-policy', {
+      baseUrl: 'https://audiorecorder-production.up.railway.app/',
+      retries: 0,
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://audiorecorder-production.up.railway.app/media/upload-policy',
+      expect.any(Object)
+    );
+  });
+
   it('retries on 503 Service Unavailable error', async () => {
     const mockFetch = vi
       .fn()

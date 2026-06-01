@@ -31,7 +31,7 @@ export function isPreviewRuntimeBuildMismatch() {
   return previewBuildMismatch;
 }
 
-function buildUrl(path) {
+function buildUrl(path, baseUrl = API_BASE_URL) {
   const safePath = String(path || '').startsWith('/') ? path : `/${String(path || '')}`;
   if (!apiBaseUrlConfigured()) {
     throw new Error(
@@ -39,7 +39,7 @@ function buildUrl(path) {
     );
   }
 
-  return `${API_BASE_URL}${safePath}`;
+  return `${String(baseUrl || API_BASE_URL).replace(/\/+$/, '')}${safePath}`;
 }
 
 async function parseResponse(response) {
@@ -282,6 +282,7 @@ async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
 }
 
 interface ApiOptions extends RequestInit {
+  baseUrl?: string;
   body?: any;
   parseAs?: 'json' | 'text' | 'raw';
   retries?: number;
@@ -361,7 +362,7 @@ async function fetchWithRetry(
 }
 
 export async function apiRequest(path: string, options: ApiOptions = {}) {
-  const { body, headers, parseAs = 'json', retries = 3, ...rest } = options;
+  const { baseUrl, body, headers, parseAs = 'json', retries = 3, ...rest } = options;
   const token = readSessionToken();
   const requestInit: RequestInit = {
     ...rest,
@@ -379,7 +380,7 @@ export async function apiRequest(path: string, options: ApiOptions = {}) {
 
   let response: Response;
   try {
-    response = await fetchWithRetry(buildUrl(path), requestInit, retries);
+    response = await fetchWithRetry(buildUrl(path, baseUrl), requestInit, retries);
   } catch (error: any) {
     const normalizedMessage = normalizeApiErrorMessage(error?.message || 'Failed to fetch');
     const normalizedError = new Error(normalizedMessage);

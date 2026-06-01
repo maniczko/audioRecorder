@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const ORIGINAL_ENV = {
   VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
   REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL,
+  VITE_MEDIA_API_BASE_URL: process.env.VITE_MEDIA_API_BASE_URL,
+  REACT_APP_MEDIA_API_BASE_URL: process.env.REACT_APP_MEDIA_API_BASE_URL,
 };
 
 function setWindowOrigin(origin: string) {
@@ -22,6 +24,8 @@ describe('services/config resolveApiBaseUrl', () => {
     vi.unstubAllEnvs();
     process.env.VITE_API_BASE_URL = ORIGINAL_ENV.VITE_API_BASE_URL;
     process.env.REACT_APP_API_BASE_URL = ORIGINAL_ENV.REACT_APP_API_BASE_URL;
+    process.env.VITE_MEDIA_API_BASE_URL = ORIGINAL_ENV.VITE_MEDIA_API_BASE_URL;
+    process.env.REACT_APP_MEDIA_API_BASE_URL = ORIGINAL_ENV.REACT_APP_MEDIA_API_BASE_URL;
     vi.resetModules();
   });
 
@@ -33,6 +37,16 @@ describe('services/config resolveApiBaseUrl', () => {
     const config = await import('./config');
 
     expect(config.API_BASE_URL).toBe('https://audiorecorder-preview.vercel.app');
+    expect(config.MEDIA_API_BASE_URL).toBe('https://audiorecorder-production.up.railway.app');
+  });
+
+  it('allows overriding the direct media API base URL', async () => {
+    vi.stubEnv('VITE_MEDIA_API_BASE_URL', 'https://media.example.test');
+    setWindowOrigin('https://audiorecorder-preview.vercel.app');
+
+    const config = await import('./config');
+
+    expect(config.MEDIA_API_BASE_URL).toBe('https://media.example.test');
   });
 
   it('falls back to local default when API URL is not configured in non-hosted runtime', async () => {
