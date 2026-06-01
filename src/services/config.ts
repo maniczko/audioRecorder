@@ -24,6 +24,8 @@ function readEnv(key: string, fallback = '') {
   return fallback;
 }
 
+const RAILWAY_API_BASE_URL = 'https://audiorecorder-production.up.railway.app';
+
 function readMode(value, fallback = 'local') {
   const normalized = String(value || '')
     .trim()
@@ -64,12 +66,8 @@ function resolveApiBaseUrl() {
     readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || ''
   ).trim();
 
-  // On Vercel deployments ALWAYS use same-origin proxy.
-  // vercel.json rewrites (/state/*, /media/*, /auth/*, etc.) proxy to Railway.
-  // Using the Railway URL directly causes CORS errors because Railway
-  // does not set Access-Control-Allow-Origin headers.
   if (isHostedPreviewRuntime()) {
-    return String(window.location.origin || '').trim();
+    return configuredValue || RAILWAY_API_BASE_URL;
   }
 
   return configuredValue || readDefaultApiBaseUrl();
@@ -91,7 +89,7 @@ export const API_BASE_URL = RAW_API_BASE_URL;
 export const MEDIA_API_BASE_URL = String(
   readEnv('VITE_MEDIA_API_BASE_URL') ||
     readEnv('REACT_APP_MEDIA_API_BASE_URL') ||
-    (isHostedPreviewRuntime() ? 'https://audiorecorder-production.up.railway.app' : API_BASE_URL)
+    (isHostedPreviewRuntime() ? RAILWAY_API_BASE_URL : API_BASE_URL)
 ).trim();
 
 export function apiBaseUrlConfigured() {
