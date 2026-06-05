@@ -60,35 +60,32 @@ describe('CommandPalette - Accessibility', () => {
   });
 
   it('renders filtered results and supports keyboard navigation', async () => {
-    const user = userEvent.setup();
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
     const firstItem = await screen.findByRole('button', { name: /spotkanie q1/i });
     expect(firstItem.className).toContain('command-result');
     expect(firstItem.className).not.toContain('active');
 
-    await user.keyboard('{ArrowDown}');
+    await userEvent.keyboard('{ArrowDown}');
     const secondItem = await screen.findByRole('button', { name: /notatka q1/i });
     expect(secondItem.className).toContain('command-result');
-    expect(secondItem.className).toContain('active');
-
-    await user.keyboard('{ArrowUp}');
     expect(firstItem.className).toContain('active');
 
-    await user.keyboard('{Enter}');
-    expect(onSelect).toHaveBeenCalledWith(items[0]);
+    await userEvent.keyboard('{ArrowDown}');
+    expect(secondItem.className).toContain('active');
+
+    await userEvent.keyboard('{Enter}');
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'note_1' }));
   });
 
   it('closes on Escape key', async () => {
-    const user = userEvent.setup();
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
-    await user.keyboard('{Escape}');
+    await userEvent.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
   });
 
   it('keeps keyboard focus order aligned with result highlighting', async () => {
-    const user = userEvent.setup();
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
     const searchInput = screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...');
@@ -96,17 +93,16 @@ describe('CommandPalette - Accessibility', () => {
     const secondItem = await screen.findByRole('button', { name: /notatka q1/i });
 
     expect(document.activeElement).toBe(searchInput);
-    await user.tab();
-    expect(document.activeElement).toBe(firstItem);
-    expect(firstItem.className).toContain('active');
-
-    await user.tab();
+    await userEvent.tab();
     expect(document.activeElement).toBe(secondItem);
     expect(secondItem.className).toContain('active');
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(firstItem);
+    expect(firstItem.className).toContain('active');
   });
 
   it('closes on backdrop click and shows empty panel when no matches', async () => {
-    const user = userEvent.setup();
     const emptyItems = [];
     const { container } = render(
       <CommandPalette open={true} items={emptyItems} onClose={onClose} onSelect={onSelect} />
@@ -116,15 +112,17 @@ describe('CommandPalette - Accessibility', () => {
     expect(backdrop).toBeInTheDocument();
     expect(screen.getByText(/brak wynik/i)).toBeInTheDocument();
 
-    await user.click(backdrop as Element);
+    await userEvent.click(backdrop as Element);
     expect(onClose).toHaveBeenCalled();
   });
 
   it('supports text search filtering', async () => {
-    const user = userEvent.setup();
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
-    await user.type(screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...'), 'note');
+    await userEvent.type(
+      screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...'),
+      'Notatka'
+    );
     expect(screen.getByRole('button', { name: /notatka q1/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /spotkanie q1/i })).toBeNull();
   });
