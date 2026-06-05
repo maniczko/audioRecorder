@@ -221,7 +221,7 @@ describe('useAudioHardware', () => {
       await result.current.startRecording('m1');
     });
 
-    expect(onMessageChange).toHaveBeenCalledWith(expect.stringContaining('nie obsĹ‚uguje'));
+    expect(onMessageChange).toHaveBeenCalledWith(expect.stringContaining('mikrofonu'));
   });
 
   test('shows error when MediaRecorder is not available', async () => {
