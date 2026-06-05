@@ -1509,8 +1509,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const blockers = asList(body?.blockers || diarization?.blockers);
     const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
 
-    if (!env.GEMINI_API_KEY) {
-      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
+    if (!process.env.GEMINI_API_KEY) {
+      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji Ĺ›rodowiska.' }, 400);
     }
 
     try {
@@ -1583,7 +1583,7 @@ Important:
       });
       const geminiHeaders = {
         'Content-Type': 'application/json',
-        'x-goog-api-key': env.GEMINI_API_KEY,
+        'x-goog-api-key': process.env.GEMINI_API_KEY,
       };
 
       const MAX_RETRIES = 2;
