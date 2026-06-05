@@ -8,7 +8,7 @@
       "fingerprint": "61136dc0d155d1a4",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
-      "testEvidence": ["Zapomniałeś hasła?", "Dołącz z kodu", "Wejd[zź] do aplikacji"],
+      "testEvidence": ["Zapomnia", "Dołącz z kodu", "Wejd[zź]"],
       "owner": "frontend-auth"
     },
     {
@@ -63,7 +63,7 @@
       "screen": "Recordings",
       "file": "src/RecordingsTab.tsx",
       "expectedActionCount": 8,
-      "fingerprint": "7aa673a9fe3a304a",
+      "fingerprint": "9584b1db0ddac9cd",
       "contractStatus": "covered",
       "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
       "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
@@ -119,7 +119,7 @@
       "fingerprint": "85b6cdc8a62b87de",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
-      "testEvidence": ["Zapisz profil", "Zmień hasło", "reviewBtn"],
+      "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone"],
       "owner": "frontend-profile"
     },
     {
