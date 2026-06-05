@@ -26,6 +26,7 @@ data
 *.db
 *.tgz
 *.log
+*.wav
 .logs/
 tmp/
 temp/
