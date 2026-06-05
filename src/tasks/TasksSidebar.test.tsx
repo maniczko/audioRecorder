@@ -90,7 +90,7 @@ describe('TasksSidebar', () => {
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
       'voicebobr:sidebar-collapsed',
-      expect.stringContaining('\"smart\":true')
+      expect.stringContaining('"smart":true')
     );
     expect(screen.queryByText('Important')).not.toBeInTheDocument();
   });
