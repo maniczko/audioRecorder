@@ -117,6 +117,11 @@
   background: rgba(116, 208, 191, 0.1);
 }
 
+.command-result:focus-visible {
+  outline: 2px solid rgba(116, 208, 191, 0.72);
+  outline-offset: 2px;
+}
+
 /* ================================================================ */
 /* MOBILE RESPONSIVE - Command Palette (2026-04-01)                */
 /* ================================================================ */

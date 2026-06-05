@@ -56,6 +56,50 @@ type PendingImportQueueItem = Partial<RecordingQueueItem> & {
   status?: string;
 };
 
+function positiveDurationSeconds(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function getRecordingDurationSeconds(recording: RecordingsTabRecording | null | undefined) {
+  if (!recording || typeof recording !== 'object') return 0;
+  const audioQuality = recording.audioQuality as { durationSeconds?: unknown } | undefined;
+  const diagnostics = recording.transcriptionDiagnostics as
+    | { durationSeconds?: unknown }
+    | undefined;
+  return (
+    positiveDurationSeconds(audioQuality?.durationSeconds) ||
+    positiveDurationSeconds(diagnostics?.durationSeconds) ||
+    positiveDurationSeconds(recording.duration)
+  );
+}
+
+function getMeetingRecordingDurationSeconds(meeting: Partial<RecordingsTabMeeting>) {
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  if (!recordings.length) return 0;
+  const latestRecordingId = String(meeting?.latestRecordingId || '').trim();
+  const latestRecording = latestRecordingId
+    ? recordings.find(
+        (recording) =>
+          String(recording?.id || recording?.recordingId || '').trim() === latestRecordingId
+      )
+    : null;
+  return getRecordingDurationSeconds(latestRecording || recordings[0]);
+}
+
+function getMeetingDisplayDurationMinutes(meeting: Partial<RecordingsTabMeeting>) {
+  const recordingSeconds = getMeetingRecordingDurationSeconds(meeting);
+  if (recordingSeconds > 0) {
+    return Math.max(1, Math.round(recordingSeconds / 60));
+  }
+  return Math.max(0, Math.round(Number(meeting?.durationMinutes) || 0));
+}
+
+function formatMeetingDuration(meeting: Partial<RecordingsTabMeeting>) {
+  const minutes = getMeetingDisplayDurationMinutes(meeting);
+  return minutes > 0 ? `${minutes} min` : '—';
+}
+
 function formatPipelineDiagnostics(item) {
   const details: string[] = [];
   const transcriptOutcome = String(item?.transcriptOutcome || '').trim();
@@ -189,7 +233,7 @@ function AiStatusBadge({ meeting }) {
 function RecordingsStatsBar({ meetings }) {
   const stats = React.useMemo(() => {
     const totalMeetings = meetings.length;
-    const totalMinutes = meetings.reduce((sum, m) => sum + (Number(m.durationMinutes) || 0), 0);
+    const totalMinutes = meetings.reduce((sum, m) => sum + getMeetingDisplayDurationMinutes(m), 0);
     const totalHours = (totalMinutes / 60).toFixed(1);
     const participantSet = new Set();
     meetings.forEach((m) => {
@@ -441,8 +485,8 @@ function UnifiedLibrary({
             bVal = (b.title || '').toLowerCase();
             break;
           case 'durationMinutes':
-            aVal = a.durationMinutes || 0;
-            bVal = b.durationMinutes || 0;
+            aVal = getMeetingDisplayDurationMinutes(a);
+            bVal = getMeetingDisplayDurationMinutes(b);
             break;
           case 'recordingsCount':
             aVal = (a.recordings || []).length;
@@ -922,7 +966,7 @@ function UnifiedLibrary({
                     </strong>
                   </td>
                   <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
-                  <td>{m.durationMinutes ? `${m.durationMinutes} min` : '—'}</td>
+                  <td>{formatMeetingDuration(m)}</td>
                   <td style={{ color: 'var(--muted)', textAlign: 'center' }}>
                     {Number(m.speakerCount) > 0 ? m.speakerCount : '—'}
                   </td>

@@ -517,9 +517,7 @@ describe('audioPipeline exports', () => {
     });
   });
 
-  it.skip('returns all_chunks_discarded_as_too_small when chunk extraction never yields a transcribable buffer', async () => {
-    // SKIP: Complex mock interaction with vi.resetModules() causes timing issues
-    // Chunking is tested through integration tests instead
+  it('returns all_chunks_discarded_as_too_small when chunk extraction never yields a transcribable buffer', async () => {
     const { EventEmitter } = await import('node:events');
     vi.resetModules();
 
@@ -591,9 +589,7 @@ describe('audioPipeline exports', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   }, 30000);
 
-  it.skip('fails the pipeline when every chunked STT request fails instead of classifying it as empty transcript', async () => {
-    // SKIP: Complex mock interaction with vi.resetModules() causes timing issues
-    // Chunking is tested through integration tests instead
+  it('fails the pipeline when every chunked STT request fails instead of classifying it as empty transcript', async () => {
     const { EventEmitter } = await import('node:events');
     vi.resetModules();
 
@@ -674,7 +670,7 @@ describe('audioPipeline exports', () => {
     });
   }, 30000);
 
-  it.skip('still sends chunked audio to STT when chunk-level VAD reports silence', async () => {
+  it('still sends chunked audio to STT when chunk-level VAD reports silence', async () => {
     // SKIP: Complex mock interaction with vi.resetModules() causes timing issues
     // Chunking is tested through integration tests instead
     const { EventEmitter } = await import('node:events');
@@ -1845,8 +1841,7 @@ describe('audioPipeline exports', () => {
     expect(Object.values(result.speakerNames)).toContain('Speaker 1');
   }, 30000);
 
-  // Skipped - requires complex child_process mocking
-  it.skip('transcribeRecording applies per-speaker normalization when HF_TOKEN and PER_SPEAKER_NORM are set', async () => {
+  it('transcribeRecording applies per-speaker normalization when HF_TOKEN and PER_SPEAKER_NORM are set', async () => {
     const { EventEmitter } = await import('node:events');
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
@@ -1985,8 +1980,7 @@ describe('audioPipeline exports', () => {
     expect(result.segments.length).toBeGreaterThan(0);
   }, 30000);
 
-  // Skipped - requires complex child_process mocking
-  it.skip('correctTranscriptWithLLM is called when transcriptCorrection option is set', async () => {
+  it('correctTranscriptWithLLM is called when transcriptCorrection option is set', async () => {
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
 
@@ -2121,8 +2115,7 @@ describe('audioPipeline exports', () => {
     expect(String((global.fetch as any).mock.calls[2][1].body)).toContain('Popraw');
   }, 30000);
 
-  // Skipped - requires complex child_process mocking
-  it.skip('transcribeRecording processes large files via in-memory chunking and merges payloads', async () => {
+  it('transcribeRecording processes large files via in-memory chunking and merges payloads', async () => {
     const { EventEmitter } = await import('node:events');
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
@@ -2258,8 +2251,7 @@ describe('audioPipeline exports', () => {
     expect(result.segments.length).toBeGreaterThan(0);
   }, 30000);
 
-  // Skipped - requires complex child_process mocking
-  it.skip('correctTranscriptWithLLM falls back to original segments when LLM returns HTTP error', async () => {
+  it('correctTranscriptWithLLM falls back to original segments when LLM returns HTTP error', async () => {
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
 
@@ -2379,8 +2371,7 @@ describe('audioPipeline exports', () => {
     expect(result.segments.length).toBeGreaterThan(0);
   }, 30000);
 
-  // Skipped - requires complex child_process mocking
-  it.skip('transcribeRecording falls back to OpenAI STT when Groq STT fails', async () => {
+  it('transcribeRecording falls back to OpenAI STT when Groq STT fails', async () => {
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
 

@@ -168,6 +168,29 @@ describe('Workspace Routes', () => {
     expect(forbiddenRes.status).toBe(403);
   });
 
+  it('blocks viewer from changing workspace member roles', async () => {
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('viewer')
+    );
+
+    const forbiddenRes = await app.request('/workspaces/ws1/members/u2/role', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberRole: 'admin' }),
+    });
+
+    expect(forbiddenRes.status).toBe(403);
+    const data = await forbiddenRes.json();
+    expect(data).toEqual({ message: 'Tylko owner lub admin moze zmieniac role.' });
+    expect(mockWorkspaceService.updateWorkspaceMemberRole).not.toHaveBeenCalled();
+  });
+
   it('handles RAG ask validation, no-results and LLM failure paths', async () => {
     app = createApp(
       {

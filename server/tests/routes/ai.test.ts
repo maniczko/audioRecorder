@@ -133,7 +133,7 @@ describe('AI Routes', () => {
       const json = await res.json();
       expect(json.mode).toBe('anthropic');
       expect(json.meetingsAnalyzed).toBe(1);
-      expect(json.disc).toBeDefined();
+      expect(json.disc).toEqual({ D: 65, I: 45, S: 70, C: 55 });
       expect(json.discStyle).toBe('SC — stabilny');
     });
 
@@ -164,6 +164,31 @@ describe('AI Routes', () => {
         ok: true,
         json: vi.fn().mockResolvedValue({
           content: [{ text: 'This is not JSON' }],
+        }),
+      });
+
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.mode).toBe('no-key');
+    });
+
+    test('returns no-key mode when Anthropic returns empty content body', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          content: [],
         }),
       });
 
@@ -311,6 +336,30 @@ describe('AI Routes', () => {
       expect(json.tasks).toEqual([]);
     });
 
+    test('returns empty tasks when Anthropic returns empty content body', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          content: [],
+        }),
+      });
+
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.tasks).toEqual([]);
+    });
+
     test('returns empty tasks when response has no tasks array', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
@@ -432,6 +481,30 @@ describe('AI Routes', () => {
         ok: true,
         json: vi.fn().mockResolvedValue({
           content: [{ text: 'No json here' }],
+        }),
+      });
+
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'spotkanie o budzecie',
+          items: [{ id: '1', title: 'T' }],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.mode).toBe('no-key');
+      expect(json.matches).toEqual([]);
+    });
+
+    test('returns no-key mode when Anthropic returns empty content body', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          content: [],
         }),
       });
 

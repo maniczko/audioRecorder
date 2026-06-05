@@ -6,6 +6,7 @@ import {
   getNextProcessableRecordingQueueItem,
   getRecordingQueueForMeeting,
   hasRecordingWorkspaceContext,
+  isQueueMeetingSnapshotTarget,
   isWorkspaceMissingErrorMessage,
   normalizeQueueErrorMessage,
   normalizeRecordingQueue,
@@ -172,12 +173,32 @@ describe('recordingQueue helpers', () => {
     });
   });
 
-  test('finds a live meeting by workspace and title when the snapshot id changed after sync', () => {
+  test('keeps a queue snapshot recoverable instead of fuzzy matching a same-title meeting', () => {
     const item = createRecordingQueueItem({
       recordingId: 'recording_3',
       meetingId: 'meeting_local',
       meeting: { id: 'meeting_local', workspaceId: 'workspace_1', title: 'Ad hoc' },
     });
+
+    const meetings = [{ id: 'meeting_remote', workspaceId: 'workspace_1', title: 'Ad hoc' }];
+
+    const resolved = resolveQueueMeetingContext(meetings, item);
+
+    expect(findLiveMeetingForQueueItem(meetings, item)).toBeNull();
+    expect(resolved).toMatchObject({
+      id: 'meeting_local',
+      workspaceId: 'workspace_1',
+      title: 'Ad hoc',
+    });
+    expect(isQueueMeetingSnapshotTarget(resolved)).toBe(true);
+  });
+
+  test('fuzzy matches a live meeting by workspace and title when no queue snapshot exists', () => {
+    const item = {
+      meetingId: 'meeting_local',
+      workspaceId: 'workspace_1',
+      meetingTitle: 'Ad hoc',
+    };
 
     const meetings = [{ id: 'meeting_remote', workspaceId: 'workspace_1', title: 'Ad hoc' }];
 
@@ -200,11 +221,12 @@ describe('recordingQueue helpers', () => {
       meetingSnapshot: null,
     });
 
-    expect(resolved).toEqual({
+    expect(resolved).toMatchObject({
       id: 'meeting_recoverable',
       workspaceId: 'workspace_1',
       title: 'Recovered import',
     });
+    expect(isQueueMeetingSnapshotTarget(resolved)).toBe(true);
   });
 
   test('returns the next processable pending item based on a predicate', () => {

@@ -961,7 +961,10 @@ export default function StudioMeetingView({
   // Speaker picker dropdown — tracks which segment's dropdown is open
   const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState<string | null>(null);
   // Rename flow (triggered from within the dropdown)
-  const [renamingSpeakerId, setRenamingSpeakerId] = useState<string | null>(null);
+  const [renamingSpeaker, setRenamingSpeaker] = useState<{
+    segmentId: string;
+    speakerId: string;
+  } | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [renameDuplicate, setRenameDuplicate] = useState(false);
   const [pendingNewSpeakerAssignment, setPendingNewSpeakerAssignment] = useState<{
@@ -1507,28 +1510,45 @@ export default function StudioMeetingView({
 
   const commitSpeakerRename = useCallback(
     (speakerId, speakerName) => {
+      const normalizedSpeakerId = String(speakerId ?? '').trim();
       const nextName = String(speakerName || '').trim();
-      if (!nextName || typeof renameSpeaker !== 'function') return;
+      if (!normalizedSpeakerId || !nextName || typeof renameSpeaker !== 'function') return;
 
       // Uniqueness check — reject if another speaker already has this name
       const duplicate = Object.entries(displaySpeakerNames).some(
         ([id, name]) =>
-          String(id) !== String(speakerId) && String(name).toLowerCase() === nextName.toLowerCase()
+          String(id) !== normalizedSpeakerId &&
+          String(name).toLowerCase() === nextName.toLowerCase()
       );
       if (duplicate) return;
 
-      renameSpeaker(speakerId, nextName);
+      const nextTranscript = transcript.map((segment) =>
+        String(segment?.speakerId ?? '') === normalizedSpeakerId
+          ? { ...segment, speakerName: nextName }
+          : segment
+      );
+      const recordingId = String(selectedRecording?.id || displayRecording?.id || '').trim();
+
+      renameSpeaker(normalizedSpeakerId, nextName);
       if (!autoCreateVoiceProfile || /^speaker\s*\d+$/i.test(nextName)) return;
 
+      const enrollmentOptions = {
+        recordingId,
+        transcriptSegments: nextTranscript,
+      };
+
       if (autoLearnSpeakerProfiles) {
-        enrollSpeakerProfile(speakerId, nextName).catch(() => undefined);
+        enrollSpeakerProfile(normalizedSpeakerId, nextName, enrollmentOptions).catch(
+          () => undefined
+        );
         return;
       }
 
       setPendingVoiceProfileEnrollment({
-        recordingId: String(selectedRecording?.id || displayRecording?.id || ''),
-        speakerId,
+        recordingId,
+        speakerId: normalizedSpeakerId,
         speakerName: nextName,
+        transcriptSegments: nextTranscript,
       });
     },
     [
@@ -1539,6 +1559,7 @@ export default function StudioMeetingView({
       enrollSpeakerProfile,
       renameSpeaker,
       selectedRecording?.id,
+      transcript,
     ]
   );
 
@@ -3560,7 +3581,7 @@ export default function StudioMeetingView({
                       <div className="fireflies-content">
                         <div className="fireflies-header">
                           <div className="ff-speaker-picker-wrap ff-speaker-picker-inline">
-                            {renamingSpeakerId === String(seg.speakerId) ? (
+                            {renamingSpeaker?.segmentId === String(seg.id) ? (
                               <input
                                 className={`ff-speaker-rename-input ff-speaker-input-highlight${renameDuplicate ? ' is-duplicate' : ''}`}
                                 autoFocus
@@ -3574,24 +3595,39 @@ export default function StudioMeetingView({
                                   const trimmed = val.trim().toLowerCase();
                                   const isDup = Object.entries(displaySpeakerNames).some(
                                     ([id, name]) =>
-                                      String(id) !== String(seg.speakerId) &&
+                                      String(id) !== renamingSpeaker.speakerId &&
                                       String(name).toLowerCase() === trimmed
                                   );
                                   setRenameDuplicate(Boolean(trimmed && isDup));
                                 }}
                                 onBlur={() => {
                                   const name = renameValue.trim();
-                                  if (name && !renameDuplicate)
-                                    commitSpeakerRename(seg.speakerId, name);
-                                  setRenamingSpeakerId(null);
-                                  setRenameDuplicate(false);
+                                  const previousName = labelSpeaker(
+                                    displaySpeakerNames,
+                                    renamingSpeaker.speakerId
+                                  ).trim();
+                                  if (name && !renameDuplicate && name !== previousName) {
+                                    commitSpeakerRename(renamingSpeaker.speakerId, name);
+                                    setRenamingSpeaker(null);
+                                    setRenameDuplicate(false);
+                                    return;
+                                  }
+                                  if (!name) {
+                                    setRenamingSpeaker(null);
+                                    setRenameDuplicate(false);
+                                  }
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    if (!renameDuplicate) (e.target as any).blur();
+                                    const name = renameValue.trim();
+                                    if (name && !renameDuplicate) {
+                                      commitSpeakerRename(renamingSpeaker.speakerId, name);
+                                      setRenamingSpeaker(null);
+                                      setRenameDuplicate(false);
+                                    }
                                   }
                                   if (e.key === 'Escape') {
-                                    setRenamingSpeakerId(null);
+                                    setRenamingSpeaker(null);
                                     setRenameDuplicate(false);
                                   }
                                 }}
@@ -3641,7 +3677,10 @@ export default function StudioMeetingView({
                                     }
                                     onRename={(sid) => {
                                       setSpeakerDropdownSegId(null);
-                                      setRenamingSpeakerId(String(sid));
+                                      setRenamingSpeaker({
+                                        segmentId: String(seg.id),
+                                        speakerId: String(sid),
+                                      });
                                       setRenameValue(labelSpeaker(displaySpeakerNames, sid));
                                       setRenameDuplicate(false);
                                     }}
@@ -4254,9 +4293,9 @@ export default function StudioMeetingView({
         >
           <div className="ff-modal-body">
             <p className="ff-enrollment-copy">
-              Zmieniono nazwe mowcy na <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>.
-              Mozemy zapisac te probke jako aktualizacje profilu glosu, zeby kolejne spotkania byly
-              lepiej rozpoznawane.
+              Nazwa mowcy zostala zapisana jako{' '}
+              <strong>{pendingVoiceProfileEnrollment.speakerName}</strong>. Probka glosu jest
+              opcjonalna i pomoze lepiej rozpoznawac tego mowce w kolejnych spotkaniach.
             </p>
             <p className="ff-enrollment-copy muted">
               Jesli chcesz robic to bez pytania, wlacz `Auto-learn speaker profiles` w Profilu.

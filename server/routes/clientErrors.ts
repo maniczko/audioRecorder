@@ -17,6 +17,7 @@ interface ClientErrorEntry {
 
 const MAX_STORED_ERRORS = 500;
 const MAX_BODY_ERRORS = 50;
+const DEFAULT_CLIENT_ERROR_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 // In-memory store with periodic file persistence
 let errorStore: ClientErrorEntry[] = [];
@@ -27,6 +28,37 @@ function getErrorsFilePath(): string {
   return path.resolve(dataDir, 'client-errors.json');
 }
 
+function getClientErrorRetentionMs(): number {
+  const raw = process.env.VOICELOG_CLIENT_ERROR_RETENTION_MS;
+  if (!raw) return DEFAULT_CLIENT_ERROR_RETENTION_MS;
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_CLIENT_ERROR_RETENTION_MS;
+  }
+
+  return parsed;
+}
+
+function cleanupExpiredClientErrors(): boolean {
+  const previousCount = errorStore.length;
+  const retentionMs = getClientErrorRetentionMs();
+  const cutoff = Date.now() - retentionMs;
+
+  errorStore = errorStore.filter((entry) => {
+    const parsed = Date.parse(entry.timestamp);
+    if (!Number.isFinite(parsed)) return true;
+    return parsed >= cutoff;
+  });
+
+  return previousCount !== errorStore.length;
+}
+
+function enforceMaxStoredErrors(errors: ClientErrorEntry[]): ClientErrorEntry[] {
+  if (errors.length <= MAX_STORED_ERRORS) return errors;
+  return errors.slice(-MAX_STORED_ERRORS);
+}
+
 function loadFromDisk(): void {
   if (storeLoaded) return;
   try {
@@ -34,11 +66,16 @@ function loadFromDisk(): void {
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) errorStore = parsed;
+      if (Array.isArray(parsed)) {
+        errorStore = parsed;
+      }
     }
   } catch {
     // Start fresh if file is corrupt
   }
+
+  cleanupExpiredClientErrors();
+  errorStore = enforceMaxStoredErrors(errorStore);
   storeLoaded = true;
 }
 
@@ -99,13 +136,19 @@ export function createClientErrorRoutes() {
       }
 
       loadFromDisk();
+      const wasCleaned = cleanupExpiredClientErrors();
+
       // Deduplicate by id
       const existingIds = new Set(errorStore.map((e) => e.id));
       const newErrors = validErrors.filter((e) => !existingIds.has(e.id));
 
       if (newErrors.length > 0) {
-        errorStore = [...errorStore, ...newErrors].slice(-MAX_STORED_ERRORS);
+        errorStore = enforceMaxStoredErrors([...errorStore, ...newErrors]);
         persistToDisk();
+      } else if (wasCleaned) {
+        persistToDisk();
+      }
+      if (newErrors.length > 0) {
         logger.info(`[ClientErrors] Received ${newErrors.length} new error(s) from client.`);
       }
 
@@ -119,6 +162,10 @@ export function createClientErrorRoutes() {
   // GET /api/client-errors — retrieve stored errors
   router.get('/', (c) => {
     loadFromDisk();
+    const wasCleaned = cleanupExpiredClientErrors();
+    if (wasCleaned) {
+      persistToDisk();
+    }
     return c.json({ count: errorStore.length, errors: errorStore });
   });
 

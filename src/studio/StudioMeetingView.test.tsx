@@ -641,12 +641,13 @@ describe('StudioMeetingView', () => {
 
   test('opens voice profile enrollment modal after renaming a speaker', async () => {
     const renameSpeaker = vi.fn();
+    const autoCreateVoiceProfile = vi.fn(() => Promise.resolve(true));
 
     renderWithContext(
       <StudioMeetingView
         {...defaultProps}
         renameSpeaker={renameSpeaker}
-        autoCreateVoiceProfile={vi.fn()}
+        autoCreateVoiceProfile={autoCreateVoiceProfile}
         displaySpeakerNames={{ speaker_1: 'Speaker 1' }}
         displayRecording={{
           id: 'rec-1',
@@ -686,9 +687,94 @@ describe('StudioMeetingView', () => {
 
     expect(renameSpeaker).toHaveBeenCalledWith('speaker_1', 'Anna');
     await waitFor(() => {
-      expect(screen.getByText(/zmieniono nazwe mowcy na/i)).toBeInTheDocument();
+      expect(screen.getByText(/nazwa mowcy zostala zapisana/i)).toBeInTheDocument();
     });
     expect(screen.getByText(/Anna/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /zapisz do profilu glosu/i }));
+
+    await waitFor(() => {
+      expect(autoCreateVoiceProfile).toHaveBeenCalledWith(
+        'speaker_1',
+        'Anna',
+        expect.objectContaining({
+          recordingId: 'rec-1',
+          transcriptSegments: [
+            expect.objectContaining({
+              id: 'seg-1',
+              speakerId: 'speaker_1',
+              speakerName: 'Anna',
+            }),
+          ],
+        })
+      );
+    });
+  });
+
+  test('Regression: renaming one speaker segment opens a single editor for repeated speakers', async () => {
+    const renameSpeaker = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        renameSpeaker={renameSpeaker}
+        displaySpeakerNames={{ '0': 'Speaker 1' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 0,
+              text: 'Pierwszy fragment tego samego mowcy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 0,
+              text: 'Drugi fragment tego samego mowcy.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: 0,
+              text: 'Pierwszy fragment tego samego mowcy.',
+              timestamp: 0,
+              endTimestamp: 5,
+            },
+            {
+              id: 'seg-2',
+              speakerId: 0,
+              text: 'Drugi fragment tego samego mowcy.',
+              timestamp: 6,
+              endTimestamp: 12,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: /speaker 1/i })[1]);
+    fireEvent.click(screen.getByRole('menuitem', { name: /nazw/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/nowa nazwa/i)).toHaveLength(1);
+    });
+
+    fireEvent.change(screen.getByLabelText(/nowa nazwa/i), {
+      target: { value: 'Iwo' },
+    });
+    fireEvent.keyDown(screen.getByLabelText(/nowa nazwa/i), { key: 'Enter' });
+
+    expect(renameSpeaker).toHaveBeenCalledWith('0', 'Iwo');
   });
 
   test('Regression: auto-learns a voice profile sample after assigning a segment to a named speaker', async () => {

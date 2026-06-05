@@ -12,6 +12,7 @@ import type { TranscriptSegment } from '../shared/types';
 const SILENCE_AMPLITUDE_THRESHOLD = 10;
 // How often to update the silence countdown display (every N frames)
 const SILENCE_CHECK_INTERVAL_FRAMES = 20;
+const MIC_SETUP_TIMEOUT_MS = 8000;
 
 const PREFERRED_AUDIO_CONSTRAINTS = {
   audio: {
@@ -40,6 +41,24 @@ async function requestMicrophoneStream(mediaDevices: MediaDevices) {
       return mediaDevices.getUserMedia({ audio: true });
     }
     throw error;
+  }
+}
+
+async function requestMicrophoneStreamWithTimeout(mediaDevices: MediaDevices, timeoutMs: number) {
+  let timeoutHandle: ReturnType<typeof globalThis.setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = globalThis.setTimeout(() => {
+      const error = new Error('Microphone setup timed out');
+      (error as Error & { name: string }).name = 'TimeoutError';
+      reject(error);
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([requestMicrophoneStream(mediaDevices), timeoutPromise]);
+  } finally {
+    if (timeoutHandle !== null) globalThis.clearTimeout(timeoutHandle);
   }
 }
 
@@ -278,7 +297,10 @@ export default function useAudioHardware({
     signatureTimelineRef.current = [];
 
     try {
-      const stream = await requestMicrophoneStream(navigator.mediaDevices);
+      const stream = await requestMicrophoneStreamWithTimeout(
+        navigator.mediaDevices,
+        MIC_SETUP_TIMEOUT_MS
+      );
       const browserWindow = window as typeof globalThis & {
         webkitAudioContext?: typeof AudioContext;
       };

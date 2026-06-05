@@ -286,6 +286,94 @@ describe('useWorkspaceData', () => {
     unmount();
   });
 
+  test('Regression: #0 - pauses remote pull while local speaker rename is pending autosave', async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'token-1', userId: 'u1', workspaceId: 'ws1' };
+    workspaceState.currentWorkspaceId = 'ws1';
+    stateServiceMock.bootstrap.mockResolvedValueOnce({
+      workspaceId: 'ws1',
+      state: {
+        meetings: [
+          {
+            id: 'm1',
+            workspaceId: 'ws1',
+            latestRecordingId: 'r1',
+            updatedAt: '2026-06-05T10:00:00.000Z',
+            speakerNames: { '0': 'Speaker 1' },
+            recordings: [
+              {
+                id: 'r1',
+                speakerNames: { '0': 'Speaker 1' },
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      },
+    });
+
+    const { rerender, unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+      await Promise.resolve();
+    });
+
+    meetingsState.meetings = [
+      {
+        id: 'm1',
+        workspaceId: 'ws1',
+        latestRecordingId: 'r1',
+        updatedAt: '2026-06-05T10:00:02.000Z',
+        speakerNames: { '0': 'Anna' },
+        recordings: [
+          {
+            id: 'r1',
+            speakerNames: { '0': 'Anna' },
+          },
+        ],
+      },
+    ];
+    rerender();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+
+    expect(stateServiceMock.syncWorkspaceState).toHaveBeenCalledWith(
+      'ws1',
+      expect.objectContaining({
+        meetings: {
+          upsert: [
+            expect.objectContaining({
+              id: 'm1',
+              speakerNames: { '0': 'Anna' },
+              recordings: [
+                expect.objectContaining({
+                  id: 'r1',
+                  speakerNames: { '0': 'Anna' },
+                }),
+              ],
+            }),
+          ],
+        },
+      })
+    );
+
+    unmount();
+  });
+
   test('bootstraps remote state and applies it to store', async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = 'remote';

@@ -11,6 +11,7 @@ describe('API Security Regression Tests', () => {
     HF_TOKEN: process.env.HF_TOKEN,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    VOICELOG_ADMIN_TOKEN: process.env.VOICELOG_ADMIN_TOKEN,
   };
 
   beforeAll(async () => {
@@ -19,6 +20,7 @@ describe('API Security Regression Tests', () => {
     process.env.SUPABASE_URL = originalEnv.SUPABASE_URL || 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY =
       originalEnv.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key';
+    process.env.VOICELOG_ADMIN_TOKEN = originalEnv.VOICELOG_ADMIN_TOKEN || 'security-admin-token';
     vi.resetModules();
 
     // Bootstrap services and server
@@ -54,6 +56,7 @@ describe('API Security Regression Tests', () => {
     process.env.HF_TOKEN = originalEnv.HF_TOKEN;
     process.env.SUPABASE_URL = originalEnv.SUPABASE_URL;
     process.env.SUPABASE_SERVICE_ROLE_KEY = originalEnv.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.VOICELOG_ADMIN_TOKEN = originalEnv.VOICELOG_ADMIN_TOKEN;
   });
 
   // Helper to make native HTTP requests
@@ -140,6 +143,36 @@ describe('API Security Regression Tests', () => {
     );
     expect(heapFilesAfter).toEqual([...heapFilesBefore]);
     expect(heapdumpRes.body).not.toContain(process.cwd());
+  });
+
+  test('[H-06] admin and metrics endpoints accept valid admin token', async () => {
+    const adminToken = process.env.VOICELOG_ADMIN_TOKEN;
+
+    const metricsRes: any = await makeRequest('GET', '/metrics', {
+      Authorization: `Bearer ${adminToken}`,
+    });
+    const adminMetricsRes: any = await makeRequest('GET', '/api/admin/metrics', {
+      'X-Admin-Token': adminToken,
+    });
+
+    expect(metricsRes.statusCode).toBe(200);
+    expect(metricsRes.body.length).toBeGreaterThan(0);
+    expect(adminMetricsRes.statusCode).toBe(200);
+    expect(JSON.parse(adminMetricsRes.body as string)).toMatchObject({});
+  });
+
+  test('[H-07] admin and metrics endpoints reject invalid admin token', async () => {
+    const invalidToken = 'wrong-admin-token';
+
+    const metricsRes: any = await makeRequest('GET', '/metrics', {
+      Authorization: `Bearer ${invalidToken}`,
+    });
+    const adminMetricsRes: any = await makeRequest('GET', '/api/admin/metrics', {
+      'X-Admin-Token': invalidToken,
+    });
+
+    expect(metricsRes.statusCode).toBe(401);
+    expect(adminMetricsRes.statusCode).toBe(401);
   });
 
   test('[M-03] GET /media/recordings/:id/audio - Should fallback Content-Type if invalid (Stored XSS)', async () => {

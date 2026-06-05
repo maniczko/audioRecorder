@@ -14,7 +14,10 @@ export interface RecordingQueueMeetingLike {
   id?: string;
   workspaceId?: string;
   title?: string;
+  [key: string]: unknown;
 }
+
+export const QUEUE_MEETING_SNAPSHOT_SOURCE = '__recordingQueueSnapshot';
 
 export const RECORDING_WORKSPACE_REQUIRED_MESSAGE =
   'Nie można rozpocząć uploadu, bo przestrzeń robocza nie jest jeszcze gotowa. Odśwież lub wybierz workspace.';
@@ -88,6 +91,51 @@ function getQueueMeetingSnapshot(item: unknown): RecordingQueueMeetingLike | nul
   return null;
 }
 
+function shouldPreferQueueSnapshot(item: unknown) {
+  if (!item || typeof item !== 'object') {
+    return false;
+  }
+
+  const candidate = item as {
+    meetingSnapshot?: RecordingQueueMeetingLike | null;
+    [QUEUE_MEETING_SNAPSHOT_SOURCE]?: boolean;
+  };
+  return Boolean(candidate[QUEUE_MEETING_SNAPSHOT_SOURCE] || candidate.meetingSnapshot);
+}
+
+export function isQueueMeetingSnapshotTarget(value: unknown) {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    (value as { [QUEUE_MEETING_SNAPSHOT_SOURCE]?: boolean })[QUEUE_MEETING_SNAPSHOT_SOURCE]
+  );
+}
+
+export function stripQueueMeetingSnapshotMarker<T extends RecordingQueueMeetingLike | null>(
+  value: T
+): T {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const next = { ...value };
+  delete next[QUEUE_MEETING_SNAPSHOT_SOURCE];
+  return next as T;
+}
+
+function markQueueMeetingSnapshot(
+  snapshot: RecordingQueueMeetingLike | null
+): RecordingQueueMeetingLike | null {
+  if (!snapshot) {
+    return null;
+  }
+
+  return {
+    ...snapshot,
+    [QUEUE_MEETING_SNAPSHOT_SOURCE]: true,
+  };
+}
+
 function getQueueMeetingId(item: unknown) {
   if (!item || typeof item !== 'object') {
     return '';
@@ -131,6 +179,10 @@ export function findLiveMeetingForQueueItem<
     }
   }
 
+  if (shouldPreferQueueSnapshot(item)) {
+    return null;
+  }
+
   const workspaceId = getQueueWorkspaceId(item, snapshot);
   const normalizedTitle = normalizeMeetingResolverValue(getQueueMeetingTitle(item, snapshot));
   if (!normalizedTitle) {
@@ -160,7 +212,10 @@ export function resolveQueueMeetingContext<
     title?: string;
   },
 >(meetings: TMeeting[] = [], item: unknown): TMeeting | RecordingQueueMeetingLike | null {
-  return findLiveMeetingForQueueItem(meetings, item) || getQueueMeetingSnapshot(item) || null;
+  return (
+    findLiveMeetingForQueueItem(meetings, item) ||
+    markQueueMeetingSnapshot(getQueueMeetingSnapshot(item))
+  );
 }
 
 export interface RecordingQueueItem {

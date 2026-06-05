@@ -254,6 +254,11 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.patch('/voice-profiles/:id/threshold', async (c) => {
     const session = c.get('session') as any;
+    const membership = await ensureWorkspaceAccess(c, session.workspace_id);
+    if (membership?.member_role === 'viewer') {
+      return c.json({ message: 'Tylko owner lub admin moze zmieniac threshold.' }, 403);
+    }
+
     const body = await c.req.json().catch(() => ({}));
     const threshold = Number(body.threshold);
     if (!Number.isFinite(threshold) || threshold < 0.5 || threshold > 0.99) {

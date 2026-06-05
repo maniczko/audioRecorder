@@ -30,6 +30,9 @@ describe('useRecordingActions', () => {
           { id: 's1', speakerId: '0', text: 'Test', timestamp: 0, verificationStatus: 'review' },
         ],
         speakerNames: { '0': 'Speaker 1' },
+        analysis: {
+          speakerLabels: { '0': 'Speaker 1' },
+        },
         markers: [],
       },
     ],
@@ -71,6 +74,34 @@ describe('useRecordingActions', () => {
     const newMeetings = updater([baseMeeting]);
     expect(newMeetings[0].speakerNames['0']).toBe('Alice');
     expect(newMeetings[0].recordings[0].speakerNames['0']).toBe('Alice');
+    expect(newMeetings[0].recordings[0].analysis.speakerLabels['0']).toBe('Alice');
+    expect(newMeetings[0].recordings[0].transcript[0].speakerName).toBe('Alice');
+    expect(newMeetings[0].updatedAt).toEqual(expect.any(String));
+    expect(newMeetings[0].recordings[0].updatedAt).toEqual(expect.any(String));
+  });
+
+  test('Regression: renameSpeaker falls back to latest recording when selectedRecording is missing', () => {
+    const meeting = {
+      ...baseMeeting,
+      latestRecordingId: baseMeeting.recordings[0].id,
+      recordings: [
+        {
+          ...baseMeeting.recordings[0],
+          speakerNames: { '0': 'Speaker 1' },
+        },
+      ],
+    };
+    const { result } = setupHook(meeting, null);
+
+    act(() => {
+      result.current.renameSpeaker('0', 'Iwo');
+    });
+
+    expect(mockSetMeetings).toHaveBeenCalled();
+    const updater = mockSetMeetings.mock.calls[0][0];
+    const newMeetings = updater([meeting]);
+    expect(newMeetings[0].speakerNames['0']).toBe('Iwo');
+    expect(newMeetings[0].recordings[0].speakerNames['0']).toBe('Iwo');
   });
 
   test('updateTranscriptSegment', () => {
@@ -430,6 +461,66 @@ describe('useRecordingActions', () => {
       expect(nextMeetings[0].recordings[0]).toMatchObject({ id: 'r_recovered' });
       expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_recovered');
       expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_recovered');
+    });
+
+    test('recreates queue snapshot instead of attaching to a same-title live meeting', () => {
+      const liveMeeting = {
+        ...baseMeeting,
+        id: 'm_live',
+        workspaceId: 'ws1',
+        title: 'Ad hoc 01 cze, 22:04',
+        recordings: [],
+      };
+      const snapshot = {
+        id: 'm_snapshot',
+        workspaceId: 'ws1',
+        title: 'Ad hoc 01 cze, 22:04',
+        startsAt: '2026-06-01T20:04:00.000Z',
+        createdAt: '2026-06-01T20:04:00.000Z',
+      };
+      let nextMeetings: any[] = [];
+      mockSetMeetings.mockImplementation((updater) => {
+        if (typeof updater === 'function') nextMeetings = updater([liveMeeting]);
+      });
+
+      const { result } = setupHook(liveMeeting, liveMeeting.recordings[0]);
+      let returnValue: any;
+      act(() => {
+        returnValue = result.current.attachCompletedRecording(
+          {
+            recordingId: 'r_large_import',
+            meetingId: snapshot.id,
+            workspaceId: snapshot.workspaceId,
+            meetingTitle: snapshot.title,
+            meetingSnapshot: snapshot,
+          },
+          {
+            id: 'r_large_import',
+            createdAt: '2026-06-01T20:05:00.000Z',
+            duration: 5455,
+            transcript: [{ text: 'Recovered import' }],
+            speakerNames: {},
+            speakerCount: 0,
+            analysis: {},
+          }
+        );
+      });
+
+      expect(returnValue).toBe(true);
+      expect(nextMeetings).toHaveLength(2);
+      expect(nextMeetings[0]).toMatchObject({
+        id: 'm_snapshot',
+        workspaceId: 'ws1',
+        title: 'Ad hoc 01 cze, 22:04',
+        startsAt: '2026-06-01T20:04:00.000Z',
+        createdAt: '2026-06-01T20:04:00.000Z',
+        latestRecordingId: 'r_large_import',
+      });
+      expect(nextMeetings[0].recordings[0]).toMatchObject({ id: 'r_large_import' });
+      expect(nextMeetings[1].id).toBe('m_live');
+      expect(nextMeetings[1].recordings).toEqual([]);
+      expect(mockSetSelectedMeetingId).toHaveBeenCalledWith('m_snapshot');
+      expect(mockSetSelectedRecordingId).toHaveBeenCalledWith('r_large_import');
     });
   });
 

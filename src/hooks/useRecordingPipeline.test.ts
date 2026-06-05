@@ -80,19 +80,19 @@ describe('useRecordingPipeline', () => {
   it('returns queue management methods', () => {
     const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
-    expect(result.current.setRecordingQueue).toBeDefined();
-    expect(result.current.setAnalysisStatus).toBeDefined();
-    expect(result.current.setPipelineProgress).toBeDefined();
-    expect(result.current.setRecordingMessage).toBeDefined();
-    expect(result.current.retryRecordingQueueItem).toBeDefined();
-    expect(result.current.updateQueueItem).toBeDefined();
-    expect(result.current.removeQueueItem).toBeDefined();
+    expect(result.current.setRecordingQueue).toBeInstanceOf(Function);
+    expect(result.current.setAnalysisStatus).toBeInstanceOf(Function);
+    expect(result.current.setPipelineProgress).toBeInstanceOf(Function);
+    expect(result.current.setRecordingMessage).toBeInstanceOf(Function);
+    expect(result.current.retryRecordingQueueItem).toBeInstanceOf(Function);
+    expect(result.current.updateQueueItem).toBeInstanceOf(Function);
+    expect(result.current.removeQueueItem).toBeInstanceOf(Function);
   });
 
   it('returns getMeetingQueue method', () => {
     const { result } = renderHook(() => useRecordingPipeline(defaultParams));
 
-    expect(result.current.getMeetingQueue).toBeDefined();
+    expect(result.current.getMeetingQueue).toBeInstanceOf(Function);
     expect(typeof result.current.getMeetingQueue).toBe('function');
   });
 

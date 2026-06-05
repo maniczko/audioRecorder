@@ -120,6 +120,41 @@ function normalizeRetryAfterMs(value: unknown) {
     : BACKGROUND_TRANSCRIPTION_RETRY_MS;
 }
 
+function positiveNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function maxTranscriptEndSeconds(segments: unknown) {
+  if (!Array.isArray(segments)) {
+    return 0;
+  }
+
+  return segments.reduce((max, segment) => {
+    const candidate = segment as { endTimestamp?: unknown; timestamp?: unknown };
+    return Math.max(
+      max,
+      positiveNumber(candidate.endTimestamp),
+      positiveNumber(candidate.timestamp)
+    );
+  }, 0);
+}
+
+function resolveRecordingDurationSeconds(
+  nextItem: RecordingQueueItem,
+  transcription: Partial<StartedTranscription> | null | undefined,
+  uploadResult: { durationMs?: unknown } | null
+) {
+  const candidates = [
+    positiveNumber(uploadResult?.durationMs) / 1000,
+    positiveNumber(transcription?.durationMs) / 1000,
+    maxTranscriptEndSeconds(transcription?.segments),
+    positiveNumber(nextItem.duration),
+  ];
+
+  return candidates.find((duration) => duration > 0) || 0;
+}
+
 function getPollingSleepMs(value: unknown) {
   const retryAfterMs = Number(value);
   if (!Number.isFinite(retryAfterMs) || retryAfterMs <= 0) return 1500;
@@ -571,6 +606,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       return;
     }
 
+    let uploadResult: { durationMs?: unknown; audioQuality?: unknown } | null = null;
     if (!nextItem.uploaded) {
       let uploadBlob: Blob | null = localBlob as Blob;
       let vadRemovedS = 0;
@@ -630,21 +666,17 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         errorMessage: '',
       });
 
-      const uploadResult = await mediaService.persistRecordingAudio(
-        nextItem.recordingId,
-        uploadBlob,
-        {
-          workspaceId,
-          meetingId: targetWithWorkspace.id,
-          onProgress: (pct: number) => {
-            const mapped = 12 + Math.round((pct / 100) * 10);
-            setState({
-              pipelineProgressPercent: mapped,
-              pipelineStageLabel: `Wgrywanie audio: ${Math.round(pct)}%`,
-            });
-          },
-        }
-      );
+      uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, uploadBlob, {
+        workspaceId,
+        meetingId: targetWithWorkspace.id,
+        onProgress: (pct: number) => {
+          const mapped = 12 + Math.round((pct / 100) * 10);
+          setState({
+            pipelineProgressPercent: mapped,
+            pipelineStageLabel: `Wgrywanie audio: ${Math.round(pct)}%`,
+          });
+        },
+      });
 
       updateQueueItem(nextItem.recordingId, {
         audioQuality: uploadResult?.audioQuality || nextItem.audioQuality || null,
@@ -753,6 +785,11 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     }
 
     const verifiedSegments = Array.isArray(transcription.segments) ? transcription.segments : [];
+    const resolvedDurationSeconds = resolveRecordingDurationSeconds(
+      nextItem,
+      transcription,
+      uploadResult
+    );
     const reviewableSegments = verifiedSegments as Array<
       TranscriptionStatusPayload['segments'][number] & {
         verificationStatus?: 'review' | 'verified' | 'low-confidence';
@@ -778,7 +815,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       const recording = {
         id: nextItem.recordingId,
         createdAt: nextItem.createdAt || new Date().toISOString(),
-        duration: nextItem.duration || 0,
+        duration: resolvedDurationSeconds,
         transcript: [],
         transcriptOutcome: 'empty',
         emptyReason:
@@ -898,7 +935,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const recording = {
       id: nextItem.recordingId,
       createdAt: nextItem.createdAt || new Date().toISOString(),
-      duration: nextItem.duration || 0,
+      duration: resolvedDurationSeconds,
       transcript: verifiedSegments,
       speakerNames: analysis.speakerLabels || transcription.speakerNames || {},
       speakerCount: analysis.speakerCount || transcription.speakerCount || 0,

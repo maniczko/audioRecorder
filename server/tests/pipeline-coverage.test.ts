@@ -22,52 +22,58 @@ vi.mock('node:fs', () => ({
 }));
 
 // Mock all heavy dependencies to test pipeline orchestration logic
-vi.mock('../transcription', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../transcription')>();
-
-  return {
-    ...actual,
-    resolveStoredAudioQuality: vi.fn().mockReturnValue(null),
-    analyzeAudioQuality: vi.fn().mockResolvedValue(null),
-    transcribeInChunks: vi.fn().mockResolvedValue({
+vi.mock('../transcription', () => ({
+  resolveStoredAudioQuality: vi.fn().mockReturnValue(null),
+  analyzeAudioQuality: vi.fn().mockResolvedValue(null),
+  transcribeInChunks: vi.fn().mockResolvedValue({
+    segments: [{ id: 1, text: 'hello', speakerId: 0 }],
+    words: [],
+    text: 'hello',
+  }),
+  mergeChunkedPayloads: vi.fn().mockReturnValue({
+    segments: [{ id: 1, text: 'hello', speakerId: 0 }],
+    words: [],
+    text: 'hello',
+    transcriptionDiagnostics: {},
+  }),
+  transcribeLiveChunk: vi.fn().mockResolvedValue('hello world'),
+  runSileroVAD: vi.fn().mockResolvedValue([]),
+  preprocessAudio: vi.fn().mockResolvedValue('/tmp/preprocessed.wav'),
+  requestAudioTranscription: vi.fn().mockResolvedValue({
+    payload: {
       segments: [{ id: 1, text: 'hello', speakerId: 0 }],
       words: [],
       text: 'hello',
-    }),
-    mergeChunkedPayloads: vi.fn().mockReturnValue({
-      segments: [{ id: 1, text: 'hello', speakerId: 0 }],
-      words: [],
-      text: 'hello',
-      transcriptionDiagnostics: {},
-    }),
-    transcribeLiveChunk: vi.fn().mockResolvedValue('hello world'),
-    runSileroVAD: vi.fn().mockResolvedValue([]),
-    preprocessAudio: vi.fn().mockResolvedValue('/tmp/preprocessed.wav'),
-    requestAudioTranscription: vi.fn().mockResolvedValue({
-      payload: {
-        segments: [{ id: 1, text: 'hello', speakerId: 0 }],
-        words: [],
-        text: 'hello',
-      },
-      providerId: 'openai',
-      providerLabel: 'OpenAI',
-      model: 'whisper-1',
-    }),
-    getUploadDir: vi.fn().mockReturnValue('/tmp'),
-    buildAudioPreprocessCacheKey: vi.fn().mockReturnValue('key123'),
-    getPreprocessCachePath: vi.fn().mockReturnValue('/tmp/cache/key123.wav'),
-    isPreprocessCacheFile: vi.fn().mockReturnValue(false),
-    CHUNK_DURATION_SECONDS: 10,
-    CHUNK_OVERLAP_SECONDS: 2,
-    MAX_CHUNK_RETRIES: 3,
-    SILENCE_REMOVE: false,
-    VAD_ENABLED: false,
-    STT_PROVIDER_CHAIN: [{ id: 'openai', defaultModel: 'whisper-1' }],
-    _sttUseGroq: false,
-    VERIFICATION_MODEL: 'whisper-1',
-    MAX_FILE_SIZE_BYTES: 1000000,
-  };
-});
+    },
+    providerId: 'openai',
+    providerLabel: 'OpenAI',
+    model: 'whisper-1',
+  }),
+  getUploadDir: vi.fn().mockReturnValue('/tmp'),
+  buildAudioPreprocessCacheKey: vi.fn().mockReturnValue('key123'),
+  getPreprocessCachePath: vi.fn().mockReturnValue('/tmp/cache/key123.wav'),
+  isPreprocessCacheFile: vi.fn().mockReturnValue(false),
+  CHUNK_DURATION_SECONDS: 10,
+  CHUNK_OVERLAP_SECONDS: 2,
+  MAX_CHUNK_RETRIES: 3,
+  VAD_ENABLED: false,
+  maybeRetryPoorQualityWithOpenAi: vi.fn().mockResolvedValue({
+    segments: [{ id: 1, text: 'hello', speakerId: 0 }],
+    words: [],
+    text: 'hello',
+  }),
+  retryLowConfidenceSegmentsWithOpenAi: vi.fn().mockResolvedValue({
+    segments: [{ id: 1, text: 'hello', speakerId: 0 }],
+    words: [],
+    text: 'hello',
+    diagnostics: {},
+  }),
+  SILENCE_REMOVE: false,
+  STT_PROVIDER_CHAIN: [{ id: 'openai', defaultModel: 'whisper-1' }],
+  _sttUseGroq: false,
+  VERIFICATION_MODEL: 'whisper-1',
+  MAX_FILE_SIZE_BYTES: 1000000,
+}));
 
 vi.mock('../diarization', () => ({
   runPyannoteDiarization: vi.fn().mockResolvedValue(null),
@@ -155,34 +161,30 @@ describe('pipeline.ts — orchestration coverage', () => {
     vi.resetModules();
   });
 
-  // TODO: These tests require full pipeline mock integration.
-  // The pipeline imports requestAudioTranscription from transcription.ts,
-  // which in turn imports transcribeWithProviders from stt/providers.ts.
-  // The vi.mock chain breaks because importOriginal loads the real module
-  // which loads real STT providers before mocks are applied.
-  // These should be replaced with integration tests instead.
-  test.skip('transcribeRecording returns result on success with local mode', async () => {
+  test('transcribeRecording returns result on success with local mode', async () => {
     const pipeline = await import('../pipeline.ts');
     const result = await pipeline.transcribeRecording(
       { id: 'rec1', file_path: '/tmp/test.wav', content_type: 'audio/wav' },
       { onProgress: vi.fn() }
     );
-    expect(result).toBeDefined();
-    expect(result.segments).toBeDefined();
+    expect(result.providerId).toEqual('openai');
+    expect(result.pipelineStatus).toEqual('completed');
+    expect(result.segments).toMatchObject([{ id: 1, text: 'hello', speakerId: 0 }]);
   });
 
-  test.skip('transcribeLiveChunk returns text on success', async () => {
+  test('transcribeLiveChunk returns text on success', async () => {
     const pipeline = await import('../pipeline.ts');
     const result = await pipeline.transcribeLiveChunk('/tmp/test.wav', 'audio/wav', {});
-    expect(result).toBe('hello world');
+    expect(result).toEqual('hello world');
   });
 
-  test.skip('transcribeRecording handles remote audio path', async () => {
+  test('transcribeRecording handles remote audio path', async () => {
     const pipeline = await import('../pipeline.ts');
     const result = await pipeline.transcribeRecording(
       { id: 'rec1', file_path: 'remote-rec-id', content_type: 'audio/wav' },
       { onProgress: vi.fn() }
     );
-    expect(result).toBeDefined();
+    expect(result.pipelineStatus).toEqual('completed');
+    expect(result.transcriptOutcome).toEqual('normal');
   });
 });

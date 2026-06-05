@@ -218,6 +218,7 @@ export default function CommandPalette({
                           className={
                             itemIndex === activeIndex ? 'command-result active' : 'command-result'
                           }
+                          onFocus={() => setActiveIndex(itemIndex)}
                           onMouseEnter={() => setActiveIndex(itemIndex)}
                           onClick={() => onSelect(item)}
                         >

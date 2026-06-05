@@ -1,6 +1,10 @@
 import { createId } from '../lib/storage';
 import { attachRecording } from '../lib/meeting';
-import { findLiveMeetingForQueueItem } from '../lib/recordingQueue';
+import {
+  findLiveMeetingForQueueItem,
+  isQueueMeetingSnapshotTarget,
+  stripQueueMeetingSnapshotMarker,
+} from '../lib/recordingQueue';
 import { apiRequest } from '../services/httpClient';
 import { remoteApiEnabled } from '../services/config';
 
@@ -121,28 +125,49 @@ export default function useRecordingActions({
   }
 
   function renameSpeaker(speakerId, nextValue) {
-    if (!selectedMeeting || !selectedRecording) return;
+    if (!selectedMeeting) return;
+    const normalizedSpeakerId = String(speakerId ?? '').trim();
+    const speakerName = String(nextValue ?? '').trim();
+    if (!normalizedSpeakerId || !speakerName) return;
+    const targetRecording =
+      selectedRecording ||
+      selectedMeeting.recordings?.find(
+        (recording) => recording.id === selectedMeeting.latestRecordingId
+      ) ||
+      selectedMeeting.recordings?.[0] ||
+      null;
+    if (!targetRecording) return;
+    const now = new Date().toISOString();
     setMeetings((prev) =>
       prev.map((m) => {
         if (m.id !== selectedMeeting.id) return m;
         return {
           ...m,
+          updatedAt: now,
           speakerNames:
-            m.latestRecordingId === selectedRecording.id
-              ? { ...m.speakerNames, [String(speakerId)]: nextValue }
+            m.latestRecordingId === targetRecording.id
+              ? { ...m.speakerNames, [normalizedSpeakerId]: speakerName }
               : m.speakerNames,
           recordings: m.recordings.map((r) =>
-            r.id !== selectedRecording.id
+            r.id !== targetRecording.id
               ? r
               : {
                   ...r,
-                  speakerNames: { ...r.speakerNames, [String(speakerId)]: nextValue },
+                  updatedAt: now,
+                  speakerNames: { ...r.speakerNames, [normalizedSpeakerId]: speakerName },
+                  transcript: Array.isArray(r.transcript)
+                    ? r.transcript.map((segment) =>
+                        String(segment?.speakerId ?? '') === normalizedSpeakerId
+                          ? { ...segment, speakerName }
+                          : segment
+                      )
+                    : r.transcript,
                   analysis: r.analysis
                     ? {
                         ...r.analysis,
                         speakerLabels: {
                           ...(r.analysis.speakerLabels || r.speakerNames),
-                          [String(speakerId)]: nextValue,
+                          [normalizedSpeakerId]: speakerName,
                         },
                       }
                     : r.analysis,
@@ -371,8 +396,15 @@ export default function useRecordingActions({
   function attachCompletedRecording(recordingMeetingId, recording) {
     let resolvedMeetingId = '';
     let attached = false;
-    const requestedMeeting =
+    const requestedTarget =
       recordingMeetingId && typeof recordingMeetingId === 'object' ? recordingMeetingId : null;
+    const requestedMeeting = requestedTarget
+      ? stripQueueMeetingSnapshotMarker(
+          isQueueMeetingSnapshotTarget(requestedTarget)
+            ? requestedTarget
+            : requestedTarget.meetingSnapshot || requestedTarget
+        )
+      : null;
 
     function withRecordingActivity(meeting) {
       return {
@@ -393,10 +425,11 @@ export default function useRecordingActions({
     }
 
     setMeetings((prev) => {
-      const resolvedMeeting =
-        findLiveMeetingForQueueItem(prev, recordingMeetingId) ||
-        prev.find((meeting) => meeting.id === recordingMeetingId) ||
-        null;
+      const resolvedMeeting = isQueueMeetingSnapshotTarget(requestedTarget)
+        ? prev.find((meeting) => meeting.id === requestedMeeting?.id) || null
+        : findLiveMeetingForQueueItem(prev, recordingMeetingId) ||
+          prev.find((meeting) => meeting.id === recordingMeetingId) ||
+          null;
 
       if (resolvedMeeting) {
         return prev.map((m) => {

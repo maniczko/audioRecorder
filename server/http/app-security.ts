@@ -12,6 +12,7 @@ const SERVER_INFRASTRUCTURE_ERROR_PATTERNS = [
   'enotfound',
   'econnrefused',
   'econnreset',
+  'timeout',
   'etimedout',
   'getaddrinfo',
   'tenant/user',

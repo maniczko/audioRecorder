@@ -74,6 +74,38 @@ describe('RecordingsTab', () => {
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();
   });
 
+  test('Regression: imported recording row uses real audio duration instead of meeting duration', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[
+            {
+              id: 'meeting_import_allegro',
+              title: 'Import: Allegro-rozmowa_2026-05-14',
+              startsAt: '2026-06-05T11:44:25.841Z',
+              durationMinutes: 45,
+              latestRecordingId: 'recording_allegro',
+              recordings: [
+                {
+                  id: 'recording_allegro',
+                  duration: 5455.388,
+                  transcript: [{ text: 'test' }],
+                },
+              ],
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    const row = screen.getByText('Import: Allegro-rozmowa_2026-05-14').closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row as HTMLElement).getByText('91 min')).toBeInTheDocument();
+    expect(within(row as HTMLElement).queryByText('45 min')).not.toBeInTheDocument();
+    expect(screen.getByText('1.5h')).toBeInTheDocument();
+  });
+
   test('shows pipeline diagnostics for selected meeting latest recording', () => {
     render(
       <ToastProvider>

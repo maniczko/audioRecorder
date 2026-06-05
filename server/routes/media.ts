@@ -587,7 +587,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         `[memory] Rejecting upload: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%), RSS ${memPressure.rssMB} MB`
       );
       return c.json(
-        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
+        { message: 'Serwer jest chwilowo przeciĂ„â€¦ÄąÄ˝ony. SprÄ‚Ĺ‚buj ponownie za chwilĂ„â„˘.' },
         503
       );
     }
@@ -608,7 +608,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       );
     }
 
-    // Wrap without copying — Buffer.from(ArrayBuffer) shares memory when possible
+    // Wrap without copying Ă˘â‚¬â€ť Buffer.from(ArrayBuffer) shares memory when possible
     const buffer = Buffer.from(arrayBuf);
 
     let asset: MediaAsset;
@@ -693,7 +693,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const recordingId = c.req.param('recordingId');
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) {
-        console.warn('[media] Audio 404 — no media_assets row', { recordingId });
+        console.warn('[media] Audio 404 Ă˘â‚¬â€ť no media_assets row', { recordingId });
         return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       }
       await ensureWorkspaceAccess(c, asset.workspace_id);
@@ -740,7 +740,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         }
       }
 
-      // Supabase remote path — no OS path separator means it's a short Supabase key
+      // Supabase remote path Ă˘â‚¬â€ť no OS path separator means it's a short Supabase key
       if (asset.file_path && !asset.file_path.includes('/') && !asset.file_path.includes('\\')) {
         try {
           const { arrayBuffer, storagePath } = await downloadAudioFromStorageCandidates(
@@ -766,12 +766,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             error: err.message,
           });
           return c.json(
-            { message: 'Błąd podczas pobierania nagrania z remote storage.', error: err.message },
+            {
+              message: 'BÄąâ€šĂ„â€¦d podczas pobierania nagrania z remote storage.',
+              error: err.message,
+            },
             500
           );
         }
       } else {
-        // Local file path — try local first, then fall back to Supabase with basename
+        // Local file path Ă˘â‚¬â€ť try local first, then fall back to Supabase with basename
         if (existsSync(asset.file_path)) {
           const stream = createReadStream(asset.file_path);
           c.header('Content-Type', safeType);
@@ -780,7 +783,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           return c.body(stream as any, 200);
         }
 
-        // Local file missing (e.g. after redeploy) — try Supabase with just the filename
+        // Local file missing (e.g. after redeploy) Ă˘â‚¬â€ť try Supabase with just the filename
         try {
           const { arrayBuffer, storagePath } = await downloadAudioFromStorageCandidates(
             recordingId,
@@ -797,7 +800,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           c.header('Content-Disposition', 'attachment');
           return c.body(arrayBuffer as any, 200);
         } catch {
-          console.warn('[media] Audio 404 — local file missing, Supabase fallback failed', {
+          console.warn('[media] Audio 404 Ă˘â‚¬â€ť local file missing, Supabase fallback failed', {
             recordingId,
             filePath: asset.file_path,
           });
@@ -837,7 +840,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id);
       return c.body(null, 204);
     } catch (err: any) {
-      return c.json({ message: 'Błąd podczas usuwania nagrania.', error: err.message }, 500);
+      return c.json(
+        { message: 'BÄąâ€šĂ„â€¦d podczas usuwania nagrania.', error: err.message },
+        500
+      );
     }
   });
 
@@ -848,14 +854,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
     await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
-    // Guard against OOM — reject when memory is already tight
+    // Guard against OOM Ă˘â‚¬â€ť reject when memory is already tight
     const memPressure = getMemoryPressure();
     if (!memPressure.ok) {
       console.warn(
         `[memory] Rejecting transcription ${recordingId}: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%)`
       );
       return c.json(
-        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
+        { message: 'Serwer jest chwilowo przeciĂ„â€¦ÄąÄ˝ony. SprÄ‚Ĺ‚buj ponownie za chwilĂ„â„˘.' },
         503
       );
     }
@@ -872,7 +878,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
       return c.json(
-        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+        { message: err?.message || 'BÄąâ€šĂ„â€¦d przetwarzania transkrypcji.', recordingId },
         status
       );
     }
@@ -901,9 +907,33 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
 
     if (!asset.file_path) {
-      return c.json({ message: 'Brak ścieżki pliku do ponownego przetworzenia.' }, 409);
+      return c.json({ message: 'Brak \u015Bcie\u017Cki pliku do ponownego przetworzenia.' }, 409);
     }
 
+    const status = String(asset.transcription_status || '').trim();
+    if (['queued', 'processing', 'diarization'].includes(status)) {
+      await transcriptionService.ensureTranscriptionJob(
+        recordingId,
+        {
+          id: recordingId,
+          workspace_id: asset.workspace_id,
+          meeting_id: asset.meeting_id,
+          content_type: asset.content_type,
+          file_path: asset.file_path,
+          ...asset,
+        },
+        {
+          workspaceId: asset.workspace_id,
+          meetingId: asset.meeting_id,
+          contentType: asset.content_type,
+          processingMode: resolveProcessingMode(body.processingMode),
+          requestId: c.get('reqId'),
+        }
+      );
+
+      const currentAsset = await transcriptionService.getMediaAsset(recordingId);
+      return c.json(normalizeTranscriptionStatusPayload(currentAsset || asset), 202);
+    }
     // If the local file is gone (e.g. after Railway redeploy), try the same
     // reconstructed remote candidates as the audio download endpoint.
     if (
@@ -938,7 +968,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
       return c.json(
-        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+        { message: err?.message || 'BÄąâ€šĂ„â€¦d przetwarzania transkrypcji.', recordingId },
         status
       );
     }
@@ -967,7 +997,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           );
           await transcriptionService.markTranscriptionFailure(
             recordingId,
-            'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+            'Pipeline utknĂ„â€¦Äąâ€š w przetwarzaniu. SprÄ‚Ĺ‚buj ponownie.',
             null,
             null
           );
@@ -991,7 +1021,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     } catch (err: any) {
       console.error(`[transcribe-status] Error:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
-      return c.json({ message: err?.message || 'Błąd pobierania statusu transkrypcji.' }, status);
+      return c.json(
+        { message: err?.message || 'BÄąâ€šĂ„â€¦d pobierania statusu transkrypcji.' },
+        status
+      );
     }
   });
 
@@ -1041,7 +1074,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       });
     } catch (err: any) {
       console.error(`[progress] SSE error:`, err?.message);
-      return c.json({ message: err?.message || 'Błąd strumienia postępu.' }, 500);
+      return c.json({ message: err?.message || 'BÄąâ€šĂ„â€¦d strumienia postĂ„â„˘pu.' }, 500);
     }
   });
 
@@ -1408,7 +1441,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           {
             status: 'no_changes',
             code: 'rediarization_unavailable',
-            message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+            message:
+              'Nie udaÄąâ€šo siĂ„â„˘ wykryĂ„â€ˇ nowych mÄ‚Ĺ‚wcÄ‚Ĺ‚w. Transkrypt pozostaje bez zmian.',
             speakerCount: 0,
             speakerNames: {},
             segments: [],
@@ -1483,7 +1517,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
 
     if (!process.env.GEMINI_API_KEY) {
-      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
+      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji Äąâ€şrodowiska.' }, 400);
     }
 
     try {
@@ -1607,7 +1641,7 @@ Important:
         (part: any) => part?.inlineData?.data
       )?.inlineData;
       if (!inlineImage?.data) {
-        return c.json({ message: 'Model Gemini nie wygenerował obrazu.' }, 500);
+        return c.json({ message: 'Model Gemini nie wygenerowaÄąâ€š obrazu.' }, 500);
       }
 
       const mimeType = String(inlineImage.mimeType || 'image/png').trim() || 'image/png';
@@ -1689,13 +1723,13 @@ Important:
     const index = parseInt(c.req.query('index') || '', 10);
     const total = parseInt(c.req.query('total') || '', 10);
     if (isNaN(index) || isNaN(total) || index < 0 || total <= 0 || index >= total) {
-      return c.json({ message: 'Nieprawidłowe parametry chunka (index/total).' }, 400);
+      return c.json({ message: 'NieprawidÄąâ€šowe parametry chunka (index/total).' }, 400);
     }
-    if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
+    if (total > 600) return c.json({ message: 'Za duÄąÄ˝o chunkÄ‚Ĺ‚w (max 600, ~1.2GB).' }, 400);
 
     const buffer = await c.req.arrayBuffer();
     if (buffer.byteLength > 6 * 1024 * 1024)
-      return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
+      return c.json({ message: 'Chunk jest zbyt duÄąÄ˝y (max 6MB).' }, 413);
 
     // Check disk space before writing
     const diskSpace = checkDiskSpace(uploadDir, DISK_SPACE_BLOCK_UPLOAD_BYTES);
@@ -1749,7 +1783,8 @@ Important:
     const total = parseInt(body.total || '0', 10);
 
     if (!workspaceId) return c.json({ message: 'Brakuje workspaceId.' }, 400);
-    if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele żądania.' }, 400);
+    if (!total || total <= 0)
+      return c.json({ message: 'Brakuje total w ciele ÄąÄ˝Ă„â€¦dania.' }, 400);
     await ensureWorkspaceAccess(c, workspaceId);
 
     const chunksDir = path.join(config.uploadDir, 'chunks');
@@ -1890,6 +1925,7 @@ Important:
         partCount: localParts.length,
         sourceSizeBytes: fullStats.size,
         normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
+        durationMs: normalizedAudio?.durationMs || 0,
         audioQuality: null,
       },
       200
@@ -1932,6 +1968,18 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
   const router = new Hono<{ Variables: { session: any; user: any } }>();
   const { transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit } = middlewares;
+  const liveTranscribeTimeoutMs = () => {
+    if (config?.transcribeLiveTimeoutMs && config.transcribeLiveTimeoutMs > 0) {
+      return Number(config.transcribeLiveTimeoutMs);
+    }
+
+    const envTimeout = Number(process.env.VOICELOG_TRANSCRIBE_LIVE_TIMEOUT_MS);
+    if (Number.isFinite(envTimeout) && envTimeout > 0) {
+      return envTimeout;
+    }
+
+    return 30_000;
+  };
 
   router.post('/live', authMiddleware, applyRateLimit('live-transcribe', 60), async (c) => {
     const contentType = c.req.header('content-type') || 'audio/webm';
@@ -1952,7 +2000,18 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
     );
     try {
       await writeFile(tmpPath, buffer);
-      const text = await transcriptionService.transcribeLiveChunk(tmpPath, contentType, {});
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const text = await Promise.race([
+        transcriptionService.transcribeLiveChunk(tmpPath, contentType, {}),
+        new Promise<string>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            const err: any = new Error('Transcription request timed out.');
+            err.statusCode = 504;
+            reject(err);
+          }, liveTranscribeTimeoutMs());
+        }),
+      ]);
+      clearTimeout(timeoutId);
       return c.json({ text }, 200);
     } finally {
       try {

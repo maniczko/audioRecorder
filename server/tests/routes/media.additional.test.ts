@@ -9,6 +9,7 @@ describe('Media Routes - Additional Coverage', () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: Record<string, ReturnType<typeof vi.fn>>;
   let mockWorkspaceService: { getMembership: ReturnType<typeof vi.fn> };
+  let mockAuthService: { getSession: ReturnType<typeof vi.fn> };
   let testUploadDir: string;
   let actualFs: typeof import('node:fs');
 
@@ -41,6 +42,7 @@ describe('Media Routes - Additional Coverage', () => {
     mockTranscriptionService = {
       upsertMediaAsset: vi.fn(),
       upsertMediaAssetFromPath: vi.fn(),
+      upsertMediaAssetFromPreparedAudio: vi.fn(),
       analyzeAudioQuality: vi.fn(),
       saveAudioQualityDiagnostics: vi.fn(),
       getMediaAsset: vi.fn(),
@@ -63,7 +65,7 @@ describe('Media Routes - Additional Coverage', () => {
       getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }),
     };
 
-    const mockAuthService = {
+    mockAuthService = {
       getSession: vi.fn().mockResolvedValue({ user_id: 'user_1', workspace_id: 'ws_1' }),
     };
 
@@ -685,6 +687,47 @@ describe('Media Routes - Additional Coverage', () => {
           resumable: true,
         });
       });
+
+      it('supports parallel upload sessions without cross-contamination', async () => {
+        const sessionA = 'rec_chunkstat_parallel_a';
+        const sessionB = 'rec_chunkstat_parallel_b';
+
+        await uploadChunk(sessionA, 0, 3, Buffer.from('a0'));
+        await uploadChunk(sessionB, 0, 2, Buffer.from('b0'));
+        await uploadChunk(sessionB, 1, 2, Buffer.from('b1'));
+
+        const statusA = app.request(`/media/recordings/${sessionA}/audio/chunk-status?total=3`, {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'X-Workspace-Id': 'ws_1',
+          },
+        });
+        const statusB = app.request(`/media/recordings/${sessionB}/audio/chunk-status?total=2`, {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'X-Workspace-Id': 'ws_1',
+          },
+        });
+
+        const [resA, resB] = await Promise.all([statusA, statusB]);
+        expect(resA.status).toBe(200);
+        expect(resB.status).toBe(200);
+
+        await expect(resA.json()).resolves.toEqual({
+          nextIndex: 1,
+          uploaded: 1,
+          total: 3,
+          resumable: true,
+        });
+        await expect(resB.json()).resolves.toEqual({
+          nextIndex: 2,
+          uploaded: 2,
+          total: 2,
+          resumable: false,
+        });
+      });
     });
 
     describe('PUT /media/recordings/:recordingId/audio/chunk', () => {
@@ -759,6 +802,147 @@ describe('Media Routes - Additional Coverage', () => {
         const chunksDir = path.join(testUploadDir, 'chunks');
         const chunkPath = path.join(chunksDir, 'rec1_0.chunk');
         expect(existsSync(chunkPath)).toBe(true);
+      });
+
+      it('returns 200 and keeps nextIndex stable when duplicate chunk index is retried', async () => {
+        const recordingId = 'rec1_chunk_retry';
+        const chunkPath = path.join(testUploadDir, 'chunks', 'rec1_chunk_retry_0.chunk');
+
+        const first = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('first-attempt'),
+          }
+        );
+        expect(first.status).toBe(200);
+        expect(readFileSync(chunkPath, 'utf8')).toBe('first-attempt');
+
+        const retry = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('retry-attempt'),
+          }
+        );
+        expect(retry.status).toBe(200);
+        expect(readFileSync(chunkPath, 'utf8')).toBe('retry-attempt');
+
+        const status = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk-status?total=2`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+            },
+          }
+        );
+        expect(status.status).toBe(200);
+        await expect(status.json()).resolves.toMatchObject({
+          nextIndex: 1,
+          uploaded: 1,
+          total: 2,
+          resumable: true,
+        });
+      });
+
+      it('returns 507 and keeps retryability when disk is full during chunk upload', async () => {
+        const recordingId = 'rec1_chunk_enospc';
+        const mockFs = (globalThis as any).__mockFs;
+
+        const firstChunk = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('first'),
+          }
+        );
+        expect(firstChunk.status).toBe(200);
+
+        mockFs.statfsSync.mockReturnValueOnce({
+          bsize: 4096,
+          frsize: 4096,
+          blocks: 1,
+          bfree: 0,
+          bavail: 0,
+        });
+
+        const blockedChunk = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=1&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('second'),
+          }
+        );
+
+        expect(blockedChunk.status).toBe(507);
+        const blockedPayload = await blockedChunk.json();
+        expect(blockedPayload.message).toContain('Brak miejsca na dysku serwera');
+
+        const status = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk-status?total=2`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+            },
+          }
+        );
+        expect(status.status).toBe(200);
+        await expect(status.json()).resolves.toMatchObject({
+          nextIndex: 1,
+          uploaded: 1,
+          total: 2,
+          resumable: true,
+        });
+      });
+
+      it('returns 500 when chunk checksum is invalid', async () => {
+        const recordingId = 'rec1_chunk_invalid_checksum';
+        const chunkPath = path.join(testUploadDir, 'chunks', `${recordingId}_0.chunk`);
+
+        const res = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'x-chunk-checksum':
+                '0000000000000000000000000000000000000000000000000000000000000000',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('checksum-mismatch'),
+          }
+        );
+
+        expect(res.status).toBe(500);
+        const data = await res.json();
+        expect(data.code).toBe('invalid_chunk_checksum');
+        expect(data.message).toContain('Nieprawidłowy checksum chunka');
+        expect(existsSync(chunkPath)).toBe(false);
       });
     });
 
@@ -855,6 +1039,47 @@ describe('Media Routes - Additional Coverage', () => {
         expect(listAssembledFiles(recordingId)).toEqual([]);
       });
 
+      it('is idempotent when called again after successful finalize', async () => {
+        const recordingId = 'rec_finalize_idempotent';
+        const existingAsset = {
+          id: recordingId,
+          workspace_id: 'ws_1',
+          meeting_id: 'meeting_1',
+          file_path: `ws_1/${recordingId}/finalized.webm`,
+          content_type: 'audio/webm',
+          size_bytes: 1234,
+          storage_mode: 'single',
+          source_size_bytes: 1300,
+          normalized_size_bytes: 1234,
+          transcription_status: 'uploaded',
+          transcript_json: '[]',
+          diarization_json: '[]',
+          created_by_user_id: 'user_1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        mockTranscriptionService.getMediaAsset.mockResolvedValue(existingAsset);
+        await uploadChunk(recordingId, 0, 2, Buffer.from('legacy'));
+
+        const res = await finalizeUpload(recordingId, 2);
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toMatchObject({
+          id: recordingId,
+          workspaceId: 'ws_1',
+          sizeBytes: 1234,
+          storageMode: 'single',
+          sourceSizeBytes: 1300,
+          normalizedSizeBytes: 1234,
+          audioQuality: null,
+        });
+        expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
+        expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).not.toHaveBeenCalled();
+        expect(mockTranscriptionService.getMediaAsset).toHaveBeenCalledWith(recordingId);
+        expect(existsSync(chunkPathFor(recordingId, 0))).toBe(true);
+      });
+
       it('Regression: #0 - finalizes large normalized audio as segmented storage', async () => {
         const recordingId = 'rec_finalize_segmented';
         const total = 5;
@@ -896,7 +1121,9 @@ describe('Media Routes - Additional Coverage', () => {
           workspaceId: 'ws_1',
           storageMode: 'segmented',
           partCount: 2,
+          durationMs: expect.any(Number),
         });
+        expect(data.durationMs).toBeGreaterThanOrEqual(0);
         expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
         expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).toHaveBeenCalledOnce();
         expect(capturedInput).toMatchObject({
@@ -967,11 +1194,25 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data.message).toContain('uprawnienia administratora');
     });
 
-    it.skip('POST /media/disk-space/cleanup cleans up old chunks for admin', async () => {
-      // TODO: Create integration test for admin cleanup with proper session mocking.
-      // SKIP: Complex to mock session/role properly — covered by integration tests.
-      // The 403 case for non-admin is already tested above.
-      expect(true).toBe(true);
+    it('POST /media/disk-space/cleanup cleans up old chunks for admin', async () => {
+      mockAuthService.getSession.mockResolvedValue({
+        user_id: 'admin_user',
+        workspace_id: 'ws_1',
+        role: 'admin',
+      });
+      const oldChunk = path.join(testUploadDir, 'chunks', 'sample_old.chunk');
+      writeFileSync(oldChunk, Buffer.from('old-chunk'));
+
+      const res = await app.request('/media/disk-space/cleanup', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.deleted).toBeGreaterThanOrEqual(0);
+      expect(data.mbFreed).toBeGreaterThanOrEqual(0);
     });
   });
 

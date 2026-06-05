@@ -9,6 +9,7 @@ import {
   attachRecordingWithRetry,
   buildAudioPreprocessingPlan,
   CLIENT_AUDIO_PREPROCESSING_LIMITS,
+  BACKGROUND_TRANSCRIPTION_RETRY_MS,
   BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
   REMOTE_RECORDING_MISSING_MESSAGE,
   calculateTranscriptionHardTimeoutMs,
@@ -582,6 +583,77 @@ describe('processRecordingQueueItem', () => {
     );
   });
 
+  it('uses backend duration when imported queue item duration is zero', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({ duration: 0 }),
+    });
+    context.mediaService.persistRecordingAudio.mockResolvedValueOnce({
+      durationMs: 5_455_388,
+      audioQuality: { qualityLabel: 'good' },
+    });
+    context.mediaService.startTranscriptionJob.mockResolvedValueOnce(
+      makeTranscription({ durationMs: 5_455_388 } as Partial<TranscriptionStatusPayload>)
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.attachCompletedRecording).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        id: 'recording-1',
+        duration: 5455.388,
+      })
+    );
+  });
+
+  it('prefers backend duration over stale imported queue item duration', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({ duration: 1 }),
+    });
+    context.mediaService.persistRecordingAudio.mockResolvedValueOnce({
+      durationMs: 5_455_388,
+      audioQuality: { qualityLabel: 'good' },
+    });
+    context.mediaService.startTranscriptionJob.mockResolvedValueOnce(
+      makeTranscription({ durationMs: 5_455_388 } as Partial<TranscriptionStatusPayload>)
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.attachCompletedRecording).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        id: 'recording-1',
+        duration: 5455.388,
+      })
+    );
+  });
+
+  it('uses transcription duration for empty transcript imports', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({ duration: 0 }),
+    });
+    context.mediaService.startTranscriptionJob.mockResolvedValueOnce(
+      makeTranscription({
+        durationMs: 3_600_000,
+        transcriptOutcome: 'empty',
+        segments: [],
+      } as Partial<TranscriptionStatusPayload>)
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.analyzeMeeting).not.toHaveBeenCalled();
+    expect(context.attachCompletedRecording).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        id: 'recording-1',
+        duration: 3600,
+        transcriptOutcome: 'empty',
+      })
+    );
+  });
+
   it('keeps active remote processing in the queue after soft polling timeout', async () => {
     let now = Date.UTC(2026, 0, 1, 0, 0, 0);
     const context = buildContext({
@@ -710,6 +782,114 @@ describe('processRecordingQueueItem', () => {
     );
   });
 
+  it('Regression: retries queue item when processing state is stuck in background polling', async () => {
+    let now = Date.UTC(2026, 0, 1, 0, 0, 0);
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        status: 'processing',
+        uploaded: true,
+        processingStartedAt: new Date(now).toISOString(),
+      }),
+      sleep: vi.fn(async (ms: number) => {
+        now += ms;
+      }),
+      now: () => now,
+    });
+    const mediaService = context.createMediaService();
+    mediaService.mode = 'remote';
+    mediaService.getTranscriptionJobStatus = vi.fn(async () =>
+      makeTranscription({
+        pipelineStatus: 'processing',
+        segments: [],
+        processingAgeMs: now - Date.UTC(2026, 0, 1, 0, 0, 0),
+      } as never)
+    );
+
+    await processRecordingQueueItem(context);
+
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+    expect(context.analyzeMeeting).not.toHaveBeenCalled();
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'processing',
+        errorMessage: '',
+        backoffUntil: 10000 + BACKGROUND_TRANSCRIPTION_RETRY_MS,
+      })
+    );
+    expect(context.setState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        analysisStatus: 'processing',
+        recordingMessage: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
+      })
+    );
+  });
+
+  it('Regression: retries queue item when Vercel proxy times out connecting to backend', async () => {
+    const timeoutError = Object.assign(new Error('connect ETIMEDOUT'), {
+      code: 'ETIMEDOUT',
+      status: 504,
+    });
+    const context = buildContext({
+      now: () => 6_000,
+      isTransientNetworkError: vi.fn(
+        (error: { code?: string; message?: string }) =>
+          error?.code === 'ETIMEDOUT' || String(error?.message || '').includes('ETIMEDOUT')
+      ),
+      retryDelaysMs: [1_000],
+    });
+
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(timeoutError);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.mediaService.persistRecordingAudio).toHaveBeenCalledTimes(1);
+    expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1_000);
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'queued',
+        retryCount: 1,
+        backoffUntil: 7_000,
+        lastErrorMessage: 'UI: connect ETIMEDOUT',
+        errorMessage: '',
+      })
+    );
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('Regression: retries queue item when backend is temporarily memory overloaded', async () => {
+    const overloadError = Object.assign(new Error('Backend temporarily unavailable'), {
+      status: 503,
+      code: 'EOVERFLOW',
+    });
+    const context = buildContext({
+      now: () => 6_000,
+      isTransientNetworkError: vi.fn(
+        (error: { status?: number }) => Number(error?.status) >= 500 && error?.status !== 401
+      ),
+      retryDelaysMs: [1_000],
+    });
+
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(overloadError);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.mediaService.persistRecordingAudio).toHaveBeenCalledTimes(1);
+    expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1_000);
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'queued',
+        retryCount: 1,
+        backoffUntil: 7_000,
+        lastErrorMessage: 'UI: Backend temporarily unavailable',
+        errorMessage: '',
+      })
+    );
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
   it('skips local VAD and enhancement for long recordings before upload', async () => {
     const originalBlob = new Blob(['long-recording'], { type: 'audio/webm' });
     const context = buildContext({
@@ -799,6 +979,59 @@ describe('processRecordingQueueItem', () => {
         retryCount: 1,
         backoffUntil: 6000,
         lastErrorMessage: 'UI: Failed to fetch',
+        errorMessage: '',
+      })
+    );
+    expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1000);
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('advances transient retry delay when previous backoff count exists', async () => {
+    const transientError = new Error('Failed to fetch');
+    const context = buildContext({
+      nextItem: makeQueueItem({ retryCount: 1 }),
+      retryDelaysMs: [1000, 4000, 16_000],
+    });
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(transientError);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'queued',
+        retryCount: 2,
+        backoffUntil: 9_000,
+        lastErrorMessage: 'UI: Failed to fetch',
+        errorMessage: '',
+      })
+    );
+    expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 4_000);
+    expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('preserves item after fetch abort and retries once with backoff', async () => {
+    const abortError = Object.assign(new Error('The user aborted a request.'), {
+      name: 'AbortError',
+    });
+    const context = buildContext({
+      isTransientNetworkError: vi.fn(
+        (error: { name?: string; message?: string }) => error?.name === 'AbortError'
+      ),
+      retryDelaysMs: [1000],
+      maxAutoRetries: 1,
+    });
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(abortError);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'queued',
+        retryCount: 1,
+        backoffUntil: 6000,
+        lastErrorMessage: 'UI: The user aborted a request.',
         errorMessage: '',
       })
     );

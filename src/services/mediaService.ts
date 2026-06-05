@@ -352,6 +352,7 @@ function createRemoteMediaService() {
         return {
           storageMode: response?.storageMode || 'remote',
           partCount: response?.partCount || 0,
+          durationMs: Number(response?.durationMs) || undefined,
           audioQuality:
             response?.audioQuality && typeof response.audioQuality === 'object'
               ? response.audioQuality
@@ -372,6 +373,7 @@ function createRemoteMediaService() {
       return {
         storageMode: response?.storageMode || 'remote',
         partCount: response?.partCount || 0,
+        durationMs: Number(response?.durationMs) || undefined,
         audioQuality:
           response?.audioQuality && typeof response.audioQuality === 'object'
             ? response.audioQuality

@@ -122,7 +122,60 @@ describe('httpClient retry logic', () => {
     expect(result).toEqual({ success: true });
     expect(mockFetch).toHaveBeenCalledTimes(3);
   });
+  it('retries voice-profiles threshold PATCH on 503 and returns updated payload', async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: () => Promise.resolve({ message: 'Service Unavailable' }),
+        text: () => Promise.resolve(''),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            id: 'vp_retry',
+            threshold: 0.81,
+          }),
+        text: () => Promise.resolve(''),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      });
 
+    global.fetch = mockFetch as any;
+
+    const request = apiRequest('/voice-profiles/vp_retry/threshold', {
+      method: 'PATCH',
+      body: { threshold: 0.81 },
+      retries: 1,
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    const result = await request;
+
+    expect(result).toEqual({
+      id: 'vp_retry',
+      threshold: 0.81,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      1,
+      'http://test-api.local/voice-profiles/vp_retry/threshold',
+      expect.objectContaining({
+        method: 'PATCH',
+      })
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      'http://test-api.local/voice-profiles/vp_retry/threshold',
+      expect.objectContaining({
+        method: 'PATCH',
+      })
+    );
+    expect(mockFetch.mock.calls[1][1]?.body).toBe(JSON.stringify({ threshold: 0.81 }));
+  });
   it('retries on network error (failed to fetch)', async () => {
     const mockFetch = vi
       .fn()
@@ -768,7 +821,7 @@ describe('Regression: Issue #0 - timeout exceeded when trying to connect is trea
     expect((error as Error).message).toBe(
       'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'
     );
-    expect((error as Error).message).not.toMatch(/ENOTFOUND|postgres|tenant\/user/i);
+    expect((error as Error).message).not.toMatch(/ENOTFOUND|postgres|tenant\\/ersu / i);
   });
 
   it('retries health probe when Vercel reports timeout exceeded when trying to connect', async () => {

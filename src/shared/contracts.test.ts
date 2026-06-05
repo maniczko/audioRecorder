@@ -141,6 +141,31 @@ describe('shared contracts', () => {
     });
   });
 
+  test('Regression: #0 - exposes segmented manifest duration in transcription status', () => {
+    expect(
+      normalizeTranscriptionStatusPayload({
+        id: 'rec_segmented',
+        transcription_status: 'completed',
+        media_manifest_json: JSON.stringify({
+          durationMs: 5_455_388,
+          parts: [{ path: 'recordings/rec_segmented/part-000.webm' }],
+        }),
+        transcript_json: JSON.stringify([
+          { id: 'seg1', text: 'hello', timestamp: 0, endTimestamp: 12 },
+        ]),
+        diarization_json: JSON.stringify({
+          transcriptOutcome: 'normal',
+          audioQuality: { durationSeconds: 5400 },
+        }),
+        updated_at: '2026-06-01T20:04:00.000Z',
+      } as any)
+    ).toMatchObject({
+      recordingId: 'rec_segmented',
+      pipelineStatus: 'done',
+      durationMs: 5_455_388,
+    });
+  });
+
   test('AiSuggestTasksResponse has the correct shape', () => {
     const response: AiSuggestTasksResponse = {
       tasks: [

@@ -1,15 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../app.ts';
-import { __mockFs } from '../../tests/setup';
+import path from 'node:path';
 
 describe('Transcribe Routes', () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: any;
 
   beforeEach(() => {
-    __mockFs.writeFileSync.mockClear();
-    __mockFs.unlinkSync.mockClear();
-
     mockTranscriptionService = {
       transcribeLiveChunk: vi.fn().mockResolvedValue('hello live'),
     };
@@ -22,12 +19,13 @@ describe('Transcribe Routes', () => {
       authService: testAuthService as any,
       workspaceService: { getMembership: vi.fn() } as any,
       transcriptionService: mockTranscriptionService,
-      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: process.cwd() },
     });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   it('returns empty text for too-small live chunks', async () => {
@@ -54,9 +52,7 @@ describe('Transcribe Routes', () => {
   });
 
   it('writes temp file, transcribes, and cleans up successful live chunk', async () => {
-    mockTranscriptionService.transcribeLiveChunk = vi
-      .fn()
-      .mockResolvedValue({ text: 'hello live' });
+    mockTranscriptionService.transcribeLiveChunk = vi.fn().mockResolvedValue('hello live');
 
     const testAuthServiceWithSession = {
       getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
@@ -70,7 +66,7 @@ describe('Transcribe Routes', () => {
       authService: testAuthServiceWithSession as any,
       workspaceService: testWorkspaceService as any,
       transcriptionService: mockTranscriptionService,
-      config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      config: { allowedOrigins: '*', trustProxy: false, uploadDir: process.cwd() },
     });
 
     const res = await app.request('/transcribe/live', {
@@ -86,7 +82,94 @@ describe('Transcribe Routes', () => {
 
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.text).toBeDefined();
-    // Note: fs mocks are handled by setup.ts __mockFs
+    expect(json).toEqual({ text: 'hello live' });
+    expect(mockTranscriptionService.transcribeLiveChunk).toHaveBeenCalledTimes(1);
+    const firstArg = mockTranscriptionService.transcribeLiveChunk.mock.calls[0][0];
+    expect(firstArg).toEqual(expect.stringContaining('live_'));
+    expect(path.extname(firstArg)).toBe('.wav');
+  });
+
+  it('responds quickly within the configured transcribe timeout budget', async () => {
+    const testAuthServiceWithSession = {
+      getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
+    };
+
+    const testWorkspaceService = {
+      getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+    };
+
+    app = createApp({
+      authService: testAuthServiceWithSession as any,
+      workspaceService: testWorkspaceService as any,
+      transcriptionService: mockTranscriptionService,
+      config: {
+        allowedOrigins: '*',
+        trustProxy: false,
+        uploadDir: process.cwd(),
+        transcribeLiveTimeoutMs: 200,
+      },
+    });
+
+    const res = await app.request('/transcribe/live', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'audio/wav',
+        'X-Recording-Id': 'perf_rec',
+        'X-Asset-Id': 'perf_asset',
+      },
+      body: Buffer.alloc(2000, 1),
+    });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ text: 'hello live' });
+    expect(mockTranscriptionService.transcribeLiveChunk).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 504 when live transcription exceeds the timeout budget', async () => {
+    vi.useFakeTimers();
+    mockTranscriptionService.transcribeLiveChunk = vi.fn().mockImplementation(
+      async () =>
+        new Promise<string>(() => {
+          // intentionally never resolves so timeout branch wins
+        })
+    );
+
+    const testAuthServiceWithSession = {
+      getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
+    };
+
+    const testWorkspaceService = {
+      getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+    };
+
+    app = createApp({
+      authService: testAuthServiceWithSession as any,
+      workspaceService: testWorkspaceService as any,
+      transcriptionService: mockTranscriptionService,
+      config: {
+        allowedOrigins: '*',
+        trustProxy: false,
+        uploadDir: process.cwd(),
+        transcribeLiveTimeoutMs: 20,
+      },
+    });
+
+    const requestPromise = app.request('/transcribe/live', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'audio/wav',
+        'X-Recording-Id': 'timeout_rec',
+        'X-Asset-Id': 'timeout_asset',
+      },
+      body: Buffer.alloc(2000, 1),
+    });
+    await vi.advanceTimersByTimeAsync(25);
+    const res = await requestPromise;
+
+    expect(res.status).toBe(504);
+    expect(await res.json()).toEqual({ message: 'Transcription request timed out.' });
   });
 });

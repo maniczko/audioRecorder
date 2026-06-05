@@ -182,6 +182,28 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('done');
   });
 
+  test('retryStoredRecording returns null for completed transcript without explicit force', async () => {
+    const { useRecorderStore } = await import('./recorderStore');
+    const meeting = { id: 'm1', workspaceId: 'ws1', title: 'Test' };
+    const recording = {
+      id: 'rec_completed_alias',
+      createdAt: '2026-01-01T00:00:00Z',
+      duration: 60,
+      mimeType: 'audio/webm',
+      pipelineStatus: 'done',
+      transcriptOutcome: 'normal',
+      transcript: [{ id: 's1', text: 'Gotowa transkrypcja.' }],
+    };
+
+    const result = useRecorderStore.getState().retryStoredRecording(meeting, recording);
+
+    expect(result).toBeNull();
+    expect(useRecorderStore.getState().recordingQueue).toEqual([]);
+    expect(useRecorderStore.getState().recordingMessage).toBe(
+      'To nagranie ma juz gotowa transkrypcje. Potwierdz ponowne przetworzenie, zeby ja zastapic.'
+    );
+  });
+
   test('allows explicit destructive retry for completed recording with transcript', async () => {
     const { useRecorderStore } = await import('./recorderStore');
     const meeting = { id: 'm1', workspaceId: 'ws1', title: 'Test' };
@@ -741,6 +763,32 @@ describe('recorderStore', { timeout: 30000 }, () => {
     );
   });
 
+  test('maps explicit HTTP 413 errors to a request-size related queue error', async () => {
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
+
+    mocks.createMediaService.mockReturnValue({
+      mode: 'remote',
+      persistRecordingAudio: vi.fn().mockRejectedValue(new Error('HTTP 413')),
+      subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+    });
+
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [
+        { recordingId: 'rec_http413', status: 'queued', uploaded: false, retryCount: 5 },
+      ],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: 'failed_permanent',
+      errorMessage: 'HTTP 413',
+    });
+  });
+
   // -----------------------------------------------------------------
   // Issue #0 - transient backend memory pressure killed import queue flow
   // Date: 2026-04-05
@@ -957,9 +1005,12 @@ describe('recorderStore', { timeout: 30000 }, () => {
       const queueItem = useRecorderStore
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan');
-      expect(queueItem).toBeDefined();
-      expect(queueItem!.status).toBe('processing');
-      expect(queueItem!.errorMessage).toBe('');
+      expect(queueItem).toMatchObject({
+        recordingId: 'rec_orphan',
+        status: 'processing',
+        errorMessage: '',
+        uploaded: true,
+      });
     });
 
     test('keeps item recoverable when attachCompletedRecording returns false (empty transcript)', async () => {
@@ -1005,9 +1056,12 @@ describe('recorderStore', { timeout: 30000 }, () => {
       const queueItem = useRecorderStore
         .getState()
         .recordingQueue.find((i) => i.recordingId === 'rec_orphan_empty');
-      expect(queueItem).toBeDefined();
-      expect(queueItem!.status).toBe('processing');
-      expect(queueItem!.errorMessage).toBe('');
+      expect(queueItem).toMatchObject({
+        recordingId: 'rec_orphan_empty',
+        status: 'processing',
+        errorMessage: '',
+        uploaded: true,
+      });
     });
   });
 

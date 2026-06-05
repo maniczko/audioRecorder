@@ -108,6 +108,136 @@ describe('Media Routes', () => {
     });
   });
 
+  it('PUT /media/recordings/:recordingId/audio - returns 507 when disk is full', async () => {
+    mockTranscriptionService.upsertMediaAsset.mockRejectedValue(
+      Object.assign(new Error('Brak miejsca na dysku'), { code: 'ENOSPC' })
+    );
+
+    const res = await app.request('/media/recordings/rec_disk_full/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('small-audio-data'),
+    });
+
+    expect(res.status).toBe(507);
+    const data = await res.json();
+    expect(data.message).toBe('Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.');
+    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(1);
+  });
+
+  it('PUT /media/recordings/:recordingId/audio - retries after transient memory pressure fallback', async () => {
+    const serverUtils = await import('../../lib/serverUtils.ts');
+    const memPressureSpy = vi
+      .spyOn(serverUtils, 'getMemoryPressure')
+      .mockReturnValueOnce({
+        ok: false,
+        heapUsedMB: 1500,
+        heapTotalMB: 1700,
+        rssMB: 3000,
+        ratio: 0.95,
+      })
+      .mockReturnValue({
+        ok: true,
+        heapUsedMB: 1000,
+        heapTotalMB: 1700,
+        rssMB: 2800,
+        ratio: 0.58,
+      });
+
+    mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
+      id: 'rec_transient',
+      workspace_id: 'ws_1',
+      size_bytes: 120,
+    });
+    mockTranscriptionService.analyzeAudioQuality.mockResolvedValue({
+      qualityLabel: 'fair',
+      enhancementRecommended: true,
+    });
+
+    const transient = await app.request('/media/recordings/rec_transient/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('small-audio-data'),
+    });
+    expect(transient.status).toBe(503);
+
+    const recovered = await app.request('/media/recordings/rec_transient/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('small-audio-data'),
+    });
+
+    expect(recovered.status).toBe(200);
+    const payload = await recovered.json();
+    expect(payload.id).toBe('rec_transient');
+    expect(memPressureSpy).toHaveBeenCalledTimes(2);
+    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledTimes(1);
+  });
+
+  it('PUT /media/recordings/:recordingId/audio - maps transient provider 429/503 and is retryable', async () => {
+    const upstreamError = Object.assign(new Error('Upstream provider throttled request'), {
+      statusCode: 503,
+    });
+    mockTranscriptionService.upsertMediaAsset
+      .mockRejectedValueOnce(upstreamError)
+      .mockResolvedValue({
+        id: 'rec_retryable',
+        workspace_id: 'ws_1',
+        size_bytes: 123,
+      });
+    mockTranscriptionService.analyzeAudioQuality.mockResolvedValue({
+      qualityLabel: 'good',
+      enhancementRecommended: false,
+    });
+
+    const first = await app.request('/media/recordings/rec_retryable/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('retryable-audio-data'),
+    });
+    expect(first.status).toBe(503);
+    const firstPayload = await first.json();
+    expect(firstPayload).toMatchObject({
+      message: 'Upstream provider throttled request',
+    });
+
+    const second = await app.request('/media/recordings/rec_retryable/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('retryable-audio-data'),
+    });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toMatchObject({
+      id: 'rec_retryable',
+      workspaceId: 'ws_1',
+      sizeBytes: 123,
+      audioQuality: null,
+    });
+    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(2);
+  });
+
   it('OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins', async () => {
     const previewOrigin = 'https://preview-app.vercel.app';
     const res = await app.request('/media/recordings/rec_new/audio', {
@@ -154,6 +284,62 @@ describe('Media Routes', () => {
       'rec_1',
       expect.objectContaining({ processingMode: 'fast' })
     );
+  });
+
+  it('POST /media/recordings/:recordingId/transcribe - returns retry-friendly transient error then succeeds after retry', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_retry',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'failed',
+      diarization_json: JSON.stringify({ errorMessage: 'temporary downstream failure' }),
+      transcript_json: '[]',
+    });
+    mockTranscriptionService.queueTranscription
+      .mockRejectedValueOnce(Object.assign(new Error('provider unavailable'), { statusCode: 503 }))
+      .mockResolvedValue(undefined);
+
+    const firstAttempt = await app.request('/media/recordings/rec_retry/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(firstAttempt.status).toBe(503);
+    const firstPayload = await firstAttempt.json();
+    expect(firstPayload.message).toBe('provider unavailable');
+    expect(firstPayload.recordingId).toBe('rec_retry');
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledTimes(0);
+
+    const completedAsset = {
+      id: 'rec_retry',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'queued',
+      diarization_json: JSON.stringify({}),
+      transcript_json: '[]',
+    };
+    mockTranscriptionService.queueTranscription.mockResolvedValue(undefined);
+    mockTranscriptionService.ensureTranscriptionJob.mockResolvedValue(completedAsset);
+    mockTranscriptionService.getMediaAsset.mockResolvedValue(completedAsset);
+
+    const secondAttempt = await app.request('/media/recordings/rec_retry/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(secondAttempt.status).toBe(202);
+    const secondPayload = await secondAttempt.json();
+    expect(secondPayload.recordingId).toBe('rec_retry');
+    expect(secondPayload.pipelineStatus).toBe('queued');
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledTimes(2);
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledTimes(1);
   });
 
   it('GET /media/recordings/:recordingId/transcribe - returns payload', async () => {
@@ -240,8 +426,161 @@ describe('Media Routes', () => {
     );
   });
 
-  it.skip('POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing', async () => {
-    // SKIP: fs mock caching - app is created before test can set fs state
+  it('POST /media/recordings/:recordingId/retry-transcribe - returns same job id on repeated retries', async () => {
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: 'rec_retry_idem',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry-idem.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'failed',
+        diarization_json: '{}',
+        transcript_json: '[]',
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_retry_idem',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry-idem.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
+        diarization_json: '{}',
+        transcript_json: '[]',
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_retry_idem',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/retry-idem.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
+        diarization_json: '{}',
+        transcript_json: '[]',
+      });
+
+    const first = await app.request('/media/recordings/rec_retry_idem/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+    expect(first.status).toBe(202);
+
+    const second = await app.request('/media/recordings/rec_retry_idem/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+    expect(second.status).toBe(202);
+
+    const secondPayload = await second.json();
+    expect(secondPayload.recordingId).toBe('rec_retry_idem');
+    expect(secondPayload.pipelineStatus).toBe('queued');
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenNthCalledWith(
+      1,
+      'rec_retry_idem',
+      expect.objectContaining({
+        id: 'rec_retry_idem',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/retry-idem.webm',
+      }),
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        contentType: 'audio/webm',
+      })
+    );
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenNthCalledWith(
+      2,
+      'rec_retry_idem',
+      expect.objectContaining({
+        id: 'rec_retry_idem',
+        workspace_id: 'ws_1',
+        file_path: '/tmp/retry-idem.webm',
+      }),
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        contentType: 'audio/webm',
+      })
+    );
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledTimes(2);
+  });
+
+  it('GET /media/recordings/:recordingId/transcribe - handles race polling with empty transcript edge case', async () => {
+    const staleDate = new Date(Date.now() - 40 * 60 * 1000).toISOString();
+    const activeRuntime = {
+      activeJob: true,
+      queuedPosition: null,
+      processingAgeMs: 120_000,
+      retryAfterMs: 60_000,
+    };
+    const inactiveRuntime = {
+      activeJob: false,
+      queuedPosition: null,
+      processingAgeMs: null,
+      retryAfterMs: 60_000,
+    };
+
+    mockTranscriptionService.getTranscriptionRuntimeStatus
+      .mockReturnValueOnce(activeRuntime)
+      .mockReturnValueOnce(inactiveRuntime);
+    mockTranscriptionService.markTranscriptionFailure.mockResolvedValue(undefined);
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: 'rec_poll_race',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: staleDate,
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_poll_race',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: staleDate,
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_poll_race',
+        workspace_id: 'ws_1',
+        transcription_status: 'failed',
+        transcript_json: '[]',
+        diarization_json: JSON.stringify({
+          errorMessage: 'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+        }),
+        updated_at: new Date().toISOString(),
+      });
+
+    const firstPoll = await app.request('/media/recordings/rec_poll_race/transcribe', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(firstPoll.status).toBe(200);
+    const firstPayload = await firstPoll.json();
+    expect(firstPayload.pipelineStatus).toBe('processing');
+    expect(firstPayload.activeJob).toBe(true);
+    expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+
+    const secondPoll = await app.request('/media/recordings/rec_poll_race/transcribe', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(secondPoll.status).toBe(200);
+    const secondPayload = await secondPoll.json();
+    expect(secondPayload.pipelineStatus).toBe('failed');
+    expect(secondPayload.activeJob).toBe(false);
+    expect(mockTranscriptionService.markTranscriptionFailure).toHaveBeenCalledWith(
+      'rec_poll_race',
+      'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
+      null,
+      null
+    );
+    expect(secondPayload.recordingId).toBe('rec_poll_race');
+  });
+
+  it('POST /media/recordings/:recordingId/retry-transcribe - returns 409 when audio file is missing', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_retry_missing',
       workspace_id: 'ws_1',

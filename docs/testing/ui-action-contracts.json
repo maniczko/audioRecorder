@@ -45,7 +45,7 @@
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
       "expectedActionCount": 75,
-      "fingerprint": "98aa01317d8f5600",
+      "fingerprint": "8630ba261ac0a898",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -126,7 +126,7 @@
       "screen": "CommandPalette",
       "file": "src/CommandPalette.tsx",
       "expectedActionCount": 3,
-      "fingerprint": "67b98856ba2db17b",
+      "fingerprint": "787dcd1bb6d6201f",
       "contractStatus": "covered",
       "testFiles": ["src/CommandPalette.test.tsx", "src/CommandPalette.a11y.test.tsx"],
       "testEvidence": ["Spotkanie Test", "userEvent.click(btn)"],

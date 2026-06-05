@@ -270,7 +270,7 @@ describe('useRecorder', () => {
   });
 
   test('queueRecording sets error status when saveAudioBlob throws', async () => {
-    saveAudioBlobMock.mockRejectedValue(new Error('QuotaExceededError'));
+    saveAudioBlobMock.mockRejectedValue(new Error('temporary storage write failure'));
 
     const { result } = renderHook(() =>
       useRecorder({
@@ -289,9 +289,134 @@ describe('useRecorder', () => {
     });
 
     expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(
+      0,
+      'Dodanie pliku nie powiodlo sie'
+    );
+    expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
       'Nie udalo sie zapisac pliku do kolejki.'
     );
+  });
+
+  test('quota exceeded error keeps recording queued as retryable', async () => {
+    saveAudioBlobMock.mockRejectedValue(
+      new Error('Za malo miejsca w przegladarce. Zostalo 2 MB. Zwolnij miejsce i sprobuj ponownie.')
+    );
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'Demo', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo', workspaceId: 'ws1' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(['audio'], 'quota.webm', { type: 'audio/webm' });
+    let recordingId: string | null = null;
+
+    await act(async () => {
+      recordingId = await result.current.queueRecording('m1', file);
+    });
+
+    expect(recordingId).toMatch(/^\w/);
+    expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(
+      0,
+      'Dodanie pliku nie powiodlo sie'
+    );
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Nie udalo sie zapisac pliku do kolejki.'
+    );
+
+    const queueUpdater = pipelineState.setRecordingQueue.mock.calls[0][0];
+    const queue = queueUpdater([]);
+    expect(queue).toHaveLength(1);
+    expect(queue[0]).toMatchObject({
+      recordingId,
+      meetingId: 'm1',
+      status: 'queued',
+      lastErrorMessage:
+        'Za malo miejsca w przegladarce. Zostalo 2 MB. Zwolnij miejsce i sprobuj ponownie.',
+      errorMessage: '',
+    });
+  });
+
+  test('transitions blob upload error into recoverable queue state', async () => {
+    saveAudioBlobMock.mockRejectedValue(new Error('Failed to upload audio blob to cache.'));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'Demo', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo', workspaceId: 'ws1' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(['audio'], 'upload.webm', { type: 'audio/webm' });
+    let recordingId: string | null = null;
+
+    await act(async () => {
+      recordingId = await result.current.queueRecording('m1', file);
+    });
+
+    expect(recordingId).toMatch(/^\w/);
+    expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Nie udalo sie zapisac pliku do kolejki.'
+    );
+
+    const queueUpdater = pipelineState.setRecordingQueue.mock.calls[0][0];
+    const queue = queueUpdater([]);
+    expect(queue).toHaveLength(1);
+    expect(queue[0]).toMatchObject({
+      recordingId,
+      meetingId: 'm1',
+      status: 'queued',
+      lastErrorMessage: 'Failed to upload audio blob to cache.',
+      errorMessage: '',
+      uploaded: false,
+    });
+  });
+
+  test('queueRecording removes partial artifacts and keeps queue unchanged on storage failures', async () => {
+    saveAudioBlobMock.mockRejectedValue(new Error('ENOSPC'));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'Demo', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo', workspaceId: 'ws1' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    const file = new File(['audio'], 'retry.webm', { type: 'audio/webm' });
+    let rid: string | null = null;
+
+    await act(async () => {
+      rid = await result.current.queueRecording('m1', file);
+    });
+
+    expect(rid).toBeNull();
+    expect(hydrationState.registerAudioUrl).toHaveBeenCalledTimes(1);
+    expect(saveAudioBlobMock).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Nie udalo sie zapisac pliku do kolejki.'
+    );
+    expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(
+      0,
+      'Dodanie pliku nie powiodlo sie'
+    );
+    expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
   });
 
   test('startRecording is a no-op when createAdHocMeeting returns null', () => {
@@ -533,6 +658,41 @@ describe('useRecorder', () => {
     expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
       RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
+  });
+
+  test('queues recording fails if blob is missing and can be retried by user flow', async () => {
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: { id: 'm1', title: 'Demo', workspaceId: 'ws1' },
+        userMeetings: [{ id: 'm1', title: 'Demo', workspaceId: 'ws1' }],
+        createAdHocMeeting: vi.fn(),
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+      })
+    );
+
+    await act(async () => {
+      await result.current.queueRecording('m1', null as unknown as Blob);
+    });
+
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Nie udalo sie dodac pliku do kolejki.'
+    );
+    expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
+
+    pipelineState.setRecordingMessage.mockReset();
+    saveAudioBlobMock.mockResolvedValue(undefined);
+
+    const file = new File(['audio'], 'retry.webm', { type: 'audio/webm' });
+    await act(async () => {
+      await result.current.queueRecording('m1', file);
+    });
+
+    expect(pipelineState.setRecordingQueue).toHaveBeenCalledTimes(1);
+    expect(pipelineState.setPipelineProgress).toHaveBeenCalledWith(8, 'Plik dodany do kolejki');
+    expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
+      'Plik dodany do kolejki. Rozpoczynamy wgrywanie...'
     );
   });
 

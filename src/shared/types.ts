@@ -136,6 +136,7 @@ export interface TranscriptionStatusPayload {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  durationMs?: number;
   providerId?: string;
   providerLabel?: string;
   segments: TranscriptSegment[];

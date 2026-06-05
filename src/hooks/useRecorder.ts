@@ -89,6 +89,25 @@ export default function useRecorder({
     pipeline.setRecordingMessage(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
   }
 
+  function normalizeErrorMessage(error: unknown) {
+    return String(error instanceof Error ? error.message : error || '').trim();
+  }
+
+  function isQuotaExceededSaveError(error: unknown) {
+    const message = normalizeErrorMessage(error).toLowerCase();
+    return (
+      message.includes('za malo miejsca') ||
+      message.includes('brak miejsca') ||
+      message.includes('quota exceeded') ||
+      message.includes('quota')
+    );
+  }
+
+  function isBlobUploadError(error: unknown) {
+    const message = normalizeErrorMessage(error).toLowerCase();
+    return message.includes('upload') && message.includes('blob');
+  }
+
   async function refreshAudioStorageState(): Promise<AudioStorageState> {
     const [estimate, itemsResult] = await Promise.all([
       getAudioStorageEstimate(),
@@ -294,6 +313,33 @@ export default function useRecorder({
       return rid;
     } catch (error) {
       console.error('Queued file import failed.', error);
+      const normalizedErrorMessage = normalizeErrorMessage(error);
+      if (isQuotaExceededSaveError(error) || isBlobUploadError(error)) {
+        const queuePayload = createRecordingQueueItem({
+          recordingId: rid,
+          meetingId,
+          workspaceId: currentWorkspaceId || '',
+          meeting,
+          mimeType: file.type || 'audio/webm',
+          rawSegments: [],
+          duration: 0,
+        });
+
+        pipeline.setRecordingQueue((prev) =>
+          upsertRecordingQueueItem(prev, {
+            ...queuePayload,
+            status: 'queued',
+            uploaded: false,
+            errorMessage: '',
+            lastErrorMessage: normalizedErrorMessage,
+          })
+        );
+        pipeline.setAnalysisStatus('error');
+        pipeline.setPipelineProgress(0, 'Dodanie pliku nie powiodlo sie');
+        pipeline.setRecordingMessage('Nie udalo sie zapisac pliku do kolejki.');
+        return rid;
+      }
+
       pipeline.setAnalysisStatus('error');
       pipeline.setPipelineProgress(0, 'Dodanie pliku nie powiodlo sie');
       pipeline.setRecordingMessage('Nie udalo sie zapisac pliku do kolejki.');

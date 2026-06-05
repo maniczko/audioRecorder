@@ -11,9 +11,10 @@ describe('Auth Routes', () => {
       registerUser: vi.fn(),
       loginUser: vi.fn(),
       getSession: vi.fn(),
+      upsertGoogleUser: vi.fn(),
     };
     mockWorkspaceService = {
-      getMembership: vi.fn(),
+      getMembership: vi.fn().mockResolvedValue({ member_role: 'admin' }),
     };
 
     app = createApp({
@@ -23,6 +24,45 @@ describe('Auth Routes', () => {
       config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
     });
   });
+
+  const createRefreshAwareAuthApp = () => {
+    const refreshMiddlewares = {
+      authMiddleware: async (c: any, next: any) => {
+        if (c.req.method === 'OPTIONS') {
+          await next();
+          return;
+        }
+
+        const authHeader = c.req.header('Authorization') || '';
+        const refreshHeader = c.req.header('X-Refresh-Token');
+        if (!authHeader.startsWith('Bearer ')) {
+          return c.json({ message: 'Brak tokenu autoryzacyjnego.' }, 401);
+        }
+        const primaryToken = authHeader.slice(7).trim();
+        let session = await mockAuthService.getSession(primaryToken);
+        if (!session && refreshHeader) {
+          session = await mockAuthService.getSession(refreshHeader);
+        }
+        if (!session) {
+          return c.json({ message: 'Sesja wygasla lub jest nieprawidlowa.' }, 401);
+        }
+        c.set('session', session);
+        await next();
+      },
+      ensureWorkspaceAccess: async () => ({ member_role: 'admin' }),
+      applyRateLimit: () => async (_c: any, next: any) => next(),
+    };
+
+    return createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: {},
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      },
+      refreshMiddlewares
+    );
+  };
 
   it('POST /auth/register - happy path', async () => {
     mockAuthService.registerUser.mockResolvedValue({
@@ -121,5 +161,180 @@ describe('Auth Routes', () => {
   it('GET /auth/session - returns 401 on missing token', async () => {
     const res = await app.request('/auth/session', { method: 'GET' });
     expect(res.status).toBe(401);
+  });
+
+  it('GET /auth/session - transient getSession failure is recoverable by retry', async () => {
+    mockAuthService.buildSessionPayload.mockResolvedValue({ user: { id: '123' }, workspaces: [] });
+
+    let attempt = 0;
+    mockAuthService.getSession.mockImplementation(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        const err = Object.assign(new Error('ENOTFOUND auth service'), { statusCode: 503 });
+        throw err;
+      }
+
+      return { user_id: '123', workspace_id: 'w123' };
+    });
+
+    const first = await app.request('/auth/session', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid_token' },
+    });
+    expect(first.status).toBe(503);
+
+    const second = await app.request('/auth/session', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid_token' },
+    });
+    expect(second.status).toBe(200);
+
+    const payload = await second.json();
+    expect(payload).toEqual({ user: { id: '123' }, workspaces: [] });
+    expect(mockAuthService.getSession).toHaveBeenCalledTimes(2);
+  });
+
+  it('GET /auth/session - 401 recovery using refresh token fallback and then retry success', async () => {
+    mockAuthService.getSession.mockImplementation(async (token: string) => {
+      if (token === 'expired-auth-token') return null;
+      if (token === 'refresh-auth-token') return { user_id: 'u123', workspace_id: 'w123' };
+      return null;
+    });
+    mockAuthService.buildSessionPayload.mockResolvedValue({
+      user: { id: 'u123' },
+      workspaces: [],
+      workspaceId: 'w123',
+      state: {},
+    });
+
+    const refreshAwareApp = createRefreshAwareAuthApp();
+    const res = await refreshAwareApp.request('/auth/session', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer expired-auth-token',
+        'X-Refresh-Token': 'refresh-auth-token',
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toEqual(
+      expect.objectContaining({
+        user: { id: 'u123' },
+      })
+    );
+    expect(mockAuthService.getSession).toHaveBeenCalledWith('expired-auth-token');
+    expect(mockAuthService.getSession).toHaveBeenCalledWith('refresh-auth-token');
+    expect(mockAuthService.buildSessionPayload).toHaveBeenCalledWith('u123', 'w123');
+  });
+
+  it('GET /auth/session - token expires during polling and recovers on next request', async () => {
+    let refreshAttempt = 0;
+    mockAuthService.getSession.mockImplementation(async (token: string) => {
+      if (token === 'expired-auth-token') return null;
+      if (token === 'refresh-auth-token') {
+        refreshAttempt += 1;
+        if (refreshAttempt === 1) {
+          return null;
+        }
+        return { user_id: 'u123', workspace_id: 'w123' };
+      }
+      return null;
+    });
+    mockAuthService.buildSessionPayload.mockResolvedValue({
+      user: { id: 'u123' },
+      workspaces: [],
+      workspaceId: 'w123',
+      state: {},
+    });
+
+    const refreshAwareApp = createRefreshAwareAuthApp();
+
+    const first = await refreshAwareApp.request('/auth/session', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer expired-auth-token',
+        'X-Refresh-Token': 'refresh-auth-token',
+      },
+    });
+    expect(first.status).toBe(401);
+
+    const second = await refreshAwareApp.request('/auth/session', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer expired-auth-token',
+        'X-Refresh-Token': 'refresh-auth-token',
+      },
+    });
+    expect(second.status).toBe(200);
+
+    const payload = await second.json();
+    expect(payload).toEqual(
+      expect.objectContaining({
+        user: { id: 'u123' },
+      })
+    );
+    expect(mockAuthService.getSession).toHaveBeenNthCalledWith(1, 'expired-auth-token');
+    expect(mockAuthService.getSession).toHaveBeenNthCalledWith(2, 'refresh-auth-token');
+    expect(mockAuthService.getSession).toHaveBeenNthCalledWith(3, 'expired-auth-token');
+    expect(mockAuthService.getSession).toHaveBeenNthCalledWith(4, 'refresh-auth-token');
+    expect(mockAuthService.buildSessionPayload).toHaveBeenCalledWith('u123', 'w123');
+  });
+
+  it('POST /auth/login - transient network failure maps to temporary-unavailable, retry succeeds', async () => {
+    let attempt = 0;
+    mockAuthService.loginUser.mockImplementation(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        const err = Object.assign(new Error('connect ETIMEDOUT'), { statusCode: 500 });
+        throw err;
+      }
+
+      return { id: '123', email: 'test@example.com', token: 'valid_login_token' };
+    });
+
+    const first = await app.request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+    });
+    expect(first.status).toBe(503);
+
+    const second = await app.request('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+    });
+    const secondBody = await second.json();
+
+    expect(second.status).toBe(200);
+    expect(secondBody).toEqual(expect.objectContaining({ token: 'valid_login_token' }));
+    expect(mockAuthService.loginUser).toHaveBeenCalledTimes(2);
+  });
+
+  it('POST /auth/google - returns 401 on token mismatch', async () => {
+    mockAuthService.upsertGoogleUser.mockRejectedValue(
+      Object.assign(new Error('Token mismatch.'), { statusCode: 401 })
+    );
+
+    const res = await app.request('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'google@example.com',
+        sub: 'google-mismatch-sub',
+        name: 'Google User',
+      }),
+    });
+
+    expect(res.status).toBe(401);
+    const data = await res.json();
+    expect(data).toEqual({ message: 'Token mismatch.' });
+    expect(mockAuthService.upsertGoogleUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'google@example.com',
+        sub: 'google-mismatch-sub',
+      })
+    );
   });
 });

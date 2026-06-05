@@ -134,7 +134,7 @@ vi.mock('../lib/googleSync', () => ({
   createGoogleCalendarConflictState: vi.fn(() => null),
 }));
 
-describe.skip('useMeetings — Zustand 5 migration pending', () => {
+describe('useMeetings — Zustand 5 migration pending', () => {
   beforeEach(() => {
     meetingsState.meetings = [
       {

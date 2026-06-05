@@ -66,6 +66,7 @@ export interface MediaTranscriptionResponse {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  durationMs?: number;
   reviewSummary?: string | null;
   errorMessage?: string;
   updatedAt?: string;
@@ -145,7 +146,7 @@ type IdentifiedItem = { id?: unknown };
 type DiarizationPayload = Partial<DiarizationResult> & UnknownRecord;
 type TranscriptionRuntimeFields = Pick<
   TranscriptionStatusPayload,
-  'activeJob' | 'queuedPosition' | 'processingAgeMs' | 'retryAfterMs'
+  'activeJob' | 'queuedPosition' | 'processingAgeMs' | 'retryAfterMs' | 'durationMs'
 >;
 type MediaAssetWithRuntime = Partial<MeetingAsset> & Partial<TranscriptionRuntimeFields>;
 
@@ -236,6 +237,50 @@ function parseJsonArray<T>(value: unknown): T[] {
 
 function stringValue(value: unknown) {
   return typeof value === 'string' ? value : '';
+}
+
+function positiveNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function maxTranscriptEndMs(segments: TranscriptSegment[]) {
+  return segments.reduce((max, segment) => {
+    const endSeconds = positiveNumber(segment.endTimestamp) || positiveNumber(segment.timestamp);
+    return Math.max(max, endSeconds * 1000);
+  }, 0);
+}
+
+function resolveTranscriptionDurationMs(
+  asset: MediaAssetWithRuntime | null | undefined,
+  diarization: DiarizationPayload,
+  segments: TranscriptSegment[]
+) {
+  const manifest = parseJsonRecord(asset?.media_manifest_json);
+  const audioQuality = nullableObject<AudioQualityDiagnostics>(diarization.audioQuality);
+  const candidates = [
+    positiveNumber(asset?.durationMs),
+    positiveNumber(manifest.durationMs),
+    positiveNumber(audioQuality?.durationSeconds) * 1000,
+    maxTranscriptEndMs(segments),
+  ];
+
+  return candidates.find((durationMs) => durationMs > 0) || undefined;
+}
+
+function resolveRemoteTranscriptionDurationMs(
+  response: MediaTranscriptionResponse | null | undefined,
+  diarization: DiarizationPayload,
+  segments: TranscriptSegment[]
+) {
+  const audioQuality = nullableObject<AudioQualityDiagnostics>(diarization.audioQuality);
+  const candidates = [
+    positiveNumber(response?.durationMs),
+    positiveNumber(audioQuality?.durationSeconds) * 1000,
+    maxTranscriptEndMs(segments),
+  ];
+
+  return candidates.find((durationMs) => durationMs > 0) || undefined;
 }
 
 function normalizePostprocessStage(value: unknown): TranscriptionStatusPayload['postprocessStage'] {
@@ -598,10 +643,12 @@ export function normalizeTranscriptionStatusPayload(
 ): TranscriptionStatusPayload {
   const diarization = parseJsonRecord(asset?.diarization_json);
   const segments = parseJsonArray<TranscriptSegment>(asset?.transcript_json);
+  const durationMs = resolveTranscriptionDurationMs(asset, diarization, segments);
 
   return {
     recordingId: String(asset?.id || ''),
     pipelineStatus: normalizePipelineStatus(String(asset?.transcription_status || '')),
+    durationMs,
     enhancementsPending: Boolean(diarization?.enhancementsPending),
     postprocessStage: normalizePostprocessStage(diarization.postprocessStage),
     transcriptOutcome: normalizeTranscriptOutcome(diarization.transcriptOutcome),
@@ -639,10 +686,12 @@ export function normalizeMediaTranscriptionResponse(
     ? (response.diarization as DiarizationPayload)
     : {};
   const segments = Array.isArray(response?.segments) ? response.segments : [];
+  const durationMs = resolveRemoteTranscriptionDurationMs(response, diarization, segments);
 
   return {
     recordingId: String(response?.recordingId || ''),
     pipelineStatus: normalizePipelineStatus(String(response?.pipelineStatus || 'queued')),
+    durationMs,
     enhancementsPending: Boolean(diarization.enhancementsPending ?? response?.enhancementsPending),
     postprocessStage: normalizePostprocessStage(
       diarization.postprocessStage || response?.postprocessStage

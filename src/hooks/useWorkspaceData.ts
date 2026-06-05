@@ -93,6 +93,7 @@ export default function useWorkspaceData() {
   const remoteSyncInFlightRef = useRef(false);
   const pendingRemoteSyncRef = useRef<PendingRemoteSync | null>(null);
   const migrationAppliedRef = useRef<string | null>(null);
+  const skipRemotePullCooldownOnceRef = useRef(false);
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === 'remote' && Boolean(session?.token)
@@ -123,6 +124,7 @@ export default function useWorkspaceData() {
       setVocabulary(normalizedState.vocabulary);
       remoteStateRef.current = normalizedState;
       remoteSnapshotRef.current = nextSnapshot;
+      skipRemotePullCooldownOnceRef.current = true;
       remotePullCooldownUntilRef.current = 0;
       lastWorkspaceMessageRef.current = '';
       lastLoggedRemoteErrorRef.current = '';
@@ -424,6 +426,12 @@ export default function useWorkspaceData() {
       remoteSnapshotRef.current = nextSnapshot;
       remoteStateRef.current = nextState;
       return undefined;
+    }
+
+    if (skipRemotePullCooldownOnceRef.current) {
+      skipRemotePullCooldownOnceRef.current = false;
+    } else if (!isBootstrappingRef.current) {
+      remotePullCooldownUntilRef.current = Date.now() + REMOTE_PULL_COOLDOWN_MS;
     }
 
     const timeout = window.setTimeout(() => {

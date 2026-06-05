@@ -11,6 +11,10 @@ describe('clientErrors route', () => {
     app.route('/api/client-errors', createClientErrorRoutes());
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('POST accepts a single error and GET retrieves it', async () => {
     const error = {
       id: 'err-123',
@@ -130,5 +134,71 @@ describe('clientErrors route', () => {
 
     const getRes = await app.request('/api/client-errors', { method: 'GET' });
     expect(((await getRes.json()) as any).count).toBe(0);
+  });
+
+  it('cleans up stale entries based on retention policy', async () => {
+    const now = Date.now();
+    vi.stubEnv('VOICELOG_CLIENT_ERROR_RETENTION_MS', '500');
+
+    await app.request('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        {
+          id: 'old',
+          type: 'runtime',
+          message: 'Old error',
+          timestamp: new Date(now - 1000).toISOString(),
+        },
+        {
+          id: 'fresh',
+          type: 'runtime',
+          message: 'Fresh error',
+          timestamp: new Date(now).toISOString(),
+        },
+      ]),
+    });
+
+    const res = await app.request('/api/client-errors', { method: 'GET' });
+    const body: any = await res.json();
+    expect(body.count).toBe(1);
+    expect(body.errors[0].id).toBe('fresh');
+  });
+
+  it('keeps at most the configured maximum of stored errors', async () => {
+    const now = Date.now();
+    const errors = Array.from({ length: 510 }, (_, index) => ({
+      id: `err-${index + 1}`,
+      type: 'runtime',
+      message: `Error ${index + 1}`,
+      timestamp: new Date(now - index * 1000).toISOString(),
+    }));
+
+    const postRes = await app.request('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(errors),
+    });
+
+    const postBody = await postRes.json();
+    expect(postBody.ok).toBe(true);
+    expect(postBody.received).toBe(500);
+
+    const getRes = await app.request('/api/client-errors', { method: 'GET' });
+    const getBody: any = await getRes.json();
+    expect(getBody.count).toBe(500);
+    expect(getBody.errors).toHaveLength(500);
+    const storedIds = new Set(
+      getBody.errors.map((entry: { id: string }) => Number(entry.id.replace('err-', '')))
+    );
+    expect(storedIds.size).toBe(500);
+
+    for (let removedId = 1; removedId <= 10; removedId += 1) {
+      expect(storedIds.has(removedId)).toBe(false);
+    }
+
+    for (let retainedId = 11; retainedId <= 510; retainedId += 1) {
+      expect(storedIds.has(retainedId)).toBe(true);
+    }
   });
 });

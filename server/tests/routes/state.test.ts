@@ -16,6 +16,8 @@ describe('State Routes', () => {
       getWorkspaceState: vi.fn(),
       saveWorkspaceState: vi.fn(),
     };
+    mockAuthService.getSession.mockResolvedValue({ user_id: 'u123', workspace_id: 'w123' });
+    mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'admin' });
 
     // Replace the default auth middleware for testing
     const testMiddlewares = {
@@ -49,6 +51,56 @@ describe('State Routes', () => {
       testMiddlewares
     );
   });
+
+  const createRefreshAwareStateApp = () => {
+    const refreshMiddlewares = {
+      authMiddleware: async (c: any, next: any) => {
+        if (c.req.method === 'OPTIONS') {
+          await next();
+          return;
+        }
+
+        const authHeader = c.req.header('Authorization');
+        const refreshHeader = c.req.header('X-Refresh-Token');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return c.json({ message: 'Brak tokenu' }, 401);
+        }
+
+        const primaryToken = authHeader.slice(7).trim();
+        let session = await mockAuthService.getSession(primaryToken);
+
+        if (!session && refreshHeader) {
+          session = await mockAuthService.getSession(refreshHeader);
+        }
+
+        if (!session) {
+          return c.json({ message: 'Sesja wygasla lub jest nieprawidlowa.' }, 401);
+        }
+
+        c.set('session', session);
+        await next();
+      },
+      ensureWorkspaceAccess: async (c: any, workspaceId: string) => {
+        if (workspaceId !== 'w123') {
+          const err = new Error('Brak dostepu') as any;
+          err.statusCode = 403;
+          throw err;
+        }
+        return { member_role: 'admin' };
+      },
+      applyRateLimit: () => async (_c: any, next: any) => next(),
+    };
+
+    return createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: {},
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      },
+      refreshMiddlewares
+    );
+  };
 
   it('GET /state/bootstrap - unauthorized without token', async () => {
     const res = await app.request('/state/bootstrap', { method: 'GET' });
@@ -135,6 +187,71 @@ describe('State Routes', () => {
     expect(mockAuthService.buildSessionPayload).toHaveBeenCalledWith('u123', 'w123');
   });
 
+  it('GET /state/bootstrap - transient buildSessionPayload failure is recoverable', async () => {
+    let attempt = 0;
+    mockAuthService.buildSessionPayload.mockImplementation(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        throw new Error('temporary backend hiccup');
+      }
+      return { user: { id: 'u123' }, workspaces: [] };
+    });
+
+    const firstTry = await app.request('/state/bootstrap?workspaceId=w123', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid_test_token' },
+    });
+    expect(firstTry.status).toBe(500);
+
+    const secondTry = await app.request('/state/bootstrap?workspaceId=w123', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer valid_test_token' },
+    });
+    expect(secondTry.status).toBe(200);
+    const data = await secondTry.json();
+    expect(data.user.id).toBe('u123');
+    expect(mockAuthService.buildSessionPayload).toHaveBeenCalledTimes(2);
+  });
+
+  it('GET /state/bootstrap - recovers when primary token is expired using refresh token fallback', async () => {
+    mockAuthService.getSession.mockImplementation(async (token: string) => {
+      if (token === 'expired-token') return null;
+      if (token === 'fresh-token') {
+        return { user_id: 'u123', workspace_id: 'w123' };
+      }
+      return null;
+    });
+    mockAuthService.buildSessionPayload.mockResolvedValue({
+      user: { id: 'u123' },
+      users: [],
+      workspaces: [],
+      workspaceId: 'w123',
+      state: {},
+    });
+
+    const refreshAwareApp = createRefreshAwareStateApp();
+    const res = await refreshAwareApp.request('/state/bootstrap?workspaceId=w123', {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer expired-token',
+        'X-Refresh-Token': 'fresh-token',
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload).toEqual(
+      expect.objectContaining({
+        user: { id: 'u123' },
+        workspaceId: 'w123',
+        state: {},
+      })
+    );
+    expect(mockAuthService.getSession).toHaveBeenCalledWith('expired-token');
+    expect(mockAuthService.getSession).toHaveBeenCalledWith('fresh-token');
+    expect(mockAuthService.buildSessionPayload).toHaveBeenCalledWith('u123', 'w123');
+  });
+
   it('PUT /state/workspaces/:workspaceId - state update', async () => {
     mockWorkspaceService.saveWorkspaceState.mockResolvedValue({ meetings: [] });
 
@@ -155,6 +272,51 @@ describe('State Routes', () => {
       'w123',
       expect.any(Object)
     );
+  });
+
+  it('PUT /state/workspaces/:workspaceId - allows retry after optimistic lock without data loss', async () => {
+    const firstState = { meetings: [{ id: 'meeting_base', title: 'Base' }], manualTasks: [] };
+    mockWorkspaceService.getWorkspaceState.mockResolvedValue(firstState);
+    mockWorkspaceService.saveWorkspaceState
+      .mockRejectedValueOnce(Object.assign(new Error('transient lock'), { statusCode: 409 }))
+      .mockResolvedValueOnce({
+        ...firstState,
+        meetings: [...firstState.meetings, { id: 'meeting_retry', title: 'Retry' }],
+      });
+
+    const payload = { meetings: [...firstState.meetings, { id: 'meeting_retry', title: 'Retry' }] };
+    const first = await app.request('/state/workspaces/w123', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer valid_test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    expect(first.status).toBe(409);
+
+    const second = await app.request('/state/workspaces/w123', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer valid_test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    expect(second.status).toBe(200);
+
+    const payloadData = await second.json();
+    expect(payloadData).toEqual(
+      expect.objectContaining({
+        workspaceId: 'w123',
+        state: expect.objectContaining({
+          meetings: expect.arrayContaining([{ id: 'meeting_retry', title: 'Retry' }]),
+        }),
+      })
+    );
+    expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledTimes(2);
+    expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenNthCalledWith(1, 'w123', payload);
+    expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenNthCalledWith(2, 'w123', payload);
   });
 
   it('PATCH /state/workspaces/:workspaceId - delta update', async () => {
@@ -245,5 +407,65 @@ describe('State Routes', () => {
     expect(persistedState.meetings).toEqual([
       expect.objectContaining({ id: 'meeting_concurrent' }),
     ]);
+  });
+
+  it('PATCH /state/workspaces/:workspaceId - allows retry after optimistic lock without data loss', async () => {
+    mockWorkspaceService.getWorkspaceState.mockResolvedValue({
+      meetings: [{ id: 'meeting_base', title: 'Base' }],
+      manualTasks: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+      updatedAt: '2026-05-25T00:00:00.000Z',
+    });
+
+    const optimisticError = Object.assign(new Error('Optimistic lock conflict'), {
+      statusCode: 409,
+    });
+    mockWorkspaceService.saveWorkspaceState
+      .mockRejectedValueOnce(optimisticError)
+      .mockResolvedValueOnce({
+        meetings: [
+          { id: 'meeting_base', title: 'Base' },
+          { id: 'meeting_retry', title: 'Retry' },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+        updatedAt: '2026-05-26T00:00:00.000Z',
+      });
+
+    const first = await app.request('/state/workspaces/w123', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer valid_test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        meetings: { upsert: [{ id: 'meeting_retry', title: 'Retry' }] },
+      }),
+    });
+    expect(first.status).toBe(409);
+
+    const second = await app.request('/state/workspaces/w123', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer valid_test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        meetings: { upsert: [{ id: 'meeting_retry', title: 'Retry' }] },
+      }),
+    });
+    expect(second.status).toBe(200);
+
+    const payload = await second.json();
+    expect(payload.state.meetings).toEqual(
+      expect.arrayContaining([{ id: 'meeting_retry', title: 'Retry' }])
+    );
+    expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledTimes(2);
   });
 });
