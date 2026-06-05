@@ -227,11 +227,8 @@ describe('App integration', () => {
     seedWorkspaceAppState();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     window.MediaRecorder = vi.fn() as any;
-    Object.defineProperty(window.navigator, 'mediaDevices', {
-      value: {
-        getUserMedia: vi.fn().mockRejectedValue({ name: 'NotAllowedError' }),
-      },
-      configurable: true,
+    vi.mocked(window.navigator.mediaDevices.getUserMedia).mockRejectedValue({
+      name: 'NotAllowedError',
     });
 
     render(<App />);

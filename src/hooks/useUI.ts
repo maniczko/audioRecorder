@@ -12,6 +12,9 @@ import { downloadTextFile, formatDateTime, formatDuration } from '../lib/storage
 import { buildMeetingNotesText, printMeetingPdf, slugifyExportTitle } from '../lib/export';
 import { buildGoogleCalendarUrl } from '../lib/calendar';
 
+const EMPTY_DISMISSED_NOTIFICATION_IDS: string[] = [];
+const noopDeliverBrowserNotifications = () => {};
+
 function toArray(value: unknown): any[] {
   return Array.isArray(value) ? value : [];
 }
@@ -233,21 +236,26 @@ export default function useUI() {
     [calendarEntries]
   );
 
+  const dismissedNotificationIds =
+    notificationState?.dismissedIds ?? EMPTY_DISMISSED_NOTIFICATION_IDS;
+  const safeDeliverBrowserNotifications =
+    deliverBrowserNotifications || noopDeliverBrowserNotifications;
+
   const notificationItems = useMemo(
     () =>
       buildWorkspaceNotifications({
         reminders: upcomingReminders,
         taskNotifications: meetings.taskNotifications,
-      }).filter((item) => !(notificationState.dismissedIds || []).includes(item.id)),
-    [meetings.taskNotifications, notificationState.dismissedIds, upcomingReminders]
+      }).filter((item) => !dismissedNotificationIds.includes(item.id)),
+    [dismissedNotificationIds, meetings.taskNotifications, upcomingReminders]
   );
 
   const unreadNotificationCount = notificationItems.length;
 
   // ── Browser notifications delivery ─────────────────────
   useEffect(() => {
-    deliverBrowserNotifications(notificationItems);
-  }, [deliverBrowserNotifications, notificationItems, notificationPermission]);
+    safeDeliverBrowserNotifications(notificationItems);
+  }, [notificationItems, notificationPermission, safeDeliverBrowserNotifications]);
 
   // ── Google calendar sync effect ─────────────────────────
   const syncLinkedGoogleCalendarEvents = meetings.syncLinkedGoogleCalendarEvents;
