@@ -18,7 +18,7 @@ describe('clientErrors route', () => {
   it('POST accepts a single error and GET retrieves it', async () => {
     const error = {
       id: 'err-123',
-      timestamp: '2026-04-03T10:00:00Z',
+      timestamp: new Date().toISOString(),
       type: 'runtime',
       message: 'Test error occurred',
       stack: 'Error: Test\n  at foo.js:1:1',
@@ -42,8 +42,8 @@ describe('clientErrors route', () => {
 
   it('POST accepts an array of errors', async () => {
     const errors = [
-      { id: 'err-1', type: 'runtime', message: 'Error 1', timestamp: '2026-04-03T10:00:00Z' },
-      { id: 'err-2', type: 'network', message: 'Error 2', timestamp: '2026-04-03T10:01:00Z' },
+      { id: 'err-1', type: 'runtime', message: 'Error 1', timestamp: new Date().toISOString() },
+      { id: 'err-2', type: 'network', message: 'Error 2', timestamp: new Date().toISOString() },
     ];
 
     const res = await app.request('/api/client-errors', {
@@ -61,7 +61,7 @@ describe('clientErrors route', () => {
       id: 'err-dup',
       type: 'runtime',
       message: 'Duplicate error',
-      timestamp: '2026-04-03T10:00:00Z',
+      timestamp: new Date().toISOString(),
     };
 
     await app.request('/api/client-errors', {
@@ -100,7 +100,7 @@ describe('clientErrors route', () => {
       type: 'runtime',
       message: 'x'.repeat(3000),
       stack: 'y'.repeat(6000),
-      timestamp: '2026-04-03T10:00:00Z',
+      timestamp: new Date().toISOString(),
     };
 
     await app.request('/api/client-errors', {
@@ -174,15 +174,26 @@ describe('clientErrors route', () => {
       timestamp: new Date(now - index * 1000).toISOString(),
     }));
 
-    const postRes = await app.request('/api/client-errors', {
+    for (let offset = 0; offset < 500; offset += 50) {
+      const res = await app.request('/api/client-errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errors.slice(offset, offset + 50)),
+      });
+      const body = await res.json();
+      expect(body.ok).toBe(true);
+      expect(body.received).toBe(50);
+    }
+
+    const overflowRes = await app.request('/api/client-errors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(errors),
+      body: JSON.stringify(errors.slice(500)),
     });
 
-    const postBody = await postRes.json();
-    expect(postBody.ok).toBe(true);
-    expect(postBody.received).toBe(500);
+    const overflowBody = await overflowRes.json();
+    expect(overflowBody.ok).toBe(true);
+    expect(overflowBody.received).toBe(10);
 
     const getRes = await app.request('/api/client-errors', { method: 'GET' });
     const getBody: any = await getRes.json();

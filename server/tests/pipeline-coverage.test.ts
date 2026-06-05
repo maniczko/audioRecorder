@@ -57,11 +57,7 @@ vi.mock('../transcription', () => ({
   CHUNK_OVERLAP_SECONDS: 2,
   MAX_CHUNK_RETRIES: 3,
   VAD_ENABLED: false,
-  maybeRetryPoorQualityWithOpenAi: vi.fn().mockResolvedValue({
-    segments: [{ id: 1, text: 'hello', speakerId: 0 }],
-    words: [],
-    text: 'hello',
-  }),
+  maybeRetryPoorQualityWithOpenAi: vi.fn(async ({ sttResult }) => sttResult),
   retryLowConfidenceSegmentsWithOpenAi: vi.fn().mockResolvedValue({
     segments: [{ id: 1, text: 'hello', speakerId: 0 }],
     words: [],
