@@ -814,7 +814,7 @@ describe('processRecordingQueueItem', () => {
       expect.objectContaining({
         status: 'processing',
         errorMessage: '',
-        backoffUntil: 10000 + BACKGROUND_TRANSCRIPTION_RETRY_MS,
+        backoffUntil: now + BACKGROUND_TRANSCRIPTION_RETRY_MS,
       })
     );
     expect(context.setState).toHaveBeenCalledWith(
