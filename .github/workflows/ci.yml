@@ -255,7 +255,15 @@ jobs:
           done
 
       - name: Run backend tests
-        run: pnpm run test:server:retry
+        shell: bash
+        run: |
+          while true; do
+            echo "[ci] backend tests still running..."
+            sleep 60
+          done &
+          heartbeat_pid=$!
+          trap 'kill "$heartbeat_pid" 2>/dev/null || true' EXIT
+          pnpm run test:server:retry
 
   build:
     name: Build
