@@ -128,7 +128,6 @@ describe('Transcribe Routes', () => {
   });
 
   it('returns 504 when live transcription exceeds the timeout budget', async () => {
-    vi.useFakeTimers();
     mockTranscriptionService.transcribeLiveChunk = vi.fn().mockImplementation(
       async () =>
         new Promise<string>(() => {
@@ -152,11 +151,11 @@ describe('Transcribe Routes', () => {
         allowedOrigins: '*',
         trustProxy: false,
         uploadDir: process.cwd(),
-        transcribeLiveTimeoutMs: 20,
+        transcribeLiveTimeoutMs: 1,
       },
     });
 
-    const requestPromise = app.request('/transcribe/live', {
+    const res = await app.request('/transcribe/live', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer token',
@@ -166,8 +165,6 @@ describe('Transcribe Routes', () => {
       },
       body: Buffer.alloc(2000, 1),
     });
-    await vi.advanceTimersByTimeAsync(25);
-    const res = await requestPromise;
 
     expect(res.status).toBe(504);
     expect(await res.json()).toEqual({ message: 'Transcription request timed out.' });
