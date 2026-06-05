@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getBrowserNotificationCandidates } from '../lib/notifications';
 
+const DEFAULT_NOTIFICATION_STATE = { dismissedIds: [], deliveredIds: [] };
+
+function normalizeNotificationState(value: any) {
+  return {
+    dismissedIds: Array.isArray(value?.dismissedIds) ? value.dismissedIds : [],
+    deliveredIds: Array.isArray(value?.deliveredIds) ? value.deliveredIds : [],
+  };
+}
+
 export const useUIStore = create<any>()(
   persist(
     (set, get) => ({
@@ -14,7 +23,7 @@ export const useUIStore = create<any>()(
       studioHomeSignal: 0,
       commandPaletteOpen: false,
       notificationCenterOpen: false,
-      notificationState: { dismissedIds: [], deliveredIds: [] },
+      notificationState: DEFAULT_NOTIFICATION_STATE,
       notificationPermission: 'unsupported',
 
       setActiveTab: (tab: string) => {
@@ -116,8 +125,16 @@ export const useUIStore = create<any>()(
       partialize: (state) => ({
         theme: state.theme,
         layoutPreset: state.layoutPreset,
-        notificationState: state.notificationState,
+        notificationState: normalizeNotificationState(state.notificationState),
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState || {}) as any;
+        return {
+          ...currentState,
+          ...persisted,
+          notificationState: normalizeNotificationState(persisted.notificationState),
+        };
+      },
       onRehydrateStorage: () => (state) => {
         if (state?.theme) {
           document.documentElement.setAttribute('data-theme', state.theme);
