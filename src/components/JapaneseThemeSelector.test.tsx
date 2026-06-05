@@ -1,5 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import JapaneseThemeSelector from './JapaneseThemeSelector';
 import { japaneseThemes } from '../styles/japaneseThemes';
 
@@ -34,7 +33,6 @@ describe('JapaneseThemeSelector', () => {
 
   it('invokes handler on Enter key from theme card and keeps preview controls usable', async () => {
     const onThemeChange = vi.fn();
-    const user = userEvent.setup();
     const saveSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     render(<JapaneseThemeSelector currentTheme="sakura" onThemeChange={onThemeChange} />);
 
@@ -42,13 +40,13 @@ describe('JapaneseThemeSelector', () => {
       .getAllByRole('button')
       .filter((btn) => btn.className.includes('jp-theme-card'))[0];
     firstThemeCard.focus();
-    await user.keyboard('{Enter}');
+    fireEvent.keyDown(firstThemeCard, { key: 'Enter' });
     expect(onThemeChange).toHaveBeenCalledWith(themeKeys[0]);
 
-    await user.click(screen.getByRole('button', { name: 'Zapisz Motyw' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz Motyw' }));
     expect(saveSpy).toHaveBeenCalledWith('Theme saved:', 'sakura');
 
-    await user.click(screen.getByRole('button', { name: 'Resetuj Podgląd' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resetuj Podgląd' }));
     expect(saveSpy).toHaveBeenCalledTimes(1);
 
     saveSpy.mockRestore();

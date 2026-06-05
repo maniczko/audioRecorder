@@ -821,7 +821,7 @@ describe('Regression: Issue #0 - timeout exceeded when trying to connect is trea
     expect((error as Error).message).toBe(
       'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'
     );
-    expect((error as Error).message).not.toMatch(/ENOTFOUND|postgres|tenant\\/ersu / i);
+    expect((error as Error).message).not.toMatch(/ENOTFOUND|postgres|tenant\/user/i);
   });
 
   it('retries health probe when Vercel reports timeout exceeded when trying to connect', async () => {
