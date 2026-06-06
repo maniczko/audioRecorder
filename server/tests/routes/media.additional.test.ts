@@ -1235,7 +1235,7 @@ describe('Media Routes - Additional Coverage', () => {
     });
   });
 
-  // â”€â”€ POST /media/recordings/:recordingId/voice-profiles/from-speaker â”€â”€â”€â”€â”€â”€
+  // Regression coverage note.
 
   describe('POST /media/recordings/:recordingId/voice-profiles/from-speaker', () => {
     it('returns 201 when voice profile is created successfully', async () => {
