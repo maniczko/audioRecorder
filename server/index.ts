@@ -19,14 +19,13 @@ import TranscriptionService from './services/TranscriptionService.ts';
 import WorkspaceService from './services/WorkspaceService.ts';
 import { startVoiceLogServer } from './serverRuntime.ts';
 
-initSentry();
-
 const __filename = fileURLToPath(import.meta.url);
 
 const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || '0.0.0.0';
 
 export async function bootstrap() {
+  initSentry();
   validateRequiredApiKeys();
   warnIfUsingDefaultLocalDatabase(config, logger);
 
