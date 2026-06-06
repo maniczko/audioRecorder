@@ -39,6 +39,18 @@ describe('uiStore', () => {
     expect(document.documentElement.getAttribute('data-layout')).toBe('bobr');
   });
 
+  test('supports the premium light visual preset through the browser theme attribute', () => {
+    const store = useUIStore.getState();
+
+    store.setTheme('premium-light');
+    store.setLayoutPreset('modern');
+
+    expect(useUIStore.getState().theme).toBe('premium-light');
+    expect(useUIStore.getState().layoutPreset).toBe('modern');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('premium-light');
+    expect(document.documentElement.getAttribute('data-layout')).toBe('modern');
+  });
+
   test('requests notification permission and delivers only new notifications', async () => {
     const notificationSpy = vi.fn();
     const requestPermission = vi.fn().mockResolvedValue('granted');

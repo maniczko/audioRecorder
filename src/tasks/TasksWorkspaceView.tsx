@@ -136,6 +136,13 @@ function TasksWorkspaceView({
   const isSchedule = viewMode === 'schedule';
   const isKanban = viewMode === 'kanban';
   const isSummary = viewMode === 'summary';
+  const submitToolbarQuickTask = (event) => {
+    const liveTitle = quickAddInputRef.current?.value ?? quickDraft.title;
+    submitQuickTask(event, {
+      ...quickDraft,
+      title: liveTitle,
+    });
+  };
 
   return (
     <section className="todo-main">
@@ -246,16 +253,20 @@ function TasksWorkspaceView({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      submitQuickTask(e);
+                      submitToolbarQuickTask(e);
                     }
                   }}
                 />
                 <button
                   type="button"
                   className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
-                  onClick={submitQuickTask}
-                  disabled={!quickDraft.title.trim()}
-                  title="Dodaj zadanie (Enter)"
+                  onClick={submitToolbarQuickTask}
+                  aria-label="Dodaj zadanie"
+                  title={
+                    quickDraft.title.trim()
+                      ? 'Dodaj zadanie (Enter)'
+                      : 'Wpisz tytul zadania i dodaj'
+                  }
                 >
                   <Plus className="w-[18px] h-[18px]" />
                 </button>

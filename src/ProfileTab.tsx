@@ -1737,6 +1737,13 @@ export default function ProfileTab({
                       >
                         🦫
                       </button>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => onSetTheme('premium-light')}
+                      >
+                        Premium jasny
+                      </button>
                     </div>
                   </div>
                   <div className="integration-row">

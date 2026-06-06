@@ -146,6 +146,71 @@ function transcriptSegmentCount(recording) {
   return Array.isArray(recording?.transcript) ? recording.transcript.length : 0;
 }
 
+function positiveNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+}
+
+function maxTranscriptEndSeconds(recording) {
+  const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
+  return transcript.reduce((maxEnd, segment) => {
+    const timestamp = positiveNumber(segment?.timestamp);
+    const endTimestamp = positiveNumber(segment?.endTimestamp);
+    return Math.max(maxEnd, endTimestamp, timestamp);
+  }, 0);
+}
+
+function recordingDurationSeconds(recording) {
+  return Math.max(
+    positiveNumber(recording?.duration),
+    positiveNumber(recording?.audioQuality?.durationSeconds),
+    positiveNumber(recording?.transcriptionDiagnostics?.durationSeconds),
+    maxTranscriptEndSeconds(recording)
+  );
+}
+
+function isSuspiciousShortRecordingReplacement(existingRecording, incomingRecording) {
+  const existingDurationSeconds = recordingDurationSeconds(existingRecording);
+  const incomingDurationSeconds = recordingDurationSeconds(incomingRecording);
+  const incomingTranscriptCount = transcriptSegmentCount(incomingRecording);
+
+  if (existingDurationSeconds < 30 * 60) return false;
+  if (incomingDurationSeconds <= 0 || incomingTranscriptCount <= 0) return false;
+
+  const suspiciousShortLimit = Math.min(5 * 60, existingDurationSeconds * 0.1);
+  return incomingDurationSeconds <= suspiciousShortLimit;
+}
+
+function mergeLongRecordingDiagnostics(existingRecording, incomingRecording) {
+  const existingDurationSeconds = recordingDurationSeconds(existingRecording);
+  const incomingDurationSeconds = recordingDurationSeconds(incomingRecording);
+  const preservedDurationSeconds =
+    existingDurationSeconds >= incomingDurationSeconds
+      ? existingDurationSeconds
+      : incomingDurationSeconds;
+
+  return {
+    duration:
+      preservedDurationSeconds || incomingRecording?.duration || existingRecording?.duration,
+    audioQuality: {
+      ...(incomingRecording?.audioQuality || {}),
+      ...(existingRecording?.audioQuality || {}),
+      durationSeconds:
+        positiveNumber(existingRecording?.audioQuality?.durationSeconds) ||
+        positiveNumber(incomingRecording?.audioQuality?.durationSeconds) ||
+        preservedDurationSeconds,
+    },
+    transcriptionDiagnostics: {
+      ...(incomingRecording?.transcriptionDiagnostics || {}),
+      ...(existingRecording?.transcriptionDiagnostics || {}),
+      durationSeconds:
+        positiveNumber(existingRecording?.transcriptionDiagnostics?.durationSeconds) ||
+        positiveNumber(incomingRecording?.transcriptionDiagnostics?.durationSeconds) ||
+        preservedDurationSeconds,
+    },
+  };
+}
+
 function mergeRecordingWithoutTranscriptRegression(existingRecording, incomingRecording) {
   if (!existingRecording) {
     return incomingRecording;
@@ -153,19 +218,32 @@ function mergeRecordingWithoutTranscriptRegression(existingRecording, incomingRe
 
   const existingTranscriptCount = transcriptSegmentCount(existingRecording);
   const incomingTranscriptCount = transcriptSegmentCount(incomingRecording);
+  const isSuspiciousShortReplacement = isSuspiciousShortRecordingReplacement(
+    existingRecording,
+    incomingRecording
+  );
   const shouldPreserveExistingTranscript =
-    existingTranscriptCount > 0 && incomingTranscriptCount < existingTranscriptCount;
+    existingTranscriptCount > 0 &&
+    (incomingTranscriptCount < existingTranscriptCount || isSuspiciousShortReplacement);
 
   if (!shouldPreserveExistingTranscript) {
-    return {
+    const mergedRecording = {
       ...existingRecording,
       ...incomingRecording,
     };
+
+    return isSuspiciousShortReplacement
+      ? {
+          ...mergedRecording,
+          ...mergeLongRecordingDiagnostics(existingRecording, incomingRecording),
+        }
+      : mergedRecording;
   }
 
   return {
     ...existingRecording,
     ...incomingRecording,
+    ...mergeLongRecordingDiagnostics(existingRecording, incomingRecording),
     transcript: existingRecording.transcript,
     transcriptOutcome: existingRecording.transcriptOutcome || incomingRecording.transcriptOutcome,
     analysis: existingRecording.analysis || incomingRecording.analysis,
@@ -179,14 +257,26 @@ function mergeRecordingWithoutTranscriptRegression(existingRecording, incomingRe
 export function attachRecording(meeting, recording) {
   const previousRecordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
   const existingRecording = previousRecordings.find((item) => item?.id === recording?.id);
-  const nextRecording = mergeRecordingWithoutTranscriptRegression(existingRecording, recording);
+  const latestRecording =
+    previousRecordings.find((item) => item?.id === meeting?.latestRecordingId) ||
+    previousRecordings[0];
+  const replacementBaseline =
+    existingRecording ||
+    (isSuspiciousShortRecordingReplacement(latestRecording, recording) ? latestRecording : null);
+  const nextRecording = mergeRecordingWithoutTranscriptRegression(replacementBaseline, recording);
+  const replacedRecordingId =
+    replacementBaseline && replacementBaseline?.id !== nextRecording?.id
+      ? replacementBaseline.id
+      : null;
   const aiDebrief =
     nextRecording.aiDebrief || buildMeetingAIDebrief(meeting, nextRecording.analysis);
   return {
     ...meeting,
     recordings: [
       nextRecording,
-      ...previousRecordings.filter((item) => item?.id !== nextRecording?.id),
+      ...previousRecordings.filter(
+        (item) => item?.id !== nextRecording?.id && item?.id !== replacedRecordingId
+      ),
     ],
     latestRecordingId: nextRecording.id,
     analysis: nextRecording.analysis,

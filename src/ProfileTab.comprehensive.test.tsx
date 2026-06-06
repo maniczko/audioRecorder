@@ -706,6 +706,11 @@ describe('ProfileTab', () => {
       await user.click(lightButton);
 
       expect(mockProps.onSetTheme).toHaveBeenCalledWith('light');
+
+      const premiumLightButton = screen.getByText('Premium jasny');
+      await user.click(premiumLightButton);
+
+      expect(mockProps.onSetTheme).toHaveBeenCalledWith('premium-light');
     });
 
     it('calls onSetLayoutPreset when layout buttons are clicked', async () => {

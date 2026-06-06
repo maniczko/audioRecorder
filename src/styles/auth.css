@@ -129,6 +129,53 @@
   line-height: 1.5;
 }
 
+[data-theme='premium-light'] .auth-hero-section {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(119, 214, 196, 0.28) 0%, transparent 48%),
+    radial-gradient(circle at 88% 78%, rgba(255, 190, 116, 0.18) 0%, transparent 44%),
+    linear-gradient(155deg, #fbfcf8 0%, #edf7f1 52%, #f8f1e7 100%);
+}
+
+[data-theme='premium-light'] .auth-hero-branding {
+  color: #122822;
+}
+
+[data-theme='premium-light'] .auth-hero-content h1 {
+  background: linear-gradient(135deg, #122822 0%, #1c8d7a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='premium-light'] .auth-hero-copy {
+  color: rgba(18, 40, 34, 0.72);
+}
+
+[data-theme='premium-light'] .auth-feature {
+  background: rgba(255, 255, 252, 0.62);
+  border-color: rgba(43, 82, 74, 0.12);
+  box-shadow: 0 18px 42px rgba(53, 77, 72, 0.08);
+}
+
+[data-theme='premium-light'] .auth-feature:hover {
+  background: rgba(255, 255, 252, 0.82);
+  border-color: rgba(28, 141, 122, 0.2);
+}
+
+[data-theme='premium-light'] .auth-feature h2 {
+  color: #122822;
+}
+
+[data-theme='premium-light'] .auth-feature p {
+  color: rgba(18, 40, 34, 0.66);
+}
+
+[data-theme='premium-light'] .auth-feature-icon {
+  background: linear-gradient(135deg, rgba(28, 141, 122, 0.14), rgba(255, 255, 252, 0.78));
+  border-color: rgba(28, 141, 122, 0.22);
+  box-shadow: inset 0 1px 10px rgba(28, 141, 122, 0.08);
+}
+
 .auth-form-section {
   width: 100%;
   max-width: 540px;

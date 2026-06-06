@@ -153,7 +153,46 @@ describe('TasksWorkspaceView', () => {
     fireEvent.change(quickInput, { target: { value: 'Nowe zadanie' } });
     fireEvent.keyDown(quickInput, { key: 'Enter' });
     expect(setQuickDraft).toHaveBeenCalledWith(expect.any(Function));
-    expect(submitQuickTask).toHaveBeenCalledTimes(1);
+    expect(submitQuickTask).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ title: 'Nowe zadanie' })
+    );
+  });
+
+  it('passes the live quick-add input value when the toolbar plus is clicked', () => {
+    const submitQuickTask = vi.fn();
+    render(
+      <TasksWorkspaceView
+        {...createBaseProps({
+          viewMode: 'list',
+          submitQuickTask,
+          allVisibleTasks: [
+            {
+              id: 'task-1',
+              title: 'Alpha',
+              status: 'todo',
+              completed: false,
+              owner: '',
+              tags: [],
+              dueDate: '',
+              important: false,
+              reminderAt: '',
+              myDay: false,
+            },
+          ],
+          groupedTasks: [{ id: 'todo', label: 'Todo', tasks: [] }],
+        })}
+      />
+    );
+
+    const quickInput = screen.getByPlaceholderText('Dodaj zadanie (N)...') as HTMLInputElement;
+    fireEvent.change(quickInput, { target: { value: 'Zadanie z plusa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Dodaj zadanie' }));
+
+    expect(submitQuickTask).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ title: 'Zadanie z plusa' })
+    );
   });
 
   it('renders summary mode stats cards', () => {

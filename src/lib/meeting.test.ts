@@ -206,6 +206,69 @@ describe('attachRecording', () => {
     expect(result.recordings[0].transcriptOutcome).toBe('normal');
     expect(result.latestRecordingId).toBe('rec1');
   });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - long imported transcript replaced by a 3-second result
+  // Date: 2026-06-06
+  // Bug: a retry/update result for a 90+ minute import could become the
+  // latest recording and shrink the UI duration/transcript to a few seconds.
+  // Fix: treat suspiciously short replacements of long recordings as a
+  // regression and preserve the long transcript and duration metadata.
+  // -----------------------------------------------------------------
+  it('preserves a long imported recording when a later result is suspiciously short', () => {
+    const longTranscript = [
+      { id: 's1', text: 'Pelny wstep rozmowy.', timestamp: 0, endTimestamp: 120 },
+      { id: 's2', text: 'Dalsza czesc rozmowy.', timestamp: 5400, endTimestamp: 5460 },
+    ];
+    const meeting = {
+      id: 'm1',
+      title: 'Import: Allegro-rozmowa_2026-05-14',
+      recordings: [
+        {
+          id: 'rec_long',
+          duration: 5460,
+          transcript: longTranscript,
+          transcriptOutcome: 'normal',
+          audioQuality: { durationSeconds: 5460 },
+          transcriptionDiagnostics: { durationSeconds: 5460 },
+          analysis: { summary: 'Pelna analiza' },
+          speakerNames: { 0: 'Speaker 1' },
+          speakerCount: 1,
+        },
+      ],
+      latestRecordingId: 'rec_long',
+    };
+    const shortRetryResult = {
+      id: 'rec_retry',
+      duration: 3,
+      transcript: [
+        {
+          id: 'short',
+          text: 'Dziekuje za uwage.',
+          timestamp: 0,
+          endTimestamp: 3,
+          speakerId: 0,
+        },
+      ],
+      transcriptOutcome: 'normal',
+      audioQuality: { durationSeconds: 3 },
+      transcriptionDiagnostics: { durationSeconds: 3 },
+      analysis: { summary: 'Skrocona analiza' },
+      speakerNames: { 0: 'Speaker 1' },
+      speakerCount: 1,
+    };
+
+    const result = attachRecording(meeting, shortRetryResult);
+
+    expect(result.recordings).toHaveLength(1);
+    expect(result.recordings[0].id).toBe('rec_retry');
+    expect(result.recordings[0].duration).toBe(5460);
+    expect(result.recordings[0].audioQuality.durationSeconds).toBe(5460);
+    expect(result.recordings[0].transcriptionDiagnostics.durationSeconds).toBe(5460);
+    expect(result.recordings[0].transcript).toEqual(longTranscript);
+    expect(result.recordings[0].transcriptOutcome).toBe('normal');
+    expect(result.latestRecordingId).toBe('rec_retry');
+  });
 });
 
 describe('buildMeetingAIDebrief', () => {
