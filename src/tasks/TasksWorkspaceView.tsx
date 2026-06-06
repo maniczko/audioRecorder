@@ -1,4 +1,4 @@
-import { Suspense, lazy, memo, useState } from 'react';
+import { Suspense, lazy, memo, useEffect, useState } from 'react';
 import { Search, Plus, Settings } from 'lucide-react';
 import TaskCreateForm from './TaskCreateForm';
 import TaskScheduleView from './TaskScheduleView';
@@ -136,8 +136,19 @@ function TasksWorkspaceView({
   const isSchedule = viewMode === 'schedule';
   const isKanban = viewMode === 'kanban';
   const isSummary = viewMode === 'summary';
+  const [quickTitleDraft, setQuickTitleDraft] = useState(quickDraft.title || '');
+
+  useEffect(() => {
+    setQuickTitleDraft(quickDraft.title || '');
+  }, [quickDraft.title]);
+
+  const updateQuickTitleDraft = (title) => {
+    setQuickTitleDraft(title);
+    setQuickDraft((previous) => ({ ...previous, title }));
+  };
+
   const submitToolbarQuickTask = (event) => {
-    const liveTitle = quickAddInputRef.current?.value ?? quickDraft.title;
+    const liveTitle = quickAddInputRef.current?.value ?? quickTitleDraft;
     submitQuickTask(event, {
       ...quickDraft,
       title: liveTitle,
@@ -244,10 +255,8 @@ function TasksWorkspaceView({
               <div className="relative flex-1 min-w-[220px] max-w-[320px]">
                 <input
                   ref={quickAddInputRef}
-                  value={quickDraft.title}
-                  onChange={(event) =>
-                    setQuickDraft((previous) => ({ ...previous, title: event.target.value }))
-                  }
+                  value={quickTitleDraft}
+                  onChange={(event) => updateQuickTitleDraft(event.target.value)}
                   placeholder="Dodaj zadanie (N)..."
                   className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                   onKeyDown={(e) => {
@@ -263,9 +272,7 @@ function TasksWorkspaceView({
                   onClick={submitToolbarQuickTask}
                   aria-label="Dodaj zadanie"
                   title={
-                    quickDraft.title.trim()
-                      ? 'Dodaj zadanie (Enter)'
-                      : 'Wpisz tytul zadania i dodaj'
+                    quickTitleDraft.trim() ? 'Dodaj zadanie (Enter)' : 'Wpisz tytul zadania i dodaj'
                   }
                 >
                   <Plus className="w-[18px] h-[18px]" />
