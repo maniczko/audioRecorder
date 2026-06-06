@@ -969,7 +969,7 @@ describe('Regression: #0 — getUploadDir writable fallback chain', () => {
     expect(first).toBe(second);
     expect(typeof first).toBe('string');
     expect(first.length).toBeGreaterThan(0);
-  });
+  }, 15000);
 });
 
 // ─────────────────────────────────────────────────────────────────

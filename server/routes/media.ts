@@ -1779,6 +1779,27 @@ Important:
     if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele ??dania.' }, 400);
     await ensureWorkspaceAccess(c, workspaceId);
 
+    const existingAsset =
+      typeof transcriptionService.getMediaAsset === 'function'
+        ? await transcriptionService.getMediaAsset(recordingId)
+        : null;
+    if (existingAsset?.workspace_id === workspaceId) {
+      return c.json(
+        {
+          id: existingAsset.id,
+          workspaceId: existingAsset.workspace_id,
+          sizeBytes: existingAsset.size_bytes,
+          storageMode: existingAsset.storage_mode || 'single',
+          partCount: existingAsset.storage_mode === 'segmented' ? undefined : 0,
+          sourceSizeBytes: existingAsset.source_size_bytes || existingAsset.size_bytes,
+          normalizedSizeBytes: existingAsset.normalized_size_bytes || existingAsset.size_bytes,
+          durationMs: existingAsset.duration_ms || 0,
+          audioQuality: null,
+        },
+        200
+      );
+    }
+
     const chunksDir = path.join(config.uploadDir, 'chunks');
     const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
 
@@ -1935,7 +1956,7 @@ Important:
     });
   });
 
-  router.post('/disk-space/cleanup', async (c) => {
+  router.post('/disk-space/cleanup', authMiddleware, async (c) => {
     const session = c.get('session') as any;
     // Only allow admin users
     if (!session || session.role !== 'admin') {

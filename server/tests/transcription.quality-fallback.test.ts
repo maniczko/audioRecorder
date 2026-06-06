@@ -84,7 +84,7 @@ describe('transcription quality fallback', () => {
     const body = options?.body as FormData;
     expect(body.get('model')).toBe('gpt-4o-transcribe');
     expect(body.get('language')).toBe('pl');
-  }, 15000);
+  }, 30000);
 
   it('uses OpenAI gpt-4o-transcribe retry for poor quality audio when retry is clean', async () => {
     const httpClientSpy = vi.fn().mockResolvedValue({

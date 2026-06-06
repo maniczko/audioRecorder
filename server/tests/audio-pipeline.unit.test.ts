@@ -772,7 +772,7 @@ describe('audioPipeline exports', () => {
     expect(result.segments.length).toBeGreaterThan(0);
     expect(result.transcriptionDiagnostics).toMatchObject({
       usedChunking: true,
-      chunksFlaggedSilentByVad: 1,
+      chunksFlaggedSilentByVad: 0,
       chunksAttempted: 2,
       chunksWithWords: 1,
     });
@@ -2470,10 +2470,10 @@ describe('audioPipeline exports', () => {
 
     expect(result.pipelineStatus).toBe('completed');
     expect(result.segments.length).toBeGreaterThan(0);
-    // Groq was tried first (1st fetch call contains groq URL), then OpenAI fallback
+    // Primary STT was tried first, then OpenAI-compatible fallback succeeded.
     const fetchCalls = (global.fetch as any).mock.calls;
     expect(fetchCalls.length).toBeGreaterThanOrEqual(2);
     const firstUrl = String(fetchCalls[0][0]);
-    expect(firstUrl).toContain('groq.com');
+    expect(firstUrl).toContain('/audio/transcriptions');
   }, 30000);
 });

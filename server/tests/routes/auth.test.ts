@@ -11,6 +11,7 @@ describe('Auth Routes', () => {
       registerUser: vi.fn(),
       loginUser: vi.fn(),
       getSession: vi.fn(),
+      buildSessionPayload: vi.fn(),
       upsertGoogleUser: vi.fn(),
     };
     mockWorkspaceService = {

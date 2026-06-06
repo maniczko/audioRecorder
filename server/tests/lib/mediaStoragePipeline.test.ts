@@ -61,6 +61,9 @@ async function withPipelineModule(
 
   vi.clearAllMocks();
   vi.resetModules();
+  vi.doUnmock('node:fs/promises');
+  vi.doUnmock('node:child_process');
+  vi.doUnmock('../../lib/supabaseStorage.js');
 
   const execFile = options.execFile
     ? vi.fn(options.execFile)
@@ -378,7 +381,6 @@ describe('mediaStoragePipeline', () => {
     const { module } = await withPipelineModule({
       testRuntime: false,
       execFile,
-      rm: async () => {},
     });
     const parts = await module.splitNormalizedAudioIntoParts({
       normalizedPath,

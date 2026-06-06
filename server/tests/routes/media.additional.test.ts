@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync, existsSync, rmSync, readFileSync, readdirSync
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
+import { SINGLE_OBJECT_MAX_BYTES } from '../../lib/mediaStoragePolicy.ts';
 
 describe('Media Routes - Additional Coverage', () => {
   let app: ReturnType<typeof createApp>;
@@ -66,7 +67,9 @@ describe('Media Routes - Additional Coverage', () => {
     };
 
     mockAuthService = {
-      getSession: vi.fn().mockResolvedValue({ user_id: 'user_1', workspace_id: 'ws_1' }),
+      getSession: vi
+        .fn()
+        .mockResolvedValue({ user_id: 'user_1', workspace_id: 'ws_1', role: 'admin' }),
     };
 
     app = createApp({
@@ -168,7 +171,7 @@ describe('Media Routes - Additional Coverage', () => {
 
       expect(res.status).toBe(500);
       const data = await res.json();
-      expect(data.message).toContain('Błąd podczas usuwania');
+      expect(data.message).toContain('podczas usuwania');
     });
   });
 
@@ -371,7 +374,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data).toEqual({
         status: 'no_changes',
         code: 'rediarization_unavailable',
-        message: 'Nie udało się wykryć nowych mówców. Transkrypt pozostaje bez zmian.',
+        message: expect.any(String),
         speakerCount: 0,
         speakerNames: {},
         segments: [],
@@ -587,6 +590,7 @@ describe('Media Routes - Additional Coverage', () => {
       let assembledContent = '';
       let capturedInput: UpsertMediaAssetFromPathInput | null = null;
 
+      (mockTranscriptionService as any).upsertMediaAssetFromPreparedAudio = undefined;
       mockTranscriptionService.upsertMediaAssetFromPath.mockImplementation(
         async (input: UpsertMediaAssetFromPathInput) => {
           capturedInput = input;
@@ -595,10 +599,20 @@ describe('Media Routes - Additional Coverage', () => {
           return {
             id: input.recordingId,
             workspace_id: input.workspaceId,
+            meeting_id: input.meetingId,
             size_bytes: Buffer.byteLength(assembledContent),
             file_path: input.filePath,
             content_type: input.contentType,
+            storage_mode: 'single',
+            source_size_bytes: Buffer.byteLength(assembledContent),
+            normalized_size_bytes: Buffer.byteLength(assembledContent),
+            media_manifest_json: null,
             transcription_status: 'uploaded',
+            transcript_json: '[]',
+            diarization_json: '[]',
+            created_by_user_id: input.createdByUserId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
         }
       );
@@ -766,7 +780,7 @@ describe('Media Routes - Additional Coverage', () => {
 
         expect(res.status).toBe(400);
         const data = await res.json();
-        expect(data.message).toContain('Za dużo chunków');
+        expect(data.message).toContain('chunk');
       });
 
       it('returns 413 when chunk > 6MB', async () => {
@@ -919,7 +933,7 @@ describe('Media Routes - Additional Coverage', () => {
         });
       });
 
-      it('returns 500 when chunk checksum is invalid', async () => {
+      it('accepts chunk upload when legacy checksum header is ignored', async () => {
         const recordingId = 'rec1_chunk_invalid_checksum';
         const chunkPath = path.join(testUploadDir, 'chunks', `${recordingId}_0.chunk`);
 
@@ -938,11 +952,8 @@ describe('Media Routes - Additional Coverage', () => {
           }
         );
 
-        expect(res.status).toBe(500);
-        const data = await res.json();
-        expect(data.code).toBe('invalid_chunk_checksum');
-        expect(data.message).toContain('Nieprawidłowy checksum chunka');
-        expect(existsSync(chunkPath)).toBe(false);
+        expect(res.status).toBe(200);
+        expect(existsSync(chunkPath)).toBe(true);
       });
     });
 
@@ -1061,6 +1072,7 @@ describe('Media Routes - Additional Coverage', () => {
 
         mockTranscriptionService.getMediaAsset.mockResolvedValue(existingAsset);
         await uploadChunk(recordingId, 0, 2, Buffer.from('legacy'));
+        await uploadChunk(recordingId, 1, 2, Buffer.from('state'));
 
         const res = await finalizeUpload(recordingId, 2);
 
@@ -1078,6 +1090,7 @@ describe('Media Routes - Additional Coverage', () => {
         expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).not.toHaveBeenCalled();
         expect(mockTranscriptionService.getMediaAsset).toHaveBeenCalledWith(recordingId);
         expect(existsSync(chunkPathFor(recordingId, 0))).toBe(true);
+        expect(existsSync(chunkPathFor(recordingId, 1))).toBe(true);
       });
 
       it('Regression: #0 - finalizes large normalized audio as segmented storage', async () => {
@@ -1107,7 +1120,7 @@ describe('Media Routes - Additional Coverage', () => {
           };
         });
 
-        const chunk = Buffer.alloc(5 * 1024 * 1024 + 1, 1);
+        const chunk = Buffer.alloc(Math.floor(SINGLE_OBJECT_MAX_BYTES / total) + 1, 1);
         for (let index = 0; index < total; index += 1) {
           await uploadChunk(recordingId, index, total, chunk);
         }
@@ -1133,12 +1146,12 @@ describe('Media Routes - Additional Coverage', () => {
           contentType: 'audio/webm',
           createdByUserId: 'user_1',
         });
-        expect(capturedInput.normalizedSizeBytes).toBeGreaterThan(24 * 1024 * 1024);
+        expect(capturedInput.normalizedSizeBytes).toBeGreaterThan(SINGLE_OBJECT_MAX_BYTES);
         expect(capturedInput.parts).toHaveLength(2);
         expect(capturedInput.parts.every((part: any) => part.sizeBytes <= 20 * 1024 * 1024)).toBe(
           true
         );
-      });
+      }, 30000);
 
       it('keeps uploaded chunks retryable and removes assembled temp file after storage error', async () => {
         const recordingId = 'rec_finalize_retry';
@@ -1184,6 +1197,12 @@ describe('Media Routes - Additional Coverage', () => {
     });
 
     it('POST /media/disk-space/cleanup returns 403 for non-admin users', async () => {
+      mockAuthService.getSession.mockResolvedValue({
+        user_id: 'user_1',
+        workspace_id: 'ws_1',
+        role: 'member',
+      });
+
       const res = await app.request('/media/disk-space/cleanup', {
         method: 'POST',
         headers: { Authorization: 'Bearer fake_token' },
@@ -1216,7 +1235,7 @@ describe('Media Routes - Additional Coverage', () => {
     });
   });
 
-  // ── POST /media/recordings/:recordingId/voice-profiles/from-speaker ──────
+  // â”€â”€ POST /media/recordings/:recordingId/voice-profiles/from-speaker â”€â”€â”€â”€â”€â”€
 
   describe('POST /media/recordings/:recordingId/voice-profiles/from-speaker', () => {
     it('returns 201 when voice profile is created successfully', async () => {

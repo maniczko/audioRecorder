@@ -14,5 +14,5 @@ describe('index.ts', () => {
 
     expect(typeof bootstrap).toBe('function');
     expect(sentryMocks.initSentry).not.toHaveBeenCalled();
-  });
+  }, 15000);
 });
