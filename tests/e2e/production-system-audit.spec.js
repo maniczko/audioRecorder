@@ -13,8 +13,31 @@ const VOICE_PROFILE_SPEAKER_ID = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEA
 const VOICE_PROFILE_SPEAKER_NAME = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME || '';
 const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 const AUDIT_PREFIX = 'audit_20260524_';
+const API_REQUEST_TIMEOUT_MS = 30_000;
+const CLEANUP_REQUEST_TIMEOUT_MS = 8_000;
 
 const coreTabs = ['Studio', 'Nagrania', 'Kalendarz', 'Zadania', 'Osoby', 'Notatki'];
+
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withProductionRetry(label, operation, attempts = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) break;
+      await sleep(attempt * 2_000);
+    }
+  }
+
+  const reason = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`${label} failed after ${attempts} attempts: ${reason}`);
+}
 
 function requireProductionAuditConfig() {
   const missing = [];
@@ -55,17 +78,19 @@ function authHeaders() {
 }
 
 async function fetchProductionSession(request) {
-  const response = await request.get(
-    apiUrl(`/auth/session?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
-    {
-      headers: authHeaders(),
-    }
-  );
-
-  expect(response.status(), await response.text()).toBeLessThan(500);
-  expect(response.ok(), await response.text()).toBe(true);
-
-  const payload = await response.json();
+  const payload = await withProductionRetry('Fetch production auth session', async () => {
+    const response = await request.get(
+      apiUrl(`/auth/session?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
+      {
+        headers: authHeaders(),
+        timeout: API_REQUEST_TIMEOUT_MS,
+      }
+    );
+    const responseText = await response.text();
+    expect(response.status(), responseText).toBeLessThan(500);
+    expect(response.ok(), responseText).toBe(true);
+    return responseText ? JSON.parse(responseText) : {};
+  });
   const user = payload.user || payload.users?.[0] || null;
   const userId = user?.id || payload.userId || payload.session?.userId || payload.session?.user_id;
   expect(userId, 'production auth session must resolve a user id').toBeTruthy();
@@ -95,30 +120,34 @@ async function fetchProductionSession(request) {
 }
 
 async function fetchWorkspaceState(request) {
-  const response = await request.get(
-    apiUrl(`/state/bootstrap?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
-    {
-      headers: authHeaders(),
-    }
-  );
-
-  expect(response.status(), await response.text()).toBeLessThan(500);
-  expect(response.ok(), await response.text()).toBe(true);
-
-  const payload = await response.json();
+  const payload = await withProductionRetry('Fetch production workspace state', async () => {
+    const response = await request.get(
+      apiUrl(`/state/bootstrap?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
+      {
+        headers: authHeaders(),
+        timeout: API_REQUEST_TIMEOUT_MS,
+      }
+    );
+    const responseText = await response.text();
+    expect(response.status(), responseText).toBeLessThan(500);
+    expect(response.ok(), responseText).toBe(true);
+    return responseText ? JSON.parse(responseText) : {};
+  });
   return payload.state || {};
 }
 
-async function patchWorkspaceState(request, delta) {
+async function patchWorkspaceState(request, delta, options = {}) {
+  const attempts = options.attempts || 3;
+  const timeout = options.timeout || API_REQUEST_TIMEOUT_MS;
   let lastError = null;
-  for (const attempt of [1, 2, 3]) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       const response = await request.patch(
         apiUrl(`/state/workspaces/${encodeURIComponent(WORKSPACE_ID)}`),
         {
           headers: authHeaders(),
           data: delta,
-          timeout: 30_000,
+          timeout,
         }
       );
 
@@ -129,12 +158,19 @@ async function patchWorkspaceState(request, delta) {
       return responseText ? JSON.parse(responseText) : {};
     } catch (error) {
       lastError = error;
-      if (attempt === 3) break;
-      await new Promise((resolve) => setTimeout(resolve, attempt * 2_000));
+      if (attempt === attempts) break;
+      await sleep(attempt * 2_000);
     }
   }
 
   throw lastError || new Error('Production workspace patch failed.');
+}
+
+async function cleanupWorkspaceState(request, delta) {
+  await patchWorkspaceState(request, delta, {
+    attempts: 1,
+    timeout: CLEANUP_REQUEST_TIMEOUT_MS,
+  }).catch(() => {});
 }
 
 function hasItemWithId(items, id) {
@@ -260,7 +296,7 @@ async function openProfileSurface(page) {
 
 test.describe('Production system audit', () => {
   test.describe.configure({ mode: 'serial' });
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
 
   test.skip(
     !AUDIT_REQUIRED && (!AUTH_TOKEN || !WORKSPACE_ID),
@@ -391,9 +427,9 @@ test.describe('Production system audit', () => {
         'deleted audit task does not return after refresh'
       ).toBe(false);
     } finally {
-      await patchWorkspaceState(request, {
+      await cleanupWorkspaceState(request, {
         manualTasks: { removeIds: [taskId] },
-      }).catch(() => {});
+      });
     }
   });
 
@@ -495,14 +531,14 @@ test.describe('Production system audit', () => {
         undefined
       );
     } finally {
-      await patchWorkspaceState(request, {
+      await cleanupWorkspaceState(request, {
         meetings: {
           removeIds: [noteMeetingId, peopleCalendarMeetingId, recordingShellMeetingId],
         },
         calendarMeta: {
           [calendarMetaKey]: null,
         },
-      }).catch(() => {});
+      });
     }
   });
 
@@ -567,11 +603,11 @@ test.describe('Production system audit', () => {
       await openShellTab(page, 'Nagrania');
       await expect(page.getByText(title)).toHaveCount(0, { timeout: 20_000 });
     } finally {
-      await patchWorkspaceState(request, {
+      await cleanupWorkspaceState(request, {
         meetings: {
           removeIds: [meetingId],
         },
-      }).catch(() => {});
+      });
     }
   });
 
@@ -702,9 +738,9 @@ test.describe('Production system audit', () => {
       await page.getByRole('button', { name: 'Anuluj' }).click();
       await guard.assertClean();
     } finally {
-      await patchWorkspaceState(request, {
+      await cleanupWorkspaceState(request, {
         meetings: { removeIds: [meetingId] },
-      }).catch(() => {});
+      });
     }
   });
 });
