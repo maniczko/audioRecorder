@@ -115,8 +115,8 @@
     {
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
-      "expectedActionCount": 42,
-      "fingerprint": "85b6cdc8a62b87de",
+      "expectedActionCount": 43,
+      "fingerprint": "537c2393f8e51ff6",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
       "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone"],
