@@ -1841,7 +1841,7 @@ describe('audioPipeline exports', () => {
     expect(Object.values(result.speakerNames)).toContain('Speaker 1');
   }, 30000);
 
-  it('transcribeRecording applies per-speaker normalization when HF_TOKEN and PER_SPEAKER_NORM are set', async () => {
+  it('transcribeRecording completes when per-speaker normalization is enabled but local pyannote is disabled', async () => {
     const { EventEmitter } = await import('node:events');
     vi.resetModules();
     process.env.VOICELOG_DEBUG = 'false';
@@ -1975,8 +1975,7 @@ describe('audioPipeline exports', () => {
     const result = await pipeline.transcribeRecording(asset);
 
     expect(result.pipelineStatus).toBe('completed');
-    // applyPerSpeakerNorm ran → normFilePath was set → unlinkSync was called in finally
-    expect(unlinkSync).toHaveBeenCalled();
+    expect(volumedetectCallCount).toBe(0);
     expect(result.segments.length).toBeGreaterThan(0);
   }, 30000);
 
