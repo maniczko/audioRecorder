@@ -149,4 +149,32 @@ describe('TranscriptPanel', () => {
       )
     ).toBeInTheDocument();
   });
+
+  test('Regression: keeps transcript visible when audio is unavailable', () => {
+    renderTranscriptPanel({
+      displayRecording: {
+        audioAvailable: false,
+        audioUnavailable: true,
+        transcript: [
+          {
+            id: 'seg_unavailable_audio',
+            text: 'Transkrypt ma zostac widoczny bez audio.',
+            timestamp: 0,
+            speakerId: 0,
+          },
+        ],
+      },
+      selectedRecording: {
+        pipelineStatus: 'done',
+        audioAvailable: false,
+        audioUnavailable: true,
+      },
+      selectedRecordingAudioUrl: '',
+    });
+
+    expect(
+      screen.getByDisplayValue('Transkrypt ma zostac widoczny bez audio.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Brak transkrypcji/i)).not.toBeInTheDocument();
+  });
 });

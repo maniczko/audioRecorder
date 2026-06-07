@@ -611,6 +611,71 @@ test.describe('Production system audit', () => {
     }
   });
 
+  test('keeps transcript visible for a completed recording when audio is unavailable after refresh', async ({
+    page,
+    request,
+  }) => {
+    const stamp = Date.now();
+    const meetingId = `${AUDIT_PREFIX}audio_unavailable_transcript_${stamp}`;
+    const recordingId = `${AUDIT_PREFIX}audio_unavailable_recording_${stamp}`;
+    const title = `${AUDIT_PREFIX}audio unavailable transcript`;
+    const transcriptText = 'Ten transkrypt musi zostac widoczny mimo braku audio.';
+    const meeting = createAuditMeeting(meetingId, title, {
+      latestRecordingId: recordingId,
+      recordings: [
+        {
+          id: recordingId,
+          title,
+          status: 'completed',
+          pipelineStatus: 'done',
+          transcriptionStatus: 'done',
+          audioAvailable: false,
+          audioUnavailable: true,
+          audioUnavailableReason: 'production_audit_ui_fixture',
+          transcript: [
+            {
+              id: `${AUDIT_PREFIX}audio_unavailable_segment_${stamp}`,
+              speakerId: '0',
+              timestamp: 0,
+              endTimestamp: 8,
+              text: transcriptText,
+            },
+          ],
+          speakerNames: { 0: 'Speaker 1' },
+          speakerCount: 1,
+        },
+      ],
+    });
+
+    try {
+      await patchWorkspaceState(request, {
+        meetings: {
+          upsert: [meeting],
+        },
+      });
+
+      await installProductionSession(page, request);
+      await installProductionMeetingSnapshot(page, meeting);
+      await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Studio');
+      await expect(page.getByText(transcriptText).first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText(/Audio nie jest dost/i).first()).toBeVisible({
+        timeout: 20_000,
+      });
+
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await openShellTab(page, 'Studio');
+      await expect(page.getByText(transcriptText).first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText(/Brak transkrypcji/i)).toHaveCount(0, { timeout: 20_000 });
+    } finally {
+      await cleanupWorkspaceState(request, {
+        meetings: {
+          removeIds: [meetingId],
+        },
+      });
+    }
+  });
+
   test('covers the Studio voice-profile UI journey without silently saving unnamed speakers', async ({
     page,
     request,

@@ -40,6 +40,22 @@ function isHostedPreviewRuntime() {
   return /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(String(window.location.origin || ''));
 }
 
+function isHostedBrowserRuntime() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const location = window.location;
+  const hostname = String(location?.hostname || '').toLowerCase();
+  const protocol = String(location?.protocol || '');
+
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    return false;
+  }
+
+  return protocol === 'https:';
+}
+
 function readDefaultApiBaseUrl() {
   const env = (import.meta as any).env;
   const isProd = Boolean(env?.PROD);
@@ -74,7 +90,9 @@ function resolveApiBaseUrl() {
 }
 
 export const APP_DATA_PROVIDER = readMode(
-  readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
+  isHostedBrowserRuntime()
+    ? 'remote'
+    : readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
   'local'
 );
 

@@ -13,6 +13,7 @@ function setWindowOrigin(origin: string) {
     location: {
       origin,
       hostname: url.hostname,
+      protocol: url.protocol,
       href: origin,
     },
   });
@@ -67,5 +68,26 @@ describe('services/config resolveApiBaseUrl', () => {
     const config = await import('./config');
 
     expect(config.API_BASE_URL).toBe('http://127.0.0.1:4000');
+  });
+
+  it('forces remote data provider on hosted HTTPS runtime so new accounts use Supabase-backed API', async () => {
+    vi.stubEnv('VITE_DATA_PROVIDER', 'local');
+    vi.stubEnv('REACT_APP_DATA_PROVIDER', 'local');
+    setWindowOrigin('https://voicelog-audiorecorder.vercel.app');
+
+    const config = await import('./config');
+
+    expect(config.APP_DATA_PROVIDER).toBe('remote');
+    expect(config.remoteApiEnabled()).toBe(true);
+  });
+
+  it('keeps local data provider available for localhost development', async () => {
+    vi.stubEnv('VITE_DATA_PROVIDER', 'local');
+    setWindowOrigin('http://localhost:3000');
+
+    const config = await import('./config');
+
+    expect(config.APP_DATA_PROVIDER).toBe('local');
+    expect(config.remoteApiEnabled()).toBe(false);
   });
 });

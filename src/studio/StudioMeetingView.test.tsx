@@ -1441,6 +1441,41 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  test('Regression: shows transcript while unavailable audio disables playback hydration', async () => {
+    const hydrateRecordingAudio = vi.fn(() => Promise.resolve(null));
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-display-transcript-unavailable',
+          transcript: [
+            {
+              id: 'seg-display-transcript-unavailable',
+              text: 'Transkrypt zostaje po aktualizacji.',
+              timestamp: 0,
+              speakerId: 0,
+            },
+          ],
+          duration: 120,
+          pipelineStatus: 'done',
+          audioAvailable: false,
+          audioUnavailable: true,
+          audioUnavailableReason: 'audio_source_unavailable',
+        }}
+        selectedRecording={null}
+        selectedRecordingAudioStatus="idle"
+        hydrateRecordingAudio={hydrateRecordingAudio}
+      />
+    );
+
+    expect(screen.getByText(/Audio nie jest dostepne/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Transkrypt zostaje po aktualizacji.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(hydrateRecordingAudio).not.toHaveBeenCalled();
+    });
+  });
+
   test('Regression: playback controls remain visible for display recording audio without selected recording', () => {
     renderWithContext(
       <StudioMeetingView

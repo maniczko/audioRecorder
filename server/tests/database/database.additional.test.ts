@@ -736,6 +736,137 @@ describe('Database - Additional Coverage Tests', () => {
       expect(recording?.speakerCount).toBe(1);
     });
 
+    test('Regression: #0 - workspace state does not downgrade a completed transcript to a shell recording', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_no_transcript_downgrade';
+      const meetingId = 'meeting_state_no_transcript_downgrade';
+      const recordingId = 'rec_state_no_transcript_downgrade';
+      const fullTranscript = [
+        { id: 'seg1', speakerId: '0', timestamp: 0, text: 'Pelny transkrypt zostaje.' },
+      ];
+
+      await db.upsertMediaAsset({
+        recordingId,
+        workspaceId,
+        meetingId,
+        contentType: 'audio/webm',
+        buffer: Buffer.from('audio'),
+        createdByUserId: 'user1',
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Transcript anti downgrade',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                duration: 5400,
+                transcript: fullTranscript,
+                transcriptOutcome: 'normal',
+                speakerNames: { '0': 'Speaker 1' },
+                speakerCount: 1,
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Transcript anti downgrade',
+            latestRecordingId: recordingId,
+            recordings: [{ id: recordingId, pipelineStatus: 'done', transcriptionStatus: 'done' }],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+      const recording = meeting?.recordings?.[0];
+
+      expect(recording).toMatchObject({
+        id: recordingId,
+        pipelineStatus: 'done',
+        transcriptionStatus: 'done',
+        duration: 5400,
+        transcript: fullTranscript,
+        transcriptOutcome: 'normal',
+        speakerNames: { '0': 'Speaker 1' },
+        speakerCount: 1,
+      });
+      expect(meeting?.latestRecordingId).toBe(recordingId);
+    });
+
+    test('Regression: #0 - missing media asset keeps completed transcript but marks audio unavailable', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_missing_asset_transcript';
+      const meetingId = 'meeting_state_missing_asset_transcript';
+      const recordingId = 'rec_state_missing_asset_transcript';
+      const transcript = [
+        { id: 'seg1', speakerId: '0', timestamp: 0, text: 'Transkrypt bez audio zostaje.' },
+      ];
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Missing asset still keeps transcript',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                transcript,
+                transcriptOutcome: 'normal',
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.recordings?.[0]).toMatchObject({
+        id: recordingId,
+        pipelineStatus: 'done',
+        transcriptionStatus: 'done',
+        transcript,
+        audioAvailable: false,
+        audioUnavailable: true,
+        audioUnavailableReason: 'audio_source_unavailable',
+      });
+      expect(meeting?.latestRecordingId).toBe(recordingId);
+    });
+
     test('Regression: #0 - workspace state rebuilds a missing recording from latestRecordingId when the asset exists', async () => {
       if (!(await tablesExist())) return;
 

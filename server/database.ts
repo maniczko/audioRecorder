@@ -661,6 +661,121 @@ export class Database {
     return this._transcriptTextLength(serverTranscript) > this._transcriptTextLength(local);
   }
 
+  _hasMeaningfulTranscript(recording: any = {}): boolean {
+    return (
+      this._transcriptTextLength(Array.isArray(recording?.transcript) ? recording.transcript : []) >
+      0
+    );
+  }
+
+  _isCompletedRecording(recording: any = {}): boolean {
+    const status = this._normalizeMediaPipelineStatus(
+      recording?.pipelineStatus || recording?.transcriptionStatus || recording?.status
+    );
+    return status === 'done';
+  }
+
+  _mergeRecordingAntiDegradation(currentRecording: any = {}, incomingRecording: any = {}) {
+    if (!currentRecording || typeof currentRecording !== 'object') return incomingRecording;
+    if (!incomingRecording || typeof incomingRecording !== 'object') return currentRecording;
+
+    const currentHasTranscript = this._hasMeaningfulTranscript(currentRecording);
+    const incomingHasTranscript = this._hasMeaningfulTranscript(incomingRecording);
+    const shouldPreserveCurrentTranscript =
+      currentHasTranscript &&
+      (!incomingHasTranscript ||
+        this._transcriptTextLength(currentRecording.transcript) >
+          this._transcriptTextLength(incomingRecording.transcript));
+
+    if (!shouldPreserveCurrentTranscript) {
+      return incomingRecording;
+    }
+
+    return {
+      ...incomingRecording,
+      transcript: currentRecording.transcript,
+      transcriptOutcome: currentRecording.transcriptOutcome || incomingRecording.transcriptOutcome,
+      analysis: currentRecording.analysis || incomingRecording.analysis,
+      aiDebrief: currentRecording.aiDebrief || incomingRecording.aiDebrief,
+      reviewSummary: currentRecording.reviewSummary || incomingRecording.reviewSummary,
+      speakerNames: currentRecording.speakerNames || incomingRecording.speakerNames,
+      speakerCount: currentRecording.speakerCount || incomingRecording.speakerCount,
+      diarizationConfidence:
+        currentRecording.diarizationConfidence || incomingRecording.diarizationConfidence,
+      audioQuality: currentRecording.audioQuality || incomingRecording.audioQuality,
+      transcriptionDiagnostics:
+        currentRecording.transcriptionDiagnostics || incomingRecording.transcriptionDiagnostics,
+      duration: currentRecording.duration || incomingRecording.duration,
+      pipelineStatus: currentRecording.pipelineStatus || incomingRecording.pipelineStatus,
+      transcriptionStatus:
+        currentRecording.transcriptionStatus || incomingRecording.transcriptionStatus,
+    };
+  }
+
+  _mergeMeetingsAntiRecordingDegradation(
+    currentMeetings: any[] = [],
+    incomingMeetings: any[] = [],
+    tombstoneIds: Set<string> = new Set<string>()
+  ) {
+    const currentById = new Map(
+      (Array.isArray(currentMeetings) ? currentMeetings : [])
+        .filter((meeting: any) => meeting?.id)
+        .map((meeting: any) => [String(meeting.id), meeting])
+    );
+
+    return (Array.isArray(incomingMeetings) ? incomingMeetings : []).map((incomingMeeting: any) => {
+      const currentMeeting = currentById.get(String(incomingMeeting?.id || ''));
+      if (!currentMeeting) return incomingMeeting;
+
+      const currentRecordings = Array.isArray(currentMeeting.recordings)
+        ? currentMeeting.recordings
+        : [];
+      const incomingRecordings = Array.isArray(incomingMeeting.recordings)
+        ? incomingMeeting.recordings
+        : [];
+      const currentRecordingById = new Map(
+        currentRecordings
+          .filter((recording: any) => recording?.id || recording?.recordingId)
+          .map((recording: any) => [String(recording.id || recording.recordingId), recording])
+      );
+
+      const nextRecordings = incomingRecordings.map((incomingRecording: any) => {
+        const recordingId = String(incomingRecording?.id || incomingRecording?.recordingId || '');
+        if (!recordingId || tombstoneIds.has(recordingId)) return incomingRecording;
+        return this._mergeRecordingAntiDegradation(
+          currentRecordingById.get(recordingId),
+          incomingRecording
+        );
+      });
+
+      const latestRecordingId = String(incomingMeeting.latestRecordingId || '').trim();
+      if (
+        latestRecordingId &&
+        !tombstoneIds.has(latestRecordingId) &&
+        !nextRecordings.some(
+          (recording: any) =>
+            String(recording?.id || recording?.recordingId || '').trim() === latestRecordingId
+        )
+      ) {
+        const currentLatest = currentRecordingById.get(latestRecordingId);
+        if (currentLatest && this._hasMeaningfulTranscript(currentLatest)) {
+          nextRecordings.unshift({
+            ...currentLatest,
+            audioAvailable: false,
+            audioUnavailable: true,
+            audioUnavailableReason:
+              currentLatest.audioUnavailableReason || 'audio_source_unavailable',
+          });
+        }
+      }
+
+      return {
+        ...incomingMeeting,
+        recordings: nextRecordings,
+      };
+    });
+  }
+
   _deriveAudioExtensions(rawPath: string = '', contentType: string = ''): string[] {
     const candidates = new Set<string>();
     const ext = path.extname(String(rawPath || '').trim());
@@ -1067,12 +1182,27 @@ export class Database {
       const filteredRecordings = candidateRecordings.filter((recording: any) => {
         const recordingId = String(recording?.id || recording?.recordingId || '').trim();
         return (
-          Boolean(recordingId) && !tombstoneIds.has(recordingId) && assetsById.has(recordingId)
+          Boolean(recordingId) &&
+          !tombstoneIds.has(recordingId) &&
+          (assetsById.has(recordingId) ||
+            (this._isCompletedRecording(recording) && this._hasMeaningfulTranscript(recording)))
         );
       });
       const reconciledRecordings = filteredRecordings.map((recording: any) => {
         const recordingId = String(recording?.id || recording?.recordingId || '').trim();
         const asset = assetsById.get(recordingId);
+        if (!asset) {
+          const preserved = {
+            ...recording,
+            audioAvailable: false,
+            audioUnavailable: true,
+            audioUnavailableReason: recording.audioUnavailableReason || 'audio_source_unavailable',
+          };
+          if (JSON.stringify(preserved) !== JSON.stringify(recording)) {
+            changed = true;
+          }
+          return preserved;
+        }
         const enriched = this._enrichRecordingFromMediaAsset(recording, asset, {
           audioAvailable: audioAvailabilityById.get(recordingId),
         });
@@ -1174,20 +1304,31 @@ export class Database {
     const currentRow = await this._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [
       workspaceId,
     ]);
+    const existingMeetings = this._normalizeWorkspaceMeetings(
+      this._safeJsonParse(currentRow?.meetings_json, []),
+      {
+        meetingTombstoneIds: this._extractMeetingTombstoneIds(
+          this._safeJsonParse(currentRow?.calendar_meta_json, {})
+        ),
+      }
+    ).meetings;
     const calendarMeta = this._mergeCalendarMetaTombstones(
       this._safeJsonParse(currentRow?.calendar_meta_json, {}),
       payload.calendarMeta && typeof payload.calendarMeta === 'object' ? payload.calendarMeta : {}
     );
-    const normalizedMeetings = this._normalizeWorkspaceMeetings(
+    const tombstoneIds = this._extractRecordingTombstoneIds(calendarMeta);
+    const antiDegradedMeetings = this._mergeMeetingsAntiRecordingDegradation(
+      existingMeetings,
       Array.isArray(payload.meetings) ? payload.meetings : [],
-      {
-        meetingTombstoneIds: this._extractMeetingTombstoneIds(calendarMeta),
-      }
+      tombstoneIds
     );
+    const normalizedMeetings = this._normalizeWorkspaceMeetings(antiDegradedMeetings, {
+      meetingTombstoneIds: this._extractMeetingTombstoneIds(calendarMeta),
+    });
     const reconciled = await this._reconcileWorkspaceMeetingRecordings(
       workspaceId,
       normalizedMeetings.meetings,
-      { tombstoneIds: this._extractRecordingTombstoneIds(calendarMeta) }
+      { tombstoneIds }
     );
     const timestamp = this.nowIso();
     await this._execute(
