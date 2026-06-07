@@ -50,6 +50,47 @@ function shouldForceMissingImportWorkspaceForE2E() {
   return window.localStorage.getItem('voicelog.e2e.forceMissingImportWorkspace') === 'true';
 }
 
+function transcriptSize(recording: any) {
+  return Array.isArray(recording?.transcript) ? recording.transcript.length : 0;
+}
+
+function recordingReadabilityScore(recording: any) {
+  if (!recording || typeof recording !== 'object') return -1;
+  const segments = transcriptSize(recording);
+  const textLength = segments
+    ? recording.transcript.reduce(
+        (total: number, segment: any) => total + String(segment?.text || '').trim().length,
+        0
+      )
+    : 0;
+  const isDone = recording.pipelineStatus === 'done' || recording.transcriptionStatus === 'done';
+  const isProcessing =
+    recording.pipelineStatus === 'processing' || recording.transcriptionStatus === 'processing';
+
+  return segments * 100_000 + textLength + (isDone ? 1_000 : 0) - (isProcessing ? 1_000 : 0);
+}
+
+function selectReadableRecording(meeting: any, preferredRecordingId?: string | null) {
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  if (!recordings.length) return null;
+
+  const preferred =
+    recordings.find((recording: any) => String(recording?.id) === String(preferredRecordingId)) ||
+    recordings.find(
+      (recording: any) => String(recording?.id) === String(meeting?.latestRecordingId)
+    ) ||
+    recordings[0];
+  const richest = recordings.reduce((best: any, recording: any) =>
+    recordingReadabilityScore(recording) > recordingReadabilityScore(best) ? recording : best
+  );
+
+  if (transcriptSize(richest) > 0 && transcriptSize(preferred) === 0) {
+    return richest;
+  }
+
+  return preferred;
+}
+
 export default function useMeetingLifecycle({
   currentUser,
   currentUserId,
@@ -105,10 +146,7 @@ export default function useMeetingLifecycle({
     (userMeetings.find((meeting: MeetingLike) => meeting.id === selectedMeetingId) as
       | MeetingLike
       | undefined) || null;
-  const selectedRecording =
-    selectedMeeting?.recordings?.find((recording) => recording.id === selectedRecordingId) ||
-    selectedMeeting?.recordings?.[0] ||
-    null;
+  const selectedRecording = selectReadableRecording(selectedMeeting, selectedRecordingId);
   const activeStoredMeetingDraft = currentWorkspaceId
     ? storedMeetingDrafts[currentWorkspaceId] || null
     : null;
@@ -147,7 +185,7 @@ export default function useMeetingLifecycle({
       skipSelectedMeetingDraftSyncRef.current = matchingMeeting?.id || '';
       setSelectedMeetingId(matchingMeeting?.id || null);
       setSelectedRecordingId(
-        matchingMeeting?.latestRecordingId || matchingMeeting?.recordings[0]?.id || null
+        selectReadableRecording(matchingMeeting, matchingMeeting?.latestRecordingId)?.id || null
       );
       setIsDetachedMeetingDraft(!matchingMeeting);
       setHasMeetingDraftChanges(false);
@@ -172,7 +210,8 @@ export default function useMeetingLifecycle({
       const nextDraft = meetingToDraft(nextSelectedMeeting);
       setSelectedMeetingId(nextSelectedMeeting.id);
       setSelectedRecordingId(
-        nextSelectedMeeting.latestRecordingId || nextSelectedMeeting.recordings[0]?.id || null
+        selectReadableRecording(nextSelectedMeeting, nextSelectedMeeting.latestRecordingId)?.id ||
+          null
       );
       draftBaselineRef.current = nextDraft;
       setHasMeetingDraftChanges(false);
@@ -254,7 +293,7 @@ export default function useMeetingLifecycle({
 
   function selectMeeting(meeting) {
     setSelectedMeetingId(meeting.id);
-    setSelectedRecordingId(meeting.latestRecordingId || meeting.recordings[0]?.id || null);
+    setSelectedRecordingId(selectReadableRecording(meeting, meeting.latestRecordingId)?.id || null);
     setIsDetachedMeetingDraft(false);
     const nextDraft = meetingToDraft(meeting);
     draftBaselineRef.current = nextDraft;

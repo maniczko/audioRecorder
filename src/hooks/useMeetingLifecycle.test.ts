@@ -48,6 +48,50 @@ describe('useMeetingLifecycle', () => {
     expect(result.current.meetingDraft.title).toBe('Updated title');
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - Completed transcript hidden by a newer empty shell
+  // Date: 2026-06-07
+  // Bug: Studio could keep selecting latestRecordingId even when that
+  //      recording was an empty processing shell and an older recording
+  //      in the same meeting still had the completed transcript.
+  // Fix: selected recording falls back to the richest readable recording
+  //      only when the preferred recording has no transcript.
+  // -----------------------------------------------------------------
+  test('Regression: selects readable transcript recording over empty latest shell', () => {
+    const props = {
+      ...baseProps,
+      userMeetings: [
+        {
+          id: 'meeting-allegro',
+          title: 'Import: Allegro-rozmowa_2026-05-14',
+          latestRecordingId: 'recording-empty-shell',
+          recordings: [
+            {
+              id: 'recording-empty-shell',
+              pipelineStatus: 'processing',
+              transcript: [],
+              duration: 3,
+            },
+            {
+              id: 'recording-full-transcript',
+              pipelineStatus: 'done',
+              transcriptionStatus: 'done',
+              audioAvailable: false,
+              audioUnavailable: true,
+              transcript: [{ id: 'seg-1', text: 'Transkrypt nie znika po aktualizacji.' }],
+              duration: 5400,
+            },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useMeetingLifecycle(props as any));
+
+    expect(result.current.selectedRecording?.id).toBe('recording-full-transcript');
+    expect(result.current.selectedRecording?.transcript).toHaveLength(1);
+  });
+
   test('startNewMeetingDraft & saveMeeting', () => {
     const { result } = renderHook(() => useMeetingLifecycle(baseProps as any));
 

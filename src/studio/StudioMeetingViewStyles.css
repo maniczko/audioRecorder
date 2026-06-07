@@ -4007,6 +4007,140 @@
   margin-top: 16px;
 }
 
+/* Premium light Studio pass: keep the old dark theme intact, but remove dark islands
+   from summary, transcript and recording-detail surfaces in the light layout. */
+:root[data-theme='premium-light'] .ff-studio-right-col,
+:root[data-theme='premium-light'] .studio-analysis-summary-panel,
+:root[data-theme='premium-light'] .summary-card,
+:root[data-theme='premium-light'] .summary-hero,
+:root[data-theme='premium-light'] .sketchnote-section-shell {
+  background: var(--surface-panel-strong);
+  border-color: var(--surface-stroke);
+  box-shadow: var(--shadow-panel);
+}
+
+:root[data-theme='premium-light'] .studio-analysis-summary-panel {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .studio-analysis-summary-panel .analysis-summary-text,
+:root[data-theme='premium-light'] .analysis-list li,
+:root[data-theme='premium-light'] .summary-metric strong,
+:root[data-theme='premium-light'] .summary-highlight-body,
+:root[data-theme='premium-light'] .summary-highlight-body strong,
+:root[data-theme='premium-light'] .summary-task-head strong,
+:root[data-theme='premium-light'] .meeting-task-title-row strong,
+:root[data-theme='premium-light'] .summary-task-card,
+:root[data-theme='premium-light'] .summary-pill-card,
+:root[data-theme='premium-light'] .summary-quote p,
+:root[data-theme='premium-light'] .summary-participant strong,
+:root[data-theme='premium-light'] .summary-participant span,
+:root[data-theme='premium-light'] .summary-pill-card strong {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .summary-metric span,
+:root[data-theme='premium-light'] .summary-card-head h3,
+:root[data-theme='premium-light'] .summary-card-head span,
+:root[data-theme='premium-light'] .summary-highlight-body span,
+:root[data-theme='premium-light'] .summary-story-copy,
+:root[data-theme='premium-light'] .summary-task-card p,
+:root[data-theme='premium-light'] .summary-task-meta,
+:root[data-theme='premium-light'] .meeting-task-item p,
+:root[data-theme='premium-light'] .meeting-task-meta,
+:root[data-theme='premium-light'] .summary-quote small,
+:root[data-theme='premium-light'] .summary-participant small,
+:root[data-theme='premium-light'] .summary-pill-card span,
+:root[data-theme='premium-light'] .analysis-summary-diagnostics {
+  color: var(--text-2);
+}
+
+:root[data-theme='premium-light'] .summary-metric,
+:root[data-theme='premium-light'] .summary-highlight,
+:root[data-theme='premium-light'] .summary-hero .summary-highlight:first-child,
+:root[data-theme='premium-light'] .summary-agenda-item,
+:root[data-theme='premium-light'] .summary-task-card,
+:root[data-theme='premium-light'] .meeting-task-open,
+:root[data-theme='premium-light'] .summary-pill-card,
+:root[data-theme='premium-light'] .summary-quote,
+:root[data-theme='premium-light'] .summary-participant,
+:root[data-theme='premium-light'] .transcript-timeline-panel,
+:root[data-theme='premium-light'] .transcript-toolbar,
+:root[data-theme='premium-light'] .transcript-bulk-toolbar {
+  background: rgba(255, 255, 252, 0.74);
+  border-color: var(--surface-stroke);
+}
+
+:root[data-theme='premium-light'] .summary-metric.teal,
+:root[data-theme='premium-light'] .summary-pill-card.accent,
+:root[data-theme='premium-light'] .summary-tag {
+  background: rgba(28, 141, 122, 0.08);
+  border-color: rgba(28, 141, 122, 0.2);
+  color: var(--accent-strong);
+}
+
+:root[data-theme='premium-light'] .summary-metric.blue,
+:root[data-theme='premium-light'] .summary-chip {
+  background: rgba(42, 112, 142, 0.08);
+  border-color: rgba(42, 112, 142, 0.18);
+  color: #1e5d72;
+}
+
+:root[data-theme='premium-light'] .summary-metric.warning,
+:root[data-theme='premium-light'] .summary-pill-card.warning {
+  background: rgba(169, 111, 31, 0.08);
+  border-color: rgba(169, 111, 31, 0.2);
+}
+
+:root[data-theme='premium-light'] .summary-pill-card.danger {
+  background: rgba(185, 77, 63, 0.08);
+  border-color: rgba(185, 77, 63, 0.18);
+}
+
+:root[data-theme='premium-light'] .summary-highlight-icon,
+:root[data-theme='premium-light'] .summary-step-index {
+  background: rgba(28, 141, 122, 0.1);
+  border-color: rgba(28, 141, 122, 0.2);
+  color: var(--accent-strong);
+}
+
+:root[data-theme='premium-light'] .ff-search-bar {
+  background: rgba(255, 255, 252, 0.82);
+  border-color: var(--surface-stroke);
+  color: var(--text-2);
+}
+
+:root[data-theme='premium-light'] .ff-search-bar:focus-within {
+  background: rgba(255, 255, 252, 0.96);
+  border-color: rgba(28, 141, 122, 0.34);
+  box-shadow: 0 0 0 3px rgba(28, 141, 122, 0.1);
+}
+
+:root[data-theme='premium-light'] .ff-search-bar input {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .ff-search-bar input::placeholder {
+  color: rgba(18, 40, 34, 0.42);
+}
+
+:root[data-theme='premium-light'] .timeline-wave {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(18, 40, 34, 0) 0%,
+      rgba(18, 40, 34, 0.16) 50%,
+      rgba(18, 40, 34, 0) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(18, 40, 34, 0.12) 0,
+      rgba(18, 40, 34, 0.12) 2px,
+      transparent 2px,
+      transparent 7px
+    );
+}
+
 .ff-sticky-header-shell {
   padding: 16px 20px 12px;
 }
