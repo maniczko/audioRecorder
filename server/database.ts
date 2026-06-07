@@ -733,7 +733,7 @@ export class Database {
       const incomingRecordings = Array.isArray(incomingMeeting.recordings)
         ? incomingMeeting.recordings
         : [];
-      const currentRecordingById = new Map(
+      const currentRecordingById = new Map<string, any>(
         currentRecordings
           .filter((recording: any) => recording?.id || recording?.recordingId)
           .map((recording: any) => [String(recording.id || recording.recordingId), recording])
