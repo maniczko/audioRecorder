@@ -23,6 +23,21 @@ describe('mobile responsive CSS contracts', () => {
     expect(css).toContain('grid-template-columns: minmax(0, 1fr)');
   });
 
+  it('keeps premium-light task form and completed checkbox aligned with the light layout', () => {
+    const css = readCss('./tasks.css');
+
+    expect(css).toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-detail-modal-scroll"
+    );
+    expect(css).toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-detail-unified-field"
+    );
+    expect(css).toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle.completed::after"
+    );
+    expect(css).toContain('transform: translateY(-1px) rotate(42deg)');
+  });
+
   it('turns recordings tables into labeled mobile cards', () => {
     const css = readCss('./recordings.css');
 
@@ -38,5 +53,16 @@ describe('mobile responsive CSS contracts', () => {
     expect(css).toContain('.ff-studio-split-view');
     expect(css).toContain('grid-template-columns: minmax(0, 1fr)');
     expect(css).toContain('var(--mobile-bottom-safe');
+  });
+
+  it('keeps premium-light Studio tabs, metrics and speaker labels readable', () => {
+    const studioCss = readCss('../studio/StudioMeetingViewStyles.css');
+    const modernCss = readCss('./modern-layout.css');
+
+    expect(studioCss).toContain(":root[data-theme='premium-light'] .ff-int-tab");
+    expect(studioCss).toContain(":root[data-theme='premium-light'] .analysis-shell-metric");
+    expect(studioCss).toContain(":root[data-theme='premium-light'] .ff-sov-name");
+    expect(studioCss).toContain(":root[data-theme='premium-light'] .ff-player-status-wrap");
+    expect(modernCss).toContain("[data-theme='premium-light'][data-layout='modern'] .ff-int-tab");
   });
 });

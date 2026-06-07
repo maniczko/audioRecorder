@@ -870,6 +870,20 @@
   color: var(--modern-text);
 }
 
+[data-theme='premium-light'][data-layout='modern'] .ff-int-tab {
+  border-bottom-color: transparent;
+  color: rgba(28, 50, 43, 0.68);
+}
+
+[data-theme='premium-light'][data-layout='modern'] .ff-int-tab:hover:not(.active) {
+  color: rgba(18, 40, 34, 0.9);
+}
+
+[data-theme='premium-light'][data-layout='modern'] .ff-int-tab.active {
+  border-bottom-color: transparent;
+  color: #075f52;
+}
+
 /* --- 5. TASKS: reduce excessive row padding --- */
 [data-layout='modern'] .tasks-layout.ms-todo .todo-table-row {
   padding: 8px 16px;

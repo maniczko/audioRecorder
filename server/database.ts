@@ -926,6 +926,10 @@ export class Database {
       next.audioAvailable = false;
       next.audioUnavailable = true;
       next.audioUnavailableReason = 'audio_source_unavailable';
+    } else if (options.audioAvailable === true) {
+      next.audioAvailable = true;
+      next.audioUnavailable = false;
+      delete next.audioUnavailableReason;
     }
 
     return next;

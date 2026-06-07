@@ -542,7 +542,14 @@ describe('Database - Additional Coverage Tests', () => {
       const state = await db.getWorkspaceState('ws_state_cleanup');
       const meeting = state.meetings.find((item: any) => item.id === 'meeting_state_cleanup');
 
-      expect(meeting?.recordings).toEqual([{ id: 'rec_state_valid', pipelineStatus: 'done' }]);
+      expect(meeting?.recordings).toEqual([
+        expect.objectContaining({
+          id: 'rec_state_valid',
+          pipelineStatus: 'done',
+          audioAvailable: true,
+          audioUnavailable: false,
+        }),
+      ]);
       expect(meeting?.latestRecordingId).toBe('rec_state_valid');
     });
 
@@ -1014,6 +1021,77 @@ describe('Database - Additional Coverage Tests', () => {
         audioUnavailableReason: 'audio_source_unavailable',
         transcript: [{ id: 'seg1', speakerId: '0', text: 'Test transcript' }],
       });
+      availabilitySpy.mockRestore();
+    });
+
+    test('Regression: #0 - workspace state restores playable audio when media asset is available again', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_audio_available_restore';
+      const meetingId = 'meeting_state_audio_available_restore';
+      const recordingId = 'rec_state_audio_available_restore';
+      const availabilitySpy = vi.spyOn(db, '_isMediaAssetAudioAvailable').mockResolvedValue(true);
+      const transcript = [
+        { id: 'seg1', speakerId: '0', text: 'Audio wraca bez utraty transkryptu.' },
+      ];
+
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          transcription_status, transcript_json, diarization_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          recordingId,
+          workspaceId,
+          meetingId,
+          'user1',
+          'workspace/recording/audio.webm',
+          'audio/webm',
+          'completed',
+          JSON.stringify(transcript),
+          JSON.stringify({ speakerCount: 1, transcriptOutcome: 'normal' }),
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ]
+      );
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Audio available restore',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                transcript,
+                audioAvailable: false,
+                audioUnavailable: true,
+                audioUnavailableReason: 'audio_source_unavailable',
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const meeting = state.meetings.find((item: any) => item.id === meetingId);
+
+      expect(meeting?.recordings?.[0]).toMatchObject({
+        id: recordingId,
+        audioAvailable: true,
+        audioUnavailable: false,
+        transcript,
+      });
+      expect(meeting?.recordings?.[0]?.audioUnavailableReason).toBeUndefined();
       availabilitySpy.mockRestore();
     });
   });
