@@ -3,6 +3,22 @@ import { persist } from 'zustand/middleware';
 import { getBrowserNotificationCandidates } from '../lib/notifications';
 
 const DEFAULT_NOTIFICATION_STATE = { dismissedIds: [], deliveredIds: [] };
+const FIXED_LAYOUT_PRESET = 'modern';
+
+export type AppearanceMode = 'dark' | 'premium-light';
+
+export function normalizeAppearanceMode(value: unknown): AppearanceMode {
+  const raw = String(value || '').trim();
+  if (raw === 'premium-light' || raw === 'light' || raw === 'beaver') return 'premium-light';
+  return 'dark';
+}
+
+function applyAppearanceMode(value: unknown) {
+  const appearanceMode = normalizeAppearanceMode(value);
+  document.documentElement.setAttribute('data-theme', appearanceMode);
+  document.documentElement.setAttribute('data-layout', FIXED_LAYOUT_PRESET);
+  return appearanceMode;
+}
 
 function normalizeNotificationState(value: any) {
   return {
@@ -16,8 +32,9 @@ export const useUIStore = create<any>()(
     (set, get) => ({
       activeTab: 'studio',
       tabHistory: ['studio'],
-      theme: 'dark',
-      layoutPreset: 'modern',
+      appearanceMode: 'dark' as AppearanceMode,
+      theme: 'dark' as AppearanceMode,
+      layoutPreset: FIXED_LAYOUT_PRESET,
       pendingTaskId: '',
       pendingPersonId: '',
       studioHomeSignal: 0,
@@ -39,14 +56,27 @@ export const useUIStore = create<any>()(
         set({ activeTab: prev, tabHistory: tabHistory.slice(0, -1) });
       },
 
-      setTheme: (theme: string) => {
-        document.documentElement.setAttribute('data-theme', theme);
-        set({ theme });
+      setAppearanceMode: (appearanceMode: AppearanceMode) => {
+        const normalized = applyAppearanceMode(appearanceMode);
+        set({
+          appearanceMode: normalized,
+          theme: normalized,
+          layoutPreset: FIXED_LAYOUT_PRESET,
+        });
       },
 
-      setLayoutPreset: (layoutPreset: string) => {
-        document.documentElement.setAttribute('data-layout', layoutPreset);
-        set({ layoutPreset });
+      setTheme: (theme: string) => {
+        const normalized = applyAppearanceMode(theme);
+        set({
+          appearanceMode: normalized,
+          theme: normalized,
+          layoutPreset: FIXED_LAYOUT_PRESET,
+        });
+      },
+
+      setLayoutPreset: () => {
+        document.documentElement.setAttribute('data-layout', FIXED_LAYOUT_PRESET);
+        set({ layoutPreset: FIXED_LAYOUT_PRESET });
       },
 
       setPendingTaskId: (id: string) => set({ pendingTaskId: id }),
@@ -123,23 +153,30 @@ export const useUIStore = create<any>()(
     {
       name: 'voicelog_ui_store',
       partialize: (state) => ({
+        appearanceMode: state.appearanceMode,
         theme: state.theme,
-        layoutPreset: state.layoutPreset,
+        layoutPreset: FIXED_LAYOUT_PRESET,
         notificationState: normalizeNotificationState(state.notificationState),
       }),
       merge: (persistedState, currentState) => {
         const persisted = (persistedState || {}) as any;
+        const appearanceMode = normalizeAppearanceMode(
+          persisted.appearanceMode || persisted.theme || persisted.layoutPreset
+        );
         return {
           ...currentState,
           ...persisted,
+          appearanceMode,
+          theme: appearanceMode,
+          layoutPreset: FIXED_LAYOUT_PRESET,
           notificationState: normalizeNotificationState(persisted.notificationState),
         };
       },
       onRehydrateStorage: () => (state) => {
-        if (state?.theme) {
-          document.documentElement.setAttribute('data-theme', state.theme);
-        }
-        document.documentElement.setAttribute('data-layout', state?.layoutPreset || 'modern');
+        const appearanceMode = applyAppearanceMode(state?.appearanceMode || state?.theme);
+        state.appearanceMode = appearanceMode;
+        state.theme = appearanceMode;
+        state.layoutPreset = FIXED_LAYOUT_PRESET;
       },
     }
   )

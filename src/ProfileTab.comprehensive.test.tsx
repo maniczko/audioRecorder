@@ -36,11 +36,6 @@ vi.mock('./hooks/useWorkspaceBackup', () => ({
   })),
 }));
 
-// Mock JapaneseThemeSelector to avoid its side-effects
-vi.mock('./components/JapaneseThemeSelector', () => ({
-  JapaneseThemeSelector: (props: any) => <div data-testid="japan-theme" />,
-}));
-
 const mockProps = {
   currentUser: {
     id: 'u1',
@@ -71,10 +66,10 @@ const mockProps = {
   securityMessage: '',
   workspaceRole: 'admin',
   onLogout: vi.fn(),
+  appearanceMode: 'dark',
+  onSetAppearanceMode: vi.fn(),
   theme: 'dark',
   onSetTheme: vi.fn(),
-  layoutPreset: 'default',
-  onSetLayoutPreset: vi.fn(),
   allTags: [{ tag: 'project', taskCount: 5, meetingCount: 2 }],
   onRenameTag: vi.fn(),
   onDeleteTag: vi.fn(),
@@ -677,7 +672,7 @@ describe('ProfileTab', () => {
   });
 
   describe('Settings Section - Theme and Layout', () => {
-    it('renders theme settings with current theme', async () => {
+    it('renders exactly two premium appearance choices', async () => {
       const user = userEvent.setup();
       render(<ProfileTab {...mockProps} />);
 
@@ -685,13 +680,15 @@ describe('ProfileTab', () => {
       await user.click(reviewButton!);
 
       await waitFor(() => {
-        expect(screen.getByText('Wygląd i Layout')).toBeInTheDocument();
-        expect(screen.getByText(/Motyw:/)).toBeInTheDocument();
-        expect(screen.getByText('dark')).toBeInTheDocument();
+        expect(screen.getByText('Tryb interfejsu')).toBeInTheDocument();
+        expect(screen.getByText('Ciemny klasyczny')).toBeInTheDocument();
+        expect(screen.getByText('Jasny premium')).toBeInTheDocument();
+        expect(screen.queryByText('Compact')).not.toBeInTheDocument();
+        expect(screen.queryByText('Flat')).not.toBeInTheDocument();
       });
     });
 
-    it('calls onSetTheme when theme buttons are clicked', async () => {
+    it('calls onSetAppearanceMode when appearance cards are clicked', async () => {
       const user = userEvent.setup();
       render(<ProfileTab {...mockProps} />);
 
@@ -699,38 +696,15 @@ describe('ProfileTab', () => {
       await user.click(reviewButton!);
 
       await waitFor(() => {
-        expect(screen.getByText('🌙')).toBeInTheDocument();
+        expect(screen.getByText('Jasny premium')).toBeInTheDocument();
       });
 
-      const lightButton = screen.getByText('☀️');
-      await user.click(lightButton);
-
-      expect(mockProps.onSetTheme).toHaveBeenCalledWith('light');
-
-      const premiumLightButton = screen.getByText('Premium jasny');
+      const premiumLightButton = screen.getByText('Jasny premium');
       await user.click(premiumLightButton);
 
-      expect(mockProps.onSetTheme).toHaveBeenCalledWith('premium-light');
-    });
-
-    it('calls onSetLayoutPreset when layout buttons are clicked', async () => {
-      const user = userEvent.setup();
-      render(<ProfileTab {...mockProps} />);
-
-      const reviewButton = screen.getByText('Ustawienia wyciszone').closest('button');
-      await user.click(reviewButton!);
-
-      await waitFor(() => {
-        expect(screen.getByText('Compact')).toBeInTheDocument();
-      });
-
-      const compactButton = screen.getByText('Compact');
-      await user.click(compactButton);
-
-      expect(mockProps.onSetLayoutPreset).toHaveBeenCalledWith('compact');
+      expect(mockProps.onSetAppearanceMode).toHaveBeenCalledWith('premium-light');
     });
   });
-
   describe('API Connection Status', () => {
     it('renders API connection status section', async () => {
       const user = userEvent.setup();

@@ -7,13 +7,24 @@ import './ProfileTabStyles.css';
 import useWorkspaceBackup from './hooks/useWorkspaceBackup';
 import { Input } from './ui/Input';
 import { Select } from './ui/Select';
-import { JapaneseThemeSelector } from './components/JapaneseThemeSelector';
-import { type JapaneseTheme } from './styles/japaneseThemes';
-import './styles/JapaneseFlatDesign.css';
 import TagInput from './shared/TagInput';
 import { ErrorLogSection } from './components/ErrorLogSection';
 
 const MAX_VOICE_PROFILE_SAMPLES = 5;
+const APPEARANCE_OPTIONS = [
+  {
+    id: 'dark',
+    title: 'Ciemny klasyczny',
+    eyebrow: 'Domyślny',
+    description: 'Stary, kontrastowy wygląd VoiceLog do pracy w skupieniu.',
+  },
+  {
+    id: 'premium-light',
+    title: 'Jasny premium',
+    eyebrow: 'Lekki',
+    description: 'Jaśniejszy wariant z miękkimi powierzchniami i spokojniejszym odbiorem.',
+  },
+];
 
 type VoiceProfileQualityLabel = 'Brak' | 'Niska' | 'Dobra' | 'Wysoka';
 type VoiceProfileQualityTone = 'empty' | 'low' | 'good' | 'high';
@@ -1254,10 +1265,10 @@ export default function ProfileTab({
   updateWorkspaceMemberRole,
   removeWorkspaceMember,
   onLogout,
+  appearanceMode,
+  onSetAppearanceMode,
   theme,
   onSetTheme,
-  layoutPreset = 'default',
-  onSetLayoutPreset,
   allTags = [],
   onRenameTag,
   onDeleteTag,
@@ -1272,16 +1283,15 @@ export default function ProfileTab({
 }) {
   const canManagePassword = Boolean(currentUser?.passwordHash);
   const [activeCategory, setActiveCategory] = useState('account');
-  const [japaneseTheme, setJapaneseTheme] = useState<JapaneseTheme>(() => {
-    const saved = localStorage.getItem('profile-theme') as JapaneseTheme;
-    return saved || 'sakura';
-  });
-
-  // Apply theme to document
-  useEffect(() => {
-    document.documentElement.className = `theme-${japaneseTheme}`;
-    localStorage.setItem('profile-theme', japaneseTheme);
-  }, [japaneseTheme]);
+  const currentAppearanceMode =
+    appearanceMode === 'premium-light' || theme === 'premium-light' ? 'premium-light' : 'dark';
+  const selectAppearanceMode = (mode: string) => {
+    if (typeof onSetAppearanceMode === 'function') {
+      onSetAppearanceMode(mode);
+      return;
+    }
+    onSetTheme?.(mode);
+  };
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
@@ -1689,91 +1699,50 @@ export default function ProfileTab({
         {activeCategory === 'review' && (
           <div className="profile-category-view profile-category-view-spaced">
             <div className="profile-grid">
-              {/* Japanese Flat Design Theme Selector */}
-              <section className="panel profile-grid-span-two" style={{ gridColumn: 'span 2' }}>
+              <section className="panel profile-grid-span-two">
                 <div className="panel-header compact">
                   <div>
-                    <div className="eyebrow">🎨 Japanese Flat Design</div>
-                    <h2>Wybierz Motyw</h2>
+                    <div className="eyebrow">Wygląd</div>
+                    <h2>Tryb interfejsu</h2>
+                    <p className="profile-section-copy">
+                      Wybierz jeden z dwóch dopracowanych wariantów aplikacji. Układ pozostaje
+                      spójny, zmienia się tylko nastrój i kontrast.
+                    </p>
                   </div>
                 </div>
-                <JapaneseThemeSelector
-                  currentTheme={japaneseTheme}
-                  onThemeChange={setJapaneseTheme}
-                />
-              </section>
-
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Settings</div>
-                    <h2>Wygląd i Layout</h2>
-                  </div>
-                </div>
-                <div className="stack-form">
-                  <div className="integration-row">
-                    <span>
-                      Motyw: <strong>{theme}</strong>
-                    </span>
-                    <div className="button-row">
+                <div className="appearance-choice-grid" role="group" aria-label="Tryb interfejsu">
+                  {APPEARANCE_OPTIONS.map((option) => {
+                    const active = currentAppearanceMode === option.id;
+                    return (
                       <button
+                        key={option.id}
                         type="button"
-                        className="ghost-button"
-                        onClick={() => onSetTheme('dark')}
+                        className={`appearance-choice-card ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => selectAppearanceMode(option.id)}
                       >
-                        🌙
+                        <span
+                          className={`appearance-preview appearance-preview-${option.id}`}
+                          aria-hidden="true"
+                        >
+                          <span className="appearance-preview-sidebar" />
+                          <span className="appearance-preview-main">
+                            <span />
+                            <span />
+                            <span />
+                          </span>
+                        </span>
+                        <span className="appearance-choice-copy">
+                          <span className="appearance-choice-eyebrow">{option.eyebrow}</span>
+                          <strong>{option.title}</strong>
+                          <span>{option.description}</span>
+                        </span>
+                        <span className="appearance-choice-status">
+                          {active ? 'Aktywny' : 'Wybierz'}
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetTheme('light')}
-                      >
-                        ☀️
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetTheme('beaver')}
-                      >
-                        🦫
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetTheme('premium-light')}
-                      >
-                        Premium jasny
-                      </button>
-                    </div>
-                  </div>
-                  <div className="integration-row">
-                    <span>
-                      Zagęszczenie: <strong>{layoutPreset}</strong>
-                    </span>
-                    <div className="button-row">
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetLayoutPreset?.('default')}
-                      >
-                        Default
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetLayoutPreset?.('compact')}
-                      >
-                        Compact
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => onSetLayoutPreset?.('flat')}
-                      >
-                        Flat
-                      </button>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </section>
 

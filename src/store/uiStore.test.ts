@@ -12,6 +12,7 @@ describe('uiStore', () => {
     useUIStore.setState({
       activeTab: 'studio',
       tabHistory: ['studio'],
+      appearanceMode: 'dark',
       theme: 'dark',
       layoutPreset: 'modern',
       pendingTaskId: '',
@@ -35,19 +36,31 @@ describe('uiStore', () => {
 
     expect(useUIStore.getState().activeTab).toBe('tasks');
     expect(useUIStore.getState().tabHistory).toEqual(['studio', 'studio']);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(document.documentElement.getAttribute('data-layout')).toBe('bobr');
+    expect(useUIStore.getState().appearanceMode).toBe('premium-light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('premium-light');
+    expect(document.documentElement.getAttribute('data-layout')).toBe('modern');
   });
 
   test('supports the premium light visual preset through the browser theme attribute', () => {
     const store = useUIStore.getState();
 
-    store.setTheme('premium-light');
-    store.setLayoutPreset('modern');
+    store.setAppearanceMode('premium-light');
 
+    expect(useUIStore.getState().appearanceMode).toBe('premium-light');
     expect(useUIStore.getState().theme).toBe('premium-light');
     expect(useUIStore.getState().layoutPreset).toBe('modern');
     expect(document.documentElement.getAttribute('data-theme')).toBe('premium-light');
+    expect(document.documentElement.getAttribute('data-layout')).toBe('modern');
+  });
+
+  test('normalizes legacy appearance values into the two premium modes', () => {
+    const store = useUIStore.getState();
+
+    store.setTheme('beaver');
+    expect(useUIStore.getState().appearanceMode).toBe('premium-light');
+
+    store.setTheme('flat');
+    expect(useUIStore.getState().appearanceMode).toBe('dark');
     expect(document.documentElement.getAttribute('data-layout')).toBe('modern');
   });
 

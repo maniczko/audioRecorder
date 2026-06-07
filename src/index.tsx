@@ -14,14 +14,12 @@ import reportWebVitals from './reportWebVitals';
 initSentry();
 initClarity();
 
+const initialTheme = document.documentElement.getAttribute('data-theme');
 document.documentElement.setAttribute(
   'data-theme',
-  document.documentElement.getAttribute('data-theme') || 'dark'
+  initialTheme === 'premium-light' ? 'premium-light' : 'dark'
 );
-document.documentElement.setAttribute(
-  'data-layout',
-  document.documentElement.getAttribute('data-layout') || 'bobr'
-);
+document.documentElement.setAttribute('data-layout', 'modern');
 
 async function bootstrap() {
   await prepareHostedRuntime();

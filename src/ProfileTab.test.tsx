@@ -68,6 +68,7 @@ const baseProps = {
   workspaceRole: 'admin',
   onLogout: vi.fn(),
   theme: 'dark',
+  appearanceMode: 'dark',
   onSetTheme: vi.fn(),
   layoutPreset: 'default',
   onSetLayoutPreset: vi.fn(),
@@ -471,61 +472,39 @@ describe('ProfileTab', () => {
   });
 
   describe('Theme & Layout Settings', () => {
-    it('shows theme selector in review category', async () => {
+    it('shows the two premium appearance choices in review category', async () => {
       render(<ProfileTab {...baseProps} />);
 
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getByText('Wybierz Motyw')).toBeInTheDocument();
+      expect(screen.getByText('Ciemny klasyczny')).toBeInTheDocument();
+      expect(screen.getByText('Jasny premium')).toBeInTheDocument();
     });
 
-    it('shows current theme', async () => {
-      render(<ProfileTab {...baseProps} theme="dark" />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Motyw:')).toBeInTheDocument();
-      expect(screen.getByText('dark')).toBeInTheDocument();
-    });
-
-    it('calls onSetTheme when theme button clicked', async () => {
+    it('calls onSetTheme fallback when appearance card is clicked', async () => {
       render(<ProfileTab {...baseProps} />);
 
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      const darkBtn = screen.getByText('🌙');
+      const darkBtn = screen.getByText('Ciemny klasyczny');
       await userEvent.click(darkBtn);
 
       expect(baseProps.onSetTheme).toHaveBeenCalledWith('dark');
     });
 
-    it('calls onSetLayoutPreset when layout button clicked', async () => {
+    it('does not expose legacy theme or density buttons', async () => {
       render(<ProfileTab {...baseProps} />);
 
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      const compactBtn = screen.getByText('Compact');
-      await userEvent.click(compactBtn);
-
-      expect(baseProps.onSetLayoutPreset).toHaveBeenCalledWith('compact');
-    });
-
-    it('shows layout preset buttons', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Default')).toBeInTheDocument();
-      expect(screen.getByText('Compact')).toBeInTheDocument();
-      expect(screen.getByText('Flat')).toBeInTheDocument();
+      expect(screen.queryByText('Default')).not.toBeInTheDocument();
+      expect(screen.queryByText('Compact')).not.toBeInTheDocument();
+      expect(screen.queryByText('Flat')).not.toBeInTheDocument();
     });
   });
-
   describe('API Status Section', () => {
     it('shows API connection status', async () => {
       render(<ProfileTab {...baseProps} />);
@@ -695,7 +674,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getByText('Wybierz Motyw')).toBeInTheDocument();
+      expect(screen.getByText('Tryb interfejsu')).toBeInTheDocument();
       expect(screen.getByText('Changelog')).toBeInTheDocument();
     });
 

@@ -179,14 +179,6 @@ export default function Topbar() {
 
       <Cluster className="topbar-actions" gap="sm" justify="end">
         {google.googleEnabled ? <div className="status-chip">Google ready</div> : null}
-        <button
-          className="ghost-button"
-          onClick={() => ui.setLayoutPreset('modern')}
-          style={{ color: '#75d6c4' }}
-          title="Przejdz na nowoczesny widok"
-        >
-          ✨ Nowy Wygląd
-        </button>
         <NotificationCenter
           open={ui.notificationCenterOpen}
           unreadCount={ui.unreadNotificationCount}

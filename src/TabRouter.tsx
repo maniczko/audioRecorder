@@ -340,6 +340,8 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             workspaceMembers={workspace.currentWorkspaceMembers}
             updateWorkspaceMemberRole={workspace.updateWorkspaceMemberRole}
             removeWorkspaceMember={workspace.removeWorkspaceMember}
+            appearanceMode={ui.appearanceMode || ui.theme}
+            onSetAppearanceMode={ui.setAppearanceMode || ui.setTheme}
             theme={ui.theme}
             onSetTheme={ui.setTheme}
             layoutPreset={ui.layoutPreset}
