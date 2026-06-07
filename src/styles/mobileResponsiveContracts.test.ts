@@ -28,8 +28,8 @@ describe('mobile responsive CSS contracts', () => {
 
     expect(css).toContain('.studio-recordings-table thead');
     expect(css).toContain('.studio-recordings-table td::before');
-    expect(css).toContain('content: "Spotkanie"');
-    expect(css).toContain('content: "Akcje"');
+    expect(css).toContain("content: 'Spotkanie'");
+    expect(css).toContain("content: 'Akcje'");
   });
 
   it('stacks the current Studio panes and reserves player-safe space', () => {
