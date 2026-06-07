@@ -38,6 +38,18 @@ export class MediaStoragePipelineError extends Error {
   }
 }
 
+export type AudioValidationCode = 'audio_invalid_or_empty' | 'audio_too_short';
+
+export interface AudioValidationResult {
+  ok: true;
+  code: 'audio_valid';
+  filePath: string;
+  contentType?: string;
+  sizeBytes: number;
+  durationMs: number;
+  audioStreamCount: number;
+}
+
 function isTestRuntime() {
   return Boolean(process.env.VITEST || process.env.NODE_ENV === 'test');
 }
@@ -87,6 +99,126 @@ async function probeDurationMs(filePath: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+function parseFfprobeDurationMs(value: unknown): number {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : 0;
+}
+
+async function probeAudioMetadata(
+  filePath: string,
+  signal?: AbortSignal
+): Promise<{ durationMs: number; audioStreamCount: number }> {
+  if (isTestRuntime()) {
+    return { durationMs: 0, audioStreamCount: 1 };
+  }
+
+  try {
+    const { promisify } = await import('node:util');
+    const childProcess = await import('node:child_process');
+    const execFileAsync = promisify((childProcess as any).execFile);
+    const { stdout } = await execFileAsync(
+      deriveFfprobeBinary(config.FFMPEG_BINARY || 'ffmpeg'),
+      ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', filePath],
+      { windowsHide: true, maxBuffer: 1024 * 1024 * 2, signal } as any
+    );
+    const parsed = JSON.parse(String(stdout || '{}'));
+    const streams = Array.isArray(parsed?.streams) ? parsed.streams : [];
+    const audioStreams = streams.filter((stream: any) => stream?.codec_type === 'audio');
+    const streamDurationMs = Math.max(
+      0,
+      ...audioStreams.map((stream: any) => parseFfprobeDurationMs(stream?.duration))
+    );
+    const formatDurationMs = parseFfprobeDurationMs(parsed?.format?.duration);
+    return {
+      durationMs: streamDurationMs || formatDurationMs,
+      audioStreamCount: audioStreams.length,
+    };
+  } catch (error) {
+    throw new MediaStoragePipelineError(
+      'audio_invalid_or_empty',
+      'Plik audio jest pusty, uszkodzony albo nie zawiera dekodowalnej sciezki audio.',
+      422,
+      error
+    );
+  }
+}
+
+function buildAudioValidationError(
+  code: AudioValidationCode,
+  message: string,
+  details: Record<string, unknown>
+) {
+  const error = new MediaStoragePipelineError(code, message, 422);
+  (error as any).audioValidation = {
+    ok: false,
+    code,
+    ...details,
+  };
+  return error;
+}
+
+export async function validateAudioForTranscription(input: {
+  filePath: string;
+  contentType?: string;
+  minDurationMs?: number;
+  minSizeBytes?: number;
+  signal?: AbortSignal;
+}): Promise<AudioValidationResult> {
+  const filePath = String(input.filePath || '').trim();
+  if (!filePath) {
+    throw buildAudioValidationError('audio_invalid_or_empty', 'Brak pliku audio do walidacji.', {
+      filePath,
+    });
+  }
+
+  const stats = await stat(filePath).catch((error) => {
+    throw buildAudioValidationError(
+      'audio_invalid_or_empty',
+      'Plik audio nie istnieje albo nie mozna go odczytac.',
+      { filePath, cause: error instanceof Error ? error.message : String(error) }
+    );
+  });
+  const sizeBytes = Number(stats.size || 0);
+  const minSizeBytes =
+    typeof input.minSizeBytes === 'number' ? input.minSizeBytes : isTestRuntime() ? 1 : 1024;
+  if (sizeBytes < minSizeBytes) {
+    throw buildAudioValidationError(
+      'audio_invalid_or_empty',
+      'Plik audio jest pusty albo zbyt maly, zeby go przetworzyc.',
+      { filePath, sizeBytes, minSizeBytes }
+    );
+  }
+
+  const metadata = await probeAudioMetadata(filePath, input.signal);
+  if (metadata.audioStreamCount <= 0) {
+    throw buildAudioValidationError(
+      'audio_invalid_or_empty',
+      'Plik nie zawiera dekodowalnej sciezki audio.',
+      { filePath, sizeBytes, durationMs: metadata.durationMs, audioStreamCount: 0 }
+    );
+  }
+
+  const minDurationMs =
+    typeof input.minDurationMs === 'number' ? input.minDurationMs : isTestRuntime() ? 0 : 750;
+  if (metadata.durationMs > 0 && metadata.durationMs < minDurationMs) {
+    throw buildAudioValidationError(
+      'audio_too_short',
+      'Nagranie jest zbyt krotkie, zeby je transkrybowac.',
+      { filePath, sizeBytes, durationMs: metadata.durationMs, minDurationMs }
+    );
+  }
+
+  return {
+    ok: true,
+    code: 'audio_valid',
+    filePath,
+    contentType: input.contentType,
+    sizeBytes,
+    durationMs: metadata.durationMs,
+    audioStreamCount: metadata.audioStreamCount,
+  };
 }
 
 export async function normalizeAudioForStorage(input: {

@@ -60,6 +60,24 @@ describe('TaskListView', () => {
     expect(screen.getByRole('button', { name: /Zakoncz zadanie Alpha task/i })).toBeInTheDocument();
   });
 
+  it('keeps row tools and task title in separate layout cells', () => {
+    const { container } = render(<TaskListView {...createBaseProps()} />);
+
+    const row = container.querySelector('.todo-table-row');
+    const tools = row?.querySelector('.todo-row-tools');
+    const title = row?.querySelector('.todo-title-cell');
+    const completion = tools?.querySelector('.todo-task-circle');
+
+    expect(row).toBeTruthy();
+    expect(tools).toBeTruthy();
+    expect(title).toBeTruthy();
+    expect(completion).toBeTruthy();
+    expect(Array.from(row?.children || [])).toEqual(
+      expect.arrayContaining([tools as Element, title as Element])
+    );
+    expect(title?.contains(completion as Element)).toBe(false);
+  });
+
   it('selects task row on click', () => {
     const setSelectedTaskId = vi.fn();
     const { container } = render(<TaskListView {...createBaseProps({ setSelectedTaskId })} />);

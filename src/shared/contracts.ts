@@ -66,6 +66,10 @@ export interface MediaTranscriptionResponse {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  errorCode?: string;
+  retryable?: boolean;
+  audioValidation?: Record<string, unknown> | null;
+  sttAttempts?: TranscriptionDiagnostics['sttAttempts'];
   durationMs?: number;
   reviewSummary?: string | null;
   errorMessage?: string;
@@ -314,6 +318,17 @@ function optionalObject<T extends object>(value: unknown): T | undefined {
 
 function nullableObject<T extends object>(value: unknown): T | null {
   return value && typeof value === 'object' ? (value as T) : null;
+}
+
+function optionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function resolveRetryAfterMs(primary: unknown, fallback: unknown = null): number | null {
+  const value = Number(primary);
+  if (Number.isFinite(value) && value > 0) return value;
+  const fallbackValue = Number(fallback);
+  return Number.isFinite(fallbackValue) && fallbackValue > 0 ? fallbackValue : null;
 }
 
 export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
@@ -642,6 +657,9 @@ export function normalizeTranscriptionStatusPayload(
   asset: MediaAssetWithRuntime | null | undefined
 ): TranscriptionStatusPayload {
   const diarization = parseJsonRecord(asset?.diarization_json);
+  const diagnostics = optionalObject<TranscriptionDiagnostics>(
+    diarization.transcriptionDiagnostics
+  );
   const segments = parseJsonArray<TranscriptSegment>(asset?.transcript_json);
   const durationMs = resolveTranscriptionDurationMs(asset, diarization, segments);
 
@@ -665,7 +683,13 @@ export function normalizeTranscriptionStatusPayload(
     activeJob: Boolean(asset?.activeJob),
     queuedPosition: typeof asset?.queuedPosition === 'number' ? asset.queuedPosition : null,
     processingAgeMs: typeof asset?.processingAgeMs === 'number' ? asset.processingAgeMs : null,
-    retryAfterMs: typeof asset?.retryAfterMs === 'number' ? asset.retryAfterMs : null,
+    retryAfterMs: resolveRetryAfterMs(asset?.retryAfterMs, diarization.retryAfterMs),
+    errorCode: stringValue(diarization.errorCode || diagnostics?.errorCode),
+    retryable: optionalBoolean(diarization.retryable ?? diagnostics?.retryable),
+    audioValidation:
+      nullableObject<Record<string, unknown>>(diarization.audioValidation) ||
+      nullableObject<Record<string, unknown>>(diagnostics?.audioValidation),
+    sttAttempts: Array.isArray(diagnostics?.sttAttempts) ? diagnostics.sttAttempts : [],
     segments: Array.isArray(segments) ? segments : [],
     diarization,
     speakerNames: isRecord(diarization.speakerNames)
@@ -685,6 +709,9 @@ export function normalizeMediaTranscriptionResponse(
   const diarization = isRecord(response?.diarization)
     ? (response.diarization as DiarizationPayload)
     : {};
+  const diagnostics = optionalObject<TranscriptionDiagnostics>(
+    diarization.transcriptionDiagnostics
+  );
   const segments = Array.isArray(response?.segments) ? response.segments : [];
   const durationMs = resolveRemoteTranscriptionDurationMs(response, diarization, segments);
 
@@ -720,7 +747,20 @@ export function normalizeMediaTranscriptionResponse(
     queuedPosition: typeof response?.queuedPosition === 'number' ? response.queuedPosition : null,
     processingAgeMs:
       typeof response?.processingAgeMs === 'number' ? response.processingAgeMs : null,
-    retryAfterMs: typeof response?.retryAfterMs === 'number' ? response.retryAfterMs : null,
+    retryAfterMs: resolveRetryAfterMs(response?.retryAfterMs, diarization.retryAfterMs),
+    errorCode: stringValue(response?.errorCode || diarization.errorCode || diagnostics?.errorCode),
+    retryable: optionalBoolean(
+      response?.retryable ?? diarization.retryable ?? diagnostics?.retryable
+    ),
+    audioValidation:
+      nullableObject<Record<string, unknown>>(response?.audioValidation) ||
+      nullableObject<Record<string, unknown>>(diarization.audioValidation) ||
+      nullableObject<Record<string, unknown>>(diagnostics?.audioValidation),
+    sttAttempts: Array.isArray(response?.sttAttempts)
+      ? response.sttAttempts
+      : Array.isArray(diagnostics?.sttAttempts)
+        ? diagnostics.sttAttempts
+        : [],
     segments,
     diarization,
     speakerNames: isRecord(diarization.speakerNames)

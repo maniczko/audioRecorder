@@ -78,7 +78,7 @@ type StartedTranscription = TranscriptionStatusPayload & {
   pipelineVersion?: string;
   pipelineBuildTime?: string;
   audioQuality?: unknown;
-  transcriptionDiagnostics?: unknown;
+  transcriptionDiagnostics?: Record<string, any> | null;
   transcriptOutcome?: string;
   emptyReason?: string;
   userMessage?: string;
@@ -91,6 +91,10 @@ type StartedTranscription = TranscriptionStatusPayload & {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  errorCode?: string;
+  retryable?: boolean;
+  audioValidation?: Record<string, unknown> | null;
+  sttAttempts?: unknown[];
 };
 
 function defaultSleep(ms: number) {
@@ -159,6 +163,14 @@ function getPollingSleepMs(value: unknown) {
   const retryAfterMs = Number(value);
   if (!Number.isFinite(retryAfterMs) || retryAfterMs <= 0) return 1500;
   return Math.max(1500, Math.min(10_000, retryAfterMs));
+}
+
+function getTransientRetryDelayMs(error: any, fallbackDelayMs: number) {
+  const retryAfterMs = Number(error?.retryAfterMs);
+  if (Number.isFinite(retryAfterMs) && retryAfterMs > 0) {
+    return Math.max(5_000, Math.min(5 * 60_000, Math.round(retryAfterMs)));
+  }
+  return fallbackDelayMs;
 }
 
 export class BackgroundTranscriptionPendingError extends Error {
@@ -480,6 +492,9 @@ export async function waitForCompletedTranscription({
       pipelineBuildTime: result?.pipelineBuildTime || '',
       audioQuality: result?.audioQuality || nextItem.audioQuality || null,
       transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
+      errorCode: result?.errorCode || '',
+      retryable: Boolean(result?.retryable),
+      retryAfterMs: result?.retryAfterMs || null,
     });
 
     const status = normalizeRecordingPipelineStatus(result?.pipelineStatus);
@@ -498,6 +513,18 @@ export async function waitForCompletedTranscription({
       );
       failedError.audioQuality = result?.audioQuality || null;
       failedError.transcriptionDiagnostics = result?.transcriptionDiagnostics || null;
+      failedError.errorCode =
+        result?.errorCode || result?.transcriptionDiagnostics?.errorCode || '';
+      failedError.code = failedError.errorCode || failedError.code;
+      failedError.retryable = Boolean(
+        result?.retryable || result?.transcriptionDiagnostics?.retryable
+      );
+      failedError.retryAfterMs =
+        result?.retryAfterMs || result?.transcriptionDiagnostics?.retryAfterMs || null;
+      failedError.audioValidation =
+        result?.audioValidation || result?.transcriptionDiagnostics?.audioValidation || null;
+      failedError.sttAttempts =
+        result?.sttAttempts || result?.transcriptionDiagnostics?.sttAttempts || [];
       throw failedError;
     }
 
@@ -506,6 +533,9 @@ export async function waitForCompletedTranscription({
       errorMessage: '',
       audioQuality: result?.audioQuality || nextItem.audioQuality || null,
       transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
+      errorCode: result?.errorCode || '',
+      retryable: Boolean(result?.retryable),
+      retryAfterMs: result?.retryAfterMs || null,
     });
 
     const pollingSnapshot = getPipelineSnapshot(status);
@@ -1049,7 +1079,8 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     const retryCount = nextItem.retryCount || 0;
     if (isTransientNetworkError(error) && retryCount < maxAutoRetries) {
-      const delay = retryDelaysMs[retryCount] ?? retryDelaysMs[retryDelaysMs.length - 1];
+      const fallbackDelay = retryDelaysMs[retryCount] ?? retryDelaysMs[retryDelaysMs.length - 1];
+      const delay = getTransientRetryDelayMs(error, fallbackDelay);
       console.warn(
         `[queue] Transient network error (retry ${retryCount + 1}/${maxAutoRetries}), backoff ${delay}ms`,
         error?.message
@@ -1059,6 +1090,8 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         retryCount: retryCount + 1,
         backoffUntil: now() + delay,
         lastErrorMessage: toUserFacingQueueError(error),
+        errorCode: error?.errorCode || error?.code || '',
+        retryAfterMs: delay,
         errorMessage: '',
       });
       scheduleBackoffReset?.(nextItem.recordingId, delay);

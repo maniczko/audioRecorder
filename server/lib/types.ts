@@ -80,6 +80,10 @@ export interface AudioQualityDiagnostics {
 }
 
 export interface TranscriptionDiagnostics {
+  errorCode?: string;
+  retryable?: boolean;
+  retryAfterMs?: number;
+  audioValidation?: Record<string, unknown> | null;
   usedChunking?: boolean;
   fileSizeBytes?: number;
   chunksAttempted?: number;
@@ -122,6 +126,10 @@ export interface SttProviderAttempt {
   model: string;
   success: boolean;
   durationMs?: number;
+  status?: number;
+  errorCode?: string;
+  retryable?: boolean;
+  retryAfterMs?: number;
   errorMessage?: string;
 }
 

@@ -230,6 +230,197 @@ describe('mediaStoragePipeline', () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
+  test('Regression: #0 - validates decodable audio before STT handoff', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'valid.webm');
+    await writeFile(sourcePath, Buffer.alloc(4096, 1));
+    const { module } = await withPipelineModule({
+      testRuntime: false,
+      execFile: (_command, _args, _options, callback) => {
+        callback?.(null, {
+          stdout: JSON.stringify({
+            streams: [{ codec_type: 'audio', duration: '2.5' }],
+            format: { duration: '2.5' },
+          }),
+        });
+      },
+    });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+      })
+    ).resolves.toMatchObject({
+      ok: true,
+      code: 'audio_valid',
+      durationMs: 2500,
+      audioStreamCount: 1,
+    });
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  test('Regression: #0 - rejects invalid or empty audio before STT handoff', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'invalid.webm');
+    await writeFile(sourcePath, Buffer.alloc(4096, 1));
+    const { module } = await withPipelineModule({
+      testRuntime: false,
+      execFile: (_command, _args, _options, callback) => {
+        callback?.(null, {
+          stdout: JSON.stringify({
+            streams: [{ codec_type: 'video', duration: '2.5' }],
+            format: { duration: '2.5' },
+          }),
+        });
+      },
+    });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+      })
+    ).rejects.toMatchObject({
+      code: 'audio_invalid_or_empty',
+      audioValidation: expect.objectContaining({
+        code: 'audio_invalid_or_empty',
+        audioStreamCount: 0,
+      }),
+    });
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  test('Regression: #0 - rejects missing audio path before STT handoff', async () => {
+    const { module } = await withPipelineModule({ testRuntime: false });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: '',
+        contentType: 'audio/webm',
+      })
+    ).rejects.toMatchObject({
+      code: 'audio_invalid_or_empty',
+      audioValidation: expect.objectContaining({
+        code: 'audio_invalid_or_empty',
+        filePath: '',
+      }),
+    });
+  });
+
+  test('Regression: #0 - rejects unreadable audio file before STT handoff', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'missing.webm');
+    const { module } = await withPipelineModule({ testRuntime: false });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+      })
+    ).rejects.toMatchObject({
+      code: 'audio_invalid_or_empty',
+      audioValidation: expect.objectContaining({
+        code: 'audio_invalid_or_empty',
+        cause: expect.any(String),
+      }),
+    });
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  test('Regression: #0 - rejects too small audio file before STT handoff', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'tiny.webm');
+    await writeFile(sourcePath, Buffer.alloc(10, 1));
+    const { module, execFile } = await withPipelineModule({ testRuntime: false });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+        minSizeBytes: 1024,
+      })
+    ).rejects.toMatchObject({
+      code: 'audio_invalid_or_empty',
+      audioValidation: expect.objectContaining({
+        code: 'audio_invalid_or_empty',
+        sizeBytes: 10,
+        minSizeBytes: 1024,
+      }),
+    });
+    expect(execFile).not.toHaveBeenCalled();
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  test('Regression: #0 - rejects too short decodable audio before STT handoff', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'short.webm');
+    await writeFile(sourcePath, Buffer.alloc(4096, 1));
+    const { module } = await withPipelineModule({
+      testRuntime: false,
+      execFile: (_command, _args, _options, callback) => {
+        callback?.(null, {
+          stdout: JSON.stringify({
+            streams: [{ codec_type: 'audio', duration: '0.25' }],
+            format: { duration: '0.25' },
+          }),
+        });
+      },
+    });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+        minDurationMs: 750,
+      })
+    ).rejects.toMatchObject({
+      code: 'audio_too_short',
+      audioValidation: expect.objectContaining({
+        code: 'audio_too_short',
+        durationMs: 250,
+        minDurationMs: 750,
+      }),
+    });
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  test('Regression: #0 - accepts audio when duration is available only on format metadata', async () => {
+    const workDir = await createWorkDir();
+    const sourcePath = path.join(workDir, 'format-duration.webm');
+    await writeFile(sourcePath, Buffer.alloc(4096, 1));
+    const { module } = await withPipelineModule({
+      testRuntime: false,
+      execFile: (_command, _args, _options, callback) => {
+        callback?.(null, {
+          stdout: JSON.stringify({
+            streams: [{ codec_type: 'audio' }],
+            format: { duration: '3.75' },
+          }),
+        });
+      },
+    });
+
+    await expect(
+      module.validateAudioForTranscription({
+        filePath: sourcePath,
+        contentType: 'audio/webm',
+      })
+    ).resolves.toMatchObject({
+      ok: true,
+      code: 'audio_valid',
+      durationMs: 3750,
+      audioStreamCount: 1,
+    });
+
+    await rm(workDir, { recursive: true, force: true });
+  });
+
   test('creates byte-based parts when test runtime flag is active', async () => {
     const { module } = await withPipelineModule({ testRuntime: true });
     const workDir = await createWorkDir();

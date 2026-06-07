@@ -1050,6 +1050,36 @@ describe('Media Routes - Additional Coverage', () => {
         expect(listAssembledFiles(recordingId)).toEqual([]);
       });
 
+      it('Regression: #0 - stores normalized WebM content type after MPEG source upload', async () => {
+        const recordingId = 'rec_finalize_mime_repair';
+        const total = 2;
+        const upsertCapture = mockSuccessfulPathUpsert();
+
+        await uploadChunk(recordingId, 0, total, Buffer.from('voice-'));
+        await uploadChunk(recordingId, 1, total, Buffer.from('payload'));
+
+        const res = await app.request(`/media/recordings/${recordingId}/audio/finalize`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+            'X-Workspace-Id': 'ws_1',
+          },
+          body: JSON.stringify({
+            workspaceId: 'ws_1',
+            meetingId: 'meeting_1',
+            contentType: 'audio/mpeg',
+            total,
+          }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(upsertCapture.getCapturedInput()).toMatchObject({
+          recordingId,
+          contentType: 'audio/webm',
+        });
+      });
+
       it('is idempotent when called again after successful finalize', async () => {
         const recordingId = 'rec_finalize_idempotent';
         const existingAsset = {

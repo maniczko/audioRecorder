@@ -431,6 +431,46 @@ describe('waitForCompletedTranscription', () => {
     });
   });
 
+  it('Regression: #0 - preserves retryable rate-limit metadata from failed status', async () => {
+    const failed = makeTranscription({
+      pipelineStatus: 'failed',
+      errorMessage: 'Rate limit reached.',
+      segments: [],
+      errorCode: 'stt_rate_limited',
+      retryable: true,
+      retryAfterMs: 45_000,
+      transcriptionDiagnostics: {
+        errorCode: 'stt_rate_limited',
+        retryable: true,
+        retryAfterMs: 45_000,
+      } as never,
+    } as Partial<TranscriptionStatusPayload>);
+
+    await expect(
+      waitForCompletedTranscription({
+        nextItem: makeQueueItem(),
+        mediaService: {
+          getTranscriptionJobStatus: vi.fn(async () => failed),
+        },
+        started: makeTranscription({ pipelineStatus: 'processing', segments: [] }),
+        startStatus: 'processing',
+        updateQueueItem: vi.fn(),
+        setState: vi.fn(),
+        getPipelineSnapshot: vi.fn(() => ({
+          progressPercent: 0,
+          stageLabel: 'failed',
+        })),
+        normalizeTranscriptionResponse: vi.fn((response) => response),
+        sleep: vi.fn(async () => undefined),
+      })
+    ).rejects.toMatchObject({
+      message: 'Rate limit reached.',
+      errorCode: 'stt_rate_limited',
+      retryable: true,
+      retryAfterMs: 45_000,
+    });
+  });
+
   it('treats transcription status 404 as stale remote recording without polling storm', async () => {
     const notFound = Object.assign(new Error('Nie znaleziono nagrania.'), { status: 404 });
     const mediaService = {
@@ -1037,6 +1077,57 @@ describe('processRecordingQueueItem', () => {
     );
     expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1000);
     expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('Regression: #0 - retries STT rate limits with server-provided backoff', async () => {
+    const rateLimitError: any = new Error('Rate limit reached.');
+    rateLimitError.errorCode = 'stt_rate_limited';
+    rateLimitError.retryable = true;
+    rateLimitError.retryAfterMs = 45_000;
+    const context = buildContext({
+      isTransientNetworkError: vi.fn(
+        (error: any) => error?.errorCode === 'stt_rate_limited' && error?.retryable
+      ),
+      toUserFacingQueueError: vi.fn(() => 'Limit transkrypcji, ponawiamy za chwile.'),
+      retryDelaysMs: [1000],
+      maxAutoRetries: 1,
+    });
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(rateLimitError);
+
+    await processRecordingQueueItem(context);
+
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'queued',
+        retryCount: 1,
+        backoffUntil: 50_000,
+        lastErrorMessage: 'Limit transkrypcji, ponawiamy za chwile.',
+        errorCode: 'stt_rate_limited',
+        retryAfterMs: 45_000,
+      })
+    );
+    expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 45_000);
+  });
+
+  it('Regression: #0 - attaches completed remote recording despite stale failed queue item', async () => {
+    const context = buildContext({
+      nextItem: makeQueueItem({
+        uploaded: true,
+        status: 'failed',
+        workspaceId: 'workspace-1',
+        errorMessage: 'old local failure',
+      }),
+    });
+    context.mediaService.mode = 'remote';
+    context.mediaService.getTranscriptionJobStatus.mockResolvedValueOnce(makeTranscription());
+
+    await processRecordingQueueItem(context);
+
+    expect(context.getAudioBlob).not.toHaveBeenCalled();
+    expect(context.mediaService.retryTranscriptionJob).not.toHaveBeenCalled();
+    expect(context.attachCompletedRecording).toHaveBeenCalled();
+    expect(context.removeQueueItem).toHaveBeenCalledWith('recording-1');
   });
 
   it('marks stale uploaded remote recordings as permanent without retrying STT', async () => {

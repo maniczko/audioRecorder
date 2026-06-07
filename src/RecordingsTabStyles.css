@@ -822,3 +822,66 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
     width: 100%;
   }
 }
+:root[data-theme='premium-light'] .recordings-status-panel,
+:root[data-theme='premium-light'] .recordings-section-panel,
+:root[data-theme='premium-light'] .recordings-library-panel {
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(119, 214, 196, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 252, 0.95), rgba(246, 250, 246, 0.92));
+  border: 1px solid var(--surface-stroke);
+  box-shadow:
+    0 20px 46px rgba(53, 77, 72, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+:root[data-theme='premium-light'] .recordings-section-panel.import,
+:root[data-theme='premium-light'] .recordings-status-panel {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(28, 141, 122, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 252, 0.96), rgba(248, 250, 245, 0.94));
+}
+
+:root[data-theme='premium-light'] .recordings-pending-card {
+  background: rgba(255, 255, 252, 0.78);
+  border: 1px solid color-mix(in srgb, var(--surface-stroke) 78%, white);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+:root[data-theme='premium-light'] .recordings-pending-card:has(.status-chip.failed) {
+  background: linear-gradient(180deg, rgba(255, 248, 244, 0.94), rgba(255, 252, 248, 0.9));
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--surface-stroke));
+}
+
+:root[data-theme='premium-light'] .recordings-pending-card .pipeline-error-box {
+  background: rgba(255, 246, 242, 0.92);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+:root[data-theme='premium-light'] .recordings-library-heading h1,
+:root[data-theme='premium-light'] .recordings-section-title,
+:root[data-theme='premium-light'] .recordings-pending-title {
+  color: var(--text);
+}
+
+:root[data-theme='premium-light'] .recordings-copy-md,
+:root[data-theme='premium-light'] .recordings-pending-date,
+:root[data-theme='premium-light'] .recordings-pending-diagnostics,
+:root[data-theme='premium-light'] .recordings-diagnostics-copy {
+  color: var(--muted);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table-wrap {
+  background: rgba(255, 255, 252, 0.72);
+  border: 1px solid var(--surface-stroke);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr {
+  background: rgba(255, 255, 252, 0.58);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr:hover,
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr.active {
+  background: color-mix(in srgb, var(--accent) 8%, rgba(255, 255, 252, 0.92));
+}

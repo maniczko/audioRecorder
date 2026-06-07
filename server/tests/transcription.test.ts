@@ -293,6 +293,49 @@ describe('TranscriptionService', () => {
     expect(service.transcriptionJobs.has('rec_2')).toBe(false);
   }, 10000);
 
+  it('Regression: #0 - persists retryable STT rate-limit diagnostics on failure', async () => {
+    const service = new TranscriptionService(
+      mockDb,
+      mockWorkspaceService,
+      mockAudioPipeline,
+      mockSpeakerEmbedder
+    );
+    const failure: any = new Error('Rate limit reached for audio transcriptions.');
+    failure.code = 'stt_rate_limited';
+    failure.errorCode = 'stt_rate_limited';
+    failure.retryable = true;
+    failure.retryAfterMs = 45_000;
+    failure.sttAttempts = [
+      {
+        providerId: 'openai',
+        providerLabel: 'OpenAI STT',
+        model: 'gpt-4o-transcribe',
+        success: false,
+        status: 429,
+        errorCode: 'stt_rate_limited',
+      },
+    ];
+    mockAudioPipeline.transcribeRecording.mockRejectedValue(failure);
+    const asset = { id: 'asset_429', file_path: 'test.wav', workspace_id: 'ws_1' };
+
+    service.ensureTranscriptionJob('rec_429', asset, {});
+    await service.transcriptionJobs.get('rec_429');
+
+    expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
+      'rec_429',
+      'Rate limit reached for audio transcriptions.',
+      expect.objectContaining({
+        errorCode: 'stt_rate_limited',
+        retryable: true,
+        retryAfterMs: 45_000,
+        sttAttempts: expect.arrayContaining([
+          expect.objectContaining({ providerId: 'openai', errorCode: 'stt_rate_limited' }),
+        ]),
+      }),
+      null
+    );
+  });
+
   it('persists empty transcript results without marking failure or vectorizing RAG', async () => {
     const service = new TranscriptionService(
       mockDb,

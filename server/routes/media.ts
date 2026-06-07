@@ -32,6 +32,7 @@ import {
   materializeAssetToLocal,
   normalizeAudioForStorage,
   splitNormalizedAudioIntoParts,
+  validateAudioForTranscription,
 } from '../lib/mediaStoragePipeline.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
@@ -504,6 +505,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       });
   }
 
+  function audioValidationErrorBody(error: any) {
+    return {
+      code: error?.code || 'audio_invalid_or_empty',
+      message:
+        error?.message ||
+        'Plik audio jest pusty, uszkodzony albo nie zawiera dekodowalnej sciezki audio.',
+      audioValidation: error?.audioValidation || null,
+    };
+  }
+
   async function assembleChunksToTempFile(chunksDir: string, safeId: string, total: number) {
     const chunkPaths: string[] = [];
     for (let i = 0; i < total; i += 1) {
@@ -612,7 +623,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const buffer = Buffer.from(arrayBuf);
 
     let asset: MediaAsset;
+    let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
+    const preflightDir = path.join(config.uploadDir, 'preflight');
+    const preflightPath = path.join(
+      preflightDir,
+      `${sanitizeRecordingId(recordingId)}_${crypto.randomUUID()}.upload`
+    );
     try {
+      mkdirSync(preflightDir, { recursive: true });
+      await writeFile(preflightPath, buffer);
+      audioValidation = await validateAudioForTranscription({
+        filePath: preflightPath,
+        contentType: mimeValidation.normalized.contentType,
+        signal: c.req.raw.signal,
+      });
       asset = await transcriptionService.upsertMediaAsset({
         recordingId,
         workspaceId,
@@ -622,6 +646,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         createdByUserId: session.user_id,
       });
     } catch (uploadErr: any) {
+      if (uploadErr instanceof MediaStoragePipelineError) {
+        return c.json(audioValidationErrorBody(uploadErr), uploadErr.status || 422);
+      }
       if (
         (uploadErr as any).code === 'ENOSPC' ||
         String(uploadErr.message).includes('Brak miejsca na dysku')
@@ -632,6 +659,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         );
       }
       throw uploadErr;
+    } finally {
+      try {
+        await unlink(preflightPath);
+      } catch (_) {}
     }
     scheduleAudioQuality(recordingId, asset);
 
@@ -649,6 +680,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         id: asset.id,
         workspaceId: asset.workspace_id,
         sizeBytes: asset.size_bytes,
+        audioValidation,
         audioQuality: null,
       },
       200
@@ -1837,12 +1869,18 @@ Important:
 
     let normalizedAudio: Awaited<ReturnType<typeof normalizeAudioForStorage>> | null = null;
     let localParts: Awaited<ReturnType<typeof splitNormalizedAudioIntoParts>> = [];
+    let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
     let asset: MediaAsset;
     try {
       normalizedAudio = await normalizeAudioForStorage({
         sourcePath: assembledPath,
         workDir: path.join(config.uploadDir, 'normalized'),
         recordingId,
+        signal: c.req.raw.signal,
+      });
+      audioValidation = await validateAudioForTranscription({
+        filePath: normalizedAudio.path,
+        contentType: normalizedAudio.contentType,
         signal: c.req.raw.signal,
       });
 
@@ -1866,7 +1904,7 @@ Important:
             recordingId,
             workspaceId,
             meetingId,
-            contentType: mimeValidation.normalized.contentType,
+            contentType: normalizedAudio.contentType,
             normalizedFilePath: normalizedAudio.path,
             sourceSizeBytes: fullStats.size,
             normalizedSizeBytes: normalizedAudio.sizeBytes,
@@ -1878,7 +1916,7 @@ Important:
             recordingId,
             workspaceId,
             meetingId,
-            contentType: mimeValidation.normalized.contentType,
+            contentType: normalizedAudio.contentType,
             filePath: normalizedAudio.path,
             createdByUserId: session.user_id,
           });
@@ -1898,10 +1936,7 @@ Important:
       }
       if (err instanceof MediaStoragePipelineError || err?.code === 'audio_normalization_failed') {
         await cleanupChunkFiles(chunksDir, safeId, total);
-        return c.json(
-          { code: err.code || 'audio_normalization_failed', message: err.message },
-          err.status || 422
-        );
+        return c.json(audioValidationErrorBody(err), err.status || 422);
       }
       if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
         return c.json(
@@ -1939,6 +1974,7 @@ Important:
         sourceSizeBytes: fullStats.size,
         normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
         durationMs: normalizedAudio?.durationMs || 0,
+        audioValidation,
         audioQuality: null,
       },
       200

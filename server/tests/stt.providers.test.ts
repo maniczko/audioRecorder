@@ -193,6 +193,57 @@ describe('stt providers — HTTP behavior', () => {
     expect(result.attempts[1].success).toBe(true);
   });
 
+  it('Regression: #0 - classifies OpenAI 429 as retryable STT rate limit', async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      headers: new Headers({ 'retry-after': '30' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'Rate limit reached for audio transcriptions.',
+            type: 'rate_limit_exceeded',
+            code: 'rate_limit_exceeded',
+          },
+        }),
+      json: async () => ({}),
+    } as any);
+
+    const provider = makeProvider();
+    await expect(provider.transcribeAudio(makeRequest())).rejects.toMatchObject({
+      status: 429,
+      errorCode: 'stt_rate_limited',
+      retryable: true,
+      retryAfterMs: 30_000,
+    });
+  });
+
+  it('Regression: #0 - does not classify insufficient quota as retryable rate limit', async () => {
+    vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      headers: new Headers({ 'retry-after': '30' }),
+      text: async () =>
+        JSON.stringify({
+          error: {
+            message: 'You exceeded your current quota, please check billing.',
+            type: 'insufficient_quota',
+            code: 'insufficient_quota',
+          },
+        }),
+      json: async () => ({}),
+    } as any);
+
+    const provider = makeProvider();
+    await expect(provider.transcribeAudio(makeRequest())).rejects.toMatchObject({
+      status: 429,
+      errorCode: 'stt_quota_exceeded',
+      retryable: false,
+    });
+  });
+
   it('createFormData appends file with correct name', async () => {
     const httpClientSpy = vi.spyOn(httpClientModule, 'httpClient').mockResolvedValue({
       ok: true,

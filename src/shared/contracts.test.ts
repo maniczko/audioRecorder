@@ -249,4 +249,37 @@ describe('shared contracts', () => {
     expect(contractsSource).toContain("from './types.js'");
     expect(meetingFeedbackSource).toContain("from './types.js'");
   });
+  test('Regression: #0 - exposes transcription error codes and retry metadata', () => {
+    expect(
+      normalizeMediaTranscriptionResponse({
+        recordingId: 'rec_rate_limit',
+        pipelineStatus: 'failed',
+        errorMessage: 'Rate limit reached.',
+        retryAfterMs: 45_000,
+        diarization: {
+          errorCode: 'stt_rate_limited',
+          retryable: true,
+          transcriptionDiagnostics: {
+            errorCode: 'stt_rate_limited',
+            retryable: true,
+            sttAttempts: [
+              {
+                providerId: 'openai',
+                providerLabel: 'OpenAI STT',
+                model: 'gpt-4o-transcribe',
+                success: false,
+              },
+            ],
+          },
+        },
+      } as any)
+    ).toMatchObject({
+      recordingId: 'rec_rate_limit',
+      pipelineStatus: 'failed',
+      errorCode: 'stt_rate_limited',
+      retryable: true,
+      retryAfterMs: 45_000,
+      sttAttempts: [expect.objectContaining({ providerId: 'openai' })],
+    });
+  });
 });

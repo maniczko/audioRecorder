@@ -195,6 +195,36 @@ describe('TasksWorkspaceView', () => {
     );
   });
 
+  it('renders a single quick-add control with one accessible plus action', () => {
+    const { container } = render(
+      <TasksWorkspaceView
+        {...createBaseProps({
+          viewMode: 'list',
+          allVisibleTasks: [
+            {
+              id: 'task-1',
+              title: 'Alpha',
+              status: 'todo',
+              completed: false,
+              owner: '',
+              tags: [],
+              dueDate: '',
+              important: false,
+              reminderAt: '',
+              myDay: false,
+            },
+          ],
+        })}
+      />
+    );
+
+    const quickAdd = container.querySelector('.todo-toolbar-quickadd');
+    expect(quickAdd).toBeTruthy();
+    expect(quickAdd?.querySelectorAll('input')).toHaveLength(1);
+    expect(quickAdd?.querySelectorAll('button[aria-label="Dodaj zadanie"]')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Ustawienia widoku' })).toBeInTheDocument();
+  });
+
   it('renders summary mode stats cards', () => {
     render(<TasksWorkspaceView {...createBaseProps({ viewMode: 'summary' })} />);
 

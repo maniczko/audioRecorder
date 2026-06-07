@@ -170,9 +170,48 @@ function normalizeErrorForMatching(value: unknown) {
 function toUserFacingQueueError(error: any) {
   const errorMessage = String(error?.message || 'Blad przetwarzania.');
   const normalizedMessage = normalizeErrorForMatching(errorMessage);
+  const errorCode = String(
+    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+  );
 
   if (isRemoteRecordingMissingError(error)) {
     return errorMessage;
+  }
+
+  if (errorCode === 'audio_invalid_or_empty') {
+    return 'Plik audio jest pusty, uszkodzony albo nie zawiera dekodowalnej sciezki audio. Wgraj nagranie ponownie z oryginalnego pliku.';
+  }
+
+  if (errorCode === 'audio_too_short') {
+    return 'Nagranie jest zbyt krotkie, zeby je transkrybowac.';
+  }
+
+  if (errorCode === 'stt_rate_limited' || errorCode === 'stt_provider_rate_limited') {
+    return 'Limit transkrypcji, ponawiamy za chwile.';
+  }
+
+  if (errorCode === 'stt_quota_exceeded') {
+    return 'Limit lub rozliczenie transkrypcji zostalo przekroczone. Sprawdz konfiguracje klucza API.';
+  }
+
+  if (errorCode === 'audio_unavailable') {
+    return 'Audio nie jest dostepne na serwerze. Transkrypt zostaje zachowany, ale odtwarzanie wymaga ponownego importu pliku.';
+  }
+
+  if (errorCode === 'transcription_processing') {
+    return 'Transkrypcja jeszcze trwa. Status odswiezy sie automatycznie.';
+  }
+
+  if (
+    normalizedMessage.includes('valid media file') ||
+    normalizedMessage.includes('invalid file') ||
+    normalizedMessage.includes('decode')
+  ) {
+    return 'Plik audio jest pusty, uszkodzony albo nie zawiera dekodowalnej sciezki audio. Wgraj nagranie ponownie z oryginalnego pliku.';
+  }
+
+  if (normalizedMessage.includes('rate limit') || normalizedMessage.includes('too many requests')) {
+    return 'Limit transkrypcji, ponawiamy za chwile.';
   }
 
   if (isWorkspaceMissingErrorMessage(errorMessage)) {
@@ -220,7 +259,21 @@ function toUserFacingQueueError(error: any) {
 
 function isExpectedDomainFailure(error: any) {
   const errorMessage = String(error?.message || '');
+  const errorCode = String(
+    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+  );
   return (
+    [
+      'audio_invalid_or_empty',
+      'audio_too_short',
+      'stt_rate_limited',
+      'stt_provider_rate_limited',
+      'stt_quota_exceeded',
+      'audio_unavailable',
+      'transcription_processing',
+    ].includes(errorCode) ||
+    normalizeErrorForMatching(errorMessage).includes('valid media file') ||
+    normalizeErrorForMatching(errorMessage).includes('invalid file') ||
     errorMessage.includes('Model STT nie zwrocil zadnych segmentow transkrypcji.') ||
     errorMessage.includes('Lokalny plik audio nie istnieje') ||
     isRemoteRecordingMissingError(error) ||
@@ -232,7 +285,21 @@ function isExpectedDomainFailure(error: any) {
 
 function isTransientNetworkError(error: any) {
   const msg = String(error?.message || '');
+  const errorCode = String(
+    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+  );
+  if (errorCode === 'stt_rate_limited' || errorCode === 'stt_provider_rate_limited') return true;
+  if (errorCode === 'stt_quota_exceeded') return false;
+  const normalizedMsg = normalizeErrorForMatching(msg);
+  if (
+    normalizedMsg.includes('insufficient_quota') ||
+    normalizedMsg.includes('quota') ||
+    normalizedMsg.includes('billing')
+  ) {
+    return false;
+  }
   return (
+    Number(error?.status) === 429 ||
     isTransportErrorMessage(msg) ||
     normalizeErrorForMatching(msg).includes('http 502') ||
     normalizeErrorForMatching(msg).includes('serwer chwilowo przeciazony pamieciowo') ||

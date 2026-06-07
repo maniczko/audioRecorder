@@ -154,6 +154,72 @@ describe('periodic temp cleanup', () => {
     expect(logger.info).toHaveBeenCalledWith('[Cleanup] Periodic: triggered garbage collection.');
   });
 
+  test('logs when stale files are removed', () => {
+    const logger = createLogger();
+    const uploadDir = '/tmp/voicelog-periodic';
+    const nowMs = new Date('2026-04-25T12:00:00Z').getTime();
+    setupFiles(
+      {
+        [uploadDir]: { files: ['temp_old.webm'] },
+        [path.join(uploadDir, 'temp_old.webm')]: { mtimeMs: nowMs - 90 * 60 * 1000 },
+      },
+      nowMs
+    );
+
+    const result = runPeriodicTempCleanup({
+      uploadDir,
+      logger,
+      nowMs,
+      triggerGc: () => false,
+    });
+
+    expect(result.cleaned).toBe(1);
+    expect(logger.info).toHaveBeenCalledWith('[Cleanup] Periodic: removed 1 stale temp files.');
+  });
+
+  test('falls back to default garbage collection trigger when global gc is available', () => {
+    const logger = createLogger();
+    const uploadDir = '/tmp/voicelog-periodic';
+    const originalGc = global.gc;
+    const gc = vi.fn();
+    global.gc = gc;
+    setupFiles({ [uploadDir]: { files: [] } }, Date.now());
+
+    const result = runPeriodicTempCleanup({
+      uploadDir,
+      logger,
+    });
+
+    expect(result.gcTriggered).toBe(true);
+    expect(gc).toHaveBeenCalledTimes(1);
+    global.gc = originalGc;
+  });
+
+  test('keeps cleanup interval alive even when cleanup callback throws', () => {
+    const logger = createLogger();
+    const timer = { unref: vi.fn() };
+    let callback: (() => void) | null = null;
+    const setIntervalFn = vi.fn((receivedCallback: () => void) => {
+      callback = receivedCallback;
+      return timer;
+    }) as unknown as typeof setInterval;
+    fsMocks().existsSync.mockImplementation(() => {
+      throw new Error('fs-unavailable');
+    });
+
+    startPeriodicTempCleanup({
+      uploadDir: '/tmp/uploads',
+      logger,
+      setIntervalFn,
+    });
+    callback?.();
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[Cleanup] Periodic cleanup error:',
+      expect.any(Error)
+    );
+  });
+
   test('starts an unrefed interval with the production cadence', () => {
     const logger = createLogger();
     const timer = { unref: vi.fn() };

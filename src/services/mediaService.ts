@@ -153,6 +153,11 @@ function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {})
     pipelineBuildTime: normalized.pipelineBuildTime || '',
     audioQuality: normalized.audioQuality || null,
     transcriptionDiagnostics: normalized.transcriptionDiagnostics || null,
+    errorCode: normalized.errorCode || '',
+    retryable: Boolean(normalized.retryable),
+    retryAfterMs: normalized.retryAfterMs || null,
+    audioValidation: normalized.audioValidation || null,
+    sttAttempts: normalized.sttAttempts || [],
     reviewSummary: normalized.reviewSummary || null,
     errorMessage: normalized.errorMessage || '',
   };

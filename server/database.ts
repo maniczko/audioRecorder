@@ -2497,6 +2497,23 @@ export class Database {
       [
         JSON.stringify({
           errorMessage: this._clean(errorMessage),
+          errorCode: this._clean(
+            transcriptionDiagnostics?.errorCode || transcriptionDiagnostics?.code || ''
+          ),
+          retryable:
+            typeof transcriptionDiagnostics?.retryable === 'boolean'
+              ? transcriptionDiagnostics.retryable
+              : false,
+          retryAfterMs:
+            Number.isFinite(Number(transcriptionDiagnostics?.retryAfterMs)) &&
+            Number(transcriptionDiagnostics?.retryAfterMs) > 0
+              ? Number(transcriptionDiagnostics.retryAfterMs)
+              : null,
+          audioValidation:
+            transcriptionDiagnostics?.audioValidation &&
+            typeof transcriptionDiagnostics.audioValidation === 'object'
+              ? transcriptionDiagnostics.audioValidation
+              : null,
           audioQuality: audioQuality || existingDiarization.audioQuality || null,
           transcriptionDiagnostics: transcriptionDiagnostics || null,
           qualityMetrics,

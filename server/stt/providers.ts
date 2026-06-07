@@ -17,6 +17,10 @@ export interface SttProviderAttempt {
   model: string;
   success: boolean;
   durationMs: number;
+  status?: number;
+  errorCode?: string;
+  retryable?: boolean;
+  retryAfterMs?: number;
   errorMessage?: string;
 }
 
@@ -168,6 +172,65 @@ function parseJsonResponse(rawBody: string) {
   }
 }
 
+function normalizeProviderErrorCode(
+  providerId: string,
+  status: number,
+  payload: any,
+  message: string
+) {
+  const code = String(payload?.error?.code || payload?.error?.type || '').toLowerCase();
+  const lowerMessage = String(message || '').toLowerCase();
+  if (status === 429) {
+    if (
+      code.includes('insufficient_quota') ||
+      code.includes('quota') ||
+      lowerMessage.includes('insufficient_quota') ||
+      lowerMessage.includes('quota') ||
+      lowerMessage.includes('billing')
+    ) {
+      return 'stt_quota_exceeded';
+    }
+    return providerId === 'openai' ? 'stt_rate_limited' : 'stt_provider_rate_limited';
+  }
+  if (
+    status === 400 &&
+    (lowerMessage.includes('valid media file') ||
+      lowerMessage.includes('invalid file') ||
+      lowerMessage.includes('empty') ||
+      lowerMessage.includes('decode'))
+  ) {
+    return 'audio_invalid_or_empty';
+  }
+  return '';
+}
+
+function parseRetryAfterMs(headers: Headers | undefined | null) {
+  if (!headers) return 60_000;
+  const retryAfter = headers.get('retry-after');
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.max(1_000, Math.round(seconds * 1000));
+    }
+    const dateMs = Date.parse(retryAfter);
+    if (Number.isFinite(dateMs)) {
+      return Math.max(1_000, dateMs - Date.now());
+    }
+  }
+  for (const key of ['x-ratelimit-reset-requests', 'x-ratelimit-reset-tokens']) {
+    const raw = headers.get(key);
+    const match = String(raw || '').match(/^(\d+(?:\.\d+)?)(ms|s|m)?$/i);
+    if (!match) continue;
+    const value = Number(match[1]);
+    const unit = (match[2] || 's').toLowerCase();
+    if (!Number.isFinite(value) || value <= 0) continue;
+    if (unit === 'ms') return Math.round(value);
+    if (unit === 'm') return Math.round(value * 60_000);
+    return Math.round(value * 1000);
+  }
+  return 60_000;
+}
+
 async function runProviderRequest(provider: SttProvider, request: SttAudioRequest) {
   if (!provider.isAvailable()) {
     throw new Error(`STT provider ${provider.id} nie jest skonfigurowany.`);
@@ -201,11 +264,19 @@ async function runProviderRequest(provider: SttProvider, request: SttAudioReques
     const payload = parseJsonResponse(rawBody);
     const msg =
       payload?.error?.message || `STT audio request failed with status ${response.status}.`;
+    const errorCode = normalizeProviderErrorCode(provider.id, response.status, payload, msg);
     console.warn(
       `[stt] ${provider.id} failed: status=${response.status} body=${rawBody.slice(0, 300)}`
     );
     const err: any = new Error(msg);
     err.status = response.status;
+    err.providerId = provider.id;
+    err.providerLabel = provider.label;
+    err.model = model;
+    err.errorCode = errorCode;
+    err.code = errorCode || err.code;
+    err.retryable = errorCode === 'stt_rate_limited' || errorCode === 'stt_provider_rate_limited';
+    err.retryAfterMs = err.retryable ? parseRetryAfterMs(response.headers) : undefined;
     throw err;
   }
 
@@ -307,6 +378,11 @@ export async function transcribeWithProviders(
         model: String((request.fields as any)?.model || provider.defaultModel),
         success: false,
         durationMs: Math.round(performance.now() - startedAt),
+        status: Number((lastError as any)?.status || 0) || undefined,
+        errorCode:
+          String((lastError as any)?.errorCode || (lastError as any)?.code || '') || undefined,
+        retryable: Boolean((lastError as any)?.retryable),
+        retryAfterMs: Number((lastError as any)?.retryAfterMs || 0) || undefined,
         errorMessage: lastError.message,
       });
     }
@@ -314,5 +390,8 @@ export async function transcribeWithProviders(
 
   const finalError = lastError || new Error('Brak skonfigurowanego providera STT.');
   (finalError as any).sttAttempts = attempts;
+  if (!(finalError as any).errorCode && (finalError as any).code) {
+    (finalError as any).errorCode = (finalError as any).code;
+  }
   throw finalError;
 }

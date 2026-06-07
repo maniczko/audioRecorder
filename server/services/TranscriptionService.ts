@@ -159,6 +159,26 @@ function classifyClipExtractionError(error: any) {
   );
 }
 
+function buildFailureDiagnostics(error: any) {
+  const diagnostics =
+    error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === 'object'
+      ? { ...error.transcriptionDiagnostics }
+      : {};
+  const errorCode = String(error?.errorCode || error?.code || diagnostics.errorCode || '').trim();
+  if (errorCode) diagnostics.errorCode = errorCode;
+  if (typeof error?.retryable === 'boolean') diagnostics.retryable = error.retryable;
+  if (Number.isFinite(Number(error?.retryAfterMs)) && Number(error.retryAfterMs) > 0) {
+    diagnostics.retryAfterMs = Number(error.retryAfterMs);
+  }
+  if (Array.isArray(error?.sttAttempts) && !Array.isArray(diagnostics.sttAttempts)) {
+    diagnostics.sttAttempts = error.sttAttempts;
+  }
+  if (error?.audioValidation && typeof error.audioValidation === 'object') {
+    diagnostics.audioValidation = error.audioValidation;
+  }
+  return Object.keys(diagnostics).length ? diagnostics : null;
+}
+
 // LangChain Document and RagVectorStore loaded lazily to reduce startup memory
 let _Document: any = null;
 let _RagVectorStore: any = null;
@@ -648,12 +668,11 @@ export default class TranscriptionService extends EventEmitter {
       })
       .catch(async (error: any) => {
         try {
+          const failureDiagnostics = buildFailureDiagnostics(error);
           await this.markTranscriptionFailure(
             recordingId,
             error?.message || String(error || 'Unknown pipeline error'),
-            error?.transcriptionDiagnostics && typeof error.transcriptionDiagnostics === 'object'
-              ? error.transcriptionDiagnostics
-              : null,
+            failureDiagnostics,
             error?.audioQuality && typeof error.audioQuality === 'object'
               ? error.audioQuality
               : null
