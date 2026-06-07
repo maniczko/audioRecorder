@@ -142,3 +142,60 @@
   opacity: 0.7;
 }
 
+:root[data-theme='premium-light'] .pipeline-status-wrapper {
+  color: var(--text-1, #122822);
+}
+
+:root[data-theme='premium-light'] .status-chip.processing {
+  background: rgba(83, 94, 190, 0.1);
+  color: #4650a8;
+  border-color: rgba(83, 94, 190, 0.2);
+}
+
+:root[data-theme='premium-light'] .status-chip.done {
+  background: rgba(28, 141, 122, 0.1);
+  color: #126655;
+  border-color: rgba(28, 141, 122, 0.22);
+}
+
+:root[data-theme='premium-light'] .status-chip.failed {
+  background: rgba(185, 77, 63, 0.1);
+  color: #a23f34;
+  border-color: rgba(185, 77, 63, 0.22);
+}
+
+:root[data-theme='premium-light'] .pipeline-progress-text,
+:root[data-theme='premium-light'] .pipeline-progress-subtext,
+:root[data-theme='premium-light'] .pipeline-processing-timer {
+  color: var(--text-2, rgba(18, 40, 34, 0.64));
+}
+
+:root[data-theme='premium-light'] .pipeline-progress-meter {
+  background: rgba(43, 82, 74, 0.1);
+}
+
+:root[data-theme='premium-light'] .pipeline-progress-meter span {
+  background: linear-gradient(90deg, rgba(28, 141, 122, 0.82), rgba(14, 105, 88, 0.9));
+}
+
+:root[data-theme='premium-light'] .pipeline-error-box {
+  background: rgba(255, 248, 245, 0.94);
+  border-color: rgba(185, 77, 63, 0.24);
+  box-shadow: 0 10px 24px rgba(185, 77, 63, 0.08);
+}
+
+:root[data-theme='premium-light'] .pipeline-error-icon,
+:root[data-theme='premium-light'] .pipeline-error-text {
+  color: #a23f34;
+}
+
+:root[data-theme='premium-light'] .pipeline-retry-btn {
+  background: rgba(255, 255, 252, 0.84);
+  border-color: rgba(43, 82, 74, 0.16);
+  color: var(--text-1, #122822);
+}
+
+:root[data-theme='premium-light'] .pipeline-retry-btn:hover {
+  background: rgba(28, 141, 122, 0.1);
+  border-color: rgba(28, 141, 122, 0.24);
+}

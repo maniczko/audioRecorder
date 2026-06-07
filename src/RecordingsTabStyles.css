@@ -152,7 +152,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-
 .recordings-library {
   margin: 0 0 24px;
 }
@@ -612,6 +611,86 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   margin-top: 8px;
   color: var(--text-3, #8f97ab);
   font-size: 0.76rem;
+}
+
+:root[data-theme='premium-light'] .recordings-tab-shell {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .recordings-status-panel,
+:root[data-theme='premium-light'] .recordings-section-panel,
+:root[data-theme='premium-light'] .recordings-library-panel {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 252, 0.94), rgba(244, 250, 245, 0.88)),
+    radial-gradient(circle at 12% 0%, rgba(117, 214, 196, 0.14), transparent 30%);
+  border: 1px solid rgba(43, 82, 74, 0.14);
+  color: var(--text-1);
+  box-shadow: 0 20px 48px rgba(53, 77, 72, 0.1);
+}
+
+:root[data-theme='premium-light'] .recordings-status-panel {
+  border-color: rgba(28, 141, 122, 0.2);
+}
+
+:root[data-theme='premium-light'] .recordings-section-panel {
+  border-color: rgba(43, 82, 74, 0.13);
+}
+
+:root[data-theme='premium-light'] .recordings-section-title,
+:root[data-theme='premium-light'] .recordings-library-heading h1,
+:root[data-theme='premium-light'] .recordings-pending-title,
+:root[data-theme='premium-light'] .recordings-library-meeting strong,
+:root[data-theme='premium-light'] .studio-recordings-table td {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .recordings-copy-md,
+:root[data-theme='premium-light'] .recordings-pending-date,
+:root[data-theme='premium-light'] .recordings-pending-diagnostics,
+:root[data-theme='premium-light'] .recordings-diagnostics-copy,
+:root[data-theme='premium-light'] .recording-processing-timer,
+:root[data-theme='premium-light'] .studio-recordings-table th {
+  color: var(--text-2);
+}
+
+:root[data-theme='premium-light'] .recordings-pending-card {
+  background: rgba(255, 255, 252, 0.82);
+  border-color: rgba(43, 82, 74, 0.14);
+  box-shadow: 0 12px 28px rgba(53, 77, 72, 0.07);
+}
+
+:root[data-theme='premium-light'] .recordings-pending-card:has(.status-chip.failed) {
+  background: rgba(255, 248, 245, 0.92);
+  border-color: rgba(185, 77, 63, 0.22);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table-wrap {
+  background: rgba(255, 255, 252, 0.72);
+  border-radius: 18px;
+  border: 1px solid rgba(43, 82, 74, 0.11);
+  padding: 0 18px 14px;
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table th {
+  border-bottom-color: rgba(43, 82, 74, 0.12);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table td {
+  border-bottom-color: rgba(43, 82, 74, 0.08);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr:hover td,
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr.active td {
+  background: rgba(28, 141, 122, 0.07);
+}
+
+:root[data-theme='premium-light'] .recordings-clickable-title {
+  color: var(--accent-strong, #126655);
+  text-decoration-color: rgba(28, 141, 122, 0.35);
+}
+
+:root[data-theme='premium-light'] .recordings-clickable-title:hover {
+  color: var(--accent, #1c8d7a);
 }
 
 @media (max-width: 900px) {
