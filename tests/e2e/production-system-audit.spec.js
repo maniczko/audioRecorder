@@ -654,17 +654,43 @@ test.describe('Production system audit', () => {
         },
       });
 
+      let state = await fetchWorkspaceState(request);
+      let persistedMeeting = (state.meetings || []).find((candidate) => candidate.id === meetingId);
+      let persistedRecording = persistedMeeting?.recordings?.find(
+        (candidate) => candidate.id === recordingId
+      );
+      expect(persistedRecording?.transcript?.[0]?.text, 'transcript survives production save').toBe(
+        transcriptText
+      );
+      expect(
+        persistedRecording?.audioAvailable,
+        'missing production audio should not imply transcript removal'
+      ).toBe(false);
+
       await installProductionSession(page, request);
-      await installProductionMeetingSnapshot(page, meeting);
       await page.goto(FRONTEND_URL, { waitUntil: 'domcontentloaded' });
-      await openShellTab(page, 'Studio');
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title).first()).toBeVisible({ timeout: 20_000 });
+      await page.getByText(title).first().click();
       await expect(page.getByText(transcriptText).first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText(/Audio nie jest dost/i).first()).toBeVisible({
         timeout: 20_000,
       });
 
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await openShellTab(page, 'Studio');
+      state = await fetchWorkspaceState(request);
+      persistedMeeting = (state.meetings || []).find((candidate) => candidate.id === meetingId);
+      persistedRecording = persistedMeeting?.recordings?.find(
+        (candidate) => candidate.id === recordingId
+      );
+      expect(
+        persistedRecording?.transcript?.[0]?.text,
+        'transcript survives production reload bootstrap'
+      ).toBe(transcriptText);
+
+      await openShellTab(page, 'Nagrania');
+      await expect(page.getByText(title).first()).toBeVisible({ timeout: 20_000 });
+      await page.getByText(title).first().click();
       await expect(page.getByText(transcriptText).first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText(/Brak transkrypcji/i)).toHaveCount(0, { timeout: 20_000 });
     } finally {
