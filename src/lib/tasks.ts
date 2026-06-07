@@ -30,6 +30,10 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function isTaskRecord(value) {
+  return Boolean(value) && typeof value === 'object';
+}
+
 function hasOwn(value, key) {
   return Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -1237,6 +1241,7 @@ export function buildTasksFromMeetings(
     .filter((task) => !task.archived);
 
   const standaloneTasks = safeArray(manualTasks)
+    .filter(isTaskRecord)
     .filter((task) =>
       workspaceId ? task.workspaceId === workspaceId : task.userId === currentUser?.id
     )

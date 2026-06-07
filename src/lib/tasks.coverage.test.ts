@@ -386,6 +386,40 @@ describe('tasks extra coverage', () => {
     expect(result[0].assignedToMe).toBe(true);
   });
 
+  test('Regression: #0 - buildTasksFromMeetings ignores null manual tasks from persisted state', () => {
+    const result = buildTasksFromMeetings(
+      [],
+      [
+        null,
+        {
+          id: 'manual_valid',
+          title: 'Valid task',
+          workspaceId: 'ws_1',
+          status: 'todo',
+          completed: false,
+        },
+        {
+          id: 'manual_other',
+          title: 'Other workspace task',
+          workspaceId: 'ws_2',
+          status: 'todo',
+          completed: false,
+        },
+      ],
+      {},
+      { id: 'user_1' },
+      DEFAULT_TASK_COLUMNS,
+      'ws_1'
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: 'manual_valid',
+      title: 'Valid task',
+      workspaceId: 'ws_1',
+    });
+  });
+
   test('taskListStats aggregates counts', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-10T10:00:00.000Z'));
