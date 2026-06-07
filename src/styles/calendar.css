@@ -847,3 +847,80 @@
   max-height: 200px;
   overflow-y: auto;
 }
+/* Mobile calendar remediation: prevent compressed grids and move toward agenda-style scanning. */
+@media (max-width: 720px) {
+  .calendar-page,
+  .calendar-shell,
+  .calendar-content,
+  .calendar-panel,
+  .calendar-grid,
+  .calendar-week,
+  .calendar-month {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .calendar-toolbar,
+  .calendar-header,
+  .calendar-controls,
+  .calendar-view-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .calendar-toolbar > *,
+  .calendar-header > *,
+  .calendar-controls > *,
+  .calendar-view-switcher > * {
+    min-width: 0;
+  }
+
+  .calendar-week-grid,
+  .calendar-week-view,
+  .calendar-agenda-grid {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendar-week-grid > *,
+  .calendar-week-view > *,
+  .calendar-agenda-grid > * {
+    flex: 0 0 min(86vw, 360px);
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .calendar-month-grid {
+    gap: 4px;
+  }
+
+  .calendar-day,
+  .calendar-cell,
+  .calendar-event-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-toolbar button,
+  .calendar-header button,
+  .calendar-controls button,
+  .calendar-view-switcher button {
+    min-height: 44px;
+  }
+
+  .calendar-month-grid {
+    font-size: 0.78rem;
+  }
+
+  .calendar-event-card {
+    padding: 10px;
+    border-radius: 14px;
+  }
+}

@@ -1035,3 +1035,104 @@
 [data-layout='modern'] .todo-detail-section {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
+/* Mobile UX hardening: shared shell contract for phone layouts.
+   Keeps drawers, player bars and content panes from fighting for the same space. */
+@media (max-width: 768px) {
+  :root {
+    --mobile-shell-gutter: 12px;
+    --mobile-player-height: 92px;
+    --mobile-bottom-safe: calc(
+      var(--mobile-player-height) + env(safe-area-inset-bottom, 0px) + 20px
+    );
+    --z-mobile-header: 80;
+    --z-mobile-player: 120;
+    --z-mobile-overlay: 180;
+    --z-mobile-drawer: 220;
+    --z-mobile-modal: 1000;
+    --z-mobile-toast: 1100;
+  }
+
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .modern-layout,
+  .modern-main,
+  .modern-content-wrapper,
+  .modern-content,
+  main {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .modern-header {
+    z-index: var(--z-mobile-header);
+  }
+
+  .modern-sidebar-overlay {
+    z-index: var(--z-mobile-overlay);
+  }
+
+  .modern-sidebar {
+    z-index: var(--z-mobile-drawer);
+    max-width: min(84vw, 340px);
+  }
+
+  .modern-content-wrapper {
+    padding-inline: var(--mobile-shell-gutter);
+    padding-bottom: var(--mobile-bottom-safe);
+  }
+
+  .modern-header-right,
+  .modern-header-actions,
+  .topbar-actions {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .modern-header-right > *,
+  .modern-header-actions > *,
+  .topbar-actions > * {
+    flex-shrink: 0;
+  }
+
+  .modern-search,
+  .global-search,
+  .command-search {
+    min-width: 0;
+    max-width: min(52vw, 360px);
+  }
+
+  .modal,
+  .dialog,
+  [role='dialog'] {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  .ff-player-bar,
+  .player-bar,
+  .recording-player {
+    z-index: var(--z-mobile-player);
+    right: max(10px, env(safe-area-inset-right, 0px));
+    bottom: max(10px, env(safe-area-inset-bottom, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-width: calc(100vw - 20px);
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-search,
+  .global-search,
+  .command-search {
+    max-width: 46vw;
+  }
+
+  .modern-header {
+    gap: 8px;
+  }
+}

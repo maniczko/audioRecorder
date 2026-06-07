@@ -183,3 +183,91 @@
     min-height: 48px;
   }
 }
+/* Current Studio mobile layout: stack the analysis and transcript panes,
+   and reserve space for the fixed player. */
+@media (max-width: 900px) {
+  .ff-studio-split-view,
+  .studio-meeting-shell,
+  .studio-meeting-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    min-width: 0;
+    max-width: 100%;
+    padding-bottom: var(--mobile-bottom-safe, 132px);
+  }
+
+  .ff-studio-left-col,
+  .ff-studio-right-col,
+  .studio-analysis-panel,
+  .transcript-panel,
+  .voice-analytics-panel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: none;
+  }
+
+  .ff-studio-right-col,
+  .transcript-panel,
+  .voice-analytics-panel {
+    overflow: visible;
+  }
+
+  .transcript-panel {
+    border-radius: 22px;
+  }
+
+  .transcript-list,
+  .voice-analytics-list {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .speaker-turn,
+  .transcript-row,
+  .voice-analytics-row {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 640px) {
+  .studio-meeting-view,
+  .ff-studio-split-view,
+  .studio-meeting-shell,
+  .studio-meeting-layout {
+    padding-inline: 0;
+  }
+
+  .studio-tabs,
+  .studio-actions,
+  .meeting-actions,
+  .transcript-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .studio-tabs > *,
+  .studio-actions > *,
+  .meeting-actions > *,
+  .transcript-toolbar > * {
+    min-width: 0;
+  }
+
+  .studio-tabs button,
+  .studio-actions button,
+  .meeting-actions button,
+  .transcript-toolbar button {
+    min-height: 44px;
+  }
+
+  .studio-summary-grid,
+  .studio-metrics-grid,
+  .share-of-voice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

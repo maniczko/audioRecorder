@@ -2031,7 +2031,7 @@
 }
 
 .tasks-layout.ms-todo .todo-inline-check input,
-.todo-inline-check input[type="checkbox"] {
+.todo-inline-check input[type='checkbox'] {
   width: auto;
   margin: 0;
   cursor: pointer;
@@ -6266,5 +6266,111 @@
   .tasks-layout.ms-todo .todo-table-head,
   .tasks-layout.ms-todo .todo-table-row {
     min-width: 680px;
+  }
+}
+/* Phone-first task layout remediation.
+   The desktop grid remains unchanged; phones get cards instead of a forced wide table. */
+@media (max-width: 720px) {
+  .tasks-layout.ms-todo {
+    overflow-x: hidden;
+  }
+
+  .tasks-layout.ms-todo .tasks-main,
+  .tasks-layout.ms-todo .tasks-content,
+  .tasks-layout.ms-todo .todo-surface,
+  .tasks-layout.ms-todo .todo-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .tasks-layout.ms-todo .todo-toolbar,
+  .tasks-layout.ms-todo .todo-view-switcher,
+  .tasks-layout.ms-todo .todo-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tasks-layout.ms-todo .todo-toolbar > *,
+  .tasks-layout.ms-todo .todo-search-row > * {
+    min-width: 0;
+  }
+
+  .tasks-layout.ms-todo .todo-search,
+  .tasks-layout.ms-todo .todo-quick-add,
+  .tasks-layout.ms-todo .todo-add-input {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .tasks-layout.ms-todo .todo-table-wrap {
+    overflow: visible;
+  }
+
+  .tasks-layout.ms-todo .todo-table-head {
+    display: none;
+  }
+
+  .tasks-layout.ms-todo .todo-table-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    min-width: 0 !important;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 14px;
+    border: 1px solid rgba(125, 211, 199, 0.18);
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(15, 25, 39, 0.96), rgba(13, 37, 45, 0.88));
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  }
+
+  .tasks-layout.ms-todo .todo-table-cell,
+  .tasks-layout.ms-todo .todo-table-row > * {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tasks-layout.ms-todo .todo-table-title,
+  .tasks-layout.ms-todo .todo-title-cell,
+  .tasks-layout.ms-todo .todo-item-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .tasks-layout.ms-todo .todo-row-actions,
+  .tasks-layout.ms-todo .todo-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .tasks-layout.ms-todo .todo-detail-overlay {
+    z-index: var(--z-mobile-modal, 1000);
+    padding: 10px;
+  }
+
+  .tasks-layout.ms-todo .todo-detail-panel {
+    width: min(100%, 480px);
+    max-height: calc(100dvh - 20px);
+    overflow: auto;
+    border-radius: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tasks-layout.ms-todo .todo-view-switcher > *,
+  .tasks-layout.ms-todo .todo-toolbar button,
+  .tasks-layout.ms-todo .todo-row-actions button,
+  .tasks-layout.ms-todo .todo-actions button {
+    min-height: 44px;
+  }
+
+  .tasks-layout.ms-todo .todo-view-switcher {
+    width: 100%;
+  }
+
+  .tasks-layout.ms-todo .todo-view-switcher > * {
+    flex: 1 1 calc(50% - 6px);
   }
 }

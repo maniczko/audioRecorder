@@ -420,3 +420,125 @@
 .sidebar-recording-item.meeting-active:not(.active) {
   border-color: rgba(158, 242, 219, 0.1);
 }
+/* Mobile recordings: table becomes stacked cards so every recording is readable on phones. */
+@media (max-width: 720px) {
+  .recordings-tab,
+  .recordings-page,
+  .studio-recordings,
+  .studio-recordings-panel,
+  .studio-recordings-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .recordings-toolbar,
+  .recordings-actions,
+  .recordings-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .recordings-toolbar > *,
+  .recordings-actions > *,
+  .recordings-filters > * {
+    min-width: 0;
+  }
+
+  .studio-recordings-table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .studio-recordings-table thead {
+    display: none;
+  }
+
+  .studio-recordings-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .studio-recordings-table tr {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    padding: 14px;
+    border: 1px solid rgba(125, 211, 199, 0.18);
+    border-radius: 20px;
+    background: linear-gradient(145deg, rgba(16, 31, 45, 0.98), rgba(13, 39, 48, 0.88));
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+  }
+
+  .studio-recordings-table td {
+    display: grid;
+    grid-template-columns: minmax(92px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-recordings-table td::before {
+    color: rgba(226, 232, 240, 0.58);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    content: 'Pole';
+  }
+
+  .studio-recordings-table td:nth-child(1)::before {
+    content: 'Spotkanie';
+  }
+
+  .studio-recordings-table td:nth-child(2)::before {
+    content: 'Data';
+  }
+
+  .studio-recordings-table td:nth-child(3)::before {
+    content: 'Czas';
+  }
+
+  .studio-recordings-table td:nth-child(4)::before {
+    content: 'Mówcy';
+  }
+
+  .studio-recordings-table td:nth-child(5)::before {
+    content: 'Status';
+  }
+
+  .studio-recordings-table td:nth-child(6)::before {
+    content: 'Przetwarzanie';
+  }
+
+  .studio-recordings-table td:nth-child(7)::before {
+    content: 'Tagi';
+  }
+
+  .studio-recordings-table td:nth-child(8)::before {
+    content: 'Akcje';
+  }
+}
+
+@media (max-width: 480px) {
+  .studio-recordings-table td {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .recordings-toolbar button,
+  .recordings-actions button,
+  .recordings-filters button,
+  .studio-recordings-table button {
+    min-height: 44px;
+  }
+}
