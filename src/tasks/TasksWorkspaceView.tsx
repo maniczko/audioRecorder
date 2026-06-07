@@ -204,6 +204,11 @@ function TasksWorkspaceView({
               {currentUserName && typeof setOwnerFilter === 'function' && (
                 <button
                   type="button"
+                  className={
+                    ownerFilter === currentUserName
+                      ? 'todo-owner-filter-btn active'
+                      : 'todo-owner-filter-btn'
+                  }
                   title={
                     ownerFilter === currentUserName
                       ? 'Pokaż wszystkie zadania'
@@ -212,53 +217,31 @@ function TasksWorkspaceView({
                   onClick={() =>
                     setOwnerFilter(ownerFilter === currentUserName ? 'all' : currentUserName)
                   }
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    padding: '5px 12px',
-                    borderRadius: 20,
-                    border:
-                      ownerFilter === currentUserName
-                        ? '1px solid var(--accent, #75d6c4)'
-                        : '1px solid rgba(255,255,255,0.12)',
-                    background:
-                      ownerFilter === currentUserName
-                        ? 'rgba(117,214,196,0.15)'
-                        : 'rgba(255,255,255,0.04)',
-                    color:
-                      ownerFilter === currentUserName ? 'var(--accent, #75d6c4)' : 'var(--muted)',
-                    fontSize: '0.78rem',
-                    fontWeight: ownerFilter === currentUserName ? 600 : 400,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s',
-                  }}
                 >
                   <span>👤</span>
                   Moje zadania
                 </button>
               )}
               {!isCharts && !isSchedule && !isSummary ? (
-                <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <div className="todo-toolbar-search">
+                  <Search className="todo-toolbar-search-icon" />
                   <input
                     ref={searchInputRef}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Szukaj w zadaniach..."
-                    className="w-full pl-9 pr-4 py-2 bg-slate-800/60 border border-slate-700/50 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition-all"
+                    className="todo-toolbar-input"
                   />
                 </div>
               ) : null}
 
-              <div className="relative flex-1 min-w-[220px] max-w-[320px]">
+              <div className="todo-toolbar-quickadd">
                 <input
                   ref={quickAddInputRef}
                   value={quickTitleDraft}
                   onChange={(event) => updateQuickTitleDraft(event.target.value)}
                   placeholder="Dodaj zadanie (N)..."
-                  className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                  className="todo-toolbar-input"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -268,7 +251,7 @@ function TasksWorkspaceView({
                 />
                 <button
                   type="button"
-                  className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
+                  className="todo-toolbar-add-btn"
                   onClick={submitToolbarQuickTask}
                   aria-label="Dodaj zadanie"
                   title={
