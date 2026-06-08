@@ -188,6 +188,13 @@ export default function useGoogleIntegrations({
       })
       .catch((error) => {
         if (cancelled) return;
+        const message = error instanceof Error ? error.message : String(error || '');
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        if (statusCode === 404 || /not found/i.test(message)) {
+          setGoogleCalendarStatus('idle');
+          setGoogleCalendarMessage('');
+          return;
+        }
         console.error('Google Calendar status refresh failed.', error);
         setGoogleCalendarStatus('error');
         setGoogleCalendarMessage('Nie udalo sie sprawdzic polaczenia Google Calendar.');
