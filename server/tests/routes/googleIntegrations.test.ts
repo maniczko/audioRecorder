@@ -113,6 +113,31 @@ describe('googleIntegrations routes', () => {
     ]);
   });
 
+  it('falls back to the safe local app URL for invalid returnTo values', async () => {
+    const db = {
+      _get: vi.fn(),
+      _execute: vi.fn(),
+    };
+    const app = createTestApp(db);
+
+    const response = await app.request('/connect?workspaceId=workspace-1&returnTo=not-a-url');
+    const payload = await response.json();
+    const authUrl = new URL(payload.url);
+    const state = authUrl.searchParams.get('state');
+
+    expect(response.status).toBe(200);
+    expect(state).toBeTruthy();
+    expect(db._execute).toHaveBeenCalledWith(expect.stringContaining('google_oauth_states'), [
+      state,
+      'user-1',
+      'workspace-1',
+      'http://127.0.0.1:3000/',
+      expect.any(String),
+      expect.any(String),
+      '',
+    ]);
+  });
+
   it('returns a clear status when Google backend credentials are missing', async () => {
     config.GOOGLE_CLIENT_SECRET = '';
     const db = {
@@ -185,6 +210,31 @@ describe('googleIntegrations routes', () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get('location')).toBe('http://127.0.0.1:3000/?googleCalendar=error');
+  });
+
+  it('redirects callback to error when Google rejects the token exchange', async () => {
+    const db = {
+      _get: vi.fn(async () => ({
+        state: 'state-1',
+        user_id: 'user-1',
+        workspace_id: 'workspace-1',
+        return_to: 'http://127.0.0.1:3000/calendar',
+        expires_at: '2999-01-01T00:00:00.000Z',
+        used_at: '',
+      })),
+      _execute: vi.fn(),
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error_description: 'invalid code' }), { status: 400 })
+    );
+    const app = createTestApp(db);
+
+    const response = await app.request('/callback?code=bad-code&state=state-1');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'http://127.0.0.1:3000/calendar?googleCalendar=error'
+    );
   });
 
   it('rejects event loading without a complete time range', async () => {
@@ -260,6 +310,56 @@ describe('googleIntegrations routes', () => {
       expect.stringContaining('UPDATE google_integrations'),
       expect.arrayContaining(['new-token'])
     );
+  });
+
+  it('surfaces provider errors when Google event loading fails', async () => {
+    const db = {
+      _get: vi.fn(async () => ({
+        user_id: 'user-1',
+        workspace_id: 'workspace-1',
+        access_token: 'access-token',
+        refresh_token: '',
+        expires_at: '2999-01-01T00:00:00.000Z',
+        scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+      })),
+      _execute: vi.fn(),
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: 'calendar unavailable' } }), {
+        status: 503,
+      })
+    );
+    const app = createTestApp(db);
+
+    await expect(
+      app.request(
+        '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
+      )
+    ).rejects.toThrow('calendar unavailable');
+  });
+
+  it('surfaces refresh token errors before fetching events', async () => {
+    const db = {
+      _get: vi.fn(async () => ({
+        user_id: 'user-1',
+        workspace_id: 'workspace-1',
+        access_token: 'old-token',
+        refresh_token: 'refresh-token',
+        expires_at: '2000-01-01T00:00:00.000Z',
+        scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+      })),
+      _execute: vi.fn(),
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error_description: 'refresh denied' }), { status: 400 })
+    );
+    const app = createTestApp(db);
+
+    await expect(
+      app.request(
+        '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
+      )
+    ).rejects.toThrow('refresh denied');
   });
 
   it('disconnects the stored Google Calendar integration', async () => {
