@@ -218,7 +218,7 @@ export function createGoogleIntegrationRoutes(services: AppServices, middlewares
   const db = services.db;
 
   app.get('/status', authMiddleware, async (c) => {
-    const session = c.get('session');
+    const session = (c as any).get('session') as any;
     const workspaceId = workspaceIdFrom(c.req.query('workspaceId') || session.workspace_id);
     await ensureWorkspaceAccess(c, workspaceId);
 
@@ -235,7 +235,7 @@ export function createGoogleIntegrationRoutes(services: AppServices, middlewares
   });
 
   app.get('/connect', authMiddleware, async (c) => {
-    const session = c.get('session');
+    const session = (c as any).get('session') as any;
     const workspaceId = workspaceIdFrom(c.req.query('workspaceId') || session.workspace_id);
     await ensureWorkspaceAccess(c, workspaceId);
 
@@ -309,7 +309,7 @@ export function createGoogleIntegrationRoutes(services: AppServices, middlewares
   });
 
   app.get('/events', authMiddleware, async (c) => {
-    const session = c.get('session');
+    const session = (c as any).get('session') as any;
     /* v8 ignore next -- session fallback is defensive for direct route calls */
     const workspaceId = workspaceIdFrom(c.req.query('workspaceId') || session.workspace_id);
     const timeMin = String(c.req.query('timeMin') || '').trim();
@@ -332,7 +332,7 @@ export function createGoogleIntegrationRoutes(services: AppServices, middlewares
   });
 
   app.post('/disconnect', authMiddleware, async (c) => {
-    const session = c.get('session');
+    const session = (c as any).get('session') as any;
     const body = await c.req.json().catch(() => ({}));
     /* v8 ignore next -- session fallback supports disconnect without a JSON body */
     const workspaceId = workspaceIdFrom(body.workspaceId || session.workspace_id);
