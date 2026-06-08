@@ -36,7 +36,10 @@ jobs:
           node-version: 22
       - run: corepack enable
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # Vercel frontend deployment and release smoke do not need server-side
+        # ffmpeg-static postinstall binaries. Avoid blocking production deploys
+        # on transient GitHub release asset 504s.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
