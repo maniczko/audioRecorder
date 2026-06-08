@@ -188,6 +188,61 @@ describe('StudioMeetingView', () => {
     ).toEqual(['Adam', 'Ewa']);
   });
 
+  test('Regression: offers verified voice profiles as assignable transcript speaker names', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    apiRequestMock.mockImplementation((url: string) => {
+      if (url === '/voice-profiles') {
+        return Promise.resolve({
+          profiles: [{ hasEmbedding: true, speakerName: 'Barbara' }],
+        });
+      }
+      return Promise.resolve({});
+    });
+    const renameSpeaker = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        renameSpeaker={renameSpeaker}
+        displaySpeakerNames={{ '4': 'Speaker 5' }}
+        displayRecording={{
+          id: 'rec-1',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '4',
+              text: 'Fragment, ktory powinien zostac przypisany do Barbary.',
+              timestamp: 30,
+              endTimestamp: 35,
+            },
+          ],
+          duration: 60,
+        }}
+        selectedRecording={{
+          id: 'rec-1',
+          pipelineStatus: 'done',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '4',
+              text: 'Fragment, ktory powinien zostac przypisany do Barbary.',
+              timestamp: 30,
+              endTimestamp: 35,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /speaker 5/i }));
+
+    const barbaraOption = await screen.findByRole('menuitem', { name: /Barbara/i });
+    fireEvent.click(barbaraOption);
+
+    expect(renameSpeaker).toHaveBeenCalledWith('4', 'Barbara');
+  });
+
   test('renders the player bar when there is a message or recording', () => {
     const props = { ...defaultProps, recordingMessage: 'Test Message', analysisStatus: 'error' };
     renderWithContext(<StudioMeetingView {...props} />);

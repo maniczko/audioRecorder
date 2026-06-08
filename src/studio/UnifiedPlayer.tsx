@@ -229,25 +229,25 @@ export default function UnifiedPlayer({
                   {labelSpeaker(displaySpeakerNames, activeSeg.speakerId)}
                 </span>
               ) : null}
-              <input
-                type="range"
-                className="uplayer-scrubber"
-                min={0}
-                max={audioDuration || 1}
-                step={0.05}
-                value={currentTime}
-                style={{
-                  background:
-                    audioDuration > 0
-                      ? `linear-gradient(to right, #6366f1 0%, #8b5cf6 ${fillPct}%, rgba(255,255,255,0.08) ${fillPct}%)`
-                      : undefined,
-                }}
-                onChange={(e) => {
-                  const a = audioRef.current;
-                  if (a) a.currentTime = Number(e.target.value);
-                }}
-                aria-label="Pozycja odtwarzania"
-              />
+              <div
+                className="uplayer-waveform-shell"
+                style={{ '--uplayer-progress': `${fillPct}%` } as React.CSSProperties}
+              >
+                <div className="uplayer-waveform-visual" aria-hidden="true" />
+                <input
+                  type="range"
+                  className="uplayer-scrubber"
+                  min={0}
+                  max={audioDuration || 1}
+                  step={0.05}
+                  value={currentTime}
+                  onChange={(e) => {
+                    const a = audioRef.current;
+                    if (a) a.currentTime = Number(e.target.value);
+                  }}
+                  aria-label="Pozycja odtwarzania"
+                />
+              </div>
               <span className="uplayer-time-total">{formatDuration(audioDuration)}</span>
             </>
           ) : mode === 'queue' ? (

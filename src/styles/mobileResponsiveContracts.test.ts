@@ -65,4 +65,34 @@ describe('mobile responsive CSS contracts', () => {
     expect(studioCss).toContain(":root[data-theme='premium-light'] .ff-player-status-wrap");
     expect(modernCss).toContain("[data-theme='premium-light'][data-layout='modern'] .ff-int-tab");
   });
+
+  it('keeps premium-light empty and generic state panels off dark gray fallbacks', () => {
+    const modernCss = readCss('./modern-layout.css');
+    const foundationCss = readCss('./foundation.css');
+    const skeletonCss = readCss('../components/skeleton.css');
+
+    expect(modernCss).toContain(
+      ":root[data-theme='premium-light'][data-layout='modern'] .hero-panel"
+    );
+    expect(modernCss).toContain(
+      ":root[data-theme='premium-light'][data-layout='modern'] .hero-panel.empty-workspace"
+    );
+    expect(foundationCss).toContain(":root[data-theme='premium-light'] .empty-panel");
+    expect(foundationCss).toContain(":root[data-theme='premium-light'] .skeleton");
+    expect(skeletonCss).toContain(":root[data-theme='premium-light'] .ff-state-box");
+  });
+
+  it('keeps premium-light players visually rich with waveform tracks', () => {
+    const unifiedPlayerCss = readCss('../studio/UnifiedPlayerStyles.css');
+    const studioCss = readCss('../studio/StudioMeetingViewStyles.css');
+
+    expect(unifiedPlayerCss).toContain('.uplayer-waveform-shell');
+    expect(unifiedPlayerCss).toContain('.uplayer-waveform-visual');
+    expect(unifiedPlayerCss).toContain('--uplayer-progress');
+    expect(unifiedPlayerCss).toContain(":root[data-theme='premium-light'] .unified-player-panel");
+    expect(studioCss).toContain(
+      ":root[data-theme='premium-light'] .ff-player-progress-row::before"
+    );
+    expect(studioCss).toContain(":root[data-theme='premium-light'] .ff-player-play");
+  });
 });

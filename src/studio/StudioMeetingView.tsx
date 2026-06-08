@@ -40,8 +40,10 @@ function SpeakerDropdown({
   speakers,
   nextSpeakerId,
   displaySpeakerNames,
+  profileSpeakerNames,
   onReassign,
   onReassignAll,
+  onAssignProfileName,
   onCreateNewSpeaker,
   onRename,
   onClose,
@@ -128,6 +130,30 @@ function SpeakerDropdown({
           </div>
         );
       })}
+      {profileSpeakerNames?.length ? (
+        <>
+          <div className="ff-speaker-dropdown-divider" />
+          {profileSpeakerNames.map((profileName) => (
+            <button
+              key={profileName}
+              type="button"
+              role="menuitem"
+              className="ff-speaker-dropdown-item"
+              onClick={() => {
+                if (typeof onAssignProfileName === 'function') {
+                  onAssignProfileName(currentSpeakerId, profileName);
+                }
+              }}
+            >
+              <span
+                className="ff-spk-dot"
+                style={{ background: getSpeakerColor(`profile:${profileName}`) }}
+              />
+              <span className="ff-spk-label">{profileName}</span>
+            </button>
+          ))}
+        </>
+      ) : null}
       <div className="ff-speaker-dropdown-divider" />
       <button
         type="button"
@@ -170,8 +196,10 @@ SpeakerDropdown.propTypes = {
   speakers: PropTypes.array,
   nextSpeakerId: PropTypes.string,
   displaySpeakerNames: PropTypes.object,
+  profileSpeakerNames: PropTypes.array,
   onReassign: PropTypes.func,
   onReassignAll: PropTypes.func,
+  onAssignProfileName: PropTypes.func,
   onCreateNewSpeaker: PropTypes.func,
   onRename: PropTypes.func,
   onClose: PropTypes.func,
@@ -1323,6 +1351,19 @@ export default function StudioMeetingView({
     return [...seen.entries()].map(([id, name]) => ({ id, name }));
   }, [transcript, displaySpeakerNames]);
 
+  const assignableProfileSpeakerNames = useMemo(() => {
+    const activeNames = new Set(
+      Object.values(displaySpeakerNames || {})
+        .map((name) =>
+          String(name || '')
+            .trim()
+            .toLowerCase()
+        )
+        .filter(Boolean)
+    );
+    return verifiedSpeakerNames.filter((name) => !activeNames.has(name.toLowerCase()));
+  }, [displaySpeakerNames, verifiedSpeakerNames]);
+
   const showVoiceProfileToast = useCallback((speakerName) => {
     setVoiceProfileError(null);
     setVoiceProfileSavingName(null);
@@ -1390,6 +1431,11 @@ export default function StudioMeetingView({
       try {
         const enrolled = await autoCreateVoiceProfile(speakerId, speakerName, options);
         if (enrolled) {
+          setVerifiedSpeakerNames((previous) =>
+            previous.some((name) => name.toLowerCase() === String(speakerName).toLowerCase())
+              ? previous
+              : [...previous, speakerName]
+          );
           showVoiceProfileToast(speakerName);
         } else {
           showVoiceProfileError('Nie udalo sie zapisac probki glosu. Sprobuj ponownie.');
@@ -3668,10 +3714,15 @@ export default function StudioMeetingView({
                                     speakers={uniqueSpeakers}
                                     nextSpeakerId={nextSpeakerId}
                                     displaySpeakerNames={displaySpeakerNames}
+                                    profileSpeakerNames={assignableProfileSpeakerNames}
                                     onReassign={(newId) => reassignSegmentSpeaker(seg.id, newId)}
                                     onReassignAll={(newId) =>
                                       reassignAllSegmentSpeaker(seg.speakerId, newId)
                                     }
+                                    onAssignProfileName={(speakerId, profileName) => {
+                                      commitSpeakerRename(speakerId, profileName);
+                                      setSpeakerDropdownSegId(null);
+                                    }}
                                     onCreateNewSpeaker={(newId) =>
                                       beginNewSpeakerAssignment(seg.id, newId)
                                     }

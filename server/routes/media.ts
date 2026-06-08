@@ -515,6 +515,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     };
   }
 
+  function audioValidationErrorStatus(error: any) {
+    return (Number(error?.status || error?.statusCode || 422) || 422) as any;
+  }
+
   async function assembleChunksToTempFile(chunksDir: string, safeId: string, total: number) {
     const chunkPaths: string[] = [];
     for (let i = 0; i < total; i += 1) {
@@ -647,7 +651,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       });
     } catch (uploadErr: any) {
       if (uploadErr instanceof MediaStoragePipelineError) {
-        return c.json(audioValidationErrorBody(uploadErr), uploadErr.status || 422);
+        return c.json(audioValidationErrorBody(uploadErr), audioValidationErrorStatus(uploadErr));
       }
       if (
         (uploadErr as any).code === 'ENOSPC' ||
@@ -1936,7 +1940,7 @@ Important:
       }
       if (err instanceof MediaStoragePipelineError || err?.code === 'audio_normalization_failed') {
         await cleanupChunkFiles(chunksDir, safeId, total);
-        return c.json(audioValidationErrorBody(err), err.status || 422);
+        return c.json(audioValidationErrorBody(err), audioValidationErrorStatus(err));
       }
       if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
         return c.json(

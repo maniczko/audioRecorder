@@ -420,6 +420,43 @@ describe('tasks extra coverage', () => {
     });
   });
 
+  test('Regression: #0 - buildTasksFromMeetings deduplicates persisted tasks by id before render', () => {
+    const duplicatedTaskId = 'task_v2sb1yj4_mq485au1';
+    const result = buildTasksFromMeetings(
+      [],
+      [
+        {
+          id: duplicatedTaskId,
+          title: 'Original title',
+          workspaceId: 'ws_1',
+          status: 'todo',
+          completed: false,
+          tags: [],
+        },
+        {
+          id: duplicatedTaskId,
+          title: 'Updated title',
+          workspaceId: 'ws_1',
+          status: 'in_progress',
+          completed: false,
+          tags: ['follow-up'],
+        },
+      ],
+      {},
+      { id: 'user_1' },
+      DEFAULT_TASK_COLUMNS,
+      'ws_1'
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: duplicatedTaskId,
+      title: 'Updated title',
+      status: 'in_progress',
+      tags: ['follow-up'],
+    });
+  });
+
   test('taskListStats aggregates counts', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-10T10:00:00.000Z'));

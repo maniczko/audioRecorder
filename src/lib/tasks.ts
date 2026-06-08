@@ -34,6 +34,34 @@ function isTaskRecord(value) {
   return Boolean(value) && typeof value === 'object';
 }
 
+function dedupeTasksById(tasks) {
+  const byId = new Map();
+  safeArray(tasks).forEach((task) => {
+    if (!task?.id) {
+      return;
+    }
+    const previous = byId.get(task.id);
+    if (!previous) {
+      byId.set(task.id, task);
+      return;
+    }
+
+    byId.set(task.id, {
+      ...previous,
+      ...task,
+      subtasks: safeArray(task.subtasks).length ? task.subtasks : previous.subtasks,
+      tags: safeArray(task.tags).length ? task.tags : previous.tags,
+      dependencies: safeArray(task.dependencies).length ? task.dependencies : previous.dependencies,
+      sourceMeetingId: task.sourceMeetingId || previous.sourceMeetingId,
+      sourceMeetingTitle: task.sourceMeetingTitle || previous.sourceMeetingTitle,
+      workspaceId: task.workspaceId || previous.workspaceId,
+      updatedAt: task.updatedAt || previous.updatedAt,
+      createdAt: previous.createdAt || task.createdAt,
+    });
+  });
+  return [...byId.values()];
+}
+
 function hasOwn(value, key) {
   return Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
 }
@@ -1248,7 +1276,7 @@ export function buildTasksFromMeetings(
     .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser, normalizedColumns))
     .filter((task) => !task.archived);
 
-  return [...meetingTasks, ...standaloneTasks].sort((left, right) => {
+  return dedupeTasksById([...meetingTasks, ...standaloneTasks]).sort((left, right) => {
     const orderDelta = getTaskOrder(left) - getTaskOrder(right);
     if (orderDelta !== 0) {
       return orderDelta;
