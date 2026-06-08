@@ -150,6 +150,37 @@ describe('Supabase workspace consistency verifier', () => {
     );
   });
 
+  it('keeps stale production smoke media assets visible without blocking strict production gates', () => {
+    const report = buildWorkspaceConsistencyReport({
+      workspaceId: 'workspace_1',
+      workspaceRow: {
+        workspace_id: 'workspace_1',
+        calendar_meta_json: '{}',
+        meetings_json: '[]',
+      },
+      mediaAssets: [
+        {
+          id: 'production_smoke_1780905045265',
+          workspace_id: 'workspace_1',
+          meeting_id: 'production_smoke_meeting_1780905045265',
+          file_path: 'production_smoke_1780905045265.wav',
+          transcript_json: '[]',
+        },
+      ],
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.summary.severityCounts).toEqual({ P0: 0, P1: 0, P2: 1 });
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'production_smoke_media_asset_points_to_missing_meeting',
+          severity: 'P2',
+        }),
+      ])
+    );
+  });
+
   it('validates required production Supabase environment without exposing secrets', () => {
     expect(() => validateSupabaseVerifierEnv({})).toThrow(
       'SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY'

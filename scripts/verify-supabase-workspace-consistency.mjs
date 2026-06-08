@@ -80,6 +80,10 @@ function isCanonicalRemoteAudioPath(value) {
   return Boolean(raw && !isLikelyLocalAudioPath(raw) && !raw.includes('/'));
 }
 
+function isProductionSmokeRecordingId(value) {
+  return /^production_smoke(?:_|$)/.test(normalizeId(value));
+}
+
 function extractTombstoneIds(calendarMeta, key, legacyKey) {
   const ids = new Set();
   const add = (value) => {
@@ -384,11 +388,16 @@ export function buildWorkspaceConsistencyReport({
 
     const meetingId = normalizeId(asset?.meeting_id);
     if (meetingId && !meetingIds.has(meetingId) && !meetingTombstoneIds.has(meetingId)) {
+      const isSmokeArtifact = isProductionSmokeRecordingId(recordingId);
       issues.push(
         issue(
-          'P1',
-          'media_asset_points_to_missing_meeting',
-          'media_assets.meeting_id points to a meeting that is not present in workspace_state',
+          isSmokeArtifact ? 'P2' : 'P1',
+          isSmokeArtifact
+            ? 'production_smoke_media_asset_points_to_missing_meeting'
+            : 'media_asset_points_to_missing_meeting',
+          isSmokeArtifact
+            ? 'production smoke media asset points to a meeting that is no longer present in workspace_state'
+            : 'media_assets.meeting_id points to a meeting that is not present in workspace_state',
           {
             workspaceId: stateWorkspaceId,
             meetingId,
