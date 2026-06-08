@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOJIBAKE_PATTERN =
   /[\u00c4\u00c5\u0102\u00c2\ufffd]|\u00e2[\u0080-\u00bf\u20ac\u201a-\u201e]/;
+const TRANSIENT_SMOKE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 function normalizeBaseUrl(value, name) {
   const normalized = String(value || '')
@@ -19,6 +20,41 @@ async function fetchText(url) {
   const response = await fetch(url, { redirect: 'follow' });
   const text = await response.text();
   return { response, text };
+}
+
+function sleep(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTransientRetry(
+  url,
+  init,
+  { label = 'production smoke request', attempts = 3, retryDelayMs = 1000 } = {}
+) {
+  const maxAttempts = Math.max(1, attempts);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, init);
+      const shouldRetry =
+        !response.ok && TRANSIENT_SMOKE_STATUSES.has(response.status) && attempt < maxAttempts;
+      if (!shouldRetry) return response;
+
+      const body = await response.text().catch(() => '');
+      console.warn(
+        `[production-smoke] ${label} returned ${response.status}; retrying ${attempt}/${maxAttempts}. ${body.slice(0, 180)}`
+      );
+    } catch (error) {
+      if (attempt >= maxAttempts) throw error;
+      console.warn(
+        `[production-smoke] ${label} failed; retrying ${attempt}/${maxAttempts}. ${error?.message || error}`
+      );
+    }
+
+    await sleep(retryDelayMs * attempt);
+  }
+
+  throw new Error(`${label} failed before receiving a response.`);
 }
 
 export function findMojibake(text) {
@@ -87,16 +123,20 @@ async function runAudioUploadSmoke({
   const recordingId = `production_smoke_${Date.now()}`;
   const uploadUrl = `${api}/media/recordings/${recordingId}/audio`;
   const audioBuffer = createSyntheticWavBuffer();
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'audio/wav',
-      'X-Workspace-Id': workspace,
-      'X-Meeting-Id': meetingId,
+  const response = await fetchWithTransientRetry(
+    uploadUrl,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'audio/wav',
+        'X-Workspace-Id': workspace,
+        'X-Meeting-Id': meetingId,
+      },
+      body: audioBuffer,
     },
-    body: audioBuffer,
-  });
+    { label: 'audio upload smoke' }
+  );
 
   if (!response.ok) {
     throw new Error(`Audio upload smoke failed: ${response.status} ${await response.text()}`);
@@ -470,6 +510,7 @@ export async function runVoiceProfileSmoke({
   mode = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_MODE || 'dynamic',
   now = () => Date.now(),
   supabaseClient,
+  retryDelayMs = 1000,
 } = {}) {
   const token = String(authToken || '').trim();
   const workspace = String(workspaceId || '').trim();
@@ -502,16 +543,23 @@ export async function runVoiceProfileSmoke({
   let primaryError = null;
 
   try {
-    const uploadResponse = await fetch(`${api}/media/recordings/${recording}/audio`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'audio/wav',
-        'X-Workspace-Id': workspace,
-        'X-Meeting-Id': meeting,
+    const uploadResponse = await fetchWithTransientRetry(
+      `${api}/media/recordings/${recording}/audio`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'audio/wav',
+          'X-Workspace-Id': workspace,
+          'X-Meeting-Id': meeting,
+        },
+        body: createSyntheticWavBuffer(),
       },
-      body: createSyntheticWavBuffer(),
-    });
+      {
+        label: 'voice profile fixture upload',
+        retryDelayMs,
+      }
+    );
     if (!uploadResponse.ok) {
       throw new Error(
         `Voice profile fixture upload failed: ${uploadResponse.status} ${await uploadResponse.text()}`

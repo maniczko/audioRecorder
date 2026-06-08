@@ -481,6 +481,134 @@ describe('release readiness gates', () => {
     );
   });
 
+  it('retries transient dynamic voice-profile fixture upload failures during production deploy smoke', async () => {
+    const mediaAssetsTable: any = {
+      update: vi.fn(() => mediaAssetsTable),
+      eq: vi.fn(() => mediaAssetsTable),
+      select: vi.fn(() => mediaAssetsTable),
+      maybeSingle: vi.fn(async () => ({
+        data: {
+          id: 'production_smoke_voice_profile_1780000000001',
+          file_path: 'production_smoke_voice_profile_1780000000001.wav',
+        },
+        error: null,
+      })),
+    };
+    const supabaseClient = {
+      from: vi.fn((table: string) => {
+        expect(table).toBe('media_assets');
+        return mediaAssetsTable;
+      }),
+    };
+    let uploadAttempts = 0;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/media/recordings/production_smoke_voice_profile_1780000000001/audio')) {
+        uploadAttempts += 1;
+        if (uploadAttempts === 1) {
+          return {
+            ok: false,
+            status: 502,
+            text: async () => '{"message":"Application failed to respond"}',
+            json: async () => ({ message: 'Application failed to respond' }),
+            headers: new Headers({ 'content-type': 'application/json' }),
+          };
+        }
+        return {
+          ok: true,
+          status: 201,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/from-speaker/preflight')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ready: true,
+            code: 'ready',
+            speakerId: 'speaker_smoke_1780000000001',
+            speakerName: 'production_smoke_voice_1780000000001',
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/from-speaker')) {
+        return {
+          ok: true,
+          status: 201,
+          json: async () => ({
+            id: 'vp_smoke_retry_1',
+            speakerName: 'production_smoke_voice_1780000000001',
+            sampleCount: 1,
+            hasEmbedding: true,
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles') && init?.method === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            profiles: [
+              {
+                id: 'vp_smoke_retry_1',
+                speakerName: 'production_smoke_voice_1780000000001',
+                sampleCount: 1,
+                hasEmbedding: true,
+              },
+            ],
+          }),
+          text: async () => '',
+          headers: new Headers({ 'content-type': 'application/json' }),
+        };
+      }
+      if (url.endsWith('/voice-profiles/vp_smoke_retry_1')) {
+        return {
+          ok: true,
+          status: 204,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers(),
+        };
+      }
+      if (url.endsWith('/media/recordings/production_smoke_voice_profile_1780000000001')) {
+        return {
+          ok: true,
+          status: 204,
+          text: async () => '',
+          json: async () => ({}),
+          headers: new Headers(),
+        };
+      }
+      throw new Error(`Unexpected fetch in retrying dynamic voice-profile smoke: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      runVoiceProfileSmoke({
+        api: 'https://voicelog.example.com',
+        authToken: 'token',
+        workspaceId: 'workspace_1',
+        now: () => 1780000000001,
+        supabaseClient,
+        retryDelayMs: 0,
+      })
+    ).resolves.toBe(true);
+
+    expect(uploadAttempts).toBe(2);
+    expect(mediaAssetsTable.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcription_status: 'completed',
+        transcript_json: expect.stringContaining('speaker_smoke_1780000000001'),
+      })
+    );
+  });
+
   it('fails strict production smoke when the required voice-profile evidence is missing', async () => {
     vi.stubGlobal(
       'fetch',
