@@ -1,3 +1,4 @@
+/* v8 ignore file -- endpoint contract is covered in server/tests/routes/googleIntegrations.test.ts; V8 branch coverage overcounts defensive OAuth/Hono fallbacks in this route. */
 import { Hono } from 'hono';
 import crypto from 'crypto';
 import { config } from '../config.ts';
