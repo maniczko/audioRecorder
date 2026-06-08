@@ -86,15 +86,16 @@ async function runAudioUploadSmoke({
 
   const recordingId = `production_smoke_${Date.now()}`;
   const uploadUrl = `${api}/media/recordings/${recordingId}/audio`;
+  const audioBuffer = createSyntheticWavBuffer();
   const response = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'audio/webm',
+      'Content-Type': 'audio/wav',
       'X-Workspace-Id': workspace,
       'X-Meeting-Id': meetingId,
     },
-    body: new Blob(['production-smoke-audio'], { type: 'audio/webm' }),
+    body: audioBuffer,
   });
 
   if (!response.ok) {
