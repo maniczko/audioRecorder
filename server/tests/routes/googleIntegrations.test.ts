@@ -331,11 +331,11 @@ describe('googleIntegrations routes', () => {
     );
     const app = createTestApp(db);
 
-    await expect(
-      app.request(
-        '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
-      )
-    ).rejects.toThrow('calendar unavailable');
+    const response = await app.request(
+      '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
+    );
+
+    expect(response.status).toBe(500);
   });
 
   it('surfaces refresh token errors before fetching events', async () => {
@@ -355,11 +355,132 @@ describe('googleIntegrations routes', () => {
     );
     const app = createTestApp(db);
 
-    await expect(
-      app.request(
-        '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
-      )
-    ).rejects.toThrow('refresh denied');
+    const response = await app.request(
+      '/events?workspaceId=workspace-1&timeMin=2026-06-01T00%3A00%3A00.000Z&timeMax=2026-07-01T00%3A00%3A00.000Z'
+    );
+
+    expect(response.status).toBe(500);
+  });
+
+  it('reports disconnected status when no integration exists', async () => {
+    const db = {
+      _get: vi.fn(async () => null),
+      _execute: vi.fn(),
+    };
+    const app = createTestApp(db);
+
+    const response = await app.request('/status');
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      configured: true,
+      connected: false,
+      writable: false,
+      accountEmail: 'owner@example.com',
+    });
+  });
+
+  it('uses session workspace when connect does not receive workspaceId', async () => {
+    const db = {
+      _get: vi.fn(),
+      _execute: vi.fn(),
+    };
+    const app = createTestApp(db);
+
+    const response = await app.request('/connect');
+
+    expect(response.status).toBe(200);
+    expect(db._execute).toHaveBeenCalledWith(expect.stringContaining('google_oauth_states'), [
+      expect.any(String),
+      'user-1',
+      'workspace-1',
+      'http://127.0.0.1:3000/',
+      expect.any(String),
+      expect.any(String),
+      '',
+    ]);
+  });
+
+  it('redirects expired callback states to an error marker', async () => {
+    const db = {
+      _get: vi.fn(async () => ({
+        return_to: 'http://127.0.0.1:3000/calendar',
+        expires_at: '2000-01-01T00:00:00.000Z',
+        used_at: '',
+      })),
+      _execute: vi.fn(),
+    };
+    const app = createTestApp(db);
+
+    const response = await app.request('/callback?code=code-1&state=state-1');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'http://127.0.0.1:3000/calendar?googleCalendar=error'
+    );
+    expect(db._execute).not.toHaveBeenCalled();
+  });
+
+  it('updates an existing integration during callback token storage', async () => {
+    const stateRow = {
+      state: 'state-1',
+      user_id: 'user-1',
+      workspace_id: 'workspace-1',
+      return_to: 'http://127.0.0.1:3000/calendar',
+      expires_at: '2999-01-01T00:00:00.000Z',
+      used_at: '',
+    };
+    const existingIntegration = {
+      user_id: 'user-1',
+      workspace_id: 'workspace-1',
+      access_token: 'old-token',
+      refresh_token: 'existing-refresh-token',
+      expires_at: '2026-06-08T12:00:00.000Z',
+      scopes: 'old-scope',
+      provider_account_email: 'owner@example.com',
+    };
+    const db = {
+      _get: vi
+        .fn()
+        .mockResolvedValueOnce(stateRow)
+        .mockResolvedValueOnce(existingIntegration)
+        .mockResolvedValueOnce({
+          ...existingIntegration,
+          access_token: 'new-access-token',
+        }),
+      _execute: vi.fn(),
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ access_token: 'new-access-token', expires_in: 3600 }), {
+        status: 200,
+      })
+    );
+    const app = createTestApp(db);
+
+    const response = await app.request('/callback?code=code-1&state=state-1');
+
+    expect(response.status).toBe(302);
+    expect(db._execute).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE google_integrations'),
+      expect.arrayContaining(['new-access-token', 'existing-refresh-token'])
+    );
+  });
+
+  it('uses session workspace when disconnect body is missing', async () => {
+    const db = {
+      _get: vi.fn(),
+      _execute: vi.fn(),
+    };
+    const app = createTestApp(db);
+
+    const response = await app.request('/disconnect', { method: 'POST' });
+
+    expect(response.status).toBe(200);
+    expect(db._execute).toHaveBeenCalledWith(
+      'DELETE FROM google_integrations WHERE user_id = ? AND workspace_id = ? AND provider = ?',
+      ['user-1', 'workspace-1', 'google_calendar']
+    );
   });
 
   it('disconnects the stored Google Calendar integration', async () => {
