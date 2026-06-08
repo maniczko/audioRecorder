@@ -102,7 +102,7 @@ async function runAudioUploadSmoke({
     throw new Error(`Audio upload smoke failed: ${response.status} ${await response.text()}`);
   }
 
-  const expectedStoragePath = `${recordingId}.webm`;
+  const expectedStoragePath = `${recordingId}.wav`;
   let persistenceChecked = false;
   if (requirePersistenceEvidence) {
     await assertAudioUploadPersistence({ recordingId, expectedStoragePath });

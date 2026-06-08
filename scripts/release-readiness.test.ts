@@ -59,6 +59,14 @@ describe('release readiness gates', () => {
     expect(commandText).toContain('pnpm run test:e2e:remote-api');
   });
 
+  it('keeps the production audio upload smoke aligned with the WAV fixture', () => {
+    const smokeScript = read('scripts/production-smoke.mjs');
+
+    expect(smokeScript).toContain("'Content-Type': 'audio/wav'");
+    expect(smokeScript).toContain('const expectedStoragePath = `${recordingId}.wav`;');
+    expect(smokeScript).not.toContain('const expectedStoragePath = `${recordingId}.webm`;');
+  });
+
   it('keeps the strict production gate focused on real production actions, persistence, smoke, and Sentry', () => {
     const commandText = productionGateCommands.map(([command, args]) =>
       [command, ...args].join(' ')
