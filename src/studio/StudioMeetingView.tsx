@@ -4066,7 +4066,13 @@ export default function StudioMeetingView({
           ) : (
             <>
               <div className="ff-player-main">
-                <div className="ff-player-progress-row">
+                <div
+                  className="ff-player-progress-row"
+                  style={{ '--ff-player-progress': `${scrubberProgress}%` } as React.CSSProperties}
+                >
+                  <div className="ff-player-status-orb" aria-hidden="true">
+                    <span />
+                  </div>
                   <div className="ff-player-scrubber-container ff-player-scrubber-container-shell">
                     {hoverTime !== null && (
                       <div className="ff-player-hover-time" style={{ left: `${hoverPos}px` }}>
@@ -4102,133 +4108,153 @@ export default function StudioMeetingView({
                     />
                   </div>
                 </div>
-                <div className="ff-player-controls">
-                  <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>
-                    {playbackRate}×
-                  </button>
-                  <button
-                    type="button"
-                    className="ff-player-ctrl"
-                    onClick={() => {
-                      if (audioRef.current)
-                        audioRef.current.currentTime = Math.max(0, currentTime - 15);
-                    }}
-                    title="-15s"
-                  >
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path
-                        d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                      <text
-                        x="4"
-                        y="12.5"
-                        fontSize="5.5"
-                        fill="currentColor"
-                        fontFamily="sans-serif"
-                        fontWeight="700"
-                      >
-                        15
-                      </text>
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className="ff-player-play"
-                    onClick={togglePlay}
-                    aria-label={isPlaying ? 'Pauza' : 'Odtworsz'}
-                  >
-                    {isPlaying ? (
+                <div className="ff-player-controls-row">
+                  <div className="ff-player-controls">
+                    <button type="button" className="ff-player-speed" onClick={cyclePlaybackRate}>
+                      {playbackRate}×
+                    </button>
+                    <button
+                      type="button"
+                      className="ff-player-ctrl"
+                      onClick={() => {
+                        if (audioRef.current)
+                          audioRef.current.currentTime = Math.max(0, currentTime - 15);
+                      }}
+                      title="-15s"
+                    >
                       <svg
-                        width="24"
-                        height="24"
+                        width="22"
+                        height="22"
                         viewBox="0 0 16 16"
-                        fill="currentColor"
+                        fill="none"
                         aria-hidden="true"
                       >
-                        <rect x="3" y="2" width="4" height="12" rx="1.5" />
-                        <rect x="9" y="2" width="4" height="12" rx="1.5" />
+                        <path
+                          d="M8 3V1L3.5 4 8 7V5a5 5 0 110 6H5"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                          strokeLinecap="round"
+                        />
+                        <text
+                          x="4"
+                          y="12.5"
+                          fontSize="5.5"
+                          fill="currentColor"
+                          fontFamily="sans-serif"
+                          fontWeight="700"
+                        >
+                          15
+                        </text>
                       </svg>
-                    ) : (
+                    </button>
+                    <button
+                      type="button"
+                      className="ff-player-play"
+                      onClick={togglePlay}
+                      aria-label={isPlaying ? 'Pauza' : 'Odtworsz'}
+                    >
+                      {isPlaying ? (
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <rect x="3" y="2" width="4" height="12" rx="1.5" />
+                          <rect x="9" y="2" width="4" height="12" rx="1.5" />
+                        </svg>
+                      ) : (
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 16 16"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M4 2l10 6-10 6z" />
+                        </svg>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="ff-player-ctrl"
+                      onClick={() => {
+                        if (audioRef.current)
+                          audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15);
+                      }}
+                      title="+15s"
+                    >
                       <svg
-                        width="24"
-                        height="24"
+                        width="22"
+                        height="22"
                         viewBox="0 0 16 16"
-                        fill="currentColor"
+                        fill="none"
                         aria-hidden="true"
                       >
-                        <path d="M4 2l10 6-10 6z" />
+                        <path
+                          d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                          strokeLinecap="round"
+                        />
+                        <text
+                          x="4"
+                          y="12.5"
+                          fontSize="5.5"
+                          fill="currentColor"
+                          fontFamily="sans-serif"
+                          fontWeight="700"
+                        >
+                          15
+                        </text>
                       </svg>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="ff-player-ctrl"
-                    onClick={() => {
-                      if (audioRef.current)
-                        audioRef.current.currentTime = Math.min(audioDuration, currentTime + 15);
-                    }}
-                    title="+15s"
-                  >
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path
-                        d="M8 3V1l4.5 3L8 7V5a5 5 0 100 6h3"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                      <text
-                        x="4"
-                        y="12.5"
-                        fontSize="5.5"
-                        fill="currentColor"
-                        fontFamily="sans-serif"
-                        fontWeight="700"
+                    </button>
+                    <a
+                      className="ff-player-ctrl"
+                      href={selectedRecordingAudioUrl}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!selectedRecordingAudioUrl) return;
+                        fetch(selectedRecordingAudioUrl)
+                          .then((res) => res.blob())
+                          .then((blob) => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            const safeTitle = (
+                              selectedMeeting?.title ||
+                              displayRecording?.title ||
+                              'nagranie'
+                            ).replace(/[^a-z0-9_-]/gi, '_');
+                            a.download = `${safeTitle}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                          })
+                          .catch(() => {
+                            window.open(selectedRecordingAudioUrl, '_blank');
+                          });
+                      }}
+                      title="Pobierz MP3"
+                    >
+                      <svg
+                        width="22"
+                        height="22"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        aria-hidden="true"
                       >
-                        15
-                      </text>
-                    </svg>
-                  </button>
-                  <a
-                    className="ff-player-ctrl"
-                    href={selectedRecordingAudioUrl}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (!selectedRecordingAudioUrl) return;
-                      fetch(selectedRecordingAudioUrl)
-                        .then((res) => res.blob())
-                        .then((blob) => {
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          const safeTitle = (
-                            selectedMeeting?.title ||
-                            displayRecording?.title ||
-                            'nagranie'
-                          ).replace(/[^a-z0-9_-]/gi, '_');
-                          a.download = `${safeTitle}.mp3`;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(url);
-                        })
-                        .catch(() => {
-                          window.open(selectedRecordingAudioUrl, '_blank');
-                        });
-                    }}
-                    title="Pobierz MP3"
-                  >
-                    <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path
-                        d="M8 2v8M5 8l3 4 3-4M2 14h12"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </a>
+                        <path
+                          d="M8 2v8M5 8l3 4 3-4M2 14h12"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </a>
+                  </div>
                   <span className="ff-player-time-display">
                     {formatDuration(Math.floor(currentTime))} /{' '}
                     {formatDuration(Math.floor(playbackDuration))}

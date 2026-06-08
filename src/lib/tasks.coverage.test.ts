@@ -585,9 +585,7 @@ describe('tasks extra coverage', () => {
       [{ owner: 'Ola', assignedTo: ['Anna'] }]
     );
 
-    expect(people).toEqual(
-      expect.arrayContaining(['Anna', 'Ola', 'Marek', 'Bartek', 'Jan', 'Kasia'])
-    );
+    expect(people).toEqual(['Jan', 'Kasia']);
     expect(buildTaskTags([{ tags: ['a', 'b'] }], [{ tags: ['b', 'c'] }])).toEqual(['a', 'b', 'c']);
     expect(buildTaskGroups([{ group: 'Group' }, { group: 'Group 2' }, { group: 'Group' }])).toEqual(
       ['Group', 'Group 2']
@@ -598,6 +596,31 @@ describe('tasks extra coverage', () => {
       { id: 'col_2', label: 'Koniec', isDone: false },
     ]);
     expect(updated['ws_1'].columns.slice(-1)[0].isDone).toBe(true);
+  });
+
+  test('buildTaskPeople only exposes real workspace assignees', () => {
+    const people = buildTaskPeople(
+      [
+        {
+          attendees: ['Barbara Zynda', 'RYTM', 'biuro.rytm@example.com'],
+          speakerNames: { s1: 'Speaker 1' },
+          analysis: { speakerLabels: { s2: 'Speaker 2' } },
+        },
+      ],
+      { name: 'Iwo Zynda', email: 'iwo@example.com', googleEmail: 'iwo@gmail.com' },
+      [{ name: 'Barbara Zynda', email: 'barbara@example.com' }],
+      [
+        {
+          owner: 'wizjeprojektowe@example.com',
+          assignedTo: ['RYTM', 'biuro.rytm@example.com'],
+        },
+      ]
+    );
+
+    expect(people).toEqual(['Iwo Zynda', 'Barbara Zynda']);
+    expect(people).not.toEqual(
+      expect.arrayContaining(['RYTM', 'biuro.rytm@example.com', 'wizjeprojektowe@example.com'])
+    );
   });
 
   test('buildTaskChangeHistory records comment and recurrence changes', () => {

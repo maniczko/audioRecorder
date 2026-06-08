@@ -9,6 +9,10 @@ const {
   requestGoogleCalendarAccessMock,
   fetchGoogleTaskListsMock,
   fetchPrimaryCalendarEventsMock,
+  getGoogleCalendarStatusMock,
+  startGoogleCalendarConnectMock,
+  fetchGoogleCalendarEventsMock,
+  disconnectGoogleCalendarMock,
   meetingsStoreState,
   setManualTasksMock,
 } = vi.hoisted(() => ({
@@ -27,6 +31,16 @@ const {
     items: [],
     nextPageToken: null,
   }),
+  getGoogleCalendarStatusMock: vi.fn().mockResolvedValue({
+    configured: true,
+    connected: false,
+    writable: false,
+  }),
+  startGoogleCalendarConnectMock: vi.fn().mockResolvedValue({
+    url: 'https://accounts.google.com/o/oauth2/v2/auth',
+  }),
+  fetchGoogleCalendarEventsMock: vi.fn().mockResolvedValue({ items: [] }),
+  disconnectGoogleCalendarMock: vi.fn().mockResolvedValue({ success: true }),
   meetingsStoreState: {
     meetings: [],
     calendarMeta: {},
@@ -58,6 +72,13 @@ vi.mock('../store/meetingsStore', () => ({
   useMeetingsStore: () => meetingsStoreState,
 }));
 
+vi.mock('../services/googleCalendarService', () => ({
+  getGoogleCalendarStatus: getGoogleCalendarStatusMock,
+  startGoogleCalendarConnect: startGoogleCalendarConnectMock,
+  fetchGoogleCalendarEvents: fetchGoogleCalendarEventsMock,
+  disconnectGoogleCalendar: disconnectGoogleCalendarMock,
+}));
+
 describe('useGoogleIntegrations autosync', () => {
   beforeEach(() => {
     updateGoogleTaskMock.mockClear();
@@ -66,6 +87,16 @@ describe('useGoogleIntegrations autosync', () => {
     requestGoogleCalendarAccessMock.mockClear();
     fetchGoogleTaskListsMock.mockClear();
     fetchPrimaryCalendarEventsMock.mockClear();
+    getGoogleCalendarStatusMock.mockResolvedValue({
+      configured: true,
+      connected: false,
+      writable: false,
+    });
+    startGoogleCalendarConnectMock.mockResolvedValue({
+      url: 'https://accounts.google.com/o/oauth2/v2/auth',
+    });
+    fetchGoogleCalendarEventsMock.mockResolvedValue({ items: [] });
+    disconnectGoogleCalendarMock.mockResolvedValue({ success: true });
     meetingsStoreState.meetings = [];
     meetingsStoreState.calendarMeta = {};
     meetingsStoreState.setCalendarMeta.mockReset();

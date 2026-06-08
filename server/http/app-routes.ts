@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import type { AppMiddlewares, AppServices } from '../routes/middleware.ts';
 import { createAuthRoutes } from '../routes/auth.ts';
 import { createDigestRoutes } from '../routes/digest.ts';
+import { createGoogleIntegrationRoutes } from '../routes/googleIntegrations.ts';
 import { createWorkspacesRoutes } from '../routes/workspaces.ts';
 import { createMediaRoutes, createTranscribeRoutes } from '../routes/media.ts';
 import { createAiRoutes } from '../routes/ai.ts';
@@ -81,6 +82,7 @@ export function registerAppRoutes(
   app.route('/media', createMediaRoutes(services, middlewares));
   app.route('/transcribe', createTranscribeRoutes(services, middlewares));
   app.route('/digest', createDigestRoutes(services, middlewares));
+  app.route('/integrations/google', createGoogleIntegrationRoutes(services, middlewares));
   app.route('/ai', createAiRoutes(middlewares));
   app.route('/api/client-errors', createClientErrorRoutes());
 }

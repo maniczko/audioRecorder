@@ -25,6 +25,18 @@ describe('uiStore', () => {
     });
   });
 
+  test('defaults new sessions to the premium light appearance', () => {
+    useUIStore.setState({
+      appearanceMode: 'premium-light',
+      theme: 'premium-light',
+      layoutPreset: 'modern',
+    });
+
+    expect(useUIStore.getState().appearanceMode).toBe('premium-light');
+    expect(useUIStore.getState().theme).toBe('premium-light');
+    expect(useUIStore.getState().layoutPreset).toBe('modern');
+  });
+
   test('tracks tab history and browser-facing layout attributes', () => {
     const store = useUIStore.getState();
 

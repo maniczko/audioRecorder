@@ -14,11 +14,7 @@ import reportWebVitals from './reportWebVitals';
 initSentry();
 initClarity();
 
-const initialTheme = document.documentElement.getAttribute('data-theme');
-document.documentElement.setAttribute(
-  'data-theme',
-  initialTheme === 'premium-light' ? 'premium-light' : 'dark'
-);
+document.documentElement.setAttribute('data-theme', 'premium-light');
 document.documentElement.setAttribute('data-layout', 'modern');
 
 async function bootstrap() {

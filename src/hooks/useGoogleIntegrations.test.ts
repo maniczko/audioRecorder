@@ -7,12 +7,26 @@ const {
   requestGoogleCalendarAccessMock,
   fetchGoogleTaskListsMock,
   fetchPrimaryCalendarEventsMock,
+  getGoogleCalendarStatusMock,
+  startGoogleCalendarConnectMock,
+  fetchGoogleCalendarEventsMock,
+  disconnectGoogleCalendarMock,
   meetingsStoreState,
 } = vi.hoisted(() => ({
   requestGoogleTasksAccessMock: vi.fn().mockResolvedValue({ access_token: 'tasks-token' }),
   requestGoogleCalendarAccessMock: vi.fn().mockResolvedValue({ access_token: 'calendar-token' }),
   fetchGoogleTaskListsMock: vi.fn().mockResolvedValue({ items: [{ id: 'list1', title: 'Work' }] }),
   fetchPrimaryCalendarEventsMock: vi.fn().mockResolvedValue({ items: [], nextPageToken: null }),
+  getGoogleCalendarStatusMock: vi.fn().mockResolvedValue({
+    configured: true,
+    connected: false,
+    writable: false,
+  }),
+  startGoogleCalendarConnectMock: vi.fn().mockResolvedValue({
+    url: 'https://accounts.google.com/o/oauth2/v2/auth',
+  }),
+  fetchGoogleCalendarEventsMock: vi.fn().mockResolvedValue({ items: [] }),
+  disconnectGoogleCalendarMock: vi.fn().mockResolvedValue({ success: true }),
   meetingsStoreState: {
     meetings: [],
     calendarMeta: {},
@@ -43,10 +57,27 @@ vi.mock('../store/meetingsStore', () => ({
   useMeetingsStore: () => meetingsStoreState,
 }));
 
+vi.mock('../services/googleCalendarService', () => ({
+  getGoogleCalendarStatus: getGoogleCalendarStatusMock,
+  startGoogleCalendarConnect: startGoogleCalendarConnectMock,
+  fetchGoogleCalendarEvents: fetchGoogleCalendarEventsMock,
+  disconnectGoogleCalendar: disconnectGoogleCalendarMock,
+}));
+
 describe('useGoogleIntegrations', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    getGoogleCalendarStatusMock.mockResolvedValue({
+      configured: true,
+      connected: false,
+      writable: false,
+    });
+    startGoogleCalendarConnectMock.mockResolvedValue({
+      url: 'https://accounts.google.com/o/oauth2/v2/auth',
+    });
+    fetchGoogleCalendarEventsMock.mockResolvedValue({ items: [] });
+    disconnectGoogleCalendarMock.mockResolvedValue({ success: true });
     meetingsStoreState.meetings = [];
     meetingsStoreState.calendarMeta = {};
     meetingsStoreState.setCalendarMeta.mockReset();

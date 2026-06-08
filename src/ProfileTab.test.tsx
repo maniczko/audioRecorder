@@ -55,7 +55,7 @@ const baseProps = {
     preferredInsights: 'Tasks',
   },
   setProfileDraft: vi.fn(),
-  saveProfile: vi.fn((e: any) => e.preventDefault()),
+  saveProfile: vi.fn(),
   profileMessage: '',
   passwordDraft: {
     currentPassword: '',
@@ -63,7 +63,7 @@ const baseProps = {
     confirmPassword: '',
   },
   setPasswordDraft: vi.fn(),
-  updatePassword: vi.fn((e: any) => e.preventDefault()),
+  updatePassword: vi.fn(),
   securityMessage: '',
   workspaceRole: 'admin',
   onLogout: vi.fn(),
@@ -191,8 +191,19 @@ describe('ProfileTab', () => {
       expect(baseProps.saveProfile).toHaveBeenCalled();
     });
 
-    it.skip('displays profile message after save', () => {
-      // profileMessage prop is not rendered by the component
+    it('passes the current user to saveProfile instead of the submit event', async () => {
+      render(<ProfileTab {...baseProps} />);
+
+      await userEvent.click(screen.getByRole('button', { name: /Zapisz profil/i }));
+
+      expect(baseProps.saveProfile).toHaveBeenCalledWith(baseProps.currentUser);
+      expect(baseProps.saveProfile.mock.calls[0][0]).toMatchObject({ id: 'u1' });
+    });
+
+    it('displays profile message after save', () => {
+      render(<ProfileTab {...baseProps} profileMessage="Profil zapisany." />);
+
+      expect(screen.getByText('Profil zapisany.')).toBeInTheDocument();
     });
 
     it('shows avatar fallback with initial', () => {
@@ -250,7 +261,7 @@ describe('ProfileTab', () => {
       const changeBtn = screen.getByText('Zmień hasło');
       await userEvent.click(changeBtn);
 
-      expect(baseProps.updatePassword).toHaveBeenCalled();
+      expect(baseProps.updatePassword).toHaveBeenCalledWith(baseProps.currentUser);
     });
 
     it('displays security message after password change', () => {

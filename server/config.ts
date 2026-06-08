@@ -37,6 +37,10 @@ const envSchema = z.object({
 
   SUPABASE_URL: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().optional(),
+  GOOGLE_CALENDAR_SCOPES: z.string().default('https://www.googleapis.com/auth/calendar.readonly'),
 
   SENTRY_DSN: z.string().optional(),
 

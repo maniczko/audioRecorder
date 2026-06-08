@@ -624,6 +624,87 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(237, 247, 246, 0.75);
 }
+
+/* Premium-light audit pass: notes should use the same warm surfaces as the rest of the app. */
+:root[data-theme='premium-light'] .notes-layout {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(117, 214, 196, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(248, 252, 247, 0.94), rgba(246, 243, 234, 0.86));
+}
+
+:root[data-theme='premium-light'] .notes-sidebar,
+:root[data-theme='premium-light'] .notes-detail-panel {
+  background: rgba(255, 255, 252, 0.82);
+  border-color: rgba(43, 82, 74, 0.12);
+  box-shadow:
+    0 18px 42px rgba(53, 77, 72, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+:root[data-theme='premium-light'] .note-card,
+:root[data-theme='premium-light'] .notes-empty-state,
+:root[data-theme='premium-light'] .notes-empty-detail,
+:root[data-theme='premium-light'] .notes-answer-card,
+:root[data-theme='premium-light'] .notes-detail-section.summary,
+:root[data-theme='premium-light'] .wysiwyg-wrap {
+  background: rgba(255, 255, 252, 0.88);
+  border-color: rgba(43, 82, 74, 0.12);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+:root[data-theme='premium-light'] .note-card:hover,
+:root[data-theme='premium-light'] .note-card.active {
+  background: rgba(255, 255, 252, 0.98);
+  border-color: rgba(28, 141, 122, 0.24);
+  box-shadow: 0 14px 34px rgba(53, 77, 72, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-search-input,
+:root[data-theme='premium-light'] .notes-new-title-input,
+:root[data-theme='premium-light'] .notes-tag-chips-input,
+:root[data-theme='premium-light'] .notes-tag-text-input,
+:root[data-theme='premium-light'] .wysiwyg-toolbar,
+:root[data-theme='premium-light'] .wysiwyg-body {
+  background: rgba(255, 255, 252, 0.76);
+  border-color: rgba(43, 82, 74, 0.12);
+  color: var(--text);
+}
+
+:root[data-theme='premium-light'] .note-card-preview,
+:root[data-theme='premium-light'] .notes-section-text,
+:root[data-theme='premium-light'] .notes-section-list li,
+:root[data-theme='premium-light'] .notes-answer-card p,
+:root[data-theme='premium-light'] .notes-attendee-chip {
+  color: var(--muted);
+}
+
+:root[data-theme='premium-light'] .notes-detail-header,
+:root[data-theme='premium-light'] .notes-detail-section {
+  border-color: rgba(43, 82, 74, 0.1);
+}
+
+@media (max-width: 1050px) {
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - 72px);
+    overflow: visible;
+  }
+
+  :root[data-theme='premium-light'] .notes-sidebar {
+    margin: 18px 18px 0;
+    border: 1px solid rgba(43, 82, 74, 0.12);
+    border-radius: 24px;
+  }
+
+  :root[data-theme='premium-light'] .notes-detail-panel {
+    margin: 0 18px 18px;
+    border: 1px solid rgba(43, 82, 74, 0.12);
+    border-radius: 24px;
+    max-height: none;
+  }
+}
 @media (max-width: 1300px) {
   .notes-layout {
     grid-template-columns: 220px minmax(0, 1fr) 320px;

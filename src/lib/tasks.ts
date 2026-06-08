@@ -983,27 +983,21 @@ export function buildTaskPeople(
   workspaceMembers: any[] = [],
   tasks: any[] = []
 ) {
-  const customPeople = getCustomTaskPeople();
-  return uniqueStrings([
-    currentUser?.name,
-    currentUser?.email,
-    currentUser?.googleEmail,
-    ...customPeople,
-    ...safeArray(workspaceMembers).flatMap((member) => [
-      member.name,
-      member.email,
-      member.googleEmail,
-    ]),
-    ...safeArray(meetings).flatMap((meeting) => [
-      ...safeArray(meeting.attendees),
-      ...Object.values(meeting.speakerNames || {}),
-      ...Object.values(meeting.analysis?.speakerLabels || {}),
-      ...safeArray(
-        meeting.recordings?.flatMap((recording) => Object.values(recording.speakerNames || {}))
-      ),
-    ]),
-    ...safeArray(tasks).flatMap((task) => [task.owner, ...safeArray(task.assignedTo)]),
-  ]).filter((p) => p && p !== 'Nieprzypisane');
+  const displayUser = (user) =>
+    normalizeWhitespace(user?.name) ||
+    normalizeWhitespace(user?.displayName) ||
+    normalizeWhitespace(user?.email) ||
+    normalizeWhitespace(user?.googleEmail);
+
+  const assignableUsers = [
+    displayUser(currentUser),
+    ...safeArray(workspaceMembers).map(displayUser),
+  ];
+
+  return uniqueStrings(assignableUsers).filter((person) => {
+    const label = normalizeWhitespace(person);
+    return label && label !== 'Nieprzypisane';
+  });
 }
 
 export function buildTaskTags(tasks, meetings) {

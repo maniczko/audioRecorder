@@ -4,13 +4,24 @@ import { getBrowserNotificationCandidates } from '../lib/notifications';
 
 const DEFAULT_NOTIFICATION_STATE = { dismissedIds: [], deliveredIds: [] };
 const FIXED_LAYOUT_PRESET = 'modern';
+const DEFAULT_APPEARANCE_MODE: AppearanceMode = 'premium-light';
+const APPEARANCE_FORCE_LIGHT_MIGRATION = 'premium-light-default-2026-06-08';
 
 export type AppearanceMode = 'dark' | 'premium-light';
 
 export function normalizeAppearanceMode(value: unknown): AppearanceMode {
   const raw = String(value || '').trim();
+  if (
+    raw === 'dark' ||
+    raw === 'modern' ||
+    raw === 'default' ||
+    raw === 'compact' ||
+    raw === 'flat' ||
+    raw === 'bobr'
+  )
+    return 'dark';
   if (raw === 'premium-light' || raw === 'light' || raw === 'beaver') return 'premium-light';
-  return 'dark';
+  return DEFAULT_APPEARANCE_MODE;
 }
 
 function applyAppearanceMode(value: unknown) {
@@ -32,8 +43,9 @@ export const useUIStore = create<any>()(
     (set, get) => ({
       activeTab: 'studio',
       tabHistory: ['studio'],
-      appearanceMode: 'dark' as AppearanceMode,
-      theme: 'dark' as AppearanceMode,
+      appearanceMode: DEFAULT_APPEARANCE_MODE,
+      theme: DEFAULT_APPEARANCE_MODE,
+      appearanceForceLightMigration: APPEARANCE_FORCE_LIGHT_MIGRATION,
       layoutPreset: FIXED_LAYOUT_PRESET,
       pendingTaskId: '',
       pendingPersonId: '',
@@ -155,19 +167,25 @@ export const useUIStore = create<any>()(
       partialize: (state) => ({
         appearanceMode: state.appearanceMode,
         theme: state.theme,
+        appearanceForceLightMigration: state.appearanceForceLightMigration,
         layoutPreset: FIXED_LAYOUT_PRESET,
         notificationState: normalizeNotificationState(state.notificationState),
       }),
       merge: (persistedState, currentState) => {
         const persisted = (persistedState || {}) as any;
-        const appearanceMode = normalizeAppearanceMode(
-          persisted.appearanceMode || persisted.theme || persisted.layoutPreset
-        );
+        const hasForcedLightMigration =
+          persisted.appearanceForceLightMigration === APPEARANCE_FORCE_LIGHT_MIGRATION;
+        const appearanceMode = hasForcedLightMigration
+          ? normalizeAppearanceMode(
+              persisted.appearanceMode || persisted.theme || persisted.layoutPreset
+            )
+          : DEFAULT_APPEARANCE_MODE;
         return {
           ...currentState,
           ...persisted,
           appearanceMode,
           theme: appearanceMode,
+          appearanceForceLightMigration: APPEARANCE_FORCE_LIGHT_MIGRATION,
           layoutPreset: FIXED_LAYOUT_PRESET,
           notificationState: normalizeNotificationState(persisted.notificationState),
         };

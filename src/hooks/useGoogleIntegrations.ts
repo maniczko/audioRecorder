@@ -6,9 +6,7 @@ import {
   createGoogleTask,
   fetchGoogleTaskLists,
   fetchGoogleTasks,
-  fetchPrimaryCalendarEvents,
   renderGoogleSignInButton,
-  requestGoogleCalendarAccess,
   requestGoogleTasksAccess,
   signOutGoogleSession,
   updateGoogleCalendarEvent,
@@ -19,6 +17,12 @@ import {
   createTaskHistoryEntry,
   upsertGoogleImportedTasks,
 } from '../lib/tasks';
+import {
+  disconnectGoogleCalendar as disconnectGoogleCalendarOnServer,
+  fetchGoogleCalendarEvents,
+  getGoogleCalendarStatus,
+  startGoogleCalendarConnect,
+} from '../services/googleCalendarService';
 import { useMeetingsStore } from '../store/meetingsStore';
 
 function isAfter(reference: string, baseline: string) {
@@ -71,7 +75,9 @@ export default function useGoogleIntegrations({
   useEffect(() => {
     manualTasksRef.current = manualTasks;
   }, [manualTasks]);
-  const googleEnabled = Boolean(GOOGLE_CLIENT_ID);
+  const googleTasksEnabled = Boolean(GOOGLE_CLIENT_ID);
+  const googleCalendarBackendEnabled = Boolean(currentUser && currentWorkspaceId);
+  const googleEnabled = googleTasksEnabled || googleCalendarBackendEnabled;
   const openTaskColumnId =
     taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || 'todo';
   const doneTaskColumnId =
@@ -134,35 +140,66 @@ export default function useGoogleIntegrations({
     };
   }, [currentUser, googleEnabled, onGoogleError, onGoogleProfile]);
 
-  const loadGoogleMonthEvents = useCallback(async (accessToken: string, monthDate: Date) => {
-    const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
-    const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
-    const payload = await fetchPrimaryCalendarEvents(accessToken, {
-      timeMin: monthStart,
-      timeMax: monthEnd,
-    });
-    setGoogleCalendarEvents(payload.items || []);
-    setGoogleCalendarLastSyncedAt(new Date().toISOString());
-    setGoogleCalendarStatus('connected');
-    setGoogleCalendarMessage('Pobrano wydarzenia z podstawowego kalendarza Google.');
-  }, []);
+  const loadGoogleMonthEvents = useCallback(
+    async (monthDate: Date) => {
+      if (!currentWorkspaceId) {
+        return;
+      }
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
+      const payload = await fetchGoogleCalendarEvents({
+        workspaceId: currentWorkspaceId,
+        timeMin: monthStart,
+        timeMax: monthEnd,
+      });
+      setGoogleCalendarEvents(payload.items || []);
+      setGoogleCalendarLastSyncedAt(new Date().toISOString());
+      setGoogleCalendarStatus('connected');
+      setGoogleCalendarMessage('Pobrano wydarzenia z podstawowego kalendarza Google.');
+    },
+    [currentWorkspaceId]
+  );
 
   useEffect(() => {
-    if (!googleCalendarTokenRef.current) {
+    if (!currentWorkspaceId || !currentUser) {
       return;
     }
 
-    loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth).catch((error) => {
-      console.error('Google Calendar refresh failed.', error);
-      setGoogleCalendarStatus('error');
-      setGoogleCalendarMessage(
-        'Nie udalo sie odswiezyc wydarzen Google. Polacz kalendarz ponownie.'
-      );
-    });
-  }, [calendarMonth, loadGoogleMonthEvents]);
+    let cancelled = false;
+
+    getGoogleCalendarStatus(currentWorkspaceId)
+      .then(async (status) => {
+        if (cancelled) return;
+        if (!status.configured) {
+          setGoogleCalendarStatus('idle');
+          setGoogleCalendarMessage(
+            'Google Calendar nie jest jeszcze skonfigurowany na backendzie.'
+          );
+          return;
+        }
+        if (!status.connected) {
+          setGoogleCalendarStatus('idle');
+          return;
+        }
+        setGoogleCalendarStatus('connected');
+        setGoogleCalendarMessage('Google Calendar jest polaczony.');
+        setGoogleCalendarLastSyncedAt(status.lastSyncedAt || '');
+        await loadGoogleMonthEvents(calendarMonth);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Google Calendar status refresh failed.', error);
+        setGoogleCalendarStatus('error');
+        setGoogleCalendarMessage('Nie udalo sie sprawdzic polaczenia Google Calendar.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarMonth, currentUser, currentWorkspaceId, loadGoogleMonthEvents]);
 
   useEffect(() => {
-    if (!googleCalendarTokenRef.current) {
+    if (googleCalendarStatus !== 'connected') {
       return undefined;
     }
 
@@ -170,7 +207,7 @@ export default function useGoogleIntegrations({
       if (typeof document !== 'undefined' && document.hidden) {
         return;
       }
-      loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth).catch((error) => {
+      loadGoogleMonthEvents(calendarMonth).catch((error) => {
         console.error('Google Calendar live refresh failed.', error);
       });
     }
@@ -193,7 +230,7 @@ export default function useGoogleIntegrations({
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [calendarMonth, loadGoogleMonthEvents]);
+  }, [calendarMonth, googleCalendarStatus, loadGoogleMonthEvents]);
 
   useEffect(
     () => () => {
@@ -207,28 +244,33 @@ export default function useGoogleIntegrations({
       return;
     }
 
-    if (!googleEnabled) {
+    if (!googleCalendarBackendEnabled) {
       setGoogleCalendarStatus('error');
-      setGoogleCalendarMessage('Dodaj REACT_APP_GOOGLE_CLIENT_ID, aby laczyc Google Calendar.');
+      setGoogleCalendarMessage('Zaloguj sie i wybierz workspace, aby polaczyc Google Calendar.');
       return;
     }
 
     try {
       setGoogleCalendarStatus('loading');
       setGoogleCalendarMessage('');
-      const response = await requestGoogleCalendarAccess({
-        loginHint: currentUser.googleEmail || currentUser.email,
-      });
-      googleCalendarTokenRef.current = response.access_token;
-      await loadGoogleMonthEvents(response.access_token, calendarMonth);
+      const response = await startGoogleCalendarConnect(currentWorkspaceId, window.location.href);
+      if (!response.url) {
+        throw new Error('Backend nie zwrocil adresu autoryzacji Google.');
+      }
+      window.location.assign(response.url);
     } catch (error) {
       console.error('Google Calendar connect failed.', error);
       setGoogleCalendarStatus('error');
-      setGoogleCalendarMessage('Nie udalo sie polaczyc z Google Calendar.');
+      setGoogleCalendarMessage(
+        error instanceof Error ? error.message : 'Nie udalo sie polaczyc z Google Calendar.'
+      );
     }
   }
 
-  function disconnectGoogleCalendar() {
+  async function disconnectGoogleCalendar() {
+    if (currentWorkspaceId) {
+      await disconnectGoogleCalendarOnServer(currentWorkspaceId).catch(() => undefined);
+    }
     googleCalendarTokenRef.current = '';
     setGoogleCalendarStatus('idle');
     setGoogleCalendarEvents([]);
@@ -303,7 +345,7 @@ export default function useGoogleIntegrations({
       return;
     }
 
-    if (!googleEnabled) {
+    if (!googleTasksEnabled) {
       setGoogleTasksStatus('error');
       setGoogleTasksMessage('Dodaj REACT_APP_GOOGLE_CLIENT_ID, aby laczyc Google Tasks.');
       return;
@@ -380,12 +422,12 @@ export default function useGoogleIntegrations({
   ]);
 
   const refreshGoogleCalendar = useCallback(async () => {
-    if (!googleCalendarTokenRef.current) {
+    if (!currentWorkspaceId) {
       throw new Error('Najpierw polacz Google Calendar.');
     }
 
-    await loadGoogleMonthEvents(googleCalendarTokenRef.current, calendarMonth);
-  }, [calendarMonth, loadGoogleMonthEvents]);
+    await loadGoogleMonthEvents(calendarMonth);
+  }, [calendarMonth, currentWorkspaceId, loadGoogleMonthEvents]);
 
   const refreshGoogleTasks = useCallback(async () => {
     if (!googleTasksTokenRef.current || !selectedGoogleTaskListId) {
@@ -434,7 +476,7 @@ export default function useGoogleIntegrations({
   }
 
   useEffect(() => {
-    if (!hasGoogleTasksToken || !selectedGoogleTaskListId || !googleEnabled) {
+    if (!hasGoogleTasksToken || !selectedGoogleTaskListId || !googleTasksEnabled) {
       return undefined;
     }
 
@@ -510,7 +552,13 @@ export default function useGoogleIntegrations({
     return () => {
       cancelled = true;
     };
-  }, [googleEnabled, hasGoogleTasksToken, manualTasks, selectedGoogleTaskListId, setManualTasks]);
+  }, [
+    googleTasksEnabled,
+    hasGoogleTasksToken,
+    manualTasks,
+    selectedGoogleTaskListId,
+    setManualTasks,
+  ]);
 
   useEffect(() => {
     if (!hasGoogleCalendarToken || !googleEnabled || !currentWorkspaceId) {

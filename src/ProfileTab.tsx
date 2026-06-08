@@ -1,5 +1,5 @@
 import './styles/profile.css';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, type FormEvent } from 'react';
 import { apiRequest } from './services/httpClient';
 import { apiBaseUrlConfigured } from './services/config';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from './shared/types';
@@ -1292,6 +1292,14 @@ export default function ProfileTab({
     }
     onSetTheme?.(mode);
   };
+  const handleSaveProfile = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    saveProfile?.(currentUser);
+  };
+  const handleUpdatePassword = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updatePassword?.(currentUser);
+  };
 
   const categories = [
     { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
@@ -1373,7 +1381,7 @@ export default function ProfileTab({
                     <h2>Dane podstawowe</h2>
                   </div>
                 </div>
-                <form className="stack-form" onSubmit={saveProfile}>
+                <form className="stack-form" onSubmit={handleSaveProfile}>
                   <label>
                     <span>Imię i nazwisko</span>
                     <Input
@@ -1409,6 +1417,7 @@ export default function ProfileTab({
                   <button type="submit" className="primary-button">
                     Zapisz profil
                   </button>
+                  {profileMessage && <div className="inline-alert success">{profileMessage}</div>}
                 </form>
               </section>
 
@@ -1420,7 +1429,7 @@ export default function ProfileTab({
                   </div>
                 </div>
                 {canManagePassword ? (
-                  <form className="stack-form" onSubmit={updatePassword}>
+                  <form className="stack-form" onSubmit={handleUpdatePassword}>
                     <Input
                       type="password"
                       placeholder="Aktualne hasło"
@@ -1456,7 +1465,7 @@ export default function ProfileTab({
                     <h2>Styl pracy</h2>
                   </div>
                 </div>
-                <form className="stack-form" onSubmit={saveProfile}>
+                <form className="stack-form" onSubmit={handleSaveProfile}>
                   <div className="toggle-grid">
                     <label className="toggle-card">
                       <input
