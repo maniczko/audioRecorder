@@ -700,6 +700,8 @@ describe('release readiness gates', () => {
     expect(spec).toContain('audit_20260524_');
     expect(spec).toContain('/state/workspaces/');
     expect(spec).toContain('removeIds');
+    expect(spec).toContain('function hasTaskId');
+    expect(spec).toContain('candidate?.id === taskId');
     expect(spec).toContain('does not return after refresh');
     expect(workflow).toContain('SUPABASE_URL: ${{ secrets.SUPABASE_URL }}');
     expect(workflow).toContain(

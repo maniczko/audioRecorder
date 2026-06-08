@@ -77,6 +77,10 @@ function authHeaders() {
   };
 }
 
+function hasTaskId(tasks, taskId) {
+  return (Array.isArray(tasks) ? tasks : []).some((candidate) => candidate?.id === taskId);
+}
+
 async function fetchProductionSession(request) {
   const payload = await withProductionRetry('Fetch production auth session', async () => {
     const response = await request.get(
@@ -413,7 +417,7 @@ test.describe('Production system audit', () => {
 
       let state = await fetchWorkspaceState(request);
       expect(
-        (state.manualTasks || []).some((candidate) => candidate.id === taskId),
+        hasTaskId(state.manualTasks, taskId),
         'audit task should be visible after production state write'
       ).toBe(true);
 
@@ -423,7 +427,7 @@ test.describe('Production system audit', () => {
 
       state = await fetchWorkspaceState(request);
       expect(
-        (state.manualTasks || []).some((candidate) => candidate.id === taskId),
+        hasTaskId(state.manualTasks, taskId),
         'deleted audit task does not return after refresh'
       ).toBe(false);
     } finally {
