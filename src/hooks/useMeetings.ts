@@ -41,6 +41,8 @@ export default function useMeetings() {
     setMeetings,
     manualTasks,
     setManualTasks,
+    manualPeople,
+    setManualPeople,
     taskState,
     setTaskState,
     taskBoards,
@@ -84,8 +86,15 @@ export default function useMeetings() {
   );
 
   const taskPeople = useMemo(
-    () => buildTaskPeople(userMeetings, currentUser, currentWorkspaceMembers, meetingTasks),
-    [currentUser, currentWorkspaceMembers, meetingTasks, userMeetings]
+    () =>
+      buildTaskPeople(
+        userMeetings,
+        currentUser,
+        currentWorkspaceMembers,
+        meetingTasks,
+        manualPeople
+      ),
+    [currentUser, currentWorkspaceMembers, manualPeople, meetingTasks, userMeetings]
   );
 
   const taskTags = useMemo(
@@ -116,6 +125,11 @@ export default function useMeetings() {
     meetingTasks,
     currentUser,
     currentWorkspaceMembers: currentWorkspaceMembers as any[],
+    manualPeople,
+    setManualPeople,
+    setMeetings,
+    setManualTasks,
+    setTaskState,
   });
 
   const recordingActions = useRecordingActions({
@@ -364,6 +378,7 @@ export default function useMeetings() {
     userMeetings,
     isHydratingRemoteState,
     manualTasks,
+    manualPeople,
     taskState,
     taskBoards,
     calendarMeta,

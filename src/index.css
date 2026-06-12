@@ -7,6 +7,7 @@
 @import './styles/inline-migration.css';
 @import './styles/foundation.css';
 @import './styles/mobile-utilities.css';
+@import './styles/brand.css';
 
 html {
   color-scheme: dark;
@@ -150,6 +151,16 @@ html {
 
   --layout-shell-max: 1680px;
   --layout-content-max: 1440px;
+  --layout-global-sidebar-width: 160px;
+  --layout-secondary-sidebar-width: 240px;
+  --layout-topbar-height: 64px;
+  --layout-page-padding-desktop: var(--space-7);
+  --layout-page-padding-laptop: var(--space-6);
+  --layout-page-padding-mobile: var(--space-4);
+  --layout-card-radius: 20px;
+  --layout-control-radius: 12px;
+  --layout-toolbar-gap: var(--space-3);
+  --layout-table-row-height: 68px;
   --layout-gap-sm: var(--space-3);
   --layout-gap-md: var(--space-4);
   --layout-gap-lg: var(--space-5);

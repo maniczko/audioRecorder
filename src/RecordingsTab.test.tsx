@@ -16,6 +16,7 @@ describe('RecordingsTab', () => {
           createdAt: '2026-03-18T10:00:00Z',
           duration: 2700,
           speakerCount: 2,
+          transcriptOutcome: 'normal',
           transcript: [{}, {}],
         },
       ],
@@ -74,6 +75,26 @@ describe('RecordingsTab', () => {
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();
   });
 
+  test('renders screenshot-first recordings table controls', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} />
+      </ToastProvider>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Baza nagrań' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wgraj nagranie/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Sortuj: Data/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Data i godzina/i })).toHaveAttribute(
+      'aria-sort',
+      'descending'
+    );
+    expect(screen.getByText(/Wyświetlanie 1-2 z 2/i)).toBeInTheDocument();
+    expect(screen.getByText('2 mówców')).toBeInTheDocument();
+    expect(screen.getAllByText('Gotowe').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Transkrypcja').length).toBeGreaterThan(0);
+  });
+
   test('Regression: imported recording row uses real audio duration instead of meeting duration', () => {
     render(
       <ToastProvider>
@@ -103,7 +124,7 @@ describe('RecordingsTab', () => {
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByText('91 min')).toBeInTheDocument();
     expect(within(row as HTMLElement).queryByText('45 min')).not.toBeInTheDocument();
-    expect(screen.getByText('1.5h')).toBeInTheDocument();
+    expect(screen.getByText('1h 31m')).toBeInTheDocument();
   });
 
   test('shows pipeline diagnostics for selected meeting latest recording', () => {
@@ -218,7 +239,8 @@ describe('RecordingsTab', () => {
     expect(titleCell).toBeInTheDocument();
     const importRow = titleCell.closest('tr');
     expect(importRow).not.toBeNull();
-    expect(within(importRow as HTMLElement).getByText('W toku')).toBeInTheDocument();
+    expect(within(importRow as HTMLElement).getByText('Do analizy')).toBeInTheDocument();
+    expect(within(importRow as HTMLElement).getByText('Oczekuje')).toBeInTheDocument();
   });
 
   test('Regression: stale remote import is permanent and does not expose retry', () => {

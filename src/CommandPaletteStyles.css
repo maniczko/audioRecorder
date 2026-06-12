@@ -122,6 +122,94 @@
   outline-offset: 2px;
 }
 
+:root[data-theme='premium-light'] .command-palette-backdrop {
+  background: rgba(26, 47, 41, 0.18);
+  backdrop-filter: blur(16px) saturate(118%);
+}
+
+:root[data-theme='premium-light'] .command-palette {
+  border-color: var(--surface-stroke);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 252, 0.98), rgba(250, 253, 248, 0.96)),
+    var(--surface-panel-strong);
+  color: var(--text);
+  box-shadow:
+    0 28px 80px rgba(53, 77, 72, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.78) inset;
+}
+
+:root[data-theme='premium-light'] .command-palette-header h2 {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 1.42rem;
+  font-weight: 740;
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .command-palette .ghost-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-color: var(--surface-stroke);
+  background: rgba(255, 255, 252, 0.72);
+  color: rgba(19, 42, 36, 0.74);
+}
+
+:root[data-theme='premium-light'] .command-palette-search span,
+:root[data-theme='premium-light'] .command-palette-group-label,
+:root[data-theme='premium-light'] .command-palette-hints,
+:root[data-theme='premium-light'] .command-result span,
+:root[data-theme='premium-light'] .command-result small {
+  color: rgba(39, 64, 58, 0.62);
+}
+
+:root[data-theme='premium-light'] .command-palette-search input,
+:root[data-theme='premium-light'] .command-result {
+  border-color: var(--surface-stroke);
+  background: rgba(255, 255, 252, 0.86);
+  color: var(--text);
+}
+
+:root[data-theme='premium-light'] .command-palette-search input::placeholder {
+  color: rgba(39, 64, 58, 0.46);
+}
+
+:root[data-theme='premium-light'] .command-palette-search input:focus {
+  border-color: rgba(28, 141, 122, 0.42);
+  box-shadow:
+    0 0 0 4px rgba(28, 141, 122, 0.12),
+    0 14px 32px rgba(53, 77, 72, 0.1);
+}
+
+:root[data-theme='premium-light'] .command-result.active,
+:root[data-theme='premium-light'] .command-result:hover {
+  transform: translateY(-1px);
+  border-color: rgba(28, 141, 122, 0.34);
+  background: rgba(222, 247, 239, 0.86);
+  box-shadow: 0 12px 28px rgba(53, 77, 72, 0.1);
+}
+
+:root[data-theme='premium-light'] .command-palette-hints kbd {
+  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border: 1px solid rgba(21, 52, 44, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 252, 0.82);
+  color: rgba(19, 42, 36, 0.68);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+:root[data-theme='premium-light'] .command-palette .empty-panel {
+  border-color: var(--surface-stroke);
+  background: rgba(255, 255, 252, 0.84);
+  color: var(--text);
+}
+
 /* ================================================================ */
 /* MOBILE RESPONSIVE - Command Palette (2026-04-01)                */
 /* ================================================================ */

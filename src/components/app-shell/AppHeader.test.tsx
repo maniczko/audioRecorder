@@ -53,7 +53,7 @@ describe('AppHeader', () => {
   test('starts ad hoc recording and returns to studio', async () => {
     const props = renderHeader();
 
-    await userEvent.click(screen.getByRole('button', { name: /rozpocznij nagrywanie/i }));
+    await userEvent.click(screen.getByRole('button', { name: /nagrywaj/i }));
 
     expect(props.recorder.startRecording).toHaveBeenCalledWith({ adHoc: true });
     expect(props.setActiveTab).toHaveBeenCalledWith('studio');

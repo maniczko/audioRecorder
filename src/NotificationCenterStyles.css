@@ -175,6 +175,42 @@
   flex-wrap: wrap;
 }
 
+:root[data-theme='premium-light'] .notification-trigger {
+  border-color: var(--surface-stroke);
+  background: rgba(255, 255, 252, 0.72);
+  color: var(--text);
+  box-shadow: 0 10px 28px rgba(53, 77, 72, 0.1);
+}
+
+:root[data-theme='premium-light'] .notification-trigger.active,
+:root[data-theme='premium-light'] .notification-trigger:hover {
+  background: rgba(222, 247, 239, 0.92);
+}
+
+:root[data-theme='premium-light'] .notification-panel {
+  border-color: var(--surface-stroke);
+  background: var(--surface-panel-strong);
+  color: var(--text);
+  box-shadow: 0 28px 80px rgba(53, 77, 72, 0.2);
+}
+
+:root[data-theme='premium-light'] .notification-card {
+  border-color: var(--surface-stroke);
+  background: rgba(255, 255, 252, 0.74);
+}
+
+:root[data-theme='premium-light'] .notification-tone.warning {
+  color: #7a4b00;
+  background: rgba(255, 221, 143, 0.34);
+  border-color: rgba(184, 123, 20, 0.2);
+}
+
+:root[data-theme='premium-light'] .notification-tone.danger {
+  color: #8a2f26;
+  background: rgba(255, 219, 214, 0.46);
+  border-color: rgba(184, 72, 60, 0.2);
+}
+
 /* ================================================================ */
 /* MOBILE RESPONSIVE - Notification Center (2026-04-01)            */
 /* ================================================================ */

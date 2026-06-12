@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import TaskListView from './TaskListView';
 
 function createBaseProps(overrides: Record<string, any> = {}) {
@@ -16,9 +17,10 @@ function createBaseProps(overrides: Record<string, any> = {}) {
           dueDate: '2026-01-01T10:00:00Z',
           myDay: false,
           important: true,
+          priority: 'high',
           assignedTo: ['Ala'],
           reminderAt: '',
-          tags: [],
+          tags: ['sales'],
           order: 0,
         },
       ],
@@ -29,7 +31,7 @@ function createBaseProps(overrides: Record<string, any> = {}) {
     groupedTasks,
     allTasks: groupedTasks[0].tasks,
     groupBy: 'status',
-    sortBy: 'manual',
+    sortBy: 'due:asc',
     setSortBy: vi.fn(),
     selectedTask: null,
     selectedTaskIds: [],
@@ -49,15 +51,23 @@ function createBaseProps(overrides: Record<string, any> = {}) {
 }
 
 describe('TaskListView', () => {
-  it('renders group, controls and task row', () => {
+  it('renders Microsoft To Do style columns and task row without the onboarding banner', () => {
     render(<TaskListView {...createBaseProps()} />);
 
     expect(
       screen.getByText((content, node) => node?.tagName === 'STRONG' && content === 'Todo')
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Tytul i osoby/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Termin/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Zakoncz zadanie Alpha task/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Tytuł zadania/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Status/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Priorytet/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Osoba/i })).toBeInTheDocument();
+    expect(screen.getByText('1 sty 2026')).toBeInTheDocument();
+    expect(screen.getByText('Wysoki')).toBeInTheDocument();
+    expect(screen.getByText('1 zadanie')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Odśwież/i })).toBeInTheDocument();
+    expect(screen.queryByText('Wskazówka')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Dowiedz się więcej/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Zakończ zadanie Alpha task/i })).toBeInTheDocument();
   });
 
   it('keeps row tools and task title in separate layout cells', () => {
@@ -92,54 +102,38 @@ describe('TaskListView', () => {
     const onUpdateTask = vi.fn();
     render(<TaskListView {...createBaseProps({ onUpdateTask })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Zakoncz zadanie Alpha task/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Zakończ zadanie Alpha task/i }));
     expect(onUpdateTask).toHaveBeenCalledWith('task-1', { completed: true });
   });
 
-  it('toggles my day and important flags', () => {
+  it('toggles important flag from the last row column', () => {
     const onUpdateTask = vi.fn();
-    const groupedTasks = [
-      {
-        id: 'todo',
-        label: 'Todo',
-        tasks: [
-          {
-            id: 'task-1',
-            title: 'Alpha task',
-            status: 'todo',
-            completed: false,
-            owner: 'Ala',
-            dueDate: '2026-01-01T10:00:00Z',
-            myDay: false,
-            important: false,
-            assignedTo: ['Ala'],
-            reminderAt: '',
-            tags: [],
-            order: 0,
-          },
-        ],
-      },
-    ];
+    render(<TaskListView {...createBaseProps({ onUpdateTask })} />);
 
-    render(
-      <TaskListView
-        {...createBaseProps({ onUpdateTask, groupedTasks, allTasks: groupedTasks[0].tasks })}
-      />
-    );
-
-    fireEvent.click(screen.getByTitle('Dodaj do My Day'));
-    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { myDay: true });
-
-    fireEvent.click(screen.getByTitle('Oznacz jako wazne'));
-    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { important: true });
+    fireEvent.click(screen.getByTitle('Oznacz jako ważne'));
+    expect(onUpdateTask).toHaveBeenCalledWith('task-1', { important: false });
   });
 
-  it('reorders sorting mode when header is clicked', () => {
+  it('sorts from table headers with accessible state', () => {
     const setSortBy = vi.fn();
-    render(<TaskListView {...createBaseProps({ sortBy: 'title', setSortBy })} />);
+    render(<TaskListView {...createBaseProps({ sortBy: 'due:asc', setSortBy })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Tytul i osoby/i }));
-    expect(setSortBy).toHaveBeenCalledWith('owner');
+    expect(screen.getByRole('columnheader', { name: /Termin/i })).toHaveAttribute(
+      'aria-sort',
+      'ascending'
+    );
+    expect(screen.getByRole('button', { name: /^Termin/i })).toHaveTextContent('↑');
+
+    fireEvent.click(screen.getByRole('button', { name: /^Termin/i }));
+    expect(setSortBy).toHaveBeenCalledWith('due:desc');
+  });
+
+  it('cycles a table sort header back to the default due sort', () => {
+    const setSortBy = vi.fn();
+    render(<TaskListView {...createBaseProps({ sortBy: 'title:desc', setSortBy })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Tytuł zadania/i }));
+    expect(setSortBy).toHaveBeenCalledWith('due:asc');
   });
 
   it('resets drag state on Escape key', () => {
@@ -154,6 +148,6 @@ describe('TaskListView', () => {
     const groupedTasks = [{ id: 'todo', label: 'Todo', tasks: [] }];
     render(<TaskListView {...createBaseProps({ groupedTasks, allTasks: [] })} />);
 
-    expect(screen.getByText('Brak zadan w tej sekcji.')).toBeInTheDocument();
+    expect(screen.getByText('Brak zadań w tej sekcji.')).toBeInTheDocument();
   });
 });

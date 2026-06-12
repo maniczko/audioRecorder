@@ -819,3 +819,1071 @@
     padding: 3px 8px;
   }
 }
+
+/* Premium-light audit guardrails for notes surfaces and search ergonomics. */
+.notes-search-input {
+  min-height: 44px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(244, 250, 246, 0.78)),
+    var(--surface-panel);
+  border-color: var(--surface-stroke);
+  box-shadow: var(--shadow-soft);
+}
+
+:root[data-theme='premium-light'] .notes-search-input,
+:root[data-theme='premium-light'] .notes-tag-button,
+:root[data-theme='premium-light'] .notes-group-button,
+:root[data-theme='premium-light'] .notes-card,
+:root[data-theme='premium-light'] .notes-detail-panel {
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  border-color: var(--surface-stroke);
+}
+
+/* Screenshot-first notes layout: catalog / list / detail. */
+:root[data-theme='premium-light'] .notes-layout {
+  grid-template-columns: 260px minmax(420px, 1fr) 420px;
+  gap: 0;
+  width: min(100%, 1260px);
+  height: calc(100vh - 72px);
+  margin: 0 auto;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.76);
+  border-left: 1px solid rgba(31, 94, 82, 0.08);
+  border-right: 1px solid rgba(31, 94, 82, 0.08);
+}
+
+:root[data-theme='premium-light'] .notes-sidebar {
+  padding: 28px 20px;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border-right: 1px solid rgba(31, 94, 82, 0.1);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions {
+  margin-bottom: 18px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions .primary-button,
+:root[data-theme='premium-light'] .notes-sidebar-actions .secondary-button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #009f88 0%, #007d6c 100%);
+  box-shadow: 0 16px 32px rgba(0, 143, 122, 0.2);
+}
+
+:root[data-theme='premium-light'] .notes-search-wrap {
+  margin-bottom: 28px;
+}
+
+:root[data-theme='premium-light'] .notes-search-input {
+  min-height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-section {
+  margin-bottom: 28px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-label--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:root[data-theme='premium-light'] .notes-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  color: #1f3d37;
+  background: transparent;
+  cursor: pointer;
+}
+
+:root[data-theme='premium-light'] .notes-icon-button:hover {
+  background: rgba(0, 143, 122, 0.08);
+}
+
+:root[data-theme='premium-light'] .notes-nav-row,
+:root[data-theme='premium-light'] .notes-filter-tag {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #233b36;
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+:root[data-theme='premium-light'] .notes-nav-row.active,
+:root[data-theme='premium-light'] .notes-filter-tag.active {
+  color: #007d6c;
+  background: rgba(0, 143, 122, 0.09);
+}
+
+:root[data-theme='premium-light'] .notes-filter-list,
+:root[data-theme='premium-light'] .notes-tag-filter-list {
+  display: grid;
+  gap: 6px;
+}
+
+:root[data-theme='premium-light'] .notes-main {
+  padding: 28px 26px;
+  background: rgba(255, 255, 255, 0.7);
+  border-right: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-group-header {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+:root[data-theme='premium-light'] .notes-group-header > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .notes-group-label {
+  color: #172f2b;
+  font-size: 0.94rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:root[data-theme='premium-light'] .notes-group-count {
+  background: transparent;
+  color: #70817b;
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .notes-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .note-card {
+  min-height: 148px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  box-shadow: 0 14px 34px rgba(25, 72, 62, 0.06);
+}
+
+:root[data-theme='premium-light'] .note-card.active {
+  border-color: rgba(0, 143, 122, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(0, 143, 122, 0.22),
+    0 18px 42px rgba(25, 72, 62, 0.09);
+}
+
+:root[data-theme='premium-light'] .note-card-title {
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .note-card-preview {
+  color: #60706b;
+}
+
+:root[data-theme='premium-light'] .notes-detail-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border-left: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 74px;
+  padding: 0 22px;
+  border-bottom: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-title,
+:root[data-theme='premium-light'] .notes-reference-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-title strong {
+  color: #111827;
+  font-size: 0.98rem;
+}
+
+:root[data-theme='premium-light'] .notes-detail-header {
+  padding: 22px 26px 16px;
+  border-bottom: 0;
+}
+
+:root[data-theme='premium-light'] .notes-detail-hero h2,
+:root[data-theme='premium-light'] .notes-detail-hero .ui-page-header__title {
+  margin: 16px 0 12px;
+  color: #111827;
+  font-size: 1.75rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+:root[data-theme='premium-light'] .notes-detail-meta--top {
+  color: #60706b;
+  font-size: 0.78rem;
+}
+
+:root[data-theme='premium-light'] .notes-detail-body {
+  padding: 0 26px 32px;
+  gap: 0;
+}
+
+:root[data-theme='premium-light'] .notes-detail-section {
+  border-color: rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-detail-section--plain {
+  padding-top: 6px;
+}
+
+:root[data-theme='premium-light'] .notes-section-text {
+  color: #203631;
+  font-size: 0.94rem;
+}
+
+:root[data-theme='premium-light'] .notes-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .notes-danger-action {
+  color: #c24136;
+  background: rgba(255, 235, 232, 0.86);
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 28px 20px;
+  text-align: center;
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  color: #008f7a;
+  font-size: 1.35rem;
+  background: rgba(0, 143, 122, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-card strong {
+  color: #172f2b;
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-card p {
+  max-width: 280px;
+  margin: 0;
+  color: #60706b;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+:root[data-theme='premium-light'] .notes-related-card {
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 12px;
+  margin-top: 16px;
+  padding: 14px;
+}
+
+:root[data-theme='premium-light'] .notes-related-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #60706b;
+  font-size: 0.9rem;
+}
+
+/* Premium-light notes inspector: softer right pane and balanced empty state. */
+:root[data-theme='premium-light'] .notes-layout {
+  grid-template-columns: minmax(240px, 280px) minmax(360px, 1fr) minmax(340px, 420px);
+  gap: 20px;
+}
+
+:root[data-theme='premium-light'] .notes-detail-panel {
+  background: rgba(255, 255, 255, 0.74);
+  border-left: 1px solid rgba(31, 94, 82, 0.1);
+  box-shadow: -24px 0 70px rgba(30, 70, 60, 0.06);
+}
+
+:root[data-theme='premium-light'] .notes-detail-panel .empty-state,
+:root[data-theme='premium-light'] .notes-detail-panel .empty-box,
+:root[data-theme='premium-light'] .notes-detail-panel [class*='empty'] {
+  max-width: 380px;
+  margin: 40px auto;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(31, 94, 82, 0.12);
+  box-shadow: 0 18px 42px rgba(30, 70, 60, 0.07);
+}
+
+@media (max-width: 1180px) {
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: minmax(220px, 280px) 1fr;
+  }
+
+  :root[data-theme='premium-light'] .notes-detail-panel {
+    grid-column: 1 / -1;
+    min-height: 280px;
+    border-left: 0;
+    border-top: 1px solid rgba(31, 94, 82, 0.1);
+  }
+}
+
+/* Screenshot-first alignment for notes-detail-desktop-1183x788.png. */
+:root[data-theme='premium-light'] .modern-content:has(.notes-layout) {
+  padding: 0;
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .modern-content-wrapper:has(.notes-layout) {
+  padding: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .modern-app:has(.notes-layout) {
+  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .modern-app:has(.notes-layout) .modern-sidebar {
+  width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) {
+  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-sidebar {
+  width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-brand {
+  padding: 18px 8px;
+  gap: 6px;
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-brand-logo svg {
+  width: 28px;
+  height: 28px;
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-brand h1 {
+  font-size: 1rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-nav {
+  padding: 10px 12px;
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-nav-item {
+  min-height: 42px;
+  padding: 0 8px;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+:root[data-theme='premium-light'] .notes-layout {
+  grid-template-columns: 192px minmax(430px, 1fr) 414px;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  height: calc(100vh - 64px);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 1px solid rgba(31, 94, 82, 0.08);
+  border-right: 0;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar,
+:root[data-theme='premium-light'] .notes-main,
+:root[data-theme='premium-light'] .notes-detail-panel {
+  min-height: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar {
+  padding: 14px 18px 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border-right: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions {
+  margin-bottom: 16px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions .primary-button,
+:root[data-theme='premium-light'] .notes-sidebar-actions .secondary-button {
+  min-height: 34px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  box-shadow: 0 14px 24px rgba(0, 143, 122, 0.16);
+}
+
+:root[data-theme='premium-light'] .notes-search-wrap {
+  margin-bottom: 24px;
+}
+
+:root[data-theme='premium-light'] .notes-search-input {
+  min-height: 34px;
+  height: 34px;
+  padding-left: 36px;
+  border-radius: 9px;
+  font-size: 0.75rem;
+}
+
+:root[data-theme='premium-light'] .notes-search-icon {
+  left: 13px;
+  color: #54666f;
+  font-size: 0.8rem;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-section {
+  margin-bottom: 22px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-label {
+  color: #263a4d;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:root[data-theme='premium-light'] .notes-icon-button {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  border-radius: 8px;
+}
+
+:root[data-theme='premium-light'] .notes-nav-row,
+:root[data-theme='premium-light'] .notes-filter-tag {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #1e2f44;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+:root[data-theme='premium-light'] .notes-nav-row.active,
+:root[data-theme='premium-light'] .notes-filter-tag.active {
+  color: #007d6c;
+  background: rgba(0, 143, 122, 0.08);
+}
+
+:root[data-theme='premium-light'] .notes-main {
+  padding: 28px 22px 20px;
+  background: rgba(255, 255, 255, 0.86);
+  border-right: 1px solid rgba(31, 94, 82, 0.1);
+  overflow-y: auto;
+}
+
+:root[data-theme='premium-light'] .notes-group-header {
+  margin-bottom: 24px;
+}
+
+:root[data-theme='premium-light'] .notes-group-label,
+:root[data-theme='premium-light'] .notes-group-count {
+  color: #102033;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .notes-grid {
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .note-card {
+  min-height: 146px;
+  padding: 20px;
+  border-radius: 10px;
+  background: #ffffff;
+  border-color: rgba(31, 94, 82, 0.12);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .note-card.active {
+  border-color: rgba(0, 143, 122, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 143, 122, 0.18);
+}
+
+:root[data-theme='premium-light'] .note-card-meta,
+:root[data-theme='premium-light'] .note-card-footer {
+  color: #657481;
+  font-size: 0.72rem;
+}
+
+:root[data-theme='premium-light'] .note-card-title {
+  margin-top: 10px;
+  color: #101828;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+:root[data-theme='premium-light'] .note-card-preview {
+  margin-top: 8px;
+  color: #566779;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+:root[data-theme='premium-light'] .notes-detail-panel {
+  background: rgba(255, 255, 255, 0.96);
+  border-left: 0;
+  box-shadow: none;
+  overflow-y: auto;
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-top {
+  min-height: 64px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-title strong {
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .notes-reference-detail-actions .secondary-button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+}
+
+:root[data-theme='premium-light'] .notes-detail-header {
+  padding: 22px 22px 14px;
+}
+
+:root[data-theme='premium-light'] .notes-detail-meta--top {
+  gap: 12px;
+  color: #657481;
+  font-size: 0.72rem;
+}
+
+:root[data-theme='premium-light'] .notes-detail-hero h2,
+:root[data-theme='premium-light'] .notes-detail-hero .ui-page-header__title {
+  margin: 14px 0 12px;
+  color: #101828;
+  font-size: 1.48rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .notes-detail-body {
+  padding: 0 22px 28px;
+}
+
+:root[data-theme='premium-light'] .notes-detail-section {
+  padding: 16px 0;
+  border-bottom-color: rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .notes-detail-section--plain {
+  padding: 12px 0 22px;
+}
+
+:root[data-theme='premium-light'] .notes-section-label {
+  color: #263a4d;
+  font-size: 0.68rem;
+  letter-spacing: 0.045em;
+}
+
+:root[data-theme='premium-light'] .notes-section-text {
+  color: #20313d;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+:root[data-theme='premium-light'] .notes-quick-actions {
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .notes-quick-actions .primary-button,
+:root[data-theme='premium-light'] .notes-quick-actions .secondary-button,
+:root[data-theme='premium-light'] .notes-quick-actions .ghost-button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 0.72rem;
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-card {
+  gap: 10px;
+  margin: 18px 0 16px;
+  padding: 20px 18px 18px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(251, 254, 253, 0.98), rgba(255, 255, 255, 0.92));
+  border-color: rgba(31, 94, 82, 0.12);
+}
+
+:root[data-theme='premium-light'] .notes-ai-empty-icon {
+  width: 48px;
+  height: 48px;
+}
+
+:root[data-theme='premium-light'] .notes-related-card {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+:root[data-theme='premium-light'] .notes-related-row {
+  min-height: 34px;
+  color: #263a4d;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1180px) {
+  :root[data-theme='premium-light'] .modern-content:has(.notes-layout) {
+    padding: 0;
+  }
+
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  }
+}
+
+/* Notes workspace v2: master-detail layout aligned to shared app tokens. */
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout),
+:root[data-theme='premium-light'] .modern-app:has(.notes-layout) {
+  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .app-shell-modern:has(.notes-layout) .modern-sidebar,
+:root[data-theme='premium-light'] .modern-app:has(.notes-layout) .modern-sidebar {
+  width: var(--layout-global-sidebar-width, 160px);
+}
+
+:root[data-theme='premium-light'] .notes-layout {
+  grid-template-columns:
+    var(--layout-secondary-sidebar-width, 240px)
+    minmax(420px, 1fr)
+    minmax(360px, 440px);
+  height: calc(100vh - var(--layout-topbar-height, 64px));
+  background: rgba(255, 255, 252, 0.92);
+  border-left: 1px solid rgba(31, 94, 82, 0.08);
+}
+
+:root[data-theme='premium-light'] .notes-sidebar {
+  padding: 24px 20px;
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions .primary-button,
+:root[data-theme='premium-light'] .notes-sidebar-actions .secondary-button {
+  min-height: 44px;
+  border-radius: var(--layout-control-radius, 12px);
+  font-size: 0.9rem;
+}
+
+:root[data-theme='premium-light'] .notes-search-input {
+  min-height: 42px;
+  height: 42px;
+  font-size: 0.88rem;
+}
+
+:root[data-theme='premium-light'] .notes-filter-tag-label,
+:root[data-theme='premium-light'] .note-card-meta span,
+:root[data-theme='premium-light'] .notes-detail-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .tag-badge-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+:root[data-theme='premium-light'] .notes-main {
+  padding: 28px 24px;
+}
+
+:root[data-theme='premium-light'] .notes-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--layout-toolbar-gap, 12px);
+  margin-bottom: 24px;
+}
+
+:root[data-theme='premium-light'] .notes-list-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .notes-list-heading h2 {
+  margin: 0;
+  color: #102033;
+  font-size: 1.25rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .notes-list-heading span {
+  min-width: 28px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(31, 94, 82, 0.08);
+  color: #60706b;
+  font-size: 0.78rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+:root[data-theme='premium-light'] .notes-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--layout-toolbar-gap, 12px);
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .notes-list-search {
+  width: min(340px, 36vw);
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  border-radius: var(--layout-control-radius, 12px);
+  background: #fff;
+  color: #6b7a74;
+}
+
+:root[data-theme='premium-light'] .notes-list-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #102033;
+  font: inherit;
+}
+
+:root[data-theme='premium-light'] .notes-sort-select,
+:root[data-theme='premium-light'] .notes-view-button {
+  min-height: 42px;
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  border-radius: var(--layout-control-radius, 12px);
+  background: #fff;
+  color: #102033;
+}
+
+:root[data-theme='premium-light'] .notes-sort-select {
+  padding: 0 14px;
+  font-weight: 700;
+}
+
+:root[data-theme='premium-light'] .notes-view-button {
+  width: 42px;
+  display: inline-grid;
+  place-items: center;
+}
+
+:root[data-theme='premium-light'] .notes-group {
+  margin-bottom: 20px;
+}
+
+:root[data-theme='premium-light'] .notes-group-header {
+  margin-bottom: 12px;
+}
+
+:root[data-theme='premium-light'] .note-card {
+  min-height: 160px;
+  padding: 20px;
+  border-radius: var(--layout-card-radius, 20px);
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+:root[data-theme='premium-light'] .note-card:hover {
+  background: rgba(246, 254, 251, 0.98);
+  border-color: rgba(0, 143, 122, 0.24);
+}
+
+:root[data-theme='premium-light'] .note-card.active {
+  background: rgba(239, 252, 248, 0.98);
+  border-color: rgba(0, 143, 122, 0.48);
+  box-shadow:
+    0 0 0 1px rgba(0, 143, 122, 0.16),
+    0 18px 42px rgba(25, 72, 62, 0.08);
+}
+
+:root[data-theme='premium-light'] .note-card-top {
+  align-items: center;
+}
+
+:root[data-theme='premium-light'] .note-card-meta {
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .note-ai-chip {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  background: rgba(241, 245, 244, 0.9);
+  color: #64736e;
+  font-size: 0.78rem;
+  font-weight: 780;
+  white-space: nowrap;
+}
+
+:root[data-theme='premium-light'] .note-ai-chip.ready {
+  background: rgba(218, 247, 240, 0.9);
+  border-color: rgba(0, 143, 122, 0.2);
+  color: #007d6c;
+}
+
+:root[data-theme='premium-light'] .note-ai-chip.processing {
+  background: rgba(255, 244, 224, 0.95);
+  border-color: rgba(217, 119, 6, 0.16);
+  color: #b45309;
+}
+
+:root[data-theme='premium-light'] .notes-ai-status-copy {
+  color: #60706b;
+  font-size: 0.82rem;
+}
+
+:root[data-theme='premium-light'] .notes-participants-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+:root[data-theme='premium-light'] .notes-participant-chip {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(242, 245, 244, 0.95);
+  color: #394a44;
+  font-size: 0.8rem;
+}
+
+:root[data-theme='premium-light'] .notes-participant-chip strong {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #12233f;
+  color: #fff;
+  font-size: 0.68rem;
+}
+
+:root[data-theme='premium-light'] .notes-add-tag-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  color: #007d6c;
+}
+
+:root[data-theme='premium-light'] .notes-quick-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) auto;
+}
+
+:root[data-theme='premium-light'] .notes-quick-actions .primary-button,
+:root[data-theme='premium-light'] .notes-quick-actions .secondary-button {
+  min-height: 42px;
+  gap: 8px;
+  justify-content: center;
+  font-size: 0.84rem;
+}
+
+:root[data-theme='premium-light'] .notes-ai-action {
+  color: #007d6c;
+}
+
+:root[data-theme='premium-light'] .notes-ai-mini {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 143, 122, 0.1);
+  color: #007d6c;
+  font-size: 0.7rem;
+}
+
+:root[data-theme='premium-light'] .notes-summary-checklist {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+:root[data-theme='premium-light'] .notes-summary-checklist li {
+  position: relative;
+  padding-left: 24px;
+  color: #34443f;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+:root[data-theme='premium-light'] .notes-summary-checklist li::before {
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: #008f7a;
+  color: #fff;
+  content: '✓';
+  font-size: 0.65rem;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-section .notes-section-label {
+  justify-content: space-between;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-section .notes-section-label button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #007d6c;
+  font-weight: 760;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+:root[data-theme='premium-light'] .notes-transcript-card p {
+  margin: 0;
+  color: #566779;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-card p span {
+  display: inline-block;
+  min-width: 42px;
+  color: #64736e;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-card p strong {
+  color: #102033;
+}
+
+:root[data-theme='premium-light'] .notes-transcript-footnote {
+  margin: 12px 0 0;
+  color: #60706b;
+  font-size: 0.82rem;
+}
+
+:root[data-theme='premium-light'] .notes-context-details summary {
+  cursor: pointer;
+  color: #007d6c;
+  font-weight: 760;
+}
+
+@media (max-width: 1280px) {
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: 220px minmax(360px, 1fr) minmax(320px, 380px);
+  }
+
+  :root[data-theme='premium-light'] .notes-list-search {
+    width: min(280px, 32vw);
+  }
+}
+
+@media (max-width: 1050px) {
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
+  :root[data-theme='premium-light'] .notes-list-toolbar,
+  :root[data-theme='premium-light'] .notes-list-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :root[data-theme='premium-light'] .notes-list-search {
+    width: 100%;
+  }
+
+  :root[data-theme='premium-light'] .notes-detail-panel {
+    max-height: none;
+  }
+}

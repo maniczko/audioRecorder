@@ -1,10 +1,10 @@
 /* eslint-disable no-restricted-globals */
-// Service Worker for VoiceLog OS
+// Service Worker for VoiceBóbr
 // Cache static assets only. Never cache the HTML shell because it embeds
 // runtime config such as remote/local provider mode.
 
 const CACHE_NAME = 'voicelog-assets-v2';
-const STATIC_ASSETS = ['/manifest.json', '/favicon.svg'];
+const STATIC_ASSETS = ['/manifest.json', '/favicon.ico', '/favicon.png', '/logo192.png'];
 const BACKEND_PREFIXES = [
   '/api/',
   '/auth/',

@@ -5,14 +5,32 @@ import Modal from './shared/Modal';
 import { formatDateTime } from './lib/storage';
 import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
-import { ProcessingTimer } from './components/ProcessingTimer';
 import './RecordingsTabStyles.css';
 
 import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
 import TagBadge from './shared/TagBadge';
-import { Search, Filter, Upload, Clock, Mic2, Users, Brain } from 'lucide-react';
+import {
+  Brain,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Filter,
+  Grid2X2,
+  Hourglass,
+  List,
+  Mic2,
+  MoreVertical,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Upload,
+  Users,
+} from 'lucide-react';
 import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   type RecordingQueueItem,
@@ -56,6 +74,15 @@ type PendingImportQueueItem = Partial<RecordingQueueItem> & {
   status?: string;
 };
 
+type RecordingsSortKey =
+  | 'startsAt'
+  | 'title'
+  | 'durationMinutes'
+  | 'speakerCount'
+  | 'status'
+  | 'ai'
+  | 'tags';
+
 function positiveDurationSeconds(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -98,6 +125,32 @@ function getMeetingDisplayDurationMinutes(meeting: Partial<RecordingsTabMeeting>
 function formatMeetingDuration(meeting: Partial<RecordingsTabMeeting>) {
   const minutes = getMeetingDisplayDurationMinutes(meeting);
   return minutes > 0 ? `${minutes} min` : '—';
+}
+
+function formatSpeakerCount(value: unknown) {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count <= 0) {
+    return 'Brak mówców';
+  }
+  if (count === 1) {
+    return '1 mówca';
+  }
+  return `${count} mówców`;
+}
+
+function getMeetingSpeakerCount(meeting: Partial<RecordingsTabMeeting>) {
+  const directCount = Number(meeting?.speakerCount);
+  if (Number.isFinite(directCount) && directCount > 0) {
+    return directCount;
+  }
+
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  const recordingCount = recordings.reduce((max, recording) => {
+    const count = Number(recording?.speakerCount);
+    return Number.isFinite(count) && count > max ? count : max;
+  }, 0);
+
+  return recordingCount;
 }
 
 function formatPipelineDiagnostics(item) {
@@ -178,54 +231,42 @@ function getMeetingAiStatus(m) {
   return 'none';
 }
 
-const AI_STATUS_CONFIG = {
-  ai: {
-    label: 'AI',
-    title: 'Pełna analiza AI dostępna',
-    color: '#75d6c4',
-    bg: 'rgba(117,214,196,0.13)',
-  },
-  transcript: {
-    label: 'Transkrypcja',
-    title: 'Transkrypcja dostępna',
-    color: '#a3c4f3',
-    bg: 'rgba(163,196,243,0.13)',
-  },
-  processing: {
-    label: 'W toku',
-    title: 'Przetwarzanie w toku',
-    color: '#f6c05e',
-    bg: 'rgba(246,192,94,0.13)',
-  },
-  empty: {
-    label: 'Brak mowy',
-    title: 'Nie wykryto mowy w nagraniu',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.13)',
-  },
-  none: { label: '—', title: 'Brak nagrania', color: 'var(--muted)', bg: 'transparent' },
-};
-
-function AiStatusBadge({ meeting }) {
+function getRecordingTableStatus(meeting: Partial<RecordingsTabMeeting>) {
   const status = getMeetingAiStatus(meeting);
-  const cfg = AI_STATUS_CONFIG[status] || AI_STATUS_CONFIG.none;
+  if (status === 'ai' || status === 'transcript') {
+    return 'ready';
+  }
+  return 'needs-analysis';
+}
+
+function RecordingStatusChip({ meeting }: { meeting: Partial<RecordingsTabMeeting> }) {
+  const status = getRecordingTableStatus(meeting);
+  const isReady = status === 'ready';
+
   return (
-    <span
-      title={cfg.title}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        fontSize: '0.72rem',
-        fontWeight: 600,
-        letterSpacing: '0.03em',
-        padding: '2px 8px',
-        borderRadius: 6,
-        color: cfg.color,
-        background: cfg.bg,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {cfg.label}
+    <span className={`recordings-status-chip ${isReady ? 'ready' : 'analysis'}`}>
+      {isReady ? (
+        <CheckCircle2 size={15} strokeWidth={2.2} />
+      ) : (
+        <Clock size={15} strokeWidth={2.2} />
+      )}
+      {isReady ? 'Gotowe' : 'Do analizy'}
+    </span>
+  );
+}
+
+function AiInsightChip({ meeting }: { meeting: Partial<RecordingsTabMeeting> }) {
+  const status = getMeetingAiStatus(meeting);
+  const isReady = status === 'ai' || status === 'transcript';
+
+  return (
+    <span className={`recordings-ai-chip ${isReady ? 'ready' : 'waiting'}`}>
+      {isReady ? (
+        <Sparkles size={15} strokeWidth={2.2} />
+      ) : (
+        <Hourglass size={15} strokeWidth={2.2} />
+      )}
+      {isReady ? 'Transkrypcja' : 'Oczekuje'}
     </span>
   );
 }
@@ -234,59 +275,73 @@ function RecordingsStatsBar({ meetings }) {
   const stats = React.useMemo(() => {
     const totalMeetings = meetings.length;
     const totalMinutes = meetings.reduce((sum, m) => sum + getMeetingDisplayDurationMinutes(m), 0);
-    const totalHours = (totalMinutes / 60).toFixed(1);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const totalTime =
+      hours > 0 ? `${hours}h ${minutes ? `${minutes}m` : ''}`.trim() : `${minutes}m`;
     const participantSet = new Set();
     meetings.forEach((m) => {
       if (m.owner) participantSet.add(m.owner.trim());
-      (m.attendees || m.guests || []).forEach((p) => {
+      (m.attendees || m.guests || m.participants || []).forEach((p) => {
         if (p && p.trim()) participantSet.add(p.trim());
       });
     });
-    const withAi = meetings.filter((m) => getMeetingAiStatus(m) === 'ai').length;
-    return { totalMeetings, totalHours, participants: participantSet.size, withAi };
+    const withAi = meetings.filter((m) => {
+      if (getMeetingAiStatus(m) === 'ai') return true;
+      const recordings = Array.isArray(m.recordings) ? m.recordings : [];
+      return recordings.some((recording) => {
+        const hasCompletedTranscript =
+          recording?.transcriptionStatus === 'completed' &&
+          Array.isArray(recording?.transcript) &&
+          recording.transcript.length > 0;
+        return Boolean(recording?.analysis || hasCompletedTranscript);
+      });
+    }).length;
+    return { totalMeetings, totalTime, participants: participantSet.size, withAi };
   }, [meetings]);
 
   if (stats.totalMeetings === 0) return null;
 
   const items = [
-    { icon: <Mic2 size={14} />, value: stats.totalMeetings, label: 'spotkań' },
-    { icon: <Clock size={14} />, value: `${stats.totalHours}h`, label: 'łącznie' },
-    { icon: <Users size={14} />, value: stats.participants, label: 'uczestników' },
-    { icon: <Brain size={14} />, value: stats.withAi, label: 'z analizą AI' },
+    {
+      icon: <Mic2 size={28} />,
+      value: stats.totalMeetings,
+      label: 'spotka\u0144',
+      caption: 'w tym miesi\u0105cu',
+    },
+    {
+      icon: <Clock size={28} />,
+      value: stats.totalTime,
+      label: '\u0142\u0105cznie',
+      caption: 'czas trwania',
+    },
+    {
+      icon: <Users size={28} />,
+      value: stats.participants,
+      label: 'uczestnik\u00f3w',
+      caption: 'unikalnych',
+    },
+    {
+      icon: <Brain size={28} />,
+      value: stats.withAi,
+      label: 'z analiz\u0105 AI',
+      caption: 'gotowych',
+    },
   ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 8,
-        padding: '10px 24px 0',
-        flexWrap: 'wrap',
-      }}
-    >
+    <div className="recordings-reference-stats" aria-label="Podsumowanie nagra\u0144">
       {items.map((item, i) => (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '6px 14px',
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 8,
-            fontSize: '0.8rem',
-          }}
-        >
-          <span style={{ color: 'var(--accent, #75d6c4)', display: 'flex' }}>{item.icon}</span>
-          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{item.value}</span>
-          <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>{item.label}</span>
+        <div key={i} className="recordings-reference-stat">
+          <span className="recordings-reference-stat-icon">{item.icon}</span>
+          <span className="recordings-reference-stat-value">{item.value}</span>
+          <span className="recordings-reference-stat-label">{item.label}</span>
+          <span className="recordings-reference-stat-caption">{item.caption}</span>
         </div>
       ))}
     </div>
   );
 }
-
 function getLatestRecording(selectedMeeting) {
   if (!selectedMeeting) return null;
   const recordings = Array.isArray(selectedMeeting.recordings) ? selectedMeeting.recordings : [];
@@ -432,7 +487,7 @@ function UnifiedLibrary({
   }, [recordingQueue, userMeetings]);
 
   const [sortConfig, setSortConfig] = React.useState<{
-    key: 'startsAt' | 'title' | 'durationMinutes' | 'recordingsCount' | 'speakerCount';
+    key: RecordingsSortKey;
     direction: 'asc' | 'desc';
   }>({ key: 'startsAt', direction: 'desc' });
   const [meetingToDelete, setMeetingToDelete] = React.useState<{
@@ -441,12 +496,20 @@ function UnifiedLibrary({
     recordingIds: string[];
   } | null>(null);
 
-  const handleSort = (
-    key: 'startsAt' | 'title' | 'durationMinutes' | 'recordingsCount' | 'speakerCount'
-  ) => {
+  const handleSort = (key: RecordingsSortKey) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
+  };
+
+  const sortIndicator = (key: RecordingsSortKey) => {
+    if (sortConfig.key !== key) return '↕';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
+  const ariaSort = (key: RecordingsSortKey) => {
+    if (sortConfig.key !== key) return 'none';
+    return sortConfig.direction === 'asc' ? 'ascending' : 'descending';
   };
 
   const sortedAndFiltered = React.useMemo(() => {
@@ -488,13 +551,21 @@ function UnifiedLibrary({
             aVal = getMeetingDisplayDurationMinutes(a);
             bVal = getMeetingDisplayDurationMinutes(b);
             break;
-          case 'recordingsCount':
-            aVal = (a.recordings || []).length;
-            bVal = (b.recordings || []).length;
-            break;
           case 'speakerCount':
-            aVal = Number(a.speakerCount) || 0;
-            bVal = Number(b.speakerCount) || 0;
+            aVal = getMeetingSpeakerCount(a);
+            bVal = getMeetingSpeakerCount(b);
+            break;
+          case 'status':
+            aVal = getRecordingTableStatus(a);
+            bVal = getRecordingTableStatus(b);
+            break;
+          case 'ai':
+            aVal = getMeetingAiStatus(a);
+            bVal = getMeetingAiStatus(b);
+            break;
+          case 'tags':
+            aVal = Array.isArray(a.tags) ? a.tags.join(',').toLowerCase() : '';
+            bVal = Array.isArray(b.tags) ? b.tags.join(',').toLowerCase() : '';
             break;
           case 'startsAt':
           default:
@@ -555,6 +626,19 @@ function UnifiedLibrary({
     }
   };
 
+  const visibleMeetings = sortedAndFiltered.slice(0, 10);
+  const selectedVisibleCount = visibleMeetings.filter((m) => m.id === selectedMeeting?.id).length;
+  const allVisibleSelected =
+    visibleMeetings.length > 0 && selectedVisibleCount === visibleMeetings.length;
+  const setHeaderCheckboxState = React.useCallback(
+    (node: HTMLInputElement | null) => {
+      if (node) {
+        node.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected;
+      }
+    },
+    [allVisibleSelected, selectedVisibleCount]
+  );
+
   return (
     <section
       className="panel meetings-library recordings-library-panel"
@@ -601,26 +685,19 @@ function UnifiedLibrary({
           </div>
         </div>
       )}
-      <div
-        className="panel-header compact recordings-library-header"
-        style={{ alignItems: 'center' }}
-      >
+      <div className="recordings-reference-header">
         <div className="ui-page-header__copy recordings-library-heading">
           <h2 className="ui-page-header__title" style={{ marginTop: 0 }}>
-            Baza nagrań
+            {'Baza nagra\u0144'}
           </h2>
+          <p className="recordings-reference-subtitle">
+            {
+              'Przegl\u0105daj, wyszukuj i analizuj nagrania spotka\u0144. Wgrywaj pliki, \u015Bled\u017A status przetwarzania i wracaj do rozm\u00F3w.'
+            }
+          </p>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            gap: 10,
-            alignItems: 'center',
-            flex: 1,
-            justifyContent: 'flex-end',
-            marginLeft: 32,
-          }}
-        >
+        <div className="recordings-reference-actions">
           {isUploading ? (
             <div
               style={{
@@ -661,7 +738,7 @@ function UnifiedLibrary({
           ) : (
             <button
               type="button"
-              className="secondary-button"
+              className="primary-button recordings-upload-primary"
               onClick={onUploadClick}
               style={{
                 height: 36,
@@ -672,7 +749,7 @@ function UnifiedLibrary({
                 padding: '0 12px',
               }}
             >
-              <Upload size={14} /> Wgraj
+              <Upload size={14} /> Wgraj nagranie
             </button>
           )}
           <input
@@ -691,7 +768,7 @@ function UnifiedLibrary({
           >
             <button
               type="button"
-              className="secondary-button"
+              className="secondary-button recordings-filter-button"
               onClick={() => setShowFilters(!showFilters)}
               style={{
                 height: 36,
@@ -837,7 +914,7 @@ function UnifiedLibrary({
               />
               <Input
                 type="search"
-                placeholder="Szukaj hosta lub tytułu..."
+                placeholder="Szukaj nagrania, hosta lub tytułu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -877,185 +954,249 @@ function UnifiedLibrary({
       ) : null}
       <div className="studio-recordings-table-wrap">
         {sortedAndFiltered.length ? (
-          <table className="studio-recordings-table">
-            <thead>
-              <tr>
-                <th
-                  onClick={() => handleSort('title')}
-                  className="sortable-th"
-                  style={{ width: '30%' }}
+          <>
+            <div className="recordings-reference-tablebar">
+              <strong className="recordings-reference-count">
+                {sortedAndFiltered.length} {'nagra\u0144'}
+              </strong>
+              <div className="recordings-reference-tablebar-actions">
+                <div
+                  className="recordings-reference-view-toggle"
+                  aria-label={'Widok listy nagra\u0144'}
                 >
-                  Spotkanie{' '}
-                  {sortConfig.key === 'title' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : null}
-                </th>
-                <th
-                  onClick={() => handleSort('startsAt')}
-                  className="sortable-th"
-                  style={{ width: '18%' }}
-                >
-                  Data i godzina{' '}
-                  {sortConfig.key === 'startsAt'
-                    ? sortConfig.direction === 'asc'
-                      ? '↑'
-                      : '↓'
-                    : null}
-                </th>
-                <th
-                  onClick={() => handleSort('durationMinutes')}
-                  className="sortable-th"
-                  style={{ width: '10%' }}
-                >
-                  Czas{' '}
-                  {sortConfig.key === 'durationMinutes'
-                    ? sortConfig.direction === 'asc'
-                      ? '↑'
-                      : '↓'
-                    : null}
-                </th>
-                <th
-                  onClick={() => handleSort('speakerCount')}
-                  className="sortable-th"
-                  style={{ width: '8%' }}
-                  title="Liczba uczestników"
-                >
-                  Mówcy{' '}
-                  {sortConfig.key === 'speakerCount'
-                    ? sortConfig.direction === 'asc'
-                      ? '↑'
-                      : '↓'
-                    : null}
-                </th>
-                <th style={{ width: '10%' }}>Status</th>
-                <th style={{ width: '12%' }}>Czas przetwarzania</th>
-                <th style={{ width: '19%' }}>Tagi</th>
-                <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedAndFiltered.map((m, idx) => (
-                <tr
-                  key={m.id}
-                  className={m.id === selectedMeeting?.id ? 'active' : ''}
-                  tabIndex={0}
-                  onClick={() => {
-                    selectMeeting(m);
-                    setActiveTab('studio');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
+                  <button type="button" className="active" aria-label="Widok listy">
+                    <List size={16} strokeWidth={2.2} />
+                  </button>
+                  <button type="button" aria-label="Widok siatki">
+                    <Grid2X2 size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <table className="studio-recordings-table">
+              <thead>
+                <tr>
+                  <th className="recordings-reference-select-col">
+                    <input
+                      type="checkbox"
+                      className="recordings-reference-select"
+                      aria-label="Zaznacz wszystkie nagrania"
+                      aria-checked={
+                        selectedVisibleCount > 0 && !allVisibleSelected
+                          ? 'mixed'
+                          : allVisibleSelected
+                      }
+                      checked={allVisibleSelected}
+                      ref={setHeaderCheckboxState}
+                      readOnly
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  </th>
+                  <th
+                    onClick={() => handleSort('title')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('title')}
+                    style={{ width: '25%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Spotkanie <span>{sortIndicator('title')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('startsAt')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('startsAt')}
+                    style={{ width: '16%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Data i godzina <span>{sortIndicator('startsAt')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('durationMinutes')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('durationMinutes')}
+                    style={{ width: '9%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Czas <span>{sortIndicator('durationMinutes')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('speakerCount')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('speakerCount')}
+                    style={{ width: '10%' }}
+                    title="Liczba mówców"
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Mówcy <span>{sortIndicator('speakerCount')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('status')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('status')}
+                    style={{ width: '12%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Status <span>{sortIndicator('status')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('ai')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('ai')}
+                    style={{ width: '12%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      AI <span>{sortIndicator('ai')}</span>
+                    </button>
+                  </th>
+                  <th
+                    onClick={() => handleSort('tags')}
+                    className="sortable-th"
+                    aria-sort={ariaSort('tags')}
+                    style={{ width: '14%' }}
+                  >
+                    <button type="button" className="recordings-sort-header">
+                      Tagi <span>{sortIndicator('tags')}</span>
+                    </button>
+                  </th>
+                  <th className="recordings-library-actions-col" style={{ width: '5%' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleMeetings.map((m) => (
+                  <tr
+                    key={m.id}
+                    className={m.id === selectedMeeting?.id ? 'active' : ''}
+                    tabIndex={0}
+                    onClick={() => {
                       selectMeeting(m);
                       setActiveTab('studio');
-                    } else if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      const next = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (next) next.focus();
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      const prev = e.currentTarget.previousElementSibling as HTMLElement;
-                      if (prev) prev.focus();
-                    }
-                  }}
-                >
-                  <td className="recordings-library-meeting">
-                    <strong
-                      className="recordings-clickable-title"
-                      title="Kliknij, aby otworzyć spotkanie"
-                    >
-                      {m.title}
-                    </strong>
-                  </td>
-                  <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
-                  <td>{formatMeetingDuration(m)}</td>
-                  <td style={{ color: 'var(--muted)', textAlign: 'center' }}>
-                    {Number(m.speakerCount) > 0 ? m.speakerCount : '—'}
-                  </td>
-                  <td>
-                    <AiStatusBadge meeting={m} />
-                  </td>
-                  <td style={{ color: 'var(--muted)' }}>
-                    {m.processingStartedAt ? (
-                      <ProcessingTimer
-                        startedAt={m.processingStartedAt}
-                        className="recording-processing-timer"
-                        prefix={false}
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectMeeting(m);
+                        setActiveTab('studio');
+                      } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const next = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (next) next.focus();
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prev = e.currentTarget.previousElementSibling as HTMLElement;
+                        if (prev) prev.focus();
+                      }
+                    }}
+                  >
+                    <td className="recordings-reference-row-select">
+                      <input
+                        type="checkbox"
+                        className="recordings-reference-check"
+                        aria-label={`Zaznacz nagranie ${m.title || ''}`}
+                        checked={m.id === selectedMeeting?.id}
+                        readOnly
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          selectMeeting(m);
+                        }}
                       />
-                    ) : (m.recordings?.length || 0) > 0 ? (
-                      // Compute total processing time from completed recordings
-                      (() => {
-                        const recordings = Array.isArray(m.recordings) ? m.recordings : [];
-                        const completedRecording = recordings.find(
-                          (r) =>
-                            r.pipelineStatus === 'done' || r.transcriptionStatus === 'completed'
-                        );
-                        const rec = completedRecording as Record<string, unknown> | undefined;
-                        if (rec?.processingEndedAt && rec?.processingStartedAt) {
-                          const start = new Date(rec.processingStartedAt as string).getTime();
-                          const end = new Date(rec.processingEndedAt as string).getTime();
-                          const elapsed = Math.max(0, end - start);
-                          const totalSeconds = Math.floor(elapsed / 1000);
-                          const minutes = Math.floor(totalSeconds / 60);
-                          const seconds = totalSeconds % 60;
-                          if (minutes > 0) {
-                            return `${minutes} min ${seconds} s`;
-                          }
-                          return `${seconds} s`;
-                        }
-                        return '—';
-                      })()
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    <div
-                      className="recordings-library-tags"
-                      style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', minWidth: 0 }}
-                    >
-                      {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
-                        if (!t.trim()) return null;
-                        return <TagBadge key={idx} tag={t.trim()} />;
-                      })}
-                    </div>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      title="Usuń spotkanie i nagrania"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMeetingToDelete({
-                          id: String(m.id || ''),
-                          title: String(m.title || ''),
-                          recordingIds: collectRecordingIdsForMeeting(m, recordingQueue),
-                        });
-                      }}
-                      className="recordings-library-delete-btn"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
+                    </td>
+                    <td className="recordings-library-meeting recordings-reference-title-cell">
+                      <span className="recordings-reference-title-icon" aria-hidden="true">
+                        <CalendarDays size={16} strokeWidth={2.2} />
+                      </span>
+                      <strong
+                        className="recordings-clickable-title"
+                        title="Kliknij, aby otworzyć spotkanie"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"
-                        />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        {m.title}
+                      </strong>
+                    </td>
+                    <td>{formatDateTime(m.startsAt || m.createdAt)}</td>
+                    <td>{formatMeetingDuration(m)}</td>
+                    <td>
+                      <span className="recordings-reference-speakers-pill">
+                        <Users size={14} strokeWidth={2.2} />
+                        {formatSpeakerCount(getMeetingSpeakerCount(m))}
+                      </span>
+                    </td>
+                    <td>
+                      <RecordingStatusChip meeting={m} />
+                    </td>
+                    <td>
+                      <AiInsightChip meeting={m} />
+                    </td>
+                    <td>
+                      <div
+                        className="recordings-library-tags"
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', minWidth: 0 }}
+                      >
+                        {(Array.isArray(m.tags) ? m.tags : []).map((t, idx) => {
+                          if (!t.trim()) return null;
+                          return <TagBadge key={idx} tag={t.trim()} />;
+                        })}
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        title="Usuń spotkanie i nagrania"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMeetingToDelete({
+                            id: String(m.id || ''),
+                            title: String(m.title || ''),
+                            recordingIds: collectRecordingIdsForMeeting(m, recordingQueue),
+                          });
+                        }}
+                        className="recordings-library-delete-btn"
+                      >
+                        <MoreVertical size={18} strokeWidth={2.4} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="recordings-reference-footer">
+              <div className="recordings-reference-footer-meta">
+                <span>
+                  Wyświetlanie 1-{Math.min(sortedAndFiltered.length, 10)} z{' '}
+                  {sortedAndFiltered.length}
+                </span>
+                <button type="button" className="recordings-reference-refresh">
+                  <RefreshCw size={16} strokeWidth={2.2} />
+                  Odśwież
+                </button>
+              </div>
+              <div className="recordings-reference-pagination">
+                <button type="button" aria-label="Poprzednia strona">
+                  <ChevronLeft size={16} strokeWidth={2.2} />
+                </button>
+                <button type="button" className="active">
+                  1
+                </button>
+                {sortedAndFiltered.length > 10 ? <button type="button">2</button> : null}
+                <button type="button" aria-label="Następna strona">
+                  <ChevronRight size={16} strokeWidth={2.2} />
+                </button>
+              </div>
+              <button
+                type="button"
+                className="secondary-button small recordings-reference-page-size"
+              >
+                10 na stronę
+                <ChevronDown size={16} strokeWidth={2.2} />
+              </button>
+            </div>
+          </>
         ) : (
           <EmptyState
-            icon="🎙️"
+            mascotContext="recordings"
             title="Brak nagrań"
             message="Brak spotkań spełniających kryteria wyszukiwania."
           />

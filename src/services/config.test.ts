@@ -83,11 +83,48 @@ describe('services/config resolveApiBaseUrl', () => {
 
   it('keeps local data provider available for localhost development', async () => {
     vi.stubEnv('VITE_DATA_PROVIDER', 'local');
+    vi.stubEnv('VITE_API_BASE_URL', '');
+    vi.stubEnv('REACT_APP_API_BASE_URL', '');
     setWindowOrigin('http://localhost:3000');
 
     const config = await import('./config');
 
     expect(config.APP_DATA_PROVIDER).toBe('local');
     expect(config.remoteApiEnabled()).toBe(false);
+  });
+
+  it('enables remote localhost auth when VITE_DATA_PROVIDER is remote', async () => {
+    vi.stubEnv('VITE_DATA_PROVIDER', 'remote');
+    vi.stubEnv('VITE_API_BASE_URL', 'http://127.0.0.1:4000');
+    setWindowOrigin('http://127.0.0.1:3000');
+
+    const config = await import('./config');
+
+    expect(config.APP_DATA_PROVIDER).toBe('remote');
+    expect(config.API_BASE_URL).toBe('http://127.0.0.1:4000');
+    expect(config.remoteApiEnabled()).toBe(true);
+  });
+
+  it('enables remote localhost auth when an API base URL is explicitly configured', async () => {
+    vi.stubEnv('VITE_DATA_PROVIDER', '');
+    vi.stubEnv('REACT_APP_DATA_PROVIDER', '');
+    vi.stubEnv('VITE_API_BASE_URL', 'http://127.0.0.1:4000');
+    setWindowOrigin('http://127.0.0.1:3000');
+
+    const config = await import('./config');
+
+    expect(config.APP_DATA_PROVIDER).toBe('remote');
+    expect(config.remoteApiEnabled()).toBe(true);
+  });
+
+  it('prefers explicit API base URL over stale local provider on localhost', async () => {
+    vi.stubEnv('VITE_DATA_PROVIDER', 'local');
+    vi.stubEnv('VITE_API_BASE_URL', 'http://127.0.0.1:4000');
+    setWindowOrigin('http://127.0.0.1:3000');
+
+    const config = await import('./config');
+
+    expect(config.APP_DATA_PROVIDER).toBe('remote');
+    expect(config.remoteApiEnabled()).toBe(true);
   });
 });

@@ -1,148 +1,68 @@
-import { memo, useMemo, useState } from 'react';
-import { formatDateTime } from '../lib/storage';
+import { memo, useMemo } from 'react';
+import {
+  AlertCircle,
+  CalendarRange,
+  CheckCircle2,
+  Circle,
+  Clock3,
+  Layers3,
+  ListTodo,
+  PlusCircle,
+  Star,
+  SunMedium,
+  Timer,
+  UserCheck,
+} from 'lucide-react';
 
-const LS_KEY = 'voicebobr:sidebar-collapsed';
+const iconMap = {
+  today: SunMedium,
+  week: CalendarRange,
+  planned: Clock3,
+  overdue: AlertCircle,
+  important: Star,
+  assigned: UserCheck,
+  all: Layers3,
+  todo: Circle,
+  in_progress: Timer,
+  waiting: Clock3,
+  completed: CheckCircle2,
+  done: CheckCircle2,
+  custom: ListTodo,
+};
 
-function loadCollapsed(): Record<string, boolean> {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-  } catch {
-    return {};
-  }
+function getListIcon(icon) {
+  return iconMap[icon] || iconMap[String(icon || '').toLowerCase()] || Circle;
 }
 
-function initials(name: string): string {
-  return String(name || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('');
-}
-
-const AVATAR_COLORS = [
-  '#75d6c4',
-  '#a3c4f3',
-  '#f3ca72',
-  '#f17d72',
-  '#a78bfa',
-  '#34d399',
-  '#fb923c',
-  '#60a5fa',
-  '#e879f9',
-  '#4ade80',
-];
-
-function avatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function TeamPanel({
-  workspaceMembers,
-  allTasks,
-  currentUserName,
-  ownerFilter,
-  setOwnerFilter,
-}: {
-  workspaceMembers: any[];
-  allTasks: any[];
-  currentUserName: string;
-  ownerFilter: string;
-  setOwnerFilter: (v: string) => void;
-}) {
-  const members = useMemo(() => {
-    return workspaceMembers.map((member) => {
-      const name = member.name || member.email || member.id || '';
-      const openTasks = allTasks.filter(
-        (t) =>
-          !t._softDeleted &&
-          !t.completed &&
-          (t.owner === name || (Array.isArray(t.assignedTo) && t.assignedTo.includes(name)))
-      ).length;
-      return { ...member, displayName: name, openTasks };
-    });
-  }, [workspaceMembers, allTasks]);
-
-  if (!members.length) return null;
+function SidebarSection({ title, items, selectedListId, setSelectedListId }) {
+  if (!items?.length) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {members.map((member) => {
-        const isActive = ownerFilter === member.displayName;
-        const color = avatarColor(member.displayName);
-        return (
-          <button
-            key={member.id || member.displayName}
-            type="button"
-            onClick={() => setOwnerFilter(isActive ? 'all' : member.displayName)}
-            title={isActive ? 'Pokaż wszystkie zadania' : `Filtruj zadania: ${member.displayName}`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '5px 8px',
-              borderRadius: 7,
-              border: 'none',
-              background: isActive ? 'rgba(117,214,196,0.12)' : 'transparent',
-              cursor: 'pointer',
-              textAlign: 'left',
-              width: '100%',
-              transition: 'background 0.15s',
-            }}
-          >
-            <span
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: '50%',
-                background: color,
-                color: '#000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
+    <section className="todo-sidebar-section" aria-label={title}>
+      <div className="todo-workspace-title">
+        <strong>{title}</strong>
+      </div>
+      <div className="todo-sidebar-section-list">
+        {items.map((item) => {
+          const Icon = getListIcon(item.icon);
+          const isActive = selectedListId === item.id;
+          return (
+            <button
+              type="button"
+              key={item.id}
+              className={isActive ? 'todo-side-link active' : 'todo-side-link'}
+              onClick={() => setSelectedListId(item.id)}
             >
-              {initials(member.displayName) || '?'}
-            </span>
-            <span
-              style={{
-                flex: 1,
-                fontSize: '0.8rem',
-                color: isActive ? 'var(--accent)' : 'var(--text)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                fontWeight: member.displayName === currentUserName ? 600 : 400,
-              }}
-            >
-              {member.displayName === currentUserName
-                ? `${member.displayName} (ja)`
-                : member.displayName}
-            </span>
-            {member.openTasks > 0 && (
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  color: isActive ? 'var(--accent)' : 'var(--muted)',
-                  fontWeight: 600,
-                  background: 'rgba(255,255,255,0.06)',
-                  borderRadius: 4,
-                  padding: '1px 5px',
-                  flexShrink: 0,
-                }}
-              >
-                {member.openTasks}
+              <span className="todo-side-icon" aria-hidden="true">
+                <Icon size={17} strokeWidth={2.1} />
               </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
+              <span className="todo-side-label">{item.label}</span>
+              {item.count > 0 ? <strong className="todo-side-count">{item.count}</strong> : null}
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -150,207 +70,82 @@ function TasksSidebar({
   sidebarLists,
   selectedListId,
   setSelectedListId,
-  visibleStats,
   showColumnManager,
   setShowColumnManager,
-  boardColumns,
-  onUpdateColumn,
-  onDeleteColumn,
-  columnDraft,
-  setColumnDraft,
-  submitColumn,
-  quickAddInputRef,
-  searchInputRef,
-  selectedTaskCount = 0,
-  clearTaskSelection,
-  selectedTasks = [],
-  taskNotifications = [],
-  conflictTasks = [],
-  onFocusConflictTask,
-  workspaceMembers = [],
-  currentUserName = '',
-  ownerFilter = 'all',
-  setOwnerFilter,
-  allTasks = [],
 }: any) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
-
-  function toggle(key: string) {
-    setCollapsed((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  }
-
-  const hasTeam = workspaceMembers.length > 1;
+  const customLists = useMemo(
+    () => sidebarLists.customLists || sidebarLists.customGroups || [],
+    [sidebarLists]
+  );
+  const taskLists = useMemo(
+    () => sidebarLists.taskLists || sidebarLists.baseLists || [],
+    [sidebarLists]
+  );
+  const statusLists = useMemo(
+    () => sidebarLists.statusLists || sidebarLists.workspaceLists || [],
+    [sidebarLists]
+  );
 
   return (
     <aside className="todo-sidebar">
       <div className="todo-sidebar-top">
         <div className="todo-sidebar-scroll">
-          <div className="todo-nav-panel">
-            <div className="todo-sidebar-group">
-              <button
-                type="button"
-                className="todo-workspace-title todo-workspace-toggle"
-                onClick={() => toggle('smart')}
-                aria-expanded={!collapsed.smart}
-                aria-controls="todo-smart-lists"
-              >
-                <span
-                  className={`todo-workspace-toggle-arrow${collapsed.smart ? ' collapsed' : ''}`}
-                  aria-hidden="true"
-                >
-                  ▼
-                </span>
-                <strong>Inteligentne listy</strong>
-              </button>
-              {!collapsed.smart && (
-                <div id="todo-smart-lists" role="group" aria-label="Inteligentne listy">
-                  {sidebarLists.baseLists.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={
-                        selectedListId === item.id ? 'todo-side-link active' : 'todo-side-link'
-                      }
-                      onClick={() => setSelectedListId(item.id)}
-                    >
-                      <span className="todo-side-icon">{item.icon}</span>
-                      <span className="todo-side-label">{item.label}</span>
-                      <strong>{item.count}</strong>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <nav className="todo-nav-panel" aria-label="Nawigacja zadań">
+            <SidebarSection
+              title="ZADANIA"
+              items={taskLists}
+              selectedListId={selectedListId}
+              setSelectedListId={setSelectedListId}
+            />
+            <SidebarSection
+              title="STATUSY"
+              items={statusLists}
+              selectedListId={selectedListId}
+              setSelectedListId={setSelectedListId}
+            />
 
-            <div className="todo-workspace-group">
-              <button
-                type="button"
-                className="todo-workspace-title todo-workspace-toggle"
-                onClick={() => toggle('workspace')}
-                aria-expanded={!collapsed.workspace}
-                aria-controls="todo-workspace-lists"
-              >
-                <span
-                  className={`todo-workspace-toggle-arrow${collapsed.workspace ? ' collapsed' : ''}`}
-                  aria-hidden="true"
-                >
-                  ▼
-                </span>
-                <strong>Widoki workspace</strong>
-              </button>
-              {!collapsed.workspace && (
-                <div id="todo-workspace-lists" role="group" aria-label="Widoki workspace">
-                  {sidebarLists.workspaceLists.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={
-                        selectedListId === item.id
-                          ? 'todo-side-link active workspace'
-                          : 'todo-side-link workspace'
-                      }
-                      onClick={() => setSelectedListId(item.id)}
-                    >
-                      <span className="todo-side-icon">{item.icon}</span>
-                      <span className="todo-side-label">{item.label}</span>
-                      <strong>{item.count}</strong>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {hasTeam && (
-              <div className="todo-sidebar-group">
-                <button
-                  type="button"
-                  className="todo-workspace-title todo-workspace-toggle"
-                  onClick={() => toggle('team')}
-                  aria-expanded={!collapsed.team}
-                  aria-controls="todo-team-section"
-                >
-                  <span
-                    className={`todo-workspace-toggle-arrow${collapsed.team ? ' collapsed' : ''}`}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                  <strong>Zespół</strong>
-                  {ownerFilter !== 'all' && (
-                    <span
-                      style={{
-                        marginLeft: 'auto',
-                        fontSize: '0.68rem',
-                        color: 'var(--accent)',
-                        fontWeight: 600,
-                        background: 'rgba(117,214,196,0.15)',
-                        borderRadius: 4,
-                        padding: '1px 5px',
-                      }}
-                    >
-                      filtr aktywny
-                    </span>
-                  )}
-                </button>
-                {!collapsed.team && (
-                  <div id="todo-team-section">
-                    <TeamPanel
-                      workspaceMembers={workspaceMembers}
-                      allTasks={allTasks}
-                      currentUserName={currentUserName}
-                      ownerFilter={ownerFilter}
-                      setOwnerFilter={setOwnerFilter || (() => {})}
-                    />
-                  </div>
-                )}
+            <section className="todo-sidebar-section" aria-label="LISTY WŁASNE">
+              <div className="todo-workspace-title">
+                <strong>LISTY WŁASNE</strong>
               </div>
-            )}
-          </div>
+              {customLists.length ? (
+                <div className="todo-sidebar-section-list">
+                  {customLists.map((item) => {
+                    const Icon = getListIcon(item.icon || 'custom');
+                    const isActive = selectedListId === item.id;
+                    return (
+                      <button
+                        type="button"
+                        key={item.id}
+                        className={isActive ? 'todo-side-link active' : 'todo-side-link'}
+                        onClick={() => setSelectedListId(item.id)}
+                      >
+                        <span className="todo-side-icon" aria-hidden="true">
+                          <Icon size={17} strokeWidth={2.1} />
+                        </span>
+                        <span className="todo-side-label">{item.label}</span>
+                        {item.count > 0 ? (
+                          <strong className="todo-side-count">{item.count}</strong>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="todo-manage-lists-button"
+                onClick={() => setShowColumnManager((previous) => !previous)}
+                aria-pressed={showColumnManager}
+              >
+                <span className="todo-side-icon" aria-hidden="true">
+                  <PlusCircle size={17} strokeWidth={2.1} />
+                </span>
+                <span className="todo-side-label">Utwórz listę</span>
+              </button>
+            </section>
+          </nav>
         </div>
-      </div>
-
-      <div className="todo-sidebar-footer">
-        {conflictTasks.length ? (
-          <div className="todo-conflict-card">
-            <div className="todo-card-head">
-              <div>
-                <span className="todo-card-eyebrow">Conflict center</span>
-                <strong>{conflictTasks.length} zmian do decyzji</strong>
-              </div>
-              <span className="todo-status-pill warning">Google</span>
-            </div>
-            <div className="todo-conflict-list">
-              {conflictTasks.slice(0, 4).map((task) => (
-                <button
-                  type="button"
-                  key={task.id}
-                  className="todo-conflict-item"
-                  onClick={() => onFocusConflictTask?.(task.id)}
-                >
-                  <strong>{task.title}</strong>
-                  <span>
-                    Lokalnie:{' '}
-                    {task.googleSyncConflict?.localUpdatedAt
-                      ? formatDateTime(task.googleSyncConflict.localUpdatedAt)
-                      : 'brak'}
-                  </span>
-                  <small>
-                    Google:{' '}
-                    {task.googleSyncConflict?.remoteUpdatedAt
-                      ? formatDateTime(task.googleSyncConflict.remoteUpdatedAt)
-                      : 'brak'}
-                  </small>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
     </aside>
   );

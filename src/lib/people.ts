@@ -28,6 +28,25 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '');
 }
 
+export function normalizePersonName(value) {
+  return normalizeWhitespace(value);
+}
+
+export function createManualPerson(name, seed = {}) {
+  const normalizedName = normalizePersonName(name);
+  const now = new Date().toISOString();
+  return {
+    id: seed.id || `person_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`,
+    name: normalizedName,
+    email: normalizeWhitespace(seed.email),
+    role: normalizeWhitespace(seed.role),
+    company: normalizeWhitespace(seed.company),
+    source: 'manual',
+    createdAt: seed.createdAt || now,
+    updatedAt: now,
+  };
+}
+
 function includesName(collection, name) {
   const normalized = normalizeWhitespace(name).toLowerCase();
   return safeArray(collection).some(
@@ -76,8 +95,25 @@ function personSummary(name, meetings, tasks, needs, outputs) {
   return `${name} ${firstTrait}. Najczęściej oczekuje: ${firstNeed}. Po spotkaniach najbardziej liczą się dla tej osoby: ${firstOutput}.`;
 }
 
-export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembers = []) {
+export function buildPeopleProfiles(
+  meetings,
+  tasks,
+  currentUser,
+  workspaceMembers = [],
+  manualPeople = []
+) {
+  const manualByName = new Map(
+    safeArray(manualPeople)
+      .map((person) => ({
+        ...person,
+        name: normalizePersonName(person?.name),
+      }))
+      .filter((person) => person.name)
+      .map((person) => [person.name.toLowerCase(), person])
+  );
+
   const names = uniqueStrings([
+    ...safeArray(manualPeople).map((person) => person?.name),
     currentUser?.name,
     ...safeArray(workspaceMembers).flatMap((member) => [
       member.name,
@@ -168,9 +204,16 @@ export function buildPeopleProfiles(meetings, tasks, currentUser, workspaceMembe
         })
         .filter(Boolean);
 
+      const manualPerson = manualByName.get(normalizeWhitespace(name).toLowerCase()) || null;
+
       return {
-        id: slugify(name) || name,
+        id: manualPerson?.id || slugify(name) || name,
         name,
+        email: manualPerson?.email || workspaceMemberMatch?.email || '',
+        role: manualPerson?.role || workspaceMemberMatch?.role || '',
+        company: manualPerson?.company || workspaceMemberMatch?.company || '',
+        source: manualPerson?.source || 'derived',
+        manual: Boolean(manualPerson),
         meetings: personMeetings,
         tasks: personTasks,
         tags,

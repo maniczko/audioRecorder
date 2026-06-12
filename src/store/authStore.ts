@@ -90,6 +90,12 @@ export const useAuthStore = create<any>((set, get) => ({
           ? await authService.register({ users, workspaces, draft: authDraft })
           : await authService.login({ users, workspaces, draft: authDraft });
 
+      if (authService.mode === 'remote' && !result?.token) {
+        throw new Error(
+          'Logowanie nie zwrocilo tokenu backendu. Odswiez strone i zaloguj sie ponownie.'
+        );
+      }
+
       if (result.users) setUsers(result.users);
       else if (result.user) setUsers((prev) => mergeUserIntoCollection(prev, result.user));
       if (result.workspaces) setWorkspaces(result.workspaces);

@@ -52,15 +52,19 @@ describe('CommandPalette', () => {
 
   test('renders groups and items when open', () => {
     renderCommandPalette();
+    expect(screen.getByRole('dialog', { name: 'Szybkie przejście' })).toBeInTheDocument();
     expect(screen.getByText('Spotkanie Test')).toBeInTheDocument();
     expect(screen.getByText('Zadanie Test')).toBeInTheDocument();
     expect(screen.getByText('Jan Kowalski')).toBeInTheDocument();
     expect(screen.getByText('Spotkania')).toBeInTheDocument();
+    expect(screen.getByText('Spotkanie')).toBeInTheDocument();
+    expect(screen.getByText('Zadanie')).toBeInTheDocument();
+    expect(screen.getByText('Osoba')).toBeInTheDocument();
   });
 
   test('filters results via input query', async () => {
     renderCommandPalette();
-    const searchInput = screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...');
+    const searchInput = screen.getByPlaceholderText('Zakładka, spotkanie, zadanie, osoba...');
     await userEvent.type(searchInput, 'Kowalski');
 
     expect(screen.getByText('Jan Kowalski')).toBeInTheDocument();
@@ -106,7 +110,7 @@ describe('CommandPalette', () => {
     vi.useFakeTimers();
     try {
       renderCommandPalette();
-      const searchInput = screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...');
+      const searchInput = screen.getByPlaceholderText('Zakładka, spotkanie, zadanie, osoba...');
 
       await act(async () => {
         fireEvent.change(searchInput, { target: { value: 'follow up on reporting' } });

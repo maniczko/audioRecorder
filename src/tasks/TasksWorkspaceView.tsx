@@ -1,8 +1,19 @@
-import { Suspense, lazy, memo, useEffect, useState } from 'react';
-import { Search, Plus, Settings } from 'lucide-react';
-import TaskCreateForm from './TaskCreateForm';
+import { lazy, memo, Suspense, useState } from 'react';
+import {
+  BarChart3,
+  CalendarDays,
+  Columns3,
+  Filter,
+  KanbanSquare,
+  LayoutList,
+  Mic2,
+  Plus,
+  Search,
+  Sparkles,
+} from 'lucide-react';
+import { VoiceBobrEmptyState } from '../components/brand/VoiceBobrBrand';
+import TaskCreateModal from './TaskCreateModal';
 import TaskScheduleView from './TaskScheduleView';
-import { EmptyState } from '../components/Skeleton';
 import './TasksWorkspaceViewStyles.css';
 
 const TaskKanbanView = lazy(() => import('./TaskKanbanView'));
@@ -13,279 +24,216 @@ function statCards(stats, visibleStats) {
   return [
     { id: 'open', label: 'Otwarte', value: visibleStats.open, tone: 'neutral' },
     { id: 'today', label: 'Na dzisiaj', value: visibleStats.dueToday, tone: 'info' },
-    { id: 'week', label: 'Ten tydzien', value: visibleStats.dueThisWeek, tone: 'info' },
+    { id: 'week', label: 'Ten tydzień', value: visibleStats.dueThisWeek, tone: 'info' },
     { id: 'overdue', label: 'Po terminie', value: visibleStats.overdue, tone: 'danger' },
-    { id: 'blocked', label: 'Zalezne', value: visibleStats.blocked, tone: 'warning' },
-    { id: 'progress', label: 'Ukonczone', value: `${stats.progress}%`, tone: 'success' },
+    { id: 'blocked', label: 'Zależne', value: visibleStats.blocked, tone: 'warning' },
+    { id: 'progress', label: 'Ukończone', value: `${stats.progress}%`, tone: 'success' },
   ];
 }
 
-function SettingsDropdown({
-  onExportCsv,
-  shareWorkspace,
-  showColumnManager,
-  setShowColumnManager,
-  children = null,
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="todo-settings-dropdown-wrap" style={{ position: 'relative' }}>
-      <button
-        type="button"
-        className="flex items-center justify-center w-9 h-9 border-none bg-transparent hover:bg-white/10 text-slate-400 hover:text-slate-200 rounded-full cursor-pointer transition-colors"
-        onClick={() => setOpen((v) => !v)}
-        title="Ustawienia"
-        aria-label="Ustawienia widoku"
-      >
-        <Settings className="w-5 h-5" />
-      </button>
-      {open && (
-        <div className="todo-settings-dropdown" onBlur={() => setOpen(false)}>
-          {typeof onExportCsv === 'function' && (
-            <button
-              type="button"
-              className="todo-settings-item"
-              onClick={() => {
-                onExportCsv();
-                setOpen(false);
-              }}
-            >
-              Eksport CSV
-            </button>
-          )}
-          <button
-            type="button"
-            className="todo-settings-item"
-            onClick={() => {
-              shareWorkspace();
-              setOpen(false);
-            }}
-          >
-            Udostepnij workspace
-          </button>
-          <button
-            type="button"
-            className="todo-settings-item"
-            onClick={() => {
-              setShowColumnManager((p) => !p);
-              setOpen(false);
-            }}
-          >
-            {showColumnManager ? 'Ukryj konfigurację kolumn' : 'Konfiguracja kolumn'}
-          </button>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TasksWorkspaceView({
-  selectedListLabel,
-  viewMode,
-  setViewMode,
-  sortBy,
-  setSortBy,
-  groupBy,
-  setGroupBy,
-  shareWorkspace,
-  onExportCsv,
-  submitQuickTask,
-  quickDraft,
-  setQuickDraft,
-  showAdvancedCreate,
-  setShowAdvancedCreate,
-  peopleOptions,
-  taskGroups,
-  boardColumns,
-  query,
-  setQuery,
-  ownerFilter,
-  setOwnerFilter,
-  tagFilter,
-  setTagFilter,
-  currentUserName,
-  tagOptions,
-  quickAddInputRef,
-  searchInputRef,
-  groupedTasks,
-  allVisibleTasks,
-  selectedTask,
-  setSelectedTaskId,
-  onUpdateTask,
-  onMoveTaskToColumn,
-  kanbanColumns,
-  dropColumnId,
-  setDropColumnId,
-  handleDrop,
-  handleGroupDrop,
-  handleTaskDrop,
-  setDragTaskId,
-  dragTaskId,
-  onQuickAddToColumn,
-  onReorderColumns,
-  stats,
-  visibleStats,
-  selectedTaskIds,
-  toggleTaskSelection,
-  taskNotifications,
-  showColumnManager,
-  setShowColumnManager,
-}) {
+function TasksWorkspaceView(props: any) {
+  const {
+    viewMode,
+    setViewMode,
+    sortBy,
+    setSortBy,
+    groupBy,
+    setGroupBy,
+    submitQuickTask,
+    quickDraft,
+    showAdvancedCreate,
+    setShowAdvancedCreate,
+    peopleOptions,
+    taskGroups,
+    boardColumns,
+    query,
+    setQuery,
+    tagOptions,
+    searchInputRef,
+    groupedTasks,
+    allVisibleTasks,
+    selectedTask,
+    setSelectedTaskId,
+    onUpdateTask,
+    onMoveTaskToColumn,
+    kanbanColumns,
+    dropColumnId,
+    setDropColumnId,
+    handleDrop,
+    handleGroupDrop,
+    handleTaskDrop,
+    setDragTaskId,
+    dragTaskId,
+    onQuickAddToColumn,
+    onReorderColumns,
+    stats,
+    visibleStats,
+    selectedTaskIds,
+    toggleTaskSelection,
+    onCreateFromRecording,
+  } = props;
   const isCharts = viewMode === 'charts';
   const isSchedule = viewMode === 'schedule';
   const isKanban = viewMode === 'kanban';
   const isSummary = viewMode === 'summary';
-  const [quickTitleDraft, setQuickTitleDraft] = useState(quickDraft.title || '');
+  const [localCreateOpen, setLocalCreateOpen] = useState(false);
+  const isCreateOpen = Boolean(showAdvancedCreate || localCreateOpen);
 
-  useEffect(() => {
-    setQuickTitleDraft(quickDraft.title || '');
-  }, [quickDraft.title]);
-
-  const updateQuickTitleDraft = (title) => {
-    setQuickTitleDraft(title);
-    setQuickDraft((previous) => ({ ...previous, title }));
+  const openCreateModal = () => {
+    setSelectedTaskId?.('');
+    setLocalCreateOpen(true);
+    setShowAdvancedCreate(true);
   };
 
-  const submitToolbarQuickTask = (event) => {
-    const liveTitle = quickAddInputRef.current?.value ?? quickTitleDraft;
-    submitQuickTask(event, {
-      ...quickDraft,
-      title: liveTitle,
-    });
+  const closeCreateModal = () => {
+    setLocalCreateOpen(false);
+    setShowAdvancedCreate(false);
   };
+
+  const renderEmptyTasks = () => (
+    <div className="todo-empty-workbench todo-empty-workbench--microsoft">
+      <VoiceBobrEmptyState
+        context="tasks"
+        title="Brak zadań na dziś"
+        message="Dodaj pierwsze zadanie ręcznie albo utwórz je z nagrania, notatki lub transkrypcji."
+        action={
+          <div className="todo-empty-actions" aria-label="Szybkie akcje pustej listy">
+            <button type="button" className="todo-empty-primary" onClick={openCreateModal}>
+              + Dodaj zadanie
+            </button>
+            <button type="button" className="todo-empty-secondary" onClick={onCreateFromRecording}>
+              <Mic2 size={16} aria-hidden="true" />
+              Utwórz z nagrania
+            </button>
+          </div>
+        }
+      />
+    </div>
+  );
+
+  const showTaskToolbar = !isCharts && !isSchedule && !isSummary;
 
   return (
     <section className="todo-main">
       <div className="todo-shell" data-clarity-mask="true">
         <section className={isSummary ? 'todo-toolbar-panel summary' : 'todo-toolbar-panel'}>
+          <div className="todo-workspace-topline">
+            <div className="todo-page-title">
+              <h1>Zadania</h1>
+              <p>Zarządzaj zadaniami z nagrań, notatek i spotkań.</p>
+            </div>
+          </div>
+
+          <div className="todo-primary-toolbar">
+            {showTaskToolbar ? (
+              <button
+                type="button"
+                className="todo-add-inline-trigger"
+                onClick={openCreateModal}
+                aria-expanded={isCreateOpen}
+              >
+                <Plus size={18} aria-hidden="true" />
+                <span>Dodaj zadanie</span>
+                <kbd>N</kbd>
+              </button>
+            ) : null}
+            {showTaskToolbar ? (
+              <div className="todo-toolbar-search">
+                <Search className="todo-toolbar-search-icon" />
+                <input
+                  ref={searchInputRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Szukaj zadań..."
+                  className="todo-toolbar-input"
+                />
+              </div>
+            ) : null}
+            <div className="todo-workspace-actions" aria-label="Akcje widoku zadań">
+              <button type="button" className="todo-command-button">
+                <Filter size={17} aria-hidden="true" />
+                Filtry
+              </button>
+              <button
+                type="button"
+                className="todo-command-button"
+                onClick={() => setGroupBy?.(groupBy === 'none' ? 'status' : 'none')}
+              >
+                <Columns3 size={17} aria-hidden="true" />
+                Kolumny
+              </button>
+            </div>
+          </div>
+
           <div className="todo-commandbar">
             <div className="todo-commandbar-left">
-              <div className="todo-view-switch" role="tablist" aria-label="Widok zadan">
+              <div className="todo-view-switch" role="tablist" aria-label="Widok zadań">
                 <button
                   type="button"
-                  className={isKanban ? 'todo-view-button active' : 'todo-view-button'}
-                  onClick={() => setViewMode('kanban')}
-                >
-                  Kanban
-                </button>
-                <button
-                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === 'list'}
                   className={viewMode === 'list' ? 'todo-view-button active' : 'todo-view-button'}
                   onClick={() => setViewMode('list')}
                 >
+                  <LayoutList size={17} aria-hidden="true" />
                   Lista
                 </button>
                 <button
                   type="button"
-                  className={isCharts ? 'todo-view-button active' : 'todo-view-button'}
-                  onClick={() => setViewMode('charts')}
+                  role="tab"
+                  aria-selected={isKanban}
+                  className={isKanban ? 'todo-view-button active' : 'todo-view-button'}
+                  onClick={() => setViewMode('kanban')}
                 >
-                  Wykresy
+                  <KanbanSquare size={17} aria-hidden="true" />
+                  Kanban
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={isSchedule}
                   className={isSchedule ? 'todo-view-button active' : 'todo-view-button'}
                   onClick={() => setViewMode('schedule')}
                 >
+                  <CalendarDays size={17} aria-hidden="true" />
                   Harmonogram
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={isCharts}
+                  className={isCharts ? 'todo-view-button active' : 'todo-view-button'}
+                  onClick={() => setViewMode('charts')}
+                >
+                  <BarChart3 size={17} aria-hidden="true" />
+                  Wykresy
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isSummary}
                   className={isSummary ? 'todo-view-button active' : 'todo-view-button'}
                   onClick={() => setViewMode('summary')}
                 >
+                  <Sparkles size={17} aria-hidden="true" />
                   Podsumowanie
                 </button>
               </div>
             </div>
-
-            <div className="todo-commandbar-right flex-wrap">
-              {currentUserName && typeof setOwnerFilter === 'function' && (
-                <button
-                  type="button"
-                  className={
-                    ownerFilter === currentUserName
-                      ? 'todo-owner-filter-btn active'
-                      : 'todo-owner-filter-btn'
-                  }
-                  title={
-                    ownerFilter === currentUserName
-                      ? 'Pokaż wszystkie zadania'
-                      : 'Pokaż tylko moje zadania'
-                  }
-                  onClick={() =>
-                    setOwnerFilter(ownerFilter === currentUserName ? 'all' : currentUserName)
-                  }
-                >
-                  <span>👤</span>
-                  Moje zadania
-                </button>
-              )}
-              {!isCharts && !isSchedule && !isSummary ? (
-                <div className="todo-toolbar-search">
-                  <Search className="todo-toolbar-search-icon" />
-                  <input
-                    ref={searchInputRef}
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Szukaj w zadaniach..."
-                    className="todo-toolbar-input"
-                  />
-                </div>
-              ) : null}
-
-              <div className="todo-toolbar-quickadd">
-                <input
-                  ref={quickAddInputRef}
-                  value={quickTitleDraft}
-                  onChange={(event) => updateQuickTitleDraft(event.target.value)}
-                  placeholder="Dodaj zadanie (N)..."
-                  className="todo-toolbar-input"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      submitToolbarQuickTask(e);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="todo-toolbar-add-btn"
-                  onClick={submitToolbarQuickTask}
-                  aria-label="Dodaj zadanie"
-                  title={
-                    quickTitleDraft.trim() ? 'Dodaj zadanie (Enter)' : 'Wpisz tytul zadania i dodaj'
-                  }
-                >
-                  <Plus className="w-[18px] h-[18px]" />
-                </button>
-              </div>
-
-              <SettingsDropdown
-                onExportCsv={onExportCsv}
-                shareWorkspace={shareWorkspace}
-                showColumnManager={showColumnManager}
-                setShowColumnManager={setShowColumnManager}
-              />
-            </div>
           </div>
         </section>
 
-        {/* Advanced create options - shown below toolbar when expanded */}
-        {showAdvancedCreate && !isCharts && !isSchedule && !isSummary ? (
-          <TaskCreateForm
+        {showTaskToolbar ? (
+          <TaskCreateModal
+            isOpen={isCreateOpen}
             initialDraft={quickDraft}
             boardColumns={boardColumns}
             peopleOptions={peopleOptions}
             tagOptions={tagOptions}
+            onClose={closeCreateModal}
             onSubmit={(draft) => {
               submitQuickTask(null, draft);
             }}
-            onCancel={() => setShowAdvancedCreate(false)}
-            showCancel
-            showQuickAdd={false}
-            autoFocus={false}
           />
         ) : null}
 
@@ -319,18 +267,9 @@ function TasksWorkspaceView({
               onUpdateTask={onUpdateTask}
             />
           ) : viewMode === 'list' ? (
-            <Suspense fallback={<div className="todo-loading">Ladowanie listy zadan...</div>}>
+            <Suspense fallback={<div className="todo-loading">Ładowanie listy zadań...</div>}>
               {allVisibleTasks.length === 0 ? (
-                <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
-                  <EmptyState
-                    icon="📋"
-                    title="Brak zadań"
-                    message="W tym widoku nie ma jeszcze żadnych zadań."
-                    action={() => quickAddInputRef.current?.focus()}
-                    actionText="Utwórz zadanie (N)"
-                    actionTooltip="Przejdź do szybkiego dodawania zadania"
-                  />
-                </div>
+                renderEmptyTasks()
               ) : (
                 <TaskListView
                   groupedTasks={groupedTasks}
@@ -355,18 +294,9 @@ function TasksWorkspaceView({
               )}
             </Suspense>
           ) : (
-            <Suspense fallback={<div className="todo-loading">Ladowanie kanbanu zadan...</div>}>
+            <Suspense fallback={<div className="todo-loading">Ładowanie kanbanu zadań...</div>}>
               {allVisibleTasks.length === 0 ? (
-                <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
-                  <EmptyState
-                    icon="📋"
-                    title="Brak zadań"
-                    message="W tym widoku nie ma jeszcze żadnych zadań."
-                    action={() => quickAddInputRef.current?.focus()}
-                    actionText="Utwórz zadanie (N)"
-                    actionTooltip="Przejdź do szybkiego dodawania zadania"
-                  />
-                </div>
+                renderEmptyTasks()
               ) : (
                 <TaskKanbanView
                   kanbanColumns={kanbanColumns}

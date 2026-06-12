@@ -1096,6 +1096,18 @@ export class Database {
   }
 
   async ensureWorkspaceState(workspaceId: string): Promise<void> {
+    try {
+      await this._execute(
+        "ALTER TABLE workspace_state ADD COLUMN manual_people_json TEXT NOT NULL DEFAULT '[]'"
+      );
+    } catch (error) {
+      if (
+        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
+      ) {
+        throw error;
+      }
+    }
+
     const existing = await this._get(
       'SELECT workspace_id FROM workspace_state WHERE workspace_id = ?',
       [workspaceId]
@@ -1109,13 +1121,14 @@ export class Database {
           workspace_id,
           meetings_json,
           manual_tasks_json,
+          manual_people_json,
           task_state_json,
           task_boards_json,
           calendar_meta_json,
           vocabulary_json,
           updated_at
         )
-        VALUES (?, '[]', '[]', '{}', '{}', '{}', '[]', ?)
+        VALUES (?, '[]', '[]', '[]', '{}', '{}', '{}', '[]', ?)
       `,
       [workspaceId, timestamp]
     );
@@ -1285,6 +1298,7 @@ export class Database {
     return {
       meetings: reconciled.meetings,
       manualTasks: this._safeJsonParse(row.manual_tasks_json, []),
+      manualPeople: this._safeJsonParse(row.manual_people_json, []),
       taskState: this._safeJsonParse(row.task_state_json, {}),
       taskBoards: this._safeJsonParse(row.task_boards_json, {}),
       calendarMeta,
@@ -1298,6 +1312,7 @@ export class Database {
     payload: WorkspaceStatePayload = {
       meetings: [],
       manualTasks: [],
+      manualPeople: [],
       taskState: {},
       taskBoards: {},
       calendarMeta: {},
@@ -1340,6 +1355,7 @@ export class Database {
         UPDATE workspace_state
         SET meetings_json = ?,
             manual_tasks_json = ?,
+            manual_people_json = ?,
             task_state_json = ?,
             task_boards_json = ?,
             calendar_meta_json = ?,
@@ -1350,6 +1366,9 @@ export class Database {
       [
         JSON.stringify(reconciled.meetings),
         JSON.stringify(Array.isArray(payload.manualTasks) ? payload.manualTasks : []),
+        JSON.stringify(
+          Array.isArray((payload as any).manualPeople) ? (payload as any).manualPeople : []
+        ),
         JSON.stringify(
           payload.taskState && typeof payload.taskState === 'object' ? payload.taskState : {}
         ),

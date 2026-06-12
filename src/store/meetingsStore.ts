@@ -5,6 +5,7 @@ import { createEmptyMeetingDraft } from '../lib/meeting';
 interface MeetingsState {
   meetings: any[];
   manualTasks: any[];
+  manualPeople: any[];
   taskState: Record<string, any>;
   taskBoards: Record<string, any>;
   calendarMeta: Record<string, any>;
@@ -20,6 +21,7 @@ interface MeetingsState {
 
   setMeetings: (updater: any[] | ((prev: any[]) => any[])) => void;
   setManualTasks: (updater: any[] | ((prev: any[]) => any[])) => void;
+  setManualPeople: (updater: any[] | ((prev: any[]) => any[])) => void;
   setTaskState: (
     updater: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)
   ) => void;
@@ -47,6 +49,7 @@ export const useMeetingsStore = create<MeetingsState>()(
     (set, get) => ({
       meetings: [],
       manualTasks: [],
+      manualPeople: [],
       taskState: {},
       taskBoards: {},
       calendarMeta: {},
@@ -67,6 +70,10 @@ export const useMeetingsStore = create<MeetingsState>()(
       setManualTasks: (updater) =>
         set((state) => ({
           manualTasks: typeof updater === 'function' ? updater(state.manualTasks) : updater,
+        })),
+      setManualPeople: (updater) =>
+        set((state) => ({
+          manualPeople: typeof updater === 'function' ? updater(state.manualPeople) : updater,
         })),
       setTaskState: (updater) =>
         set((state) => ({
@@ -106,6 +113,7 @@ export const useMeetingsStore = create<MeetingsState>()(
       partialize: (state) => ({
         meetings: state.meetings,
         manualTasks: state.manualTasks,
+        manualPeople: state.manualPeople,
         taskState: state.taskState,
         taskBoards: state.taskBoards,
         calendarMeta: state.calendarMeta,

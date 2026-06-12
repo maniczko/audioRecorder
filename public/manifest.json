@@ -1,6 +1,6 @@
 {
-  "short_name": "VoiceLog",
-  "name": "VoiceLog OS - Meeting Intelligence Studio",
+  "short_name": "VoiceBóbr",
+  "name": "VoiceBóbr - AI Meeting Assistant",
   "icons": [
     {
       "src": "favicon.ico",
@@ -24,6 +24,6 @@
   "orientation": "portrait-primary",
   "theme_color": "#071119",
   "background_color": "#071119",
-  "description": "Meeting intelligence workspace z nagrywaniem, transkrypcja, taskami i kalendarzem.",
+  "description": "AI meeting assistant z nagrywaniem, transkrypcją, taskami i kalendarzem.",
   "categories": ["productivity", "business", "utilities"]
 }

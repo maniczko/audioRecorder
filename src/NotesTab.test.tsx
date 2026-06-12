@@ -65,14 +65,14 @@ describe('NotesTab', () => {
 
     expect(screen.getAllByText('Ustaliliśmy najważniejsze cele.')[0]).toBeInTheDocument();
 
-    // Open in studio
-    await userEvent.click(screen.getByRole('button', { name: /Otwórz w Studio/i }));
+    // Open full note / meeting preview
+    await userEvent.click(screen.getByRole('button', { name: /Otwórz pełną notatkę/i }));
     expect(handleOpenMeeting).toHaveBeenCalledWith('m1');
 
     // Search
     const searchInput = screen.getByPlaceholderText(/Szukaj w notatkach/i);
     await userEvent.type(searchInput, 'klientem');
-    expect(screen.getByText('Spotkanie z klientem')).toBeInTheDocument();
+    expect(screen.getAllByText('Spotkanie z klientem').length).toBeGreaterThanOrEqual(1);
 
     // Clear search
     await userEvent.click(screen.getByRole('button', { name: 'Wyczyść' }));
@@ -87,10 +87,10 @@ describe('NotesTab', () => {
     await userEvent.click(tagFilterBtn as HTMLElement);
     expect(screen.getAllByText('Spotkanie zespołu').length).toBeGreaterThanOrEqual(1);
 
-    // Grouping
-    await userEvent.click(screen.getByRole('button', { name: 'Tagu' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Osoby' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Brak' }));
+    // AI status filters and reset
+    await userEvent.click(screen.getByRole('button', { name: /Z analizy AI/i }));
+    expect(screen.getAllByText('Spotkanie zespołu').length).toBeGreaterThanOrEqual(1);
+    await userEvent.click(screen.getByRole('button', { name: /Wszystkie notatki/i }));
 
     // Create new note panel
     await userEvent.click(screen.getByRole('button', { name: '+ Nowa notatka' }));
@@ -107,4 +107,19 @@ describe('NotesTab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Zapisz notatkę' }));
     expect(handleCreateNote).toHaveBeenCalled();
   }, 15000);
+
+  test('renders the reference empty AI state for notes without analysis', async () => {
+    render(<NotesTab userMeetings={[mockMeetings[1]] as any} onOpenMeeting={vi.fn()} />);
+
+    const clientCardTitle = screen
+      .getAllByText('Spotkanie z klientem')
+      .find((el) => el.classList.contains('note-card-title'));
+    await userEvent.click(clientCardTitle as HTMLElement);
+
+    expect(screen.getByText('Analiza AI oczekuje')).toBeInTheDocument();
+    expect(screen.getAllByText('Brak analizy').length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getByText('Zapytaj VoiceBóbr o tę notatkę albo uruchom analizę z pełnego widoku.')
+    ).toBeInTheDocument();
+  });
 });

@@ -1551,10 +1551,45 @@ describe('StudioMeetingView', () => {
       selectedMeeting: null,
       displayRecording: null,
       selectedRecording: null,
+      briefOpen: false,
     };
     renderWithContext(<StudioMeetingView {...props} />);
     const els = screen.getAllByText(/Brak aktywnego spotkania/i);
     expect(els.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Centrum pracy')).toBeInTheDocument();
+    expect(screen.getByText('Dziś w kalendarzu')).toBeInTheDocument();
+    expect(screen.getByText('Ostatnie nagrania')).toBeInTheDocument();
+    expect(screen.getByText('Nagrania w tym miesiącu')).toBeInTheDocument();
+    expect(screen.getByText('Gotowe podsumowania')).toBeInTheDocument();
+  });
+
+  test('routes Studio home quick actions through existing handlers', () => {
+    const props = {
+      ...defaultProps,
+      selectedMeeting: null,
+      displayRecording: null,
+      selectedRecording: null,
+      briefOpen: false,
+      setBriefOpen: vi.fn(),
+      setActiveTab: vi.fn(),
+      startNewMeetingDraft: vi.fn(),
+      startRecording: vi.fn(),
+    };
+
+    renderWithContext(<StudioMeetingView {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Nagraj ad hoc$/i }));
+    expect(props.startRecording).toHaveBeenCalledWith({ adHoc: true });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /^Przygotuj brief$/i })[0]);
+    expect(props.startNewMeetingDraft).toHaveBeenCalledTimes(1);
+    expect(props.setBriefOpen).toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /Otwórz kalendarz/i }));
+    expect(props.setActiveTab).toHaveBeenCalledWith('calendar');
+
+    fireEvent.click(screen.getByRole('button', { name: /Zobacz wszystkie/i }));
+    expect(props.setActiveTab).toHaveBeenCalledWith('recordings');
   });
 
   test('renders analysis tabs', () => {

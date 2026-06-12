@@ -28,11 +28,13 @@ export function formatListDueDate(value) {
     return '';
   }
 
-  return new Intl.DateTimeFormat('en-US', {
-    month: '2-digit',
-    day: '2-digit',
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: 'numeric',
+    month: 'short',
     year: 'numeric',
-  }).format(date);
+  })
+    .format(date)
+    .replace(/\./g, '');
 }
 
 export function dueTone(value) {
@@ -51,46 +53,39 @@ export function dueTone(value) {
 }
 
 export function buildSidebarLists(tasks, boardColumns) {
-  const baseLists = [
-    {
-      id: 'smart:important',
-      label: 'Ważne',
-      icon: '⭐',
-      count: tasks.filter((task) => task.important).length,
-    },
-    {
-      id: 'smart:planned',
-      label: 'Zaplanowane',
-      icon: '📅',
-      count: tasks.filter((task) => task.dueDate).length,
-    },
-    {
-      id: 'smart:overdue',
-      label: 'Zaległe',
-      icon: '⚠️',
-      count: tasks.filter(
-        (task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()
-      ).length,
-    },
-    {
-      id: 'smart:completed',
-      label: 'Zakończone',
-      icon: '✓',
-      count: tasks.filter((task) => task.completed).length,
-    },
-    {
-      id: 'smart:assigned',
-      label: 'Przypisane do mnie',
-      icon: '👤',
-      count: tasks.filter((task) => task.assignedToMe).length,
-    },
-    { id: 'smart:all', label: 'Zadania', icon: '✦', count: tasks.length },
-  ];
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(todayStart.getDate() + 1);
+  const weekEnd = new Date(todayStart);
+  weekEnd.setDate(todayStart.getDate() + 7);
+
+  const isDueToday = (task) => {
+    if (!task.dueDate || task.completed) return false;
+    const due = new Date(task.dueDate).getTime();
+    return due >= todayStart.getTime() && due < tomorrowStart.getTime();
+  };
+
+  const isDueThisWeek = (task) => {
+    if (!task.dueDate || task.completed) return false;
+    const due = new Date(task.dueDate).getTime();
+    return due >= todayStart.getTime() && due < weekEnd.getTime();
+  };
+
+  const normalizeStatusLabel = (column) => {
+    const id = String(column.id || '').toLowerCase();
+    const label = String(column.label || '');
+    if (column.isDone || id === 'done' || /zako|uko|done/i.test(label)) return 'Ukończone';
+    if (id === 'todo') return 'Do zrobienia';
+    if (id === 'in_progress') return 'W toku';
+    if (id === 'waiting') return 'Oczekuje';
+    return label;
+  };
 
   const workspaceLists = boardColumns.map((column) => ({
     id: `column:${column.id}`,
     label: column.label,
-    icon: '◉',
+    icon: 'o',
     count: tasks.filter((task) => task.status === column.id).length,
   }));
 
@@ -104,12 +99,96 @@ export function buildSidebarLists(tasks, boardColumns) {
       count: tasks.filter((task) => task.group === group).length,
     }));
 
-  return { baseLists, workspaceLists, customGroups };
-}
+  const taskLists = [
+    {
+      id: 'smart:today',
+      label: 'Dziś',
+      icon: 'today',
+      count: tasks.filter(isDueToday).length,
+    },
+    {
+      id: 'smart:week',
+      label: 'Ten tydzień',
+      icon: 'week',
+      count: tasks.filter(isDueThisWeek).length,
+    },
+    {
+      id: 'smart:planned',
+      label: 'Zaplanowane',
+      icon: 'planned',
+      count: tasks.filter((task) => task.dueDate).length,
+    },
+    {
+      id: 'smart:overdue',
+      label: 'Zaległe',
+      icon: 'overdue',
+      count: tasks.filter(
+        (task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()
+      ).length,
+    },
+    {
+      id: 'smart:important',
+      label: 'Ważne',
+      icon: 'important',
+      count: tasks.filter((task) => task.important).length,
+    },
+    {
+      id: 'smart:assigned',
+      label: 'Przypisane do mnie',
+      icon: 'assigned',
+      count: tasks.filter((task) => task.assignedToMe).length,
+    },
+    { id: 'smart:all', label: 'Wszystkie', icon: 'all', count: tasks.length },
+  ];
 
+  const statusLists = workspaceLists.map((item) => {
+    const columnId = item.id.slice('column:'.length);
+    const column = boardColumns.find((candidate) => candidate.id === columnId) || {};
+    return {
+      ...item,
+      label: normalizeStatusLabel(column),
+      icon: column.isDone ? 'completed' : columnId,
+    };
+  });
+
+  const customLists = customGroups.map((item) => ({ ...item, icon: 'custom' }));
+
+  return {
+    taskLists,
+    statusLists,
+    customLists,
+    baseLists: taskLists,
+    workspaceLists: statusLists,
+    customGroups: customLists,
+  };
+}
 export function applyMainListFilter(tasks, mainListId, boardColumns) {
   if (!mainListId || mainListId === 'smart:all') {
     return tasks;
+  }
+
+  if (mainListId === 'smart:today') {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(todayStart.getDate() + 1);
+    return tasks.filter((task) => {
+      if (!task.dueDate || task.completed) return false;
+      const due = new Date(task.dueDate).getTime();
+      return due >= todayStart.getTime() && due < tomorrowStart.getTime();
+    });
+  }
+
+  if (mainListId === 'smart:week') {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(todayStart);
+    weekEnd.setDate(todayStart.getDate() + 7);
+    return tasks.filter((task) => {
+      if (!task.dueDate || task.completed) return false;
+      const due = new Date(task.dueDate).getTime();
+      return due >= todayStart.getTime() && due < weekEnd.getTime();
+    });
   }
 
   if (mainListId === 'smart:my_day') {
@@ -154,30 +233,69 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
 }
 
 function priorityRank(priority) {
-  return ['urgent', 'high', 'medium', 'low'].indexOf(priority);
+  const rank = ['urgent', 'high', 'medium', 'low'].indexOf(priority);
+  return rank === -1 ? Number.MAX_SAFE_INTEGER : rank;
+}
+
+function parseSortBy(sortBy = 'due:asc') {
+  if (!sortBy || sortBy === 'manual') {
+    return { field: 'manual', direction: 'asc' };
+  }
+
+  const [field, rawDirection] = String(sortBy).split(':');
+  return {
+    field,
+    direction: rawDirection === 'desc' ? 'desc' : 'asc',
+  };
+}
+
+function dueTime(value) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Number.POSITIVE_INFINITY : time;
 }
 
 export function sortVisibleTasks(tasks, sortBy) {
+  const { field, direction } = parseSortBy(sortBy);
+  const directionMultiplier = direction === 'desc' ? -1 : 1;
+
   return [...tasks].sort((left, right) => {
-    if (sortBy === 'manual') {
+    if (field === 'manual') {
       return getTaskOrder(left) - getTaskOrder(right);
     }
-    if (sortBy === 'title') {
-      return left.title.localeCompare(right.title);
+    if (field === 'title') {
+      return (
+        directionMultiplier * String(left.title || '').localeCompare(String(right.title || ''))
+      );
     }
-    if (sortBy === 'due') {
-      return new Date(left.dueDate || 0).getTime() - new Date(right.dueDate || 0).getTime();
+    if (field === 'status') {
+      return (
+        directionMultiplier * String(left.status || '').localeCompare(String(right.status || ''))
+      );
     }
-    if (sortBy === 'owner') {
-      return (left.owner || '').localeCompare(right.owner || '');
+    if (field === 'due') {
+      const leftDue = dueTime(left.dueDate);
+      const rightDue = dueTime(right.dueDate);
+      if (!Number.isFinite(leftDue) && Number.isFinite(rightDue)) return 1;
+      if (Number.isFinite(leftDue) && !Number.isFinite(rightDue)) return -1;
+      return directionMultiplier * (leftDue - rightDue);
     }
-    if (sortBy === 'priority') {
-      return priorityRank(left.priority) - priorityRank(right.priority);
+    if (field === 'owner') {
+      return (
+        directionMultiplier * String(left.owner || '').localeCompare(String(right.owner || ''))
+      );
     }
-    return (
+    if (field === 'priority') {
+      return directionMultiplier * (priorityRank(left.priority) - priorityRank(right.priority));
+    }
+
+    const updatedDescending =
       new Date(right.updatedAt || right.createdAt).getTime() -
-      new Date(left.updatedAt || left.createdAt).getTime()
-    );
+      new Date(left.updatedAt || left.createdAt).getTime();
+    return direction === 'asc' ? updatedDescending * -1 : updatedDescending;
   });
 }
 

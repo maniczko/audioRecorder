@@ -13,6 +13,303 @@
   animation: todoOverlayFadeIn 0.2s ease-out;
 }
 
+/* Screenshot-first reference: task list table, 2026-06-10 */
+:root[data-theme='premium-light'] .tasks-layout.ms-todo {
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  background: rgba(248, 250, 247, 0.74) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  border-width: 0 1px 0 0 !important;
+  border-color: rgba(31, 55, 84, 0.1) !important;
+  border-radius: 0 !important;
+  padding: 34px 24px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-nav-panel {
+  gap: 24px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-title {
+  min-height: 32px !important;
+  padding: 0 !important;
+  color: #17233b !important;
+  font-size: 0.85rem !important;
+  font-weight: 760 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-toggle-arrow {
+  display: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+  min-height: 44px !important;
+  grid-template-columns: 24px minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  color: #1d2a44 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link.active {
+  background: rgba(219, 245, 238, 0.86) !important;
+  border-color: rgba(8, 126, 112, 0.18) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-icon {
+  color: #007f73 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-main {
+  padding: 26px 32px 22px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-topline {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin-bottom: 16px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-topline h1 {
+  margin: 0 !important;
+  color: #17233b !important;
+  font-size: 1.72rem !important;
+  font-weight: 780 !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-actions,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-primary-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-actions {
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-primary-toolbar {
+  margin-bottom: 26px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+  min-height: 48px !important;
+  display: block !important;
+  padding: 0 0 14px !important;
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  border-color: rgba(31, 55, 84, 0.12) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left {
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+  display: flex !important;
+  gap: 28px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button {
+  min-width: auto !important;
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  color: #536079 !important;
+  background: transparent !important;
+  font-size: 0.9rem !important;
+  font-weight: 620 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active {
+  color: #007f73 !important;
+  background: transparent !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active::after {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 2px !important;
+  background: #008d7d !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger {
+  min-height: 40px !important;
+  padding: 0 18px !important;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #078c7e 0%, #009f8c 100%) !important;
+  box-shadow: 0 12px 24px rgba(0, 143, 128, 0.22) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search {
+  width: 250px !important;
+  max-width: 32vw !important;
+  min-height: 40px !important;
+  border-radius: 8px !important;
+  border-color: rgba(31, 55, 84, 0.14) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-icon-button,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-command-button {
+  min-height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  border: 1px solid rgba(31, 55, 84, 0.12) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #23304b !important;
+  box-shadow: none !important;
+  font-weight: 620 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-icon-button {
+  width: 42px !important;
+  justify-content: center !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-panel {
+  margin-top: 18px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-wrap {
+  border-radius: 10px !important;
+  border-color: rgba(31, 55, 84, 0.1) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 0 18px 42px rgba(31, 55, 84, 0.07) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  min-width: 1040px !important;
+  grid-template-columns: 38px minmax(320px, 2fr) 152px 128px 132px 190px 42px !important;
+  column-gap: 12px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head {
+  min-height: 44px !important;
+  padding: 0 22px !important;
+  color: #59657d !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  font-size: 0.82rem !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  min-height: 62px !important;
+  padding: 0 22px !important;
+  border-bottom-color: rgba(31, 55, 84, 0.1) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-row-tools {
+  grid-template-columns: 18px !important;
+  justify-content: start !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-drag-handle {
+  display: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle {
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 3px !important;
+  border: 1.5px solid #8a98ad !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-cell strong {
+  color: #14213a !important;
+  font-size: 0.89rem !important;
+  font-weight: 760 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-meta {
+  color: #66708a !important;
+  font-size: 0.78rem !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-status-badge,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge {
+  min-height: 24px !important;
+  padding: 0 9px !important;
+  border-radius: 5px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.high {
+  color: #ef2b2a !important;
+  background: transparent !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.medium {
+  color: #d96b00 !important;
+  background: transparent !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.low {
+  color: #008f5d !important;
+  background: transparent !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-date {
+  color: #17233b !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-assignee-cell {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: #23304b !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-assignee-avatar {
+  width: 34px !important;
+  height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  color: #007f73 !important;
+  background: #d9f5ee !important;
+  font-size: 0.76rem !important;
+  font-weight: 780 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star {
+  width: 28px !important;
+  height: 28px !important;
+  color: #60708a !important;
+}
+
 @keyframes todoOverlayFadeIn {
   from {
     opacity: 0;
@@ -3495,7 +3792,7 @@
 .tasks-layout.ms-todo .todo-sidebar-hero h2 {
   margin: 4px 0 0;
   font-family: 'Space Grotesk', sans-serif;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .tasks-layout.ms-todo .todo-sidebar-hero p,
@@ -5855,7 +6152,7 @@
 }
 
 .tasks-layout.ms-todo .todo-title-cell strong {
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .tasks-layout.ms-todo .todo-title-cell small {
@@ -5872,7 +6169,7 @@
 }
 
 .tasks-layout.ms-todo .todo-detail-card h2 {
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .tasks-layout.ms-todo .todo-commandbar {
@@ -7095,7 +7392,7 @@
   min-width: 0;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 920px) {
   :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
     grid-template-columns: 1fr;
     gap: var(--space-4);
@@ -7282,5 +7579,627 @@
 
   :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-quickadd {
     padding-right: 54px;
+  }
+}
+
+/* Layout audit guardrails: maintain premium-light ergonomics through shared anatomy. */
+.tasks-layout.ms-todo .todo-toolbar-input,
+.tasks-layout.ms-todo .todo-toolbar-add-btn,
+.tasks-layout.ms-todo .todo-col-sort-btn {
+  min-height: 44px;
+}
+
+.tasks-layout.ms-todo .todo-toolbar-add-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, auto);
+  align-items: center;
+  gap: 16px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+  min-width: 0;
+}
+
+@media (max-width: 1366px) {
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+    width: 100%;
+  }
+}
+
+/* Microsoft To Do inspired workspace redesign - VoiceBobr premium-light */
+:root[data-theme='premium-light'] .tasks-layout.ms-todo {
+  grid-template-columns: 300px minmax(0, 1fr) !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  padding: 18px 22px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+  width: 300px !important;
+  max-width: 320px !important;
+  min-width: 280px !important;
+  border-radius: 20px !important;
+  padding: 14px !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  border: 1px solid rgba(23, 95, 82, 0.12) !important;
+  box-shadow: 0 18px 44px rgba(20, 72, 64, 0.08) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar-scroll,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-nav-panel,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar-group,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-group {
+  gap: 8px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-title {
+  min-height: 44px !important;
+  padding: 8px 8px !important;
+  color: #183f37 !important;
+  font-size: 0.86rem !important;
+  letter-spacing: 0 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+  width: 100% !important;
+  min-height: 44px !important;
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 0 10px !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #20453e !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link:hover,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button:hover {
+  background: rgba(15, 126, 109, 0.07) !important;
+  border-color: rgba(15, 126, 109, 0.11) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link.active {
+  background: linear-gradient(
+    135deg,
+    rgba(222, 248, 239, 0.96),
+    rgba(255, 255, 255, 0.92)
+  ) !important;
+  border-color: rgba(15, 126, 109, 0.22) !important;
+  box-shadow: inset 3px 0 0 #0f8f79 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-icon {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #0f806f !important;
+  font-weight: 850 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-label {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-weight: 650 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link strong {
+  justify-self: end !important;
+  color: #6d837c !important;
+  font-size: 0.82rem !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+  margin-top: 6px !important;
+  border-top: 1px solid rgba(31, 94, 82, 0.08) !important;
+  color: #5f746e !important;
+  cursor: pointer !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-main,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-shell {
+  min-width: 0 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-shell {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-panel {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workbench-header,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-quickadd,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-settings-dropdown-wrap,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-primary-action {
+  display: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+  min-height: 64px !important;
+  display: grid !important;
+  grid-template-columns: max-content minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 10px 12px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(31, 94, 82, 0.12) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: 0 18px 46px rgba(26, 80, 70, 0.08) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left {
+  width: max-content !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+  justify-content: flex-end !important;
+  justify-self: end !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(31, 94, 82, 0.14) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch::-webkit-scrollbar {
+  display: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button {
+  position: relative !important;
+  min-height: 48px !important;
+  min-width: 108px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-left: 1px solid rgba(31, 94, 82, 0.1) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #52706a !important;
+  font-weight: 720 !important;
+  cursor: pointer !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button:first-child {
+  border-left: 0 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button:hover {
+  background: rgba(15, 126, 109, 0.06) !important;
+  color: #0b594e !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active {
+  background: linear-gradient(
+    180deg,
+    rgba(222, 248, 239, 0.98),
+    rgba(242, 255, 250, 0.94)
+  ) !important;
+  color: #087262 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: #0a8f79;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-owner-filter-btn {
+  min-height: 44px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  color: #496962 !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  border: 1px solid rgba(31, 94, 82, 0.12) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search {
+  flex: 0 1 280px !important;
+  width: 280px !important;
+  max-width: 30vw !important;
+  min-height: 48px !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(31, 94, 82, 0.13) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger {
+  min-height: 48px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  padding: 0 20px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0db89f 0%, #078d78 100%) !important;
+  box-shadow: 0 14px 28px rgba(8, 141, 120, 0.24) !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger span {
+  font-size: 1.1rem !important;
+  line-height: 1 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-panel {
+  margin-top: 16px !important;
+  padding: 0 !important;
+  border-radius: 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-empty-workbench {
+  width: min(100%, 560px) !important;
+  min-height: 340px !important;
+  margin: 34px auto !important;
+  padding: 32px 28px !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px dashed rgba(31, 94, 82, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-wrap {
+  overflow-x: auto !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(31, 94, 82, 0.12) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 18px 46px rgba(26, 80, 70, 0.08) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  min-width: 920px !important;
+  display: grid !important;
+  grid-template-columns: 58px minmax(280px, 1.9fr) 132px 122px 132px 150px 54px !important;
+  align-items: center !important;
+  column-gap: 12px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head {
+  min-height: 54px !important;
+  padding: 0 18px !important;
+  color: #667b75 !important;
+  background: rgba(250, 253, 249, 0.92) !important;
+  border-bottom: 1px solid rgba(31, 94, 82, 0.1) !important;
+  font-size: 0.74rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  min-height: 72px !important;
+  padding: 0 18px !important;
+  border-bottom: 1px solid rgba(31, 94, 82, 0.08) !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  color: #193c35 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row:hover,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row.active {
+  background: rgba(232, 249, 242, 0.72) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-row-tools {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 14px 28px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-drag-handle {
+  opacity: 0.34 !important;
+  color: #71908a !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  border: 2px solid #86cfc1 !important;
+  background: #fff !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-cell {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 4px !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-cell strong {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: #173b34 !important;
+  font-size: 0.94rem !important;
+  font-weight: 800 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-meta {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px 10px !important;
+  color: #78908a !important;
+  font-size: 0.78rem !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-status-badge,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge {
+  min-height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-size: 0.78rem !important;
+  font-weight: 750 !important;
+  white-space: nowrap !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-status-badge {
+  color: #0d7566 !important;
+  background: rgba(218, 247, 237, 0.92) !important;
+  border: 1px solid rgba(15, 126, 109, 0.14) !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.high {
+  color: #b42318 !important;
+  background: #fee4e2 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.medium {
+  color: #9a5b00 !important;
+  background: #fff3d6 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge.low {
+  color: #067647 !important;
+  background: #dcfae6 !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-date,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-assignee-cell {
+  color: #536e67 !important;
+  font-size: 0.88rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star-cell {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  color: #7b8f89 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star:hover,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star.active {
+  color: #0b806f !important;
+  background: rgba(218, 247, 237, 0.9) !important;
+  border-color: rgba(15, 126, 109, 0.16) !important;
+}
+
+@media (max-width: 920px) and (min-width: 721px) {
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo {
+    grid-template-columns: 78px minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+    width: 78px !important;
+    min-width: 78px !important;
+    padding: 10px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-title strong,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-toggle-arrow,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-label,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link strong,
+  :root[data-theme='premium-light']
+    .tasks-layout.ms-todo
+    .todo-manage-lists-button
+    .todo-side-label {
+    display: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    padding: 0 !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search {
+    width: min(100%, 320px) !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo {
+    grid-template-columns: 1fr !important;
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow-x: auto !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+    grid-template-columns: 1fr !important;
+    padding: 10px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+    justify-content: stretch !important;
+    flex-wrap: wrap !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-owner-filter-btn {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-wrap {
+    border-radius: 14px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head {
+    display: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+    min-width: 0 !important;
+    grid-template-columns: 52px minmax(0, 1fr) 42px !important;
+    row-gap: 6px !important;
+    padding: 12px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-status-cell,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-cell,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-date,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-assignee-cell {
+    display: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star-cell {
+    grid-column: 3 !important;
+  }
+}
+
+@media (min-width: 921px) {
+  /* Final cascade guard for the screenshot-first task list reference. */
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo {
+    grid-template-columns: 240px minmax(0, 1fr) !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    border-width: 0 1px 0 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-main {
+    padding: 26px 32px 22px !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-topline,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-primary-toolbar {
+    display: flex !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+    display: block !important;
+    padding: 0 0 14px !important;
+    border-width: 0 0 1px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+    gap: 28px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+    min-width: 1040px !important;
+    grid-template-columns: 38px minmax(320px, 2fr) 152px 128px 132px 190px 42px !important;
   }
 }

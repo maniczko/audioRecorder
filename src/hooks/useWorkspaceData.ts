@@ -56,6 +56,8 @@ export default function useWorkspaceData() {
     setMeetings,
     manualTasks,
     setManualTasks,
+    manualPeople,
+    setManualPeople,
     taskState,
     setTaskState,
     taskBoards,
@@ -71,6 +73,7 @@ export default function useWorkspaceData() {
   const safeWorkspaces = Array.isArray(workspaces) ? workspaces : [];
   const safeMeetings = Array.isArray(meetings) ? meetings : [];
   const safeManualTasks = Array.isArray(manualTasks) ? manualTasks : [];
+  const safeManualPeople = Array.isArray(manualPeople) ? manualPeople : [];
   const safeTaskBoards =
     taskBoards && typeof taskBoards === 'object' && !Array.isArray(taskBoards) ? taskBoards : {};
   const safeCalendarMeta =
@@ -118,6 +121,7 @@ export default function useWorkspaceData() {
 
       setMeetings(normalizedState.meetings as any[]);
       setManualTasks(normalizedState.manualTasks as any[]);
+      setManualPeople(((normalizedState as any).manualPeople || []) as any[]);
       setTaskState(normalizedState.taskState as any);
       setTaskBoards(normalizedState.taskBoards as any);
       setCalendarMeta(normalizedState.calendarMeta as any);
@@ -145,6 +149,7 @@ export default function useWorkspaceData() {
       session?.workspaceId,
       setCalendarMeta,
       setManualTasks,
+      setManualPeople,
       setMeetings,
       setSession,
       setTaskBoards,
@@ -410,6 +415,7 @@ export default function useWorkspaceData() {
     const payload = {
       meetings: safeMeetings,
       manualTasks: safeManualTasks,
+      manualPeople: safeManualPeople,
       taskState,
       taskBoards: safeTaskBoards,
       calendarMeta: safeCalendarMeta,
@@ -451,6 +457,7 @@ export default function useWorkspaceData() {
     flushRemoteWorkspaceState,
     isHydratingRemoteState,
     safeManualTasks,
+    safeManualPeople,
     safeMeetings,
     session?.token,
     stateService,

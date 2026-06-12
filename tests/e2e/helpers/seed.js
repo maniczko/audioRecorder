@@ -48,6 +48,9 @@ async function seedLoggedInUser(page) {
           version: 0,
         })
       );
+      localStorage.setItem('voicelog.users.v3', JSON.stringify([user]));
+      localStorage.setItem('voicelog.workspaces.v1', JSON.stringify([workspace]));
+      localStorage.setItem('voicelog.session.v3', JSON.stringify(session));
       localStorage.setItem('voicelog.e2e', 'true');
     },
     { user: SEED_USER, workspace: SEED_WORKSPACE, session: SEED_SESSION }

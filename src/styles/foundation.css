@@ -174,7 +174,7 @@ body {
 .settings-button,
 .topbar-record-btn,
 .command-palette-launcher {
-  min-height: var(--control-height-md);
+  min-height: max(44px, var(--control-height-md));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -557,4 +557,11 @@ select:focus-visible {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Premium-light ergonomic floor for native form fields. */
+:root[data-theme='premium-light'] input:not([type='checkbox']):not([type='radio']),
+:root[data-theme='premium-light'] select,
+:root[data-theme='premium-light'] textarea {
+  min-height: 44px;
 }

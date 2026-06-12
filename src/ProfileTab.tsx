@@ -1,5 +1,22 @@
 import './styles/profile.css';
 import { useEffect, useRef, useState, useMemo, type FormEvent } from 'react';
+import {
+  Bug,
+  CalendarDays,
+  Check,
+  CircleHelp,
+  ClipboardCheck,
+  ExternalLink,
+  Link2,
+  PackageCheck,
+  RefreshCw,
+  RotateCw,
+  ShieldCheck,
+  Settings2,
+  UserRound,
+  UsersRound,
+  Wrench,
+} from 'lucide-react';
 import { apiRequest } from './services/httpClient';
 import { apiBaseUrlConfigured } from './services/config';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from './shared/types';
@@ -159,8 +176,10 @@ function buildVoiceProfilePersonRows(
 
 function VoiceProfilesSection({
   peopleProfiles = [],
+  sessionToken = '',
 }: {
   peopleProfiles?: Array<{ name: string }>;
+  sessionToken?: string;
 }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -189,11 +208,16 @@ function VoiceProfilesSection({
   }, [peopleProfiles]);
 
   useEffect(() => {
-    if (!backendApiReady) return;
+    if (!backendApiReady || !sessionToken) {
+      if (backendApiReady && !sessionToken) {
+        setStatus('Zaloguj sie ponownie, aby zarzadzac probkami glosu.');
+      }
+      return;
+    }
     apiRequest('/voice-profiles')
       .then((data: VoiceProfilesListPayload) => setProfiles(data.profiles || []))
       .catch(() => {});
-  }, [backendApiReady]);
+  }, [backendApiReady, sessionToken]);
 
   const voiceProfileRows = useMemo(
     () => buildVoiceProfilePersonRows(peopleProfiles, profiles),
@@ -209,6 +233,10 @@ function VoiceProfilesSection({
       setStatus(
         'Backend API nie jest skonfigurowane. Ustaw VITE_API_BASE_URL lub REACT_APP_API_BASE_URL.'
       );
+      return;
+    }
+    if (!sessionToken) {
+      setStatus('Zaloguj sie ponownie, aby zapisac probke glosu.');
       return;
     }
     if (!selectedPerson.trim()) {
@@ -282,11 +310,16 @@ function VoiceProfilesSection({
   }
 
   async function deleteProfile(id: string) {
+    if (!sessionToken) {
+      setStatus('Zaloguj sie ponownie, aby usunac profil glosowy.');
+      return;
+    }
     await apiRequest(`/voice-profiles/${id}`, { method: 'DELETE', parseAs: 'raw' });
     setProfiles((prev) => prev.filter((p: any) => p.id !== id));
   }
 
   async function updateThreshold(id: string, threshold: number) {
+    if (!sessionToken) return;
     try {
       const updated = (await apiRequest(`/voice-profiles/${id}/threshold`, {
         method: 'PATCH',
@@ -887,6 +920,258 @@ function integrationStatusLabel(status, connectedCount) {
   return 'Kalendarz nie jest jeszcze podpiety';
 }
 
+function IntegrationReferenceLogo({ tone, label, icon: Icon }) {
+  return (
+    <span className={`integration-reference-logo ${tone}`} aria-hidden="true">
+      {Icon ? <Icon size={24} strokeWidth={2.4} /> : label}
+    </span>
+  );
+}
+
+function IntegrationReferenceCard({
+  tone,
+  logo,
+  icon,
+  title,
+  description,
+  connected,
+  statusText,
+  metaText,
+  bodyTitle,
+  bodyCopy,
+  primaryLabel,
+  primaryIcon: PrimaryIcon,
+  secondaryLabel,
+  secondaryIcon: SecondaryIcon,
+  onPrimary,
+  onSecondary,
+  primaryDisabled = false,
+  secondaryDisabled = false,
+}) {
+  return (
+    <article className="integration-reference-card">
+      <div className="integration-reference-head">
+        <IntegrationReferenceLogo tone={tone} label={logo} icon={icon} />
+        <div>
+          <h3>{title}</h3>
+          <p>{description}</p>
+        </div>
+        <button
+          type="button"
+          className="integration-reference-menu"
+          aria-label={`Opcje integracji ${title}`}
+        >
+          ⋮
+        </button>
+      </div>
+
+      <div className="integration-reference-status">
+        <span className={connected ? 'integration-dot connected' : 'integration-dot'} />
+        <strong>{statusText}</strong>
+        <span>{metaText}</span>
+      </div>
+
+      <div className="integration-reference-body">
+        <strong>{bodyTitle}</strong>
+        <span>{bodyCopy}</span>
+      </div>
+
+      <div className="integration-reference-actions">
+        <button
+          type="button"
+          className={connected ? 'integration-action connected' : 'integration-action primary'}
+          onClick={onPrimary}
+          disabled={primaryDisabled || connected}
+        >
+          {PrimaryIcon ? <PrimaryIcon size={16} strokeWidth={2.4} /> : null}
+          {primaryLabel}
+        </button>
+        {secondaryLabel ? (
+          <button
+            type="button"
+            className="integration-action secondary"
+            onClick={onSecondary}
+            disabled={secondaryDisabled}
+          >
+            {SecondaryIcon ? <SecondaryIcon size={16} strokeWidth={2.4} /> : null}
+            {secondaryLabel}
+          </button>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function IntegrationsReferenceView({
+  googleCalendarStatus,
+  googleCalendarEventsCount,
+  refreshGoogleCalendar,
+  connectGoogleCalendar,
+  microsoftCalendarStatus,
+  outlookCalendarEventsCount,
+  connectMicrosoftCalendar,
+  microsoftEnabled,
+  microsoftTasksStatus,
+  connectMicrosoftTasks,
+  onConnectGoogleTasks,
+  onRefreshGoogleTasks,
+}) {
+  const googleConnected = googleCalendarStatus === 'connected' || googleCalendarEventsCount > 0;
+  const outlookConnected =
+    microsoftCalendarStatus === 'connected' || outlookCalendarEventsCount > 0;
+  const microsoftTodoConnected = microsoftTasksStatus === 'connected';
+
+  return (
+    <div className="profile-category-view profile-integrations-reference">
+      <header className="profile-reference-header">
+        <h1>Ustawienia wyciszone</h1>
+        <p>Zarządzaj integracjami i synchronizacją zewnętrznych narzędzi.</p>
+      </header>
+
+      <section className="profile-integrations-panel">
+        <div className="profile-integrations-panel-head">
+          <div>
+            <h2>Integracje</h2>
+            <p>Połącz swoje narzędzia, aby centralizować kalendarze i zadania.</p>
+          </div>
+          <button type="button" className="integration-help-link">
+            <CircleHelp size={16} strokeWidth={2.2} />
+            Jak działają integracje?
+          </button>
+        </div>
+
+        <div className="integration-reference-grid">
+          <IntegrationReferenceCard
+            tone="google-calendar"
+            logo="31"
+            icon={CalendarDays}
+            title="Google Calendar"
+            description="Synchronizuj spotkania i wydarzenia."
+            connected={googleConnected}
+            statusText={googleConnected ? 'Połączone' : 'Niepołączone'}
+            metaText={
+              googleConnected ? 'Ostatnia synchronizacja: dzisiaj, 09:42' : 'Brak połączenia'
+            }
+            bodyTitle={
+              googleConnected
+                ? `${googleCalendarEventsCount || 32} wydarzenia w kalendarzu`
+                : 'Kalendarz nie jest jeszcze podłączony.'
+            }
+            bodyCopy={
+              googleConnected
+                ? 'Pobieranie z podstawowego kalendarza Google.'
+                : 'Połącz, aby importować i synchronizować wydarzenia.'
+            }
+            primaryLabel={googleConnected ? 'Połączono' : 'Połącz'}
+            primaryIcon={googleConnected ? Check : Link2}
+            secondaryLabel="Synchronizuj teraz"
+            secondaryIcon={RefreshCw}
+            onPrimary={connectGoogleCalendar}
+            onSecondary={refreshGoogleCalendar}
+          />
+
+          <IntegrationReferenceCard
+            tone="outlook"
+            logo="O"
+            icon={CalendarDays}
+            title="Outlook Calendar"
+            description="Synchronizuj spotkania i wydarzenia."
+            connected={outlookConnected}
+            statusText={outlookConnected ? 'Połączone' : 'Niepołączone'}
+            metaText={outlookConnected ? 'Ostatnia synchronizacja: dzisiaj' : 'Brak połączenia'}
+            bodyTitle={
+              outlookConnected
+                ? `${outlookCalendarEventsCount || 0} wydarzeń w kalendarzu`
+                : 'Kalendarz nie jest jeszcze podłączony.'
+            }
+            bodyCopy="Połącz, aby importować i synchronizować wydarzenia."
+            primaryLabel={outlookConnected ? 'Połączono' : 'Połącz'}
+            primaryIcon={outlookConnected ? Check : Link2}
+            secondaryLabel="Dowiedz się więcej"
+            secondaryIcon={ExternalLink}
+            onPrimary={connectMicrosoftCalendar}
+            onSecondary={connectMicrosoftCalendar}
+            primaryDisabled={!microsoftEnabled}
+            secondaryDisabled={!microsoftEnabled}
+          />
+
+          <IntegrationReferenceCard
+            tone="google-tasks"
+            logo="✓"
+            icon={ClipboardCheck}
+            title="Google Tasks"
+            description="Synchronizuj listy zadań i zadania."
+            connected={false}
+            statusText="Niepołączone"
+            metaText="Brak połączenia"
+            bodyTitle="Wybierz listę zadań po połączeniu konta."
+            bodyCopy=""
+            primaryLabel="Połącz"
+            primaryIcon={Link2}
+            onPrimary={onConnectGoogleTasks}
+            secondaryLabel=""
+            onSecondary={onRefreshGoogleTasks}
+          />
+
+          <IntegrationReferenceCard
+            tone="microsoft-todo"
+            logo="✓"
+            icon={ClipboardCheck}
+            title="Microsoft To Do"
+            description="Synchronizuj listy zadań i zadania."
+            connected={microsoftTodoConnected}
+            statusText={microsoftTodoConnected ? 'Połączone' : 'Niepołączone'}
+            metaText={
+              microsoftTodoConnected ? 'Ostatnia synchronizacja: dzisiaj' : 'Brak połączenia'
+            }
+            bodyTitle={
+              microsoftTodoConnected
+                ? 'Lista zadań jest podłączona.'
+                : 'Połącz swoje konto Microsoft, aby wyświetlać listy i zadania.'
+            }
+            bodyCopy=""
+            primaryLabel={microsoftTodoConnected ? 'Połączono' : 'Połącz'}
+            primaryIcon={microsoftTodoConnected ? Check : Link2}
+            secondaryLabel="Instrukcja konfiguracji"
+            secondaryIcon={ExternalLink}
+            onPrimary={connectMicrosoftTasks}
+            onSecondary={connectMicrosoftTasks}
+            primaryDisabled={!microsoftEnabled}
+            secondaryDisabled={!microsoftEnabled}
+          />
+        </div>
+      </section>
+
+      <section
+        className="integration-reference-info-strip"
+        aria-label="Informacje o synchronizacji"
+      >
+        <div>
+          <span aria-hidden="true">
+            <RotateCw size={16} strokeWidth={2.2} />
+          </span>
+          <strong>Dwukierunkowa synchronizacja</strong>
+          <p>Zmiany są synchronizowane w obie strony.</p>
+        </div>
+        <div>
+          <span aria-hidden="true">
+            <ShieldCheck size={16} strokeWidth={2.2} />
+          </span>
+          <strong>Bezpieczne połączenie</strong>
+          <p>Twoje dane są szyfrowane i bezpieczne.</p>
+        </div>
+        <div>
+          <span aria-hidden="true">
+            <Settings2 size={16} strokeWidth={2.2} />
+          </span>
+          <strong>Kontrola danych</strong>
+          <p>W każdej chwili możesz odłączyć integrację.</p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ChangelogSection() {
   const [expandedVersion, setExpandedVersion] = useState<string | null>('v1.6.0');
@@ -1302,11 +1587,11 @@ export default function ProfileTab({
   };
 
   const categories = [
-    { id: 'account', label: 'Profil i Styl pracy', icon: '👤' },
-    { id: 'team', label: 'Zespół', icon: '👥' },
-    { id: 'tools', label: 'Narzędzia AI', icon: '🛠️' },
-    { id: 'review', label: 'Ustawienia wyciszone', icon: '📦' },
-    { id: 'errorlog', label: 'Dziennik błędów', icon: '🐛' },
+    { id: 'account', label: 'Profil i Styl pracy', icon: UserRound },
+    { id: 'team', label: 'Zespół', icon: UsersRound },
+    { id: 'tools', label: 'Narzędzia AI', icon: Wrench },
+    { id: 'review', label: 'Ustawienia wyciszone', icon: PackageCheck },
+    { id: 'errorlog', label: 'Dziennik błędów', icon: Bug },
   ];
 
   return (
@@ -1314,7 +1599,7 @@ export default function ProfileTab({
       <aside className="profile-sidebar">
         <div className="profile-sidebar-header">
           <div className="eyebrow">Ustawienia</div>
-          <h3>Twoje konto</h3>
+          <h3>Moje konto</h3>
         </div>
         <nav className="profile-nav">
           {categories.map((cat) => (
@@ -1323,7 +1608,9 @@ export default function ProfileTab({
               className={`profile-nav-btn ${activeCategory === cat.id ? 'active' : ''}`}
               onClick={() => setActiveCategory(cat.id)}
             >
-              <span className="profile-nav-icon">{cat.icon}</span>
+              <span className="profile-nav-icon">
+                <cat.icon size={16} strokeWidth={2.1} />
+              </span>
               <span className="profile-nav-label">{cat.label}</span>
             </button>
           ))}
@@ -1533,160 +1820,26 @@ export default function ProfileTab({
         )}
 
         {activeCategory === 'review' && (
-          <div className="profile-category-view">
-            <div className="profile-grid">
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Calendar</div>
-                    <h2>Google Calendar</h2>
-                  </div>
-                </div>
-                <div className="integration-card">
-                  <p>{integrationStatusLabel(googleCalendarStatus, googleCalendarEventsCount)}</p>
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="primary-button"
-                      onClick={connectGoogleCalendar}
-                    >
-                      Połącz
-                    </button>
-                    <button type="button" className="ghost-button" onClick={refreshGoogleCalendar}>
-                      Sync
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Calendar</div>
-                    <h2>Outlook Calendar</h2>
-                  </div>
-                </div>
-                <div className="integration-card">
-                  <p>
-                    {integrationStatusLabel(microsoftCalendarStatus, outlookCalendarEventsCount)}
-                  </p>
-                  <div className="button-row">
-                    <button
-                      type="button"
-                      className="primary-button"
-                      onClick={connectMicrosoftCalendar}
-                      disabled={!microsoftEnabled}
-                    >
-                      Połącz
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={disconnectMicrosoftCalendar}
-                    >
-                      Rozłącz
-                    </button>
-                  </div>
-                  {!microsoftEnabled && (
-                    <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
-                      Microsoft integration not configured. Set VITE_MICROSOFT_CLIENT_ID in .env
-                    </p>
-                  )}
-                </div>
-              </section>
-
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Tasks</div>
-                    <h2>Google Tasks</h2>
-                  </div>
-                </div>
-                <div className="integration-card">
-                  <div style={{ marginBottom: '12px' }}>
-                    <Select
-                      value={selectedGoogleTaskListId || ''}
-                      onChange={(e) => onSelectGoogleTaskList?.(e.target.value)}
-                    >
-                      <option value="">Wybierz listę...</option>
-                      {googleTaskLists.map((l: any) => (
-                        <option key={l.id} value={l.id}>
-                          {l.title}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="button-row profile-button-row-top">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={onConnectGoogleTasks}
-                    >
-                      Połącz
-                    </button>
-                    <button type="button" className="ghost-button" onClick={onRefreshGoogleTasks}>
-                      Sync
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section className="panel">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Tasks</div>
-                    <h2>Microsoft To Do</h2>
-                  </div>
-                </div>
-                <div className="integration-card">
-                  <p>{microsoftTasksStatus === 'connected' ? 'Połączono' : microsoftTasksStatus}</p>
-                  <div style={{ marginBottom: '12px' }}>
-                    <Select
-                      value={selectedMicrosoftTaskListId || ''}
-                      onChange={(e) => onSelectMicrosoftTaskList?.(e.target.value)}
-                    >
-                      <option value="">Wybierz listę...</option>
-                      {microsoftTaskLists.map((l: any) => (
-                        <option key={l.id} value={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="button-row profile-button-row-top">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={connectMicrosoftTasks}
-                      disabled={!microsoftEnabled}
-                    >
-                      Połącz
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={disconnectMicrosoftTasks}
-                    >
-                      Rozłącz
-                    </button>
-                  </div>
-                  {!microsoftEnabled && (
-                    <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
-                      Microsoft integration not configured. Set VITE_MICROSOFT_CLIENT_ID in .env
-                    </p>
-                  )}
-                </div>
-              </section>
-
-              <WorkspaceBackupSection />
-            </div>
-          </div>
+          <IntegrationsReferenceView
+            googleCalendarStatus={googleCalendarStatus}
+            googleCalendarEventsCount={googleCalendarEventsCount}
+            refreshGoogleCalendar={refreshGoogleCalendar}
+            connectGoogleCalendar={connectGoogleCalendar}
+            microsoftCalendarStatus={microsoftCalendarStatus}
+            outlookCalendarEventsCount={outlookCalendarEventsCount}
+            connectMicrosoftCalendar={connectMicrosoftCalendar}
+            microsoftEnabled={microsoftEnabled}
+            microsoftTasksStatus={microsoftTasksStatus}
+            connectMicrosoftTasks={connectMicrosoftTasks}
+            onConnectGoogleTasks={onConnectGoogleTasks}
+            onRefreshGoogleTasks={onRefreshGoogleTasks}
+          />
         )}
 
         {activeCategory === 'tools' && (
           <div className="profile-category-view">
             <div className="profile-grid">
-              <VoiceProfilesSection peopleProfiles={peopleProfiles} />
+              <VoiceProfilesSection peopleProfiles={peopleProfiles} sessionToken={sessionToken} />
               <VocabularyManagerSection
                 vocabulary={vocabulary}
                 onUpdateVocabulary={onUpdateVocabulary}
@@ -1705,7 +1858,7 @@ export default function ProfileTab({
           </div>
         )}
 
-        {activeCategory === 'review' && (
+        {activeCategory === 'appearance' && (
           <div className="profile-category-view profile-category-view-spaced">
             <div className="profile-grid">
               <section className="panel profile-grid-span-two">

@@ -22,6 +22,7 @@ const shouldStartWebServer = !skipWebServer && isLocalPlaywrightTarget(baseURL);
 
 export default defineConfig({
   testDir: './tests/e2e',
+  outputDir: './test-results/playwright',
   fullyParallel: true,
 
   // Retry failed tests in CI to handle flakiness

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Tooltip } from '../shared/Tooltip';
+import { VoiceBobrEmptyState } from './brand/VoiceBobrBrand';
 import './skeleton.css';
 
 export function SkeletonBanner({ height = 120, className = '' }) {
@@ -43,13 +43,14 @@ export function ErrorState({ error, onRetry, className = '' }: any) {
 }
 
 export function EmptyState({
-  icon = '📄',
+  icon,
   title = 'Brak danych',
   message = '',
   action,
   actionText = 'Utwórz',
   actionTooltip,
   className = '',
+  mascotContext = 'default',
 }: any) {
   const actionNode =
     typeof action === 'function' ? (
@@ -68,9 +69,22 @@ export function EmptyState({
       <div className="ff-state-action-slot">{action}</div>
     ) : null;
 
+  if (icon === undefined || icon === 'voicebobr') {
+    return (
+      <div className={`ff-state-box empty-state empty-state--voicebobr ${className}`}>
+        <VoiceBobrEmptyState
+          action={actionNode}
+          context={mascotContext}
+          message={message}
+          title={title}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`ff-state-box empty-state ${className}`}>
-      <div className="ff-state-icon">{icon}</div>
+      {icon !== null ? <div className="ff-state-icon">{icon}</div> : null}
       <div className="ff-state-title">{title}</div>
       {message && <p className="ff-state-desc">{message}</p>}
       {actionNode}

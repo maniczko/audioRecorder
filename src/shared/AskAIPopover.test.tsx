@@ -34,8 +34,8 @@ describe('AskAIPopover', () => {
   it('renders the popover component', () => {
     render(<AskAIPopover currentWorkspace={mockWorkspace} onClose={mockOnClose} />);
 
-    expect(screen.getByText('AI RAG Memory')).toBeInTheDocument();
-    expect(screen.getByText('Zapytaj o Archiwum')).toBeInTheDocument();
+    expect(screen.getByText('VoiceBóbr summary')).toBeInTheDocument();
+    expect(screen.getByText('Zapytaj o archiwum')).toBeInTheDocument();
   });
 
   it('displays description text', () => {
@@ -306,7 +306,7 @@ describe('AskAIPopover', () => {
   it('renders with null workspace gracefully', () => {
     render(<AskAIPopover currentWorkspace={null as any} onClose={mockOnClose} />);
 
-    expect(screen.getByText('AI RAG Memory')).toBeInTheDocument();
+    expect(screen.getByText('VoiceBóbr summary')).toBeInTheDocument();
   });
 
   it('handles undefined answer in response', async () => {
@@ -437,6 +437,6 @@ describe('AskAIPopover', () => {
   it('handles empty workspace object', () => {
     render(<AskAIPopover currentWorkspace={{}} onClose={mockOnClose} />);
 
-    expect(screen.getByText('AI RAG Memory')).toBeInTheDocument();
+    expect(screen.getByText('VoiceBóbr summary')).toBeInTheDocument();
   });
 });

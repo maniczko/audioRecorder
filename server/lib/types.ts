@@ -171,6 +171,7 @@ export interface TranscriptionResult {
 export interface WorkspaceState {
   meetings: any[];
   manualTasks: any[];
+  manualPeople?: any[];
   taskState: any;
   taskBoards: any;
   calendarMeta: any;

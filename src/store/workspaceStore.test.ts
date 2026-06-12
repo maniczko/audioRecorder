@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.unmock('./workspaceStore');
 
-import { useWorkspaceStore } from './workspaceStore';
+import { isWorkspaceSessionUsable, useWorkspaceStore } from './workspaceStore';
 
 const mocks = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
@@ -30,6 +30,10 @@ vi.mock('../services/stateService', () => ({
 vi.mock('../lib/sessionStorage', () => ({
   clearPersistedSession: mocks.clearPersistedSession,
   syncLegacySessionFromWorkspaceSession: mocks.syncLegacySession,
+}));
+
+vi.mock('../services/config', () => ({
+  APP_DATA_PROVIDER: 'remote',
 }));
 
 describe('workspaceStore', () => {
@@ -91,11 +95,40 @@ describe('workspaceStore', () => {
   });
 
   test('logout clears session and persisted session snapshot', () => {
-    useWorkspaceStore.setState({ session: { userId: 'u1', workspaceId: 'ws1', token: 'token' } });
+    useWorkspaceStore.setState({
+      users: [{ id: 'u1' }],
+      workspaces: [{ id: 'ws1' }],
+      session: { userId: 'u1', workspaceId: 'ws1', token: 'token' },
+    });
 
     useWorkspaceStore.getState().logout();
 
     expect(mocks.clearPersistedSession).toHaveBeenCalled();
     expect(useWorkspaceStore.getState().session).toBeNull();
+    expect(useWorkspaceStore.getState().users).toEqual([]);
+    expect(useWorkspaceStore.getState().workspaces).toEqual([]);
+  });
+
+  test('treats a persisted remote session without token as unusable', () => {
+    expect(isWorkspaceSessionUsable({ userId: 'u1', workspaceId: 'ws1', token: '' })).toBe(false);
+    expect(isWorkspaceSessionUsable({ userId: 'u1', workspaceId: 'ws1', token: 'token' })).toBe(
+      true
+    );
+  });
+
+  test('bootstrap clears remote session data when token is missing', async () => {
+    useWorkspaceStore.setState({
+      users: [{ id: 'u1' }],
+      workspaces: [{ id: 'ws1' }],
+      session: { userId: 'u1', workspaceId: 'ws1', token: '' },
+    });
+
+    await useWorkspaceStore.getState().bootstrapSession();
+
+    expect(mocks.clearPersistedSession).toHaveBeenCalled();
+    expect(mocks.bootstrap).not.toHaveBeenCalled();
+    expect(useWorkspaceStore.getState().session).toBeNull();
+    expect(useWorkspaceStore.getState().users).toEqual([]);
+    expect(useWorkspaceStore.getState().workspaces).toEqual([]);
   });
 });

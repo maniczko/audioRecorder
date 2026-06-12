@@ -316,270 +316,89 @@ describe('ProfileTab', () => {
     });
   });
 
-  describe('Google Calendar Integration', () => {
-    it('shows Google Calendar section', async () => {
-      render(<ProfileTab {...baseProps} />);
+  describe('Integrations reference view', () => {
+    async function openIntegrationsView(props = {}) {
+      render(<ProfileTab {...baseProps} {...props} />);
+      await userEvent.click(screen.getByText('Ustawienia wyciszone'));
+    }
 
-      // Google Calendar is in "Ustawienia wyciszone" (review) category
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
+    function getIntegrationCard(title: string) {
+      const heading = screen.getByRole('heading', { name: title });
+      const card = heading.closest('article');
+      expect(card).toBeTruthy();
+      return card as HTMLElement;
+    }
 
-      expect(
-        screen.getByText((content) => content.includes('Google Calendar'))
-      ).toBeInTheDocument();
+    it('renders the screenshot-first integrations grid and info strip', async () => {
+      await openIntegrationsView();
+
+      expect(screen.getByRole('heading', { name: 'Ustawienia wyciszone' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Moje konto' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Integracje' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Google Calendar' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Outlook Calendar' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Google Tasks' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Microsoft To Do' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Informacje o synchronizacji')).toBeInTheDocument();
     });
 
-    it('calls connectGoogleCalendar when connect button clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
+    it('calls connectGoogleCalendar when disconnected Google Calendar card is connected', async () => {
+      await openIntegrationsView({ googleCalendarStatus: 'idle', googleCalendarEventsCount: 0 });
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      // Calendar "Połącz" is first; Tasks "Połącz" is second
-      const connectBtns = screen.getAllByText('Połącz');
-      await userEvent.click(connectBtns[0]);
+      const card = getIntegrationCard('Google Calendar');
+      await userEvent.click(within(card).getByRole('button', { name: 'Połącz' }));
 
       expect(baseProps.connectGoogleCalendar).toHaveBeenCalled();
     });
 
-    it('calls refreshGoogleCalendar when sync button clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
+    it('calls refreshGoogleCalendar from connected Google Calendar card', async () => {
+      await openIntegrationsView();
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      // Calendar "Sync" is first; Tasks "Sync" is second
-      const syncBtns = screen.getAllByText('Sync');
-      await userEvent.click(syncBtns[0]);
+      const card = getIntegrationCard('Google Calendar');
+      await userEvent.click(within(card).getByRole('button', { name: 'Synchronizuj teraz' }));
 
       expect(baseProps.refreshGoogleCalendar).toHaveBeenCalled();
     });
 
-    it('shows events count when connected', async () => {
-      render(<ProfileTab {...baseProps} />);
+    it('shows events count when Google Calendar is connected', async () => {
+      await openIntegrationsView();
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText((content) => content.includes('wydarzen'))).toBeInTheDocument();
+      expect(screen.getByText('3 wydarzenia w kalendarzu')).toBeInTheDocument();
+      expect(screen.getByText(/Ostatnia synchronizacja/i)).toBeInTheDocument();
     });
 
-    it('shows not connected message when calendar not connected', async () => {
-      render(
-        <ProfileTab {...baseProps} googleCalendarStatus="idle" googleCalendarEventsCount={0} />
-      );
+    it('shows not connected message when calendar is not connected', async () => {
+      await openIntegrationsView({ googleCalendarStatus: 'idle', googleCalendarEventsCount: 0 });
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(
-        screen.getAllByText((content) => content.includes('Kalendarz')).length
-      ).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Google Tasks Integration', () => {
-    it('shows Google Tasks section', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText((content) => content.includes('Google Tasks'))).toBeInTheDocument();
+      const card = getIntegrationCard('Google Calendar');
+      expect(within(card).getByText('Niepołączone')).toBeInTheDocument();
+      expect(within(card).getByText('Kalendarz nie jest jeszcze podłączony.')).toBeInTheDocument();
     });
 
-    it('renders task list selector with options', async () => {
-      render(<ProfileTab {...baseProps} />);
+    it('calls onConnectGoogleTasks from Google Tasks card', async () => {
+      await openIntegrationsView();
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      const select = screen.getAllByRole('combobox')[0];
-      expect(select).toBeInTheDocument();
-      expect(screen.getByText('My Tasks')).toBeInTheDocument();
-      expect(screen.getByText('Work')).toBeInTheDocument();
-    });
-
-    it('calls onSelectGoogleTaskList when changing selection', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      const select = screen.getAllByRole('combobox')[0];
-      await userEvent.selectOptions(select, 'list2');
-
-      expect(baseProps.onSelectGoogleTaskList).toHaveBeenCalledWith('list2');
-    });
-
-    it('calls onConnectGoogleTasks when connect clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      // Tasks "Połącz": 0=Google Calendar, 1=Outlook Calendar, 2=Google Tasks, 3=Microsoft Tasks
-      const connectBtns = screen.getAllByText('Połącz');
-      const googleTasksConnectBtn = connectBtns.find((btn, i) => i === 2);
-      await userEvent.click(googleTasksConnectBtn!);
+      const card = getIntegrationCard('Google Tasks');
+      await userEvent.click(within(card).getByRole('button', { name: 'Połącz' }));
 
       expect(baseProps.onConnectGoogleTasks).toHaveBeenCalled();
     });
 
-    it('calls onRefreshGoogleTasks when sync clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
+    it('handles empty google task lists without rendering a legacy selector', async () => {
+      await openIntegrationsView({ googleTaskLists: [] });
 
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
+      expect(screen.getByRole('heading', { name: 'Google Tasks' })).toBeInTheDocument();
+      expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    });
 
-      // Tasks "Sync" is second (Calendar is first)
-      const syncBtns = screen.getAllByText('Sync');
-      await userEvent.click(syncBtns[1]);
+    it('does not expose legacy appearance or changelog sections in integrations category', async () => {
+      await openIntegrationsView();
 
-      expect(baseProps.onRefreshGoogleTasks).toHaveBeenCalled();
+      expect(screen.queryByText('Tryb interfejsu')).not.toBeInTheDocument();
+      expect(screen.queryByText('Changelog')).not.toBeInTheDocument();
+      expect(screen.queryByText('Połączenie API')).not.toBeInTheDocument();
     });
   });
-
-  describe('Workspace Backup Section', () => {
-    it('shows workspace backup section', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getAllByText((content) => content.includes('Eksport')).length).toBeGreaterThan(
-        0
-      );
-    });
-
-    it('shows export button', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText((content) => content.includes('Eksportuj'))).toBeInTheDocument();
-    });
-
-    it('shows import button', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText((content) => content.includes('Importuj'))).toBeInTheDocument();
-    });
-
-    it('shows apply import button (disabled when no import pending)', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      const applyBtn = screen.getByText('Zastosuj import');
-      expect(applyBtn).toBeInTheDocument();
-      expect(applyBtn).toBeDisabled();
-    });
-  });
-
-  describe('Theme & Layout Settings', () => {
-    it('shows the two premium appearance choices in review category', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Ciemny klasyczny')).toBeInTheDocument();
-      expect(screen.getByText('Jasny premium')).toBeInTheDocument();
-    });
-
-    it('calls onSetTheme fallback when appearance card is clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      const darkBtn = screen.getByText('Ciemny klasyczny');
-      await userEvent.click(darkBtn);
-
-      expect(baseProps.onSetTheme).toHaveBeenCalledWith('dark');
-    });
-
-    it('does not expose legacy theme or density buttons', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.queryByText('Default')).not.toBeInTheDocument();
-      expect(screen.queryByText('Compact')).not.toBeInTheDocument();
-      expect(screen.queryByText('Flat')).not.toBeInTheDocument();
-    });
-  });
-  describe('API Status Section', () => {
-    it('shows API connection status', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Połączenie API')).toBeInTheDocument();
-      expect(screen.getByText(/localhost:3000/i)).toBeInTheDocument();
-    });
-
-    it('shows user role', async () => {
-      render(<ProfileTab {...baseProps} workspaceRole="owner" />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('owner')).toBeInTheDocument();
-    });
-
-    it('shows online status', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Online')).toBeInTheDocument();
-    });
-  });
-
-  describe('Changelog Section', () => {
-    it('shows changelog section', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getByText('Changelog')).toBeInTheDocument();
-    });
-
-    it('shows changelog versions', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      expect(screen.getAllByText(/v1\./i)[0]).toBeInTheDocument();
-    });
-
-    it('expands changelog version when clicked', async () => {
-      render(<ProfileTab {...baseProps} />);
-
-      const reviewBtn = screen.getByText('Ustawienia wyciszone');
-      await userEvent.click(reviewBtn);
-
-      const versionHeaders = screen.getAllByText(/v1\./i);
-      await userEvent.click(versionHeaders[0]);
-
-      // Changes list should appear
-      const changesList = screen.getByRole('list');
-      expect(changesList).toBeInTheDocument();
-    });
-  });
-
   describe('Accessibility', () => {
     it('has proper labels for form fields', () => {
       render(<ProfileTab {...baseProps} />);
@@ -630,7 +449,7 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getAllByText('Wybierz listę...').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     });
 
     it('handles null optional props', () => {
@@ -685,8 +504,8 @@ describe('ProfileTab', () => {
       const reviewBtn = screen.getByText('Ustawienia wyciszone');
       await userEvent.click(reviewBtn);
 
-      expect(screen.getByText('Tryb interfejsu')).toBeInTheDocument();
-      expect(screen.getByText('Changelog')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Integracje' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Google Calendar' })).toBeInTheDocument();
     });
 
     it('returns to account category from tools', async () => {

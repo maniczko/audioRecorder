@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { beforeEach } from 'vitest';
 import PeopleTab from './PeopleTab';
 
 describe('PeopleTab', () => {
@@ -38,6 +39,21 @@ describe('PeopleTab', () => {
       openTasks: 0,
       completedTasks: 5,
     },
+    {
+      id: 'manual_barbara',
+      name: 'Barbara Zynda',
+      summary: 'Manual person',
+      meetings: [],
+      tasks: [],
+      traits: [],
+      tags: [],
+      needs: [],
+      concerns: [],
+      outputs: [],
+      openTasks: 0,
+      completedTasks: 0,
+      manual: true,
+    },
   ];
 
   const defaultProps = {
@@ -47,10 +63,17 @@ describe('PeopleTab', () => {
     onCreateTask: vi.fn(),
     onCreateMeeting: vi.fn(),
     onUpdatePersonNotes: vi.fn(),
+    onAddPerson: vi.fn(),
+    onRenamePerson: vi.fn(),
+    onDeletePerson: vi.fn(),
     onAnalyzePersonProfile: vi.fn(),
     externalSelectedPersonId: '',
     onPersonSelectionHandled: vi.fn(),
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   test('renders profile sidebar and selected person details', async () => {
     render(<PeopleTab {...defaultProps} />);
@@ -98,6 +121,50 @@ describe('PeopleTab', () => {
         needs: ['Clear goals', 'Quiet space'],
       })
     );
+  });
+
+  test('adds a manual person from sidebar form', () => {
+    defaultProps.onAddPerson.mockReturnValueOnce({ id: 'manual_ewa', name: 'Ewa Test' });
+    render(<PeopleTab {...defaultProps} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/Barbara Zynda/i), {
+      target: { value: 'Ewa Test' },
+    });
+    fireEvent.submit(screen.getByPlaceholderText(/Barbara Zynda/i).closest('form')!);
+
+    expect(defaultProps.onAddPerson).toHaveBeenCalledWith({ name: 'Ewa Test' });
+  });
+
+  test('renames selected person from hero editor', () => {
+    defaultProps.onRenamePerson.mockReturnValueOnce({ id: 'person_1', name: 'Anna Premium' });
+    render(<PeopleTab {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Edytuj profil/i }));
+    fireEvent.change(screen.getByLabelText('Nazwa osoby'), {
+      target: { value: 'Anna Premium' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz' }));
+
+    expect(defaultProps.onRenamePerson).toHaveBeenCalledWith('person_1', 'Anna Premium');
+  });
+
+  test('renders reference profile hero metrics', () => {
+    render(<PeopleTab {...defaultProps} />);
+
+    expect(screen.getByRole('button', { name: /Spotkania\s*1/i })).toBeInTheDocument();
+    expect(screen.getByText('Ostatnia aktywność')).toBeInTheDocument();
+    expect(screen.getAllByText('Profil AI').length).toBeGreaterThan(0);
+    expect(screen.getByText('aktywny')).toBeInTheDocument();
+  });
+
+  test('allows deleting manual people', () => {
+    render(<PeopleTab {...defaultProps} />);
+    const barbaraButton = screen.getByText('Barbara Zynda').closest('button');
+    fireEvent.click(barbaraButton);
+
+    fireEvent.click(screen.getByRole('button', { name: /Usun osobe/i }));
+
+    expect(defaultProps.onDeletePerson).toHaveBeenCalledWith('manual_barbara');
   });
 
   test('calls onOpenMeeting when history item is clicked', () => {

@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import TasksSidebar from './TasksSidebar';
 
 function createBaseProps(overrides: Record<string, any> = {}) {
@@ -42,65 +43,59 @@ function createBaseProps(overrides: Record<string, any> = {}) {
 }
 
 describe('TasksSidebar', () => {
-  it('renders smart and workspace lists and calls list select callback', () => {
+  it('renders task, status and custom-list sections and calls list select callback', () => {
     const setSelectedListId = vi.fn();
     render(<TasksSidebar {...createBaseProps({ setSelectedListId })} />);
 
+    expect(screen.getByText('ZADANIA')).toBeInTheDocument();
+    expect(screen.getByText('STATUSY')).toBeInTheDocument();
+    expect(screen.getByText('LISTY WŁASNE')).toBeInTheDocument();
     expect(screen.getByText('Important')).toBeInTheDocument();
     expect(screen.getByText('Todo')).toBeInTheDocument();
+    expect(screen.queryByText('Zapytaj AI')).not.toBeInTheDocument();
 
     const allButtonText = screen.getByText('All');
     fireEvent.click(allButtonText.closest('button') as HTMLButtonElement);
     expect(setSelectedListId).toHaveBeenCalledWith('smart:all');
   });
 
-  it('does not render team block when there is only one workspace member', () => {
-    render(
-      <TasksSidebar {...createBaseProps({ workspaceMembers: [{ id: 'u1', name: 'One' }] })} />
-    );
-    expect(screen.queryByText('One')).not.toBeInTheDocument();
-  });
-
-  it('renders and handles team block when workspace has multiple members', () => {
-    const setOwnerFilter = vi.fn();
+  it('hides zero counters while keeping non-zero badges visible', () => {
     render(
       <TasksSidebar
         {...createBaseProps({
-          workspaceMembers: [
-            { id: 'u1', name: 'Alice' },
-            { id: 'u2', name: 'Bob' },
-          ],
-          setOwnerFilter,
+          sidebarLists: {
+            baseLists: [
+              { id: 'smart:today', label: 'Dziś', icon: 'today', count: 0 },
+              { id: 'smart:all', label: 'Wszystkie', icon: 'all', count: 3 },
+            ],
+            workspaceLists: [
+              { id: 'column:todo', label: 'Do zrobienia', icon: 'todo', count: 0 },
+              { id: 'column:done', label: 'Ukończone', icon: 'completed', count: 2 },
+            ],
+            customGroups: [],
+          },
         })}
       />
     );
 
-    const bob = screen.getByRole('button', { name: /Bob/ });
-    fireEvent.click(bob);
-
-    expect(setOwnerFilter).toHaveBeenCalledWith('Bob');
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('persists collapsed state when toggling group', () => {
-    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-    render(<TasksSidebar {...createBaseProps()} />);
+  it('opens custom list manager from list section', () => {
+    const setShowColumnManager = vi.fn();
+    render(<TasksSidebar {...createBaseProps({ setShowColumnManager })} />);
 
-    const smartHeader = screen.getByRole('button', { name: /Inteligentne listy/i });
-    fireEvent.click(smartHeader);
+    fireEvent.click(screen.getByRole('button', { name: /Utwórz listę/i }));
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      'voicebobr:sidebar-collapsed',
-      expect.stringContaining('"smart":true')
-    );
-    expect(screen.queryByText('Important')).not.toBeInTheDocument();
+    expect(setShowColumnManager).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it('renders conflict card and focuses conflict task', () => {
-    const onFocusConflictTask = vi.fn();
+  it('does not render conflict or AI cards in the task filter sidebar', () => {
     render(
       <TasksSidebar
         {...createBaseProps({
-          onFocusConflictTask,
           conflictTasks: [
             {
               id: 'conflict-1',
@@ -112,10 +107,8 @@ describe('TasksSidebar', () => {
       />
     );
 
-    expect(screen.getByText('1 zmian do decyzji')).toBeInTheDocument();
-    expect(screen.getByText('Conflict task')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Conflict task/i }));
-    expect(onFocusConflictTask).toHaveBeenCalledWith('conflict-1');
+    expect(screen.queryByText('Conflict task')).not.toBeInTheDocument();
+    expect(screen.queryByText('Zapytaj AI')).not.toBeInTheDocument();
+    expect(screen.queryByText(/zmian do decyzji/i)).not.toBeInTheDocument();
   });
 });

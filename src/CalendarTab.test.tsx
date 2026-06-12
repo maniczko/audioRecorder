@@ -127,6 +127,27 @@ describe('CalendarTab', () => {
     expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
+  test('renders polished Polish calendar labels', () => {
+    renderCalendarTab({ userMeetings: [], calendarTasks: [], googleCalendarEvents: [] });
+
+    expect(screen.getByRole('button', { name: 'Dzień' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tydzień' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: 'Miesiąc' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Harmonogram' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /\+ Dodaj spotkanie/i })).toBeInTheDocument();
+    expect(screen.getByText('Nadchodzące')).toBeInTheDocument();
+    expect(screen.getByText('Legenda')).toBeInTheDocument();
+    expect(screen.getByText('Brak nadchodzących pozycji')).toBeInTheDocument();
+    expect(
+      screen.getByText('Spotkania, nagrania i zadania z terminem pojawią się tutaj.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Brak spotkań')).not.toBeInTheDocument();
+    expect(screen.queryByText('Brak terminów')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Spotkanie').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Nagranie').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Zadanie z terminem').length).toBeGreaterThanOrEqual(1);
+  });
+
   test('renders google calendar events', () => {
     renderCalendarTab();
     const els = screen.getAllByText(/Google sync/i);
@@ -143,6 +164,45 @@ describe('CalendarTab', () => {
     expect(props.startNewMeetingDraft).toHaveBeenCalledTimes(1);
     expect(props.startNewMeetingDraft).toHaveBeenCalledWith({ startsAt: expect.any(String) });
     // The StudioBriefModal should now be rendered
-    expect(screen.getByText('Meeting brief')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Nowe spotkanie' })).toBeInTheDocument();
+  });
+
+  test('hides month cell add actions from the default week view and reveals overflow in month cells', () => {
+    const extraTasks = Array.from({ length: 4 }, (_, index) => ({
+      id: `task_extra_${index}`,
+      title: `Extra task ${index + 1}`,
+      dueDate: `2026-03-14T1${index}:00:00.000Z`,
+      completed: false,
+    }));
+    const { container } = renderCalendarTab({
+      calendarTasks: [
+        {
+          id: 'task_1',
+          title: 'Task A',
+          dueDate: '2026-03-14T12:00:00.000Z',
+          completed: false,
+        },
+        ...extraTasks,
+      ],
+    });
+
+    expect(container.querySelector('.calendar-grid')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Miesiąc' }));
+
+    expect(container.querySelector('.calendar-grid')).toBeInTheDocument();
+    expect(container.querySelectorAll('.calendar-day-add-btn').length).toBeGreaterThan(0);
+    expect(screen.getByText(/\+3 więcej/)).toBeInTheDocument();
+  });
+
+  test('renders chronological schedule view', () => {
+    renderCalendarTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Harmonogram' }));
+
+    expect(screen.getByRole('list', { name: 'Harmonogram wydarzeń' })).toBeInTheDocument();
+    expect(screen.getByText('Spotkanie zespolu')).toBeInTheDocument();
+    expect(screen.getByText('Task A')).toBeInTheDocument();
+    expect(screen.getByText('Google sync')).toBeInTheDocument();
   });
 });

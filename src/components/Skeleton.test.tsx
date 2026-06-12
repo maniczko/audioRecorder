@@ -1,12 +1,12 @@
-import { describe, test, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, test, vi } from 'vitest';
 import {
+  EmptyState,
+  ErrorState,
+  LoadingScreen,
   SkeletonBanner,
   SkeletonCard,
   SkeletonList,
-  ErrorState,
-  EmptyState,
-  LoadingScreen,
   StudioSkeleton,
 } from './Skeleton';
 
@@ -130,14 +130,15 @@ describe('ErrorState', () => {
 });
 
 describe('EmptyState', () => {
-  test('renders with default values', () => {
+  test('renders with VoiceBóbr mascot by default', () => {
     const { container } = render(<EmptyState />);
-    expect(container.querySelector('.ff-state-icon')?.textContent).toBe('📄');
-    expect(container.querySelector('.ff-state-title')?.textContent).toBe('Brak danych');
-    expect(container.querySelector('.ff-state-desc')).toBeNull();
+    expect(container.querySelector('.empty-state--voicebobr')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'VoiceBóbr assistant' })).toBeInTheDocument();
+    expect(screen.getByText('Brak danych')).toBeInTheDocument();
+    expect(container.querySelector('.ff-state-icon')).toBeNull();
   });
 
-  test('renders custom icon, title, and message', () => {
+  test('renders custom icon, title, and message when icon is provided', () => {
     render(
       <EmptyState icon="🎤" title="No recordings" message="Start recording to see items here" />
     );
@@ -165,7 +166,6 @@ describe('EmptyState', () => {
 
   test('wraps action in Tooltip when actionTooltip provided', () => {
     render(<EmptyState actionText="Delete" action={vi.fn()} actionTooltip="Remove all items" />);
-    // Tooltip renders children when content is present; check tooltip wrapper exists
     const btn = screen.getByRole('button', { name: 'Delete' });
     expect(btn).toBeInTheDocument();
   });

@@ -38,6 +38,24 @@ describe('mobile responsive CSS contracts', () => {
     expect(css).toContain('transform: translateY(-1px) rotate(42deg)');
   });
 
+  it('keeps the desktop task create/detail aside in a real third column', () => {
+    const css = readCss('../tasks/TasksWorkspaceViewStyles.css');
+
+    expect(css).toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo.ui-split-pane[data-columns='three']"
+    );
+    expect(css).toContain('minmax(680px, 1fr) minmax(360px, 420px)');
+  });
+
+  it('keeps the screenshot-first task tablet layout compact', () => {
+    const css = readCss('../tasks/TasksWorkspaceViewStyles.css');
+
+    expect(css).toContain('@media (max-width: 920px) and (min-width: 721px)');
+    expect(css).toContain('grid-template-columns: 78px minmax(0, 1fr) !important');
+    expect(css).toContain('.tasks-layout.ms-todo .todo-workspace-actions');
+    expect(css).toContain('.tasks-layout.ms-todo .todo-primary-toolbar');
+  });
+
   it('turns recordings tables into labeled mobile cards', () => {
     const css = readCss('./recordings.css');
 

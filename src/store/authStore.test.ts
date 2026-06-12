@@ -93,6 +93,24 @@ describe('authStore', () => {
     expect(useAuthStore.getState().authError).not.toMatch(/ENOTFOUND|postgres|tenant/i);
   });
 
+  test('submitAuth rejects remote auth responses without backend token', async () => {
+    (mocks as any).mode = 'remote';
+    mocks.login.mockResolvedValue({
+      user: { id: 'u1', email: 'a@example.com' },
+      users: [{ id: 'u1', email: 'a@example.com' }],
+      workspaces: [{ id: 'ws1', memberIds: ['u1'] }],
+      workspaceId: 'ws1',
+    });
+    useAuthStore.getState().setAuthMode('login');
+    useAuthStore.getState().setAuthDraft({ email: 'a@example.com', password: 'pass123' });
+
+    await useAuthStore.getState().submitAuth();
+
+    expect(useWorkspaceStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().authError).toContain('tokenu backendu');
+    (mocks as any).mode = undefined;
+  });
+
   test('setAuthDraft merges partial updates without dropping existing fields', () => {
     useAuthStore.getState().setAuthDraft({ email: 'a@example.com' });
     useAuthStore.getState().setAuthDraft({ name: 'Alice' });

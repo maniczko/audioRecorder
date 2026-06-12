@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AiTaskSuggestionsPanel from './AiTaskSuggestionsPanel';
 
 const suggestTasksFromTranscriptMock = vi.hoisted(() => vi.fn());
@@ -48,11 +48,10 @@ describe('AiTaskSuggestionsPanel', () => {
 
     await screen.findByText('Dopiąć plan wdrożenia');
 
-    expect(screen.getByText('AI — zadania')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: 'Sugestie zadań ze spotkania' })
-    ).toBeInTheDocument();
+    expect(screen.getByText('VoiceBóbr suggests')).toBeInTheDocument();
+    expect(screen.getByText('Sugestie zadań ze spotkania')).toBeInTheDocument();
     expect(screen.getByText('Średni')).toBeInTheDocument();
+    expect(screen.getByText('VoiceBóbr')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(
       /\u0139|\u0102|\u00e2\u20ac\u201d|\u00e2\u20ac|\u00c4\u2122|\u00c4\u2021/
     );
@@ -74,7 +73,7 @@ describe('AiTaskSuggestionsPanel', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          'Brak nowych sugestii — wszystkie zatwierdzone lub brak zadań w transkrypcji.'
+          'Brak nowych sugestii - wszystkie zatwierdzone lub brak zadań w transkrypcji.'
         )
       ).toBeInTheDocument();
     });
@@ -100,7 +99,7 @@ describe('AiTaskSuggestionsPanel', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Generuj sugestie AI' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Generuj sugestie' })).toBeDisabled();
     await waitFor(() => {
       expect(suggestTasksFromTranscriptMock).not.toHaveBeenCalled();
     });
@@ -123,7 +122,7 @@ describe('AiTaskSuggestionsPanel', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Generuj sugestie AI' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Generuj sugestie' })).toBeDisabled();
 
     rerender(
       <AiTaskSuggestionsPanel
@@ -134,7 +133,7 @@ describe('AiTaskSuggestionsPanel', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Generuj sugestie AI' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Generuj sugestie' })).toBeEnabled();
     });
   });
 

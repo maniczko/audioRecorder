@@ -7,6 +7,7 @@
 
 .ui-input {
   width: 100%;
+  min-height: 44px;
   border: 1px solid var(--surface-stroke);
   border-radius: var(--radius-md);
   background: var(--surface-panel-muted);

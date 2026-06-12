@@ -34,6 +34,7 @@ export function GoogleProvider({ calendarMonth, children }) {
   const google = useGoogleIntegrations({
     currentUser: workspace.currentUser,
     currentWorkspaceId: workspace.currentWorkspaceId,
+    sessionToken: workspace.session?.token || '',
     calendarMonth,
     taskColumns: meetings.taskColumns,
     meetingTasks: meetings.meetingTasks,

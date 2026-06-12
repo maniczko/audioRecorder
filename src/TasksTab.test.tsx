@@ -1,10 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TasksTab from './TasksTab';
 import { ToastProvider } from './shared/Toast';
 
 function createDataTransfer() {
-  const store = {};
+  const store: Record<string, string> = {};
   return {
     dropEffect: 'move',
     effectAllowed: 'move',
@@ -110,7 +110,7 @@ describe('TasksTab', () => {
     );
   });
 
-  test('creates a task with the group from advanced fields', async () => {
+  test('creates a task with the modal create fields', async () => {
     const createdTask = {
       id: 'task_2',
       title: 'Nowe zadanie',
@@ -122,9 +122,9 @@ describe('TasksTab', () => {
       onCreateTask: vi.fn().mockReturnValue(createdTask),
     });
 
-    // Type in inline quick add input and press Enter
-    const quickAddInput = screen.getByPlaceholderText(/Dodaj zadanie/);
-    await userEvent.type(quickAddInput, 'Nowe zadanie{enter}');
+    await userEvent.click(screen.getByRole('button', { name: /Dodaj zadanie/i }));
+    const titleInput = await screen.findByPlaceholderText('Wpisz tytuł zadania...');
+    await userEvent.type(titleInput, 'Nowe zadanie{enter}');
 
     expect(props.onCreateTask).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Nowe zadanie' })
@@ -170,12 +170,13 @@ describe('TasksTab', () => {
       ],
     });
 
-    expect(screen.getByText(/(Completed|Zakończone)/i)).toBeInTheDocument();
-    expect(screen.getByText(/(Overdue|Zaległe)/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/(Completed|Zakończone|Ukończone|Zakonczone|Ukonczone)/i).length
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(/(Overdue|Zaległe|Zalegle)/i)).toBeInTheDocument();
   });
 
   test('pokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)', async () => {
-    // Toast DOM doesn't render under global fakeTimers — spy on useToast instead
     const toastModule = await import('./shared/Toast');
     const errorSpy = vi.fn();
     const spy = vi.spyOn(toastModule, 'useToast').mockReturnValue({
@@ -190,12 +191,23 @@ describe('TasksTab', () => {
     const onCreateTask = vi.fn().mockReturnValue(null);
     renderTasksTab({ defaultView: 'list', onCreateTask });
 
-    const quickAddInput = screen.getByPlaceholderText(/Dodaj zadanie/);
-    await userEvent.type(quickAddInput, 'Felerne zadanie{Enter}');
+    await userEvent.click(screen.getByRole('button', { name: /Dodaj zadanie/i }));
+    const titleInput = await screen.findByPlaceholderText('Wpisz tytuł zadania...');
+    await userEvent.type(titleInput, 'Felerne zadanie{Enter}');
 
     expect(onCreateTask).toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(/Nie udalo sie dodac zadania/));
 
     spy.mockRestore();
   }, 15000);
+
+  test('opens the new task modal with the N shortcut', async () => {
+    renderTasksTab({ defaultView: 'list' });
+
+    fireEvent.keyDown(window, { key: 'n' });
+
+    expect(await screen.findByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
+    expect(screen.queryByText('Notatka')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
+  });
 });

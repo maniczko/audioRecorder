@@ -8,7 +8,6 @@ import {
   buildMonthMatrix,
   buildParticipantTimezoneSummary,
   buildTimeSlots,
-  buildUpcomingReminders,
   buildWeekDays,
   entriesForDay,
   formatCalendarDayLabel,
@@ -18,7 +17,6 @@ import {
   mergeDatePreservingTime,
   mergeDateWithHour,
   monthLabel,
-  reminderLabel,
   resizeCalendarEntry,
   toLocalDateTimeValue,
   weekdayLabels,
@@ -32,13 +30,17 @@ const CALENDAR_WEEKDAYS = weekdayLabels();
 const CALENDAR_HOURS = buildTimeSlots(0, 23);
 
 function eventTypeLabel(type) {
-  return type === 'google' ? 'Google' : type === 'task' ? 'Zadanie' : 'Spotkanie';
+  return type === 'google' ? 'Nagranie' : type === 'task' ? 'Zadanie z terminem' : 'Spotkanie';
+}
+
+function eventTypeShortLabel(type) {
+  return type === 'google' ? 'N' : type === 'task' ? 'Z' : 'S';
 }
 
 function eventTimeLabel(entry) {
   return entry?.startsAt
     ? `${formatCalendarEventTime(entry.startsAt)}${entry.endsAt ? ` - ${formatCalendarEventTime(entry.endsAt)}` : ''}`
-    : 'Caly dzien';
+    : 'Cały dzień';
 }
 
 function buildConflictDraft(conflict) {
@@ -127,8 +129,7 @@ function CalendarEntryChip({
       onDragEnd={entry.editable ? onDragEnd : undefined}
     >
       <span className="calendar-pill-main">
-        {entry.type === 'google' ? 'G' : entry.type === 'task' ? 'T' : 'V'} {eventTimeLabel(entry)}{' '}
-        {entry.title}
+        {eventTypeShortLabel(entry.type)} {eventTimeLabel(entry)} {entry.title}
       </span>
       {conflictCount ? (
         <small className="calendar-pill-conflict">{conflictCount} konflikt</small>
@@ -188,27 +189,19 @@ export default function CalendarTab({
   setSelectedRecordingId,
   tagOptions = [],
 }) {
-  const [viewMode, setViewMode] = useState('month');
+  const [viewMode, setViewMode] = useState('week');
   const [filters, setFilters] = useState({ meeting: true, task: true, google: true });
   const [selectedEntryKey, setSelectedEntryKey] = useState('');
   const [dragEntryKey, setDragEntryKey] = useState('');
   const [calendarMessage, setCalendarMessage] = useState('');
   const [conflictDraft, setConflictDraft] = useState(buildConflictDraft(null));
-  const [tagFilter, setTagFilter] = useState('');
   const [briefOpen, setBriefOpen] = useState(false);
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
   });
   const currentTimeRef = useRef(null);
-  const allMeetingTags = useMemo(() => {
-    const s = new Set();
-    userMeetings.forEach((m) => (m.tags || []).forEach((t) => s.add(t)));
-    return [...s].sort();
-  }, [userMeetings]);
-
   const monthMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
-  const miniMatrix = useMemo(() => buildMonthMatrix(activeMonth), [activeMonth]);
   const weekDays = useMemo(() => buildWeekDays(selectedDate), [selectedDate]);
   const allEntries = useMemo(
     () => buildCalendarEntries(userMeetings, googleCalendarEvents, calendarTasks, calendarMeta),
@@ -218,39 +211,24 @@ export default function CalendarTab({
     () =>
       allEntries.filter((entry) => {
         if (filters[entry.type] === false) return false;
-        if (tagFilter && entry.type !== 'google') {
-          const entryTags = entry.source?.tags || [];
-          if (!entryTags.includes(tagFilter)) return false;
-        }
         return true;
       }),
-    [allEntries, filters, tagFilter]
+    [allEntries, filters]
   );
   const selectedDayEntries = useMemo(
     () => entriesForDay(visibleEntries, selectedDate),
     [selectedDate, visibleEntries]
   );
   const conflictMap = useMemo(() => buildConflictMap(visibleEntries), [visibleEntries]);
-  const reminders = useMemo(() => buildUpcomingReminders(visibleEntries), [visibleEntries]);
-  const upcomingMeetings = useMemo(
+  const upcomingEntries = useMemo(
     () =>
-      [...userMeetings]
-        .filter(
-          (meeting) => new Date(meeting.startsAt).getTime() >= Date.now() - 6 * 60 * 60 * 1000
-        )
+      visibleEntries
+        .filter((entry) => new Date(entry.startsAt).getTime() >= Date.now() - 6 * 60 * 60 * 1000)
         .sort(
           (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
         )
-        .slice(0, 4),
-    [userMeetings]
-  );
-  const upcomingTasks = useMemo(
-    () =>
-      [...calendarTasks]
-        .filter((task) => Boolean(task.dueDate) && !task.completed)
-        .sort((left, right) => new Date(left.dueDate).getTime() - new Date(right.dueDate).getTime())
-        .slice(0, 4),
-    [calendarTasks]
+        .slice(0, 5),
+    [visibleEntries]
   );
 
   useEffect(() => {
@@ -406,12 +384,12 @@ export default function CalendarTab({
         googlePulledAt: now,
         googleRemoteUpdatedAt: selectedMeta.googleSyncConflict.remoteUpdatedAt || now,
       });
-      setCalendarMessage(`Przyjeto wersje Google dla "${selectedEntry.title}".`);
+      setCalendarMessage(`Przyjęto wersję Google dla "${selectedEntry.title}".`);
       return;
     }
 
     if (!googleCalendarWritable) {
-      setCalendarMessage('Polacz Google Calendar, aby zapisac finalna wersje po konflikcie.');
+      setCalendarMessage('Połącz Google Calendar, aby zapisać finalną wersję po konflikcie.');
       return;
     }
 
@@ -439,7 +417,7 @@ export default function CalendarTab({
     setCalendarMessage(
       mode === 'merge'
         ? `Scalono lokalne i zdalne zmiany dla "${selectedEntry.title}".`
-        : `Zachowano lokalna wersje "${selectedEntry.title}" i zsynchronizowano ja do Google.`
+        : `Zachowano lokalną wersję "${selectedEntry.title}" i zsynchronizowano ją do Google.`
     );
   }
 
@@ -455,7 +433,7 @@ export default function CalendarTab({
         await syncToGoogle(entry, entry.startsAt, nextWindow.endsAt);
       }
     }
-    setCalendarMessage(`Zmieniono dlugosc: ${entry.title}`);
+    setCalendarMessage(`Zmieniono długość: ${entry.title}`);
   }
 
   async function handleDrop(date, event, hour = null) {
@@ -522,160 +500,47 @@ export default function CalendarTab({
   return (
     <div className="calendar-layout">
       <aside className="calendar-sidebar">
-        <section className="panel">
-          <div className="mini-calendar-header">
-            <button
-              type="button"
-              className="calendar-nav-button"
-              onClick={() =>
-                setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() - 1, 1))
-              }
-            >
-              {'\u2039'}
-            </button>
-            <strong>{monthLabel(activeMonth)}</strong>
-            <button
-              type="button"
-              className="calendar-nav-button"
-              onClick={() =>
-                setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() + 1, 1))
-              }
-            >
-              {'\u203A'}
-            </button>
-          </div>
-          <div className="mini-calendar-grid">
-            {CALENDAR_WEEKDAYS.map((label) => (
-              <span key={label} className="mini-calendar-weekday">
-                {label}
-              </span>
-            ))}
-            {miniMatrix.flat().map((date) => (
-              <button
-                key={date.toISOString()}
-                type="button"
-                className={
-                  date.toDateString() === selectedDate.toDateString()
-                    ? 'mini-day selected'
-                    : isToday(date)
-                      ? 'mini-day today'
-                      : 'mini-day'
-                }
-                data-faded={!isCurrentMonth(date, activeMonth)}
-                onClick={() => {
-                  setSelectedDate(date);
-                  setActiveMonth(new Date(date.getFullYear(), date.getMonth(), 1));
-                }}
-              >
-                {date.getDate()}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="calendar-filter-stack">
-            {['meeting', 'task', 'google'].map((type) => (
-              <CalendarFilterButton
-                key={type}
-                active={filters[type]}
-                count={allEntries.filter((entry) => entry.type === type).length}
-                label={eventTypeLabel(type)}
-                onClick={() => setFilters((previous) => ({ ...previous, [type]: !previous[type] }))}
-              />
-            ))}
-          </div>
-
-          {googleCalendarEvents.length ? (
-            <div className="button-row">
-              <button type="button" className="ghost-button" onClick={disconnectGoogleCalendar}>
-                Odlacz Google
-              </button>
-            </div>
-          ) : null}
-          {googleCalendarMessage ? (
-            <div className="inline-alert info">{googleCalendarMessage}</div>
-          ) : null}
-
-          {allMeetingTags.length > 0 && (
-            <div className="calendar-tag-filters">
-              <div className="calendar-tag-filter-label">Tagi spotkań</div>
-              <div className="calendar-tag-filter-list">
+        <section className="panel calendar-sidebar-card">
+          <h2 className="calendar-sidebar-title">Nadchodzące</h2>
+          <div className="agenda-list">
+            {upcomingEntries.length ? (
+              upcomingEntries.map((entry) => (
                 <button
+                  key={entry.key}
                   type="button"
-                  className={!tagFilter ? 'calendar-tag-chip active' : 'calendar-tag-chip'}
-                  onClick={() => setTagFilter('')}
+                  className={`agenda-card calendar-upcoming-card ${entry.colorTone}`}
+                  onClick={() => {
+                    const date = new Date(entry.startsAt);
+                    setSelectedEntryKey(entry.key);
+                    setSelectedDate(date);
+                    setActiveMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+                  }}
                 >
-                  Wszystkie
+                  <span className={`calendar-type-dot ${entry.colorTone}`} aria-hidden="true" />
+                  <span className="calendar-upcoming-copy">
+                    <strong>{entry.title}</strong>
+                    <span>{formatDateTime(entry.startsAt)}</span>
+                  </span>
                 </button>
-                {allMeetingTags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className={tagFilter === tag ? 'calendar-tag-chip active' : 'calendar-tag-chip'}
-                    onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
-                  >
-                    #{tag}
-                  </button>
-                ))}
+              ))
+            ) : (
+              <div className="calendar-sidebar-empty">
+                <strong>Brak nadchodzących pozycji</strong>
+                <p>Spotkania, nagrania i zadania z terminem pojawią się tutaj.</p>
               </div>
-            </div>
-          )}
-        </section>
-
-        {reminders.length > 0 ? (
-          <section className="panel">
-            <div className="agenda-list">
-              {reminders.slice(0, 5).map((reminder) => (
-                <button key={reminder.id} type="button" className="agenda-card">
-                  <strong>{reminder.title}</strong>
-                  <span>{reminderLabel(reminder.minutes)} przed wydarzeniem</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="panel">
-          <div className="agenda-list">
-            {upcomingMeetings.length ? (
-              upcomingMeetings.map((meeting) => (
-                <button
-                  key={meeting.id}
-                  type="button"
-                  className="agenda-card"
-                  onClick={() => openMeetingFromCalendar(meeting.id)}
-                >
-                  <strong>{meeting.title}</strong>
-                  <span>{formatDateTime(meeting.startsAt)}</span>
-                </button>
-              ))
-            ) : (
-              <EmptyBox title="Brak spotkań" message="Dodaj spotkanie, a pojawi się tutaj." />
             )}
           </div>
         </section>
 
-        <section className="panel">
-          <div className="agenda-list">
-            {upcomingTasks.length ? (
-              upcomingTasks.map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  className="agenda-card"
-                  onClick={() => openTask({ taskId: task.id, mode: 'detail' })}
-                >
-                  <strong>{task.title}</strong>
-                  <span>{formatDateTime(task.dueDate)}</span>
-                </button>
-              ))
-            ) : (
-              <EmptyBox
-                title="Brak terminów"
-                message="Taski z terminem pojawią się tutaj automatycznie."
-              />
-            )}
+        <section className="panel calendar-sidebar-card">
+          <h2 className="calendar-sidebar-title">Legenda</h2>
+          <div className="calendar-legend-list">
+            {['meeting', 'google', 'task'].map((type) => (
+              <div key={type} className="calendar-legend-item">
+                <span className={`calendar-type-dot ${type}`} aria-hidden="true" />
+                <span>{eventTypeLabel(type)}</span>
+              </div>
+            ))}
           </div>
         </section>
       </aside>
@@ -683,6 +548,17 @@ export default function CalendarTab({
       <section className="panel calendar-board">
         <div className="calendar-board-header">
           <div className="calendar-board-actions">
+            <button type="button" className="calendar-nav-button" onClick={() => shiftPeriod(-1)}>
+              {'\u2039'}
+            </button>
+            <div>
+              <h2 className="calendar-board-title">
+                {viewMode === 'month' ? monthLabel(activeMonth) : monthLabel(selectedDate)}
+              </h2>
+            </div>
+            <button type="button" className="calendar-nav-button" onClick={() => shiftPeriod(1)}>
+              {'\u203A'}
+            </button>
             <button
               type="button"
               className="secondary-button"
@@ -692,25 +568,12 @@ export default function CalendarTab({
                 setActiveMonth(new Date(today.getFullYear(), today.getMonth(), 1));
               }}
             >
-              Dzisiaj
+              Dziś
             </button>
-            <button type="button" className="calendar-nav-button" onClick={() => shiftPeriod(-1)}>
-              {'\u2039'}
-            </button>
-            <button type="button" className="calendar-nav-button" onClick={() => shiftPeriod(1)}>
-              {'\u203A'}
-            </button>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
-                {viewMode === 'month'
-                  ? monthLabel(activeMonth)
-                  : formatCalendarDayLabel(selectedDate, { month: true })}
-              </h2>
-            </div>
           </div>
           <div className="calendar-toolbar">
             <div className="calendar-view-switch">
-              {['month', 'week', 'day'].map((mode) => (
+              {['day', 'week', 'month', 'agenda'].map((mode) => (
                 <button
                   key={mode}
                   type="button"
@@ -719,16 +582,36 @@ export default function CalendarTab({
                   }
                   onClick={() => setViewMode(mode)}
                 >
-                  {mode === 'month' ? 'Miesiac' : mode === 'week' ? 'Tydzien' : 'Dzien'}
+                  {mode === 'month'
+                    ? 'Miesiąc'
+                    : mode === 'week'
+                      ? 'Tydzień'
+                      : mode === 'agenda'
+                        ? 'Harmonogram'
+                        : 'Dzień'}
                 </button>
               ))}
             </div>
-            <div className="status-cluster">
-              <span className="status-chip">{userMeetings.length} spotkań</span>
-              <span className="status-chip">{calendarTasks.length} zadań</span>
-              <span className="status-chip">{googleCalendarEvents.length} Google</span>
-            </div>
+            <button
+              type="button"
+              className="primary-button calendar-add-meeting-button"
+              onClick={() => createMeetingFromDay(selectedDate)}
+            >
+              + Dodaj spotkanie
+            </button>
           </div>
+        </div>
+
+        <div className="calendar-type-toggles" aria-label="Typy wydarzeń">
+          {['meeting', 'google', 'task'].map((type) => (
+            <CalendarFilterButton
+              key={type}
+              active={filters[type]}
+              count={allEntries.filter((entry) => entry.type === type).length}
+              label={eventTypeLabel(type)}
+              onClick={() => setFilters((previous) => ({ ...previous, [type]: !previous[type] }))}
+            />
+          ))}
         </div>
 
         {calendarMessage ? <div className="inline-alert info">{calendarMessage}</div> : null}
@@ -775,7 +658,12 @@ export default function CalendarTab({
                         {date.getDate()}
                       </div>
                       <div className="calendar-day-events">
-                        {entries.slice(0, 4).map((entry) => renderEntry(entry))}
+                        {entries.slice(0, 3).map((entry) => renderEntry(entry))}
+                        {entries.length > 3 ? (
+                          <span className="calendar-more-indicator">
+                            +{entries.length - 3} więcej
+                          </span>
+                        ) : null}
                       </div>
                     </button>
                     <button
@@ -801,7 +689,9 @@ export default function CalendarTab({
                 onDrop={(event) => handleDrop(day, event)}
               >
                 <header className="calendar-column-head">
-                  <strong>{formatCalendarDayLabel(day, { short: true })}</strong>
+                  <strong>
+                    {new Intl.DateTimeFormat('pl-PL', { weekday: 'short' }).format(day)}
+                  </strong>
                   <span>{day.getDate()}</span>
                   <button
                     type="button"
@@ -816,11 +706,42 @@ export default function CalendarTab({
                   {entriesForDay(visibleEntries, day).length ? (
                     entriesForDay(visibleEntries, day).map((entry) => renderEntry(entry, true))
                   ) : (
-                    <div className="calendar-column-empty">Upusc tutaj wydarzenie.</div>
+                    <div className="calendar-column-empty" aria-label="Brak wydarzeń" />
                   )}
                 </div>
               </section>
             ))}
+          </div>
+        ) : viewMode === 'agenda' ? (
+          <div className="calendar-agenda-view" role="list" aria-label="Harmonogram wydarzeń">
+            {visibleEntries.length ? (
+              visibleEntries.map((entry) => (
+                <button
+                  key={entry.key}
+                  type="button"
+                  className={`calendar-agenda-row ${entry.colorTone}`}
+                  role="listitem"
+                  onClick={() => {
+                    const date = new Date(entry.startsAt);
+                    setSelectedEntryKey(entry.key);
+                    setSelectedDate(date);
+                    setActiveMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+                  }}
+                >
+                  <span className={`calendar-type-dot ${entry.colorTone}`} aria-hidden="true" />
+                  <span className="calendar-agenda-date">
+                    {formatCalendarDayLabel(new Date(entry.startsAt), { month: true })}
+                  </span>
+                  <strong>{entry.title}</strong>
+                  <span>{eventTimeLabel(entry)}</span>
+                </button>
+              ))
+            ) : (
+              <div className="calendar-empty-panel">
+                <strong>Brak wydarzeń w harmonogramie</strong>
+                <p>Spotkania, nagrania i zadania z terminem pojawią się tutaj.</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="calendar-day-view">
@@ -897,257 +818,263 @@ export default function CalendarTab({
           />
         )}
 
-        <div className="calendar-lower-grid">
-          <div className="selected-day-panel">
-            <div className="agenda-list">
-              {selectedDayEntries.length ? (
-                selectedDayEntries.map((entry) => (
-                  <div
-                    key={entry.key}
-                    className={
-                      selectedEntryKey === entry.key
-                        ? 'agenda-card static selected'
-                        : 'agenda-card static'
-                    }
-                    onClick={() => setSelectedEntryKey(entry.key)}
-                  >
-                    <div className="agenda-card-top">
-                      <strong>{entry.title}</strong>
-                      <span>{eventTypeLabel(entry.type)}</span>
+        {viewMode === 'day' ? (
+          <div className="calendar-lower-grid">
+            <div className="selected-day-panel">
+              <div className="agenda-list">
+                {selectedDayEntries.length ? (
+                  selectedDayEntries.map((entry) => (
+                    <div
+                      key={entry.key}
+                      className={
+                        selectedEntryKey === entry.key
+                          ? 'agenda-card static selected'
+                          : 'agenda-card static'
+                      }
+                      onClick={() => setSelectedEntryKey(entry.key)}
+                    >
+                      <div className="agenda-card-top">
+                        <strong>{entry.title}</strong>
+                        <span>{eventTypeLabel(entry.type)}</span>
+                      </div>
+                      <p>{eventTimeLabel(entry)}</p>
+                      {(conflictMap[entry.key] || []).length ? (
+                        <small className="calendar-conflict-label">
+                          {(conflictMap[entry.key] || []).length} konfliktów
+                        </small>
+                      ) : null}
                     </div>
-                    <p>{eventTimeLabel(entry)}</p>
-                    {(conflictMap[entry.key] || []).length ? (
-                      <small className="calendar-conflict-label">
-                        {(conflictMap[entry.key] || []).length} konfliktow
-                      </small>
+                  ))
+                ) : (
+                  <EmptyBox
+                    title="Ten dzień jest pusty"
+                    message="Wybierz inny dzień albo dodaj nowe spotkanie."
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="selected-day-panel">
+              {selectedEntry ? (
+                <div className="calendar-editor-card">
+                  <div className="calendar-editor-meta">
+                    <span className={`calendar-source-pill ${selectedEntry.type}`}>
+                      {eventTypeLabel(selectedEntry.type)}
+                    </span>
+                    <span>{formatDateTime(selectedEntry.startsAt)}</span>
+                    {selectedMeta.googleEventId ? (
+                      <span className="calendar-source-pill google">Linked Google</span>
                     ) : null}
                   </div>
-                ))
+                  <label className="calendar-editor-field">
+                    <span>{selectedEntry.type === 'task' ? 'Termin' : 'Start'}</span>
+                    <input
+                      type="datetime-local"
+                      value={toLocalDateTimeValue(selectedEntry.startsAt)}
+                      onChange={(event) =>
+                        rescheduleEntry(
+                          selectedEntry,
+                          new Date(event.target.value).toISOString(),
+                          selectedEntry.endsAt
+                        )
+                      }
+                      disabled={!selectedEntry.editable}
+                    />
+                  </label>
+                  <div className="calendar-editor-field">
+                    <span>Zakres</span>
+                    <strong>{eventTimeLabel(selectedEntry)}</strong>
+                  </div>
+                  <div className="calendar-duration-buttons">
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => resizeEntry(selectedEntry, -30)}
+                    >
+                      Skróć o 30 min
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => resizeEntry(selectedEntry, 30)}
+                    >
+                      Wydłuż o 30 min
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() => resizeEntry(selectedEntry, 60)}
+                    >
+                      +1 godzina
+                    </button>
+                  </div>
+                  {selectedEntry.type !== 'google' ? (
+                    <div className="calendar-reminder-grid">
+                      {REMINDER_PRESETS.map((preset) => {
+                        const active = selectedEntry.reminders.includes(preset.value);
+                        return (
+                          <button
+                            key={preset.value}
+                            type="button"
+                            className={
+                              active ? 'calendar-reminder-chip active' : 'calendar-reminder-chip'
+                            }
+                            onClick={() =>
+                              onUpdateCalendarEntryMeta(selectedEntry.type, selectedEntry.id, {
+                                reminders: active
+                                  ? selectedEntry.reminders.filter(
+                                      (value) => value !== preset.value
+                                    )
+                                  : [...selectedEntry.reminders, preset.value],
+                              })
+                            }
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="calendar-readonly-note">
+                      Przypomnienia dla Google ustawiasz bezpośrednio w Google.
+                    </div>
+                  )}
+                  {participantTimezones.length ? (
+                    <div className="calendar-timezone-list">
+                      {participantTimezones.map((participant) => (
+                        <div
+                          key={`${participant.label}-${participant.timezone}`}
+                          className="calendar-timezone-row"
+                        >
+                          <strong>{participant.label}</strong>
+                          <span>{participant.timezone}</span>
+                          <small>{participant.range}</small>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {selectedConflicts.length ? (
+                    <div className="calendar-conflict-list">
+                      {selectedConflicts.map((entry) => (
+                        <button
+                          key={entry.key}
+                          type="button"
+                          className="agenda-card static"
+                          onClick={() => setSelectedEntryKey(entry.key)}
+                        >
+                          <strong>{entry.title}</strong>
+                          <span>{eventTimeLabel(entry)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {selectedMeta.googleSyncConflict ? (
+                    <section className="calendar-sync-conflict-panel">
+                      <div className="panel-header compact">
+                        <div>
+                          <div className="eyebrow">Google conflict</div>
+                          <h2>Rozwiąż konflikt synchronizacji</h2>
+                        </div>
+                      </div>
+                      <div className="calendar-sync-conflict-grid">
+                        <article className="calendar-sync-card">
+                          <strong>Lokalne</strong>
+                          <span>{selectedMeta.googleSyncConflict.localSnapshot.title}</span>
+                          <small>
+                            {formatDateTime(selectedMeta.googleSyncConflict.localSnapshot.startsAt)}
+                          </small>
+                        </article>
+                        <article className="calendar-sync-card">
+                          <strong>Google</strong>
+                          <span>{selectedMeta.googleSyncConflict.remoteSnapshot.title}</span>
+                          <small>
+                            {formatDateTime(
+                              selectedMeta.googleSyncConflict.remoteSnapshot.startsAt
+                            )}
+                          </small>
+                        </article>
+                        <article className="calendar-sync-card">
+                          <strong>Finalna wersja</strong>
+                          <label className="calendar-editor-field">
+                            <span>Tytuł</span>
+                            <input
+                              value={conflictDraft.title}
+                              onChange={(e) =>
+                                setConflictDraft((f) => ({ ...f, title: e.target.value }))
+                              }
+                            />
+                          </label>
+                          <label className="calendar-editor-field">
+                            <span>Kiedy</span>
+                            <input
+                              type="datetime-local"
+                              value={conflictDraft.startsAt}
+                              onChange={(e) =>
+                                setConflictDraft((f) => ({ ...f, startsAt: e.target.value }))
+                              }
+                            />
+                          </label>
+                          <label className="calendar-editor-field">
+                            <span>Czas (min)</span>
+                            <input
+                              type="number"
+                              value={conflictDraft.durationMinutes}
+                              onChange={(e) =>
+                                setConflictDraft((f) => ({
+                                  ...f,
+                                  durationMinutes: Number(e.target.value),
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className="calendar-editor-field">
+                            <span>Lokalizacja</span>
+                            <input
+                              value={conflictDraft.location}
+                              onChange={(e) =>
+                                setConflictDraft((f) => ({ ...f, location: e.target.value }))
+                              }
+                            />
+                          </label>
+                        </article>
+                      </div>
+                      <div className="calendar-sync-conflict-actions">
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => resolveGoogleSyncConflict('merge')}
+                        >
+                          Zachowaj finalną wersję
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => resolveGoogleSyncConflict('google')}
+                        >
+                          Przyjmij Google
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => resolveGoogleSyncConflict('local')}
+                        >
+                          Przyjmij Lokalne
+                        </button>
+                      </div>
+                    </section>
+                  ) : null}
+                </div>
               ) : (
-                <EmptyBox
-                  title="Ten dzień jest pusty"
-                  message="Wybierz inny dzień albo dodaj nowe spotkanie."
-                />
+                <div className="selected-day-panel">
+                  <EmptyBox
+                    title="Wybierz wydarzenie"
+                    message="Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły."
+                  />
+                </div>
               )}
             </div>
           </div>
-
-          <div className="selected-day-panel">
-            {selectedEntry ? (
-              <div className="calendar-editor-card">
-                <div className="calendar-editor-meta">
-                  <span className={`calendar-source-pill ${selectedEntry.type}`}>
-                    {eventTypeLabel(selectedEntry.type)}
-                  </span>
-                  <span>{formatDateTime(selectedEntry.startsAt)}</span>
-                  {selectedMeta.googleEventId ? (
-                    <span className="calendar-source-pill google">Linked Google</span>
-                  ) : null}
-                </div>
-                <label className="calendar-editor-field">
-                  <span>{selectedEntry.type === 'task' ? 'Termin' : 'Start'}</span>
-                  <input
-                    type="datetime-local"
-                    value={toLocalDateTimeValue(selectedEntry.startsAt)}
-                    onChange={(event) =>
-                      rescheduleEntry(
-                        selectedEntry,
-                        new Date(event.target.value).toISOString(),
-                        selectedEntry.endsAt
-                      )
-                    }
-                    disabled={!selectedEntry.editable}
-                  />
-                </label>
-                <div className="calendar-editor-field">
-                  <span>Zakres</span>
-                  <strong>{eventTimeLabel(selectedEntry)}</strong>
-                </div>
-                <div className="calendar-duration-buttons">
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => resizeEntry(selectedEntry, -30)}
-                  >
-                    Skroc o 30 min
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => resizeEntry(selectedEntry, 30)}
-                  >
-                    Wydluz o 30 min
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => resizeEntry(selectedEntry, 60)}
-                  >
-                    +1 godzina
-                  </button>
-                </div>
-                {selectedEntry.type !== 'google' ? (
-                  <div className="calendar-reminder-grid">
-                    {REMINDER_PRESETS.map((preset) => {
-                      const active = selectedEntry.reminders.includes(preset.value);
-                      return (
-                        <button
-                          key={preset.value}
-                          type="button"
-                          className={
-                            active ? 'calendar-reminder-chip active' : 'calendar-reminder-chip'
-                          }
-                          onClick={() =>
-                            onUpdateCalendarEntryMeta(selectedEntry.type, selectedEntry.id, {
-                              reminders: active
-                                ? selectedEntry.reminders.filter((value) => value !== preset.value)
-                                : [...selectedEntry.reminders, preset.value],
-                            })
-                          }
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="calendar-readonly-note">
-                    Przypomnienia dla Google ustawiasz bezposrednio w Google.
-                  </div>
-                )}
-                {participantTimezones.length ? (
-                  <div className="calendar-timezone-list">
-                    {participantTimezones.map((participant) => (
-                      <div
-                        key={`${participant.label}-${participant.timezone}`}
-                        className="calendar-timezone-row"
-                      >
-                        <strong>{participant.label}</strong>
-                        <span>{participant.timezone}</span>
-                        <small>{participant.range}</small>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {selectedConflicts.length ? (
-                  <div className="calendar-conflict-list">
-                    {selectedConflicts.map((entry) => (
-                      <button
-                        key={entry.key}
-                        type="button"
-                        className="agenda-card static"
-                        onClick={() => setSelectedEntryKey(entry.key)}
-                      >
-                        <strong>{entry.title}</strong>
-                        <span>{eventTimeLabel(entry)}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {selectedMeta.googleSyncConflict ? (
-                  <section className="calendar-sync-conflict-panel">
-                    <div className="panel-header compact">
-                      <div>
-                        <div className="eyebrow">Google conflict</div>
-                        <h2>Rozwiaz konflikt synchronizacji</h2>
-                      </div>
-                    </div>
-                    <div className="calendar-sync-conflict-grid">
-                      <article className="calendar-sync-card">
-                        <strong>Lokalne</strong>
-                        <span>{selectedMeta.googleSyncConflict.localSnapshot.title}</span>
-                        <small>
-                          {formatDateTime(selectedMeta.googleSyncConflict.localSnapshot.startsAt)}
-                        </small>
-                      </article>
-                      <article className="calendar-sync-card">
-                        <strong>Google</strong>
-                        <span>{selectedMeta.googleSyncConflict.remoteSnapshot.title}</span>
-                        <small>
-                          {formatDateTime(selectedMeta.googleSyncConflict.remoteSnapshot.startsAt)}
-                        </small>
-                      </article>
-                      <article className="calendar-sync-card">
-                        <strong>Finalna wersja</strong>
-                        <label className="calendar-editor-field">
-                          <span>Tytul</span>
-                          <input
-                            value={conflictDraft.title}
-                            onChange={(e) =>
-                              setConflictDraft((f) => ({ ...f, title: e.target.value }))
-                            }
-                          />
-                        </label>
-                        <label className="calendar-editor-field">
-                          <span>Kiedy</span>
-                          <input
-                            type="datetime-local"
-                            value={conflictDraft.startsAt}
-                            onChange={(e) =>
-                              setConflictDraft((f) => ({ ...f, startsAt: e.target.value }))
-                            }
-                          />
-                        </label>
-                        <label className="calendar-editor-field">
-                          <span>Czas (min)</span>
-                          <input
-                            type="number"
-                            value={conflictDraft.durationMinutes}
-                            onChange={(e) =>
-                              setConflictDraft((f) => ({
-                                ...f,
-                                durationMinutes: Number(e.target.value),
-                              }))
-                            }
-                          />
-                        </label>
-                        <label className="calendar-editor-field">
-                          <span>Lokalizacja</span>
-                          <input
-                            value={conflictDraft.location}
-                            onChange={(e) =>
-                              setConflictDraft((f) => ({ ...f, location: e.target.value }))
-                            }
-                          />
-                        </label>
-                      </article>
-                    </div>
-                    <div className="calendar-sync-conflict-actions">
-                      <button
-                        type="button"
-                        className="primary-button"
-                        onClick={() => resolveGoogleSyncConflict('merge')}
-                      >
-                        Zachowaj finalna wersje
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => resolveGoogleSyncConflict('google')}
-                      >
-                        Przyjmij Google
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-button"
-                        onClick={() => resolveGoogleSyncConflict('local')}
-                      >
-                        Przyjmij Lokalne
-                      </button>
-                    </div>
-                  </section>
-                ) : null}
-              </div>
-            ) : (
-              <div className="selected-day-panel">
-                <EmptyBox
-                  title="Wybierz wydarzenie"
-                  message="Kliknij w kalendarzu, aby zobaczyć i edytować szczegóły."
-                />
-              </div>
-            )}
-          </div>
-        </div>
+        ) : null}
       </section>
     </div>
   );

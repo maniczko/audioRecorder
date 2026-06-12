@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import '@fontsource-variable/geist';
 import './index.css';
+import './styles/reference-ui.css';
 import { initSentry } from './sentry';
 import { initClarity } from './lib/clarity';
 import App from './App';

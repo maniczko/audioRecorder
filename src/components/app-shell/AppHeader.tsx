@@ -1,4 +1,4 @@
-import { Menu, Play, Search, Square, X } from 'lucide-react';
+import { Menu, Mic, Search, Square, X } from 'lucide-react';
 import type { WorkspaceNotificationItem } from '../../lib/notifications';
 import NotificationCenter from '../../NotificationCenter';
 
@@ -16,6 +16,7 @@ interface RecorderControls {
 interface AppHeaderProps {
   sidebarOpen: boolean;
   currentUser: CurrentUser;
+  activeTab?: string;
   canRecordAudio?: boolean;
   recorder: RecorderControls;
   notificationCenterOpen: boolean;
@@ -60,7 +61,7 @@ export default function AppHeader({
     setActiveTab('studio');
   };
 
-  const recordingLabel = recorder.isRecording ? 'Zatrzymaj nagrywanie' : 'Rozpocznij nagrywanie';
+  const recordingLabel = recorder.isRecording ? 'Zatrzymaj nagrywanie' : 'Nagrywaj';
 
   return (
     <header className="modern-header">
@@ -108,7 +109,7 @@ export default function AppHeader({
           className={
             recorder.isRecording
               ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20'
-              : 'modern-record-btn bg-gradient-to-br from-teal-400 to-sky-400 text-slate-900 shadow-[0_4px_14px_rgba(116,208,191,0.25)] hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(116,208,191,0.4)]'
+              : 'modern-record-btn modern-record-btn--compact text-teal-700'
           }
           type="button"
           onClick={toggleRecording}
@@ -124,7 +125,7 @@ export default function AppHeader({
               </>
             ) : (
               <>
-                <Play size={16} className="fill-current text-slate-900" />
+                <Mic size={16} className="text-teal-700" />
                 <span className="modern-record-label">{recordingLabel}</span>
               </>
             )}

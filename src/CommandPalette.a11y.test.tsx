@@ -52,11 +52,12 @@ describe('CommandPalette - Accessibility', () => {
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
     expect(screen.getByRole('heading', { name: /szybkie/i })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /szybkie przejście/i })).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...')
+      screen.getByPlaceholderText('Zakładka, spotkanie, zadanie, osoba...')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /zamknij/i })).toBeInTheDocument();
-    expect(screen.getByText(/ctrl\/cmd \+ k/i)).toBeInTheDocument();
+    expect(screen.getByText(/otwiera paletę/i)).toBeInTheDocument();
   });
 
   it('renders filtered results and supports keyboard navigation', async () => {
@@ -88,7 +89,7 @@ describe('CommandPalette - Accessibility', () => {
   it('keeps keyboard focus order aligned with result highlighting', async () => {
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
-    const searchInput = screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...');
+    const searchInput = screen.getByPlaceholderText('Zakładka, spotkanie, zadanie, osoba...');
     const firstItem = await screen.findByRole('button', { name: /spotkanie q1/i });
     const secondItem = await screen.findByRole('button', { name: /notatka q1/i });
 
@@ -120,7 +121,7 @@ describe('CommandPalette - Accessibility', () => {
     render(<CommandPalette open={true} items={items} onClose={onClose} onSelect={onSelect} />);
 
     await userEvent.type(
-      screen.getByPlaceholderText('Zakladka, spotkanie, zadanie, osoba...'),
+      screen.getByPlaceholderText('Zakładka, spotkanie, zadanie, osoba...'),
       'Notatka'
     );
     expect(screen.getByRole('button', { name: /notatka q1/i })).toBeInTheDocument();

@@ -67,6 +67,7 @@ export default function NotificationCenter({
         type="button"
         className={open ? 'notification-trigger active' : 'notification-trigger'}
         aria-label="Powiadomienia"
+        title="Powiadomienia i przypomnienia"
         onClick={onToggle}
       >
         <span className="notification-trigger-icon">{'\u23f0'}</span>

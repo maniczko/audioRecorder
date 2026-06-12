@@ -12,6 +12,7 @@ import type {
 export interface WorkspaceStatePayload {
   meetings: unknown[];
   manualTasks: unknown[];
+  manualPeople?: unknown[];
   taskState: Record<string, unknown>;
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;
@@ -26,6 +27,7 @@ export interface WorkspaceCollectionDelta {
 export interface WorkspaceStateDeltaPayload {
   meetings?: WorkspaceCollectionDelta | unknown[];
   manualTasks?: WorkspaceCollectionDelta | unknown[];
+  manualPeople?: WorkspaceCollectionDelta | unknown[];
   taskState?: Record<string, unknown>;
   taskBoards?: Record<string, unknown>;
   calendarMeta?: Record<string, unknown>;
@@ -340,6 +342,7 @@ export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
       calendarMeta
     ),
     manualTasks: Array.isArray(source.manualTasks) ? source.manualTasks : [],
+    manualPeople: Array.isArray(source.manualPeople) ? source.manualPeople : [],
     taskState: isRecord(source.taskState) ? source.taskState : {},
     taskBoards: isRecord(source.taskBoards) ? source.taskBoards : {},
     calendarMeta,
@@ -435,6 +438,14 @@ export function buildWorkspaceStateDelta(
   const manualTasksDelta = buildCollectionDelta(prevState.manualTasks, nextState.manualTasks);
   if (manualTasksDelta) {
     delta.manualTasks = manualTasksDelta;
+  }
+
+  const manualPeopleDelta = buildCollectionDelta(
+    (prevState as any).manualPeople,
+    (nextState as any).manualPeople
+  );
+  if (manualPeopleDelta) {
+    delta.manualPeople = manualPeopleDelta;
   }
 
   const taskStateDelta = buildObjectDelta(
@@ -627,6 +638,7 @@ export function applyWorkspaceStateDelta(
   return normalizeWorkspaceState({
     meetings: applyCollectionDelta(current.meetings, delta.meetings),
     manualTasks: applyCollectionDelta(current.manualTasks, delta.manualTasks),
+    manualPeople: applyCollectionDelta((current as any).manualPeople, delta.manualPeople),
     taskState: applyObjectDelta(current.taskState as Record<string, unknown>, delta.taskState),
     taskBoards: applyObjectDelta(current.taskBoards as Record<string, unknown>, delta.taskBoards),
     calendarMeta,

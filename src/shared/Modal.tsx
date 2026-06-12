@@ -10,6 +10,8 @@ interface ModalProps {
   ariaLabel?: string;
   size?: 'sm' | 'md' | 'lg';
   danger?: boolean;
+  className?: string;
+  bodyClassName?: string;
   children: React.ReactNode;
   hideHeader?: boolean;
 }
@@ -24,6 +26,8 @@ export default function Modal({
   ariaLabel,
   size = 'md',
   danger = false,
+  className,
+  bodyClassName,
   children,
   hideHeader = false,
 }: ModalProps) {
@@ -89,9 +93,10 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizeClass = styles[size] || styles.md;
-  const cardClasses = [styles.card, sizeClass, danger ? styles.danger : '']
+  const cardClasses = [styles.card, sizeClass, danger ? styles.danger : '', className]
     .filter(Boolean)
     .join(' ');
+  const bodyClasses = [styles.body, bodyClassName].filter(Boolean).join(' ');
 
   const modal = (
     <div
@@ -115,7 +120,7 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div className={styles.body}>{children}</div>
+        <div className={bodyClasses}>{children}</div>
       </div>
     </div>
   );

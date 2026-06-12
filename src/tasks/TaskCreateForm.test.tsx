@@ -82,19 +82,24 @@ describe('TaskCreateForm', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders all form fields matching TaskDetailsPanel', () => {
+  it('renders create task fields without existing-task detail sections', () => {
     render(<TaskCreateForm {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('Dodaj zadanie (N)...')).toBeInTheDocument();
     expect(screen.getByText('Termin')).toBeInTheDocument();
+    expect(screen.getByText('Godzina')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cały dzień')).toBeInTheDocument();
     expect(screen.getByText('Osoba')).toBeInTheDocument();
     expect(screen.getByText('Priorytet')).toBeInTheDocument();
     expect(screen.getByText('Tagi')).toBeInTheDocument();
     expect(screen.getByText('Opis')).toBeInTheDocument();
-    expect(screen.getByText('Notatka')).toBeInTheDocument();
+    expect(screen.getByText(/Uzupełnij opis z nagrania/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wybierz źródło/i })).toBeInTheDocument();
+    expect(screen.queryByText('Notatka')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
   });
 
-  it('does not render fields absent from TaskDetailsPanel', () => {
+  it('does not render fields absent from the create modal reference', () => {
     render(<TaskCreateForm {...defaultProps} />);
 
     expect(screen.queryByText('Przypomnienie')).not.toBeInTheDocument();
@@ -107,9 +112,37 @@ describe('TaskCreateForm', () => {
     render(<TaskCreateForm {...defaultProps} showQuickAdd={false} />);
 
     expect(screen.queryByPlaceholderText('Dodaj zadanie (N)...')).not.toBeInTheDocument();
-    // Fields still visible
+    expect(screen.getByText('Tytuł zadania')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Wpisz tytuł zadania...')).toBeInTheDocument();
     expect(screen.getByText('Osoba')).toBeInTheDocument();
     expect(screen.getByText('Priorytet')).toBeInTheDocument();
+  });
+
+  it('renders screenshot-first date and time controls in detail create mode', () => {
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{ dueDate: '2026-06-09T08:32' }}
+      />
+    );
+
+    expect(screen.getByLabelText('Wybierz datę')).toHaveValue('2026-06-09');
+    expect(screen.getByLabelText('Wybierz godzinę')).toHaveValue('08:32');
+    expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
+  });
+
+  it('submits from the detail title field when Enter is pressed', () => {
+    const onSubmit = vi.fn();
+    render(<TaskCreateForm {...defaultProps} showQuickAdd={false} onSubmit={onSubmit} />);
+
+    const titleInput = screen.getByPlaceholderText('Wpisz tytuł zadania...');
+    fireEvent.change(titleInput, { target: { value: 'Nowe zadanie z panelu' } });
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Nowe zadanie z panelu' })
+    );
   });
 
   it('shows quick-add row by default', () => {
@@ -177,7 +210,7 @@ describe('TaskCreateForm', () => {
     const onCancel = vi.fn();
     render(<TaskCreateForm {...defaultProps} showCancel onCancel={onCancel} />);
 
-    const cancelButton = screen.getByText('Zamknij');
+    const cancelButton = screen.getByText('Anuluj');
     expect(cancelButton).toBeInTheDocument();
     fireEvent.click(cancelButton);
     expect(onCancel).toHaveBeenCalledTimes(1);
@@ -185,7 +218,7 @@ describe('TaskCreateForm', () => {
 
   it('hides cancel button when showCancel is false', () => {
     render(<TaskCreateForm {...defaultProps} />);
-    expect(screen.queryByText('Zamknij')).not.toBeInTheDocument();
+    expect(screen.queryByText('Anuluj')).not.toBeInTheDocument();
   });
 
   it('disables submit button when title is empty', () => {
@@ -204,13 +237,12 @@ describe('TaskCreateForm', () => {
     expect(submitButton).not.toBeDisabled();
   });
 
-  it('includes description and notes in submitted draft', () => {
+  it('includes description and keeps notes empty in submitted draft', () => {
     const onSubmit = vi.fn();
     render(<TaskCreateForm {...defaultProps} onSubmit={onSubmit} />);
 
     const textareas = screen.getAllByTestId('mock-mention-textarea');
     fireEvent.change(textareas[0], { target: { value: 'Opis zadania' } });
-    fireEvent.change(textareas[1], { target: { value: 'Notatka do zadania' } });
 
     const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...');
     fireEvent.change(titleInput, { target: { value: 'Task' } });
@@ -219,7 +251,7 @@ describe('TaskCreateForm', () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         description: 'Opis zadania',
-        notes: 'Notatka do zadania',
+        notes: '',
       })
     );
   });

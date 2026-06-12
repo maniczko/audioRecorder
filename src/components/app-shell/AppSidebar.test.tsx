@@ -33,6 +33,13 @@ function renderSidebar(overrides = {}) {
 }
 
 describe('AppSidebar', () => {
+  test('renders the VoiceBóbr brand lockup in the sidebar', () => {
+    renderSidebar();
+
+    expect(screen.getAllByRole('img', { name: 'VoiceBóbr' }).length).toBeGreaterThan(0);
+    expect(screen.getByText('VoiceBóbr')).toBeInTheDocument();
+  });
+
   test('opens studio from the Studio navigation item', async () => {
     const props = renderSidebar({ activeTab: 'recordings' });
 

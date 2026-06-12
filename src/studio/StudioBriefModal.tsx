@@ -16,51 +16,79 @@ import {
   ChevronUp,
   ListTodo,
 } from 'lucide-react';
+import '../tasks/TaskDetailsPanelStyles.css';
 import './StudioBriefModalStyles.css';
-import '../tasks/TaskDetailsPanelStyles.css'; /* Upewniamy się, że klasy unified-field i detail-row są dostępne */
+
+const COMMON_DURATIONS = [15, 30, 45, 60];
 
 export default function StudioBriefModal({
   currentWorkspacePermissions,
   isDetachedMeetingDraft,
   meetingDraft,
   setMeetingDraft,
-  activeStoredMeetingDraft,
   clearMeetingDraft,
   saveMeeting,
-  startNewMeetingDraft,
-  workspaceMessage,
   selectedMeeting,
   peopleOptions = [] as string[],
   tagOptions = [] as string[],
-  userMeetings = [] as any[],
-  selectMeeting,
-  selectedRecordingId,
-  setSelectedRecordingId,
   onClose,
 }) {
   const canEditWorkspace = Boolean(currentWorkspacePermissions?.canEditWorkspace);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const startsAtValue = meetingDraft.startsAt || '';
+  const [datePart = '', rawTimePart = ''] = startsAtValue.split('T');
+  const timePart = rawTimePart.slice(0, 5);
+  const titleMissing = !meetingDraft.title?.trim();
+  const dateMissing = !datePart || !timePart;
+  const durationMissing = !Number(meetingDraft.durationMinutes);
+  const contextLength = (meetingDraft.context || '').length;
+  const isNewMeeting = !selectedMeeting || isDetachedMeetingDraft;
+  const disabledReason = !canEditWorkspace
+    ? 'Brak uprawnień do edycji workspace.'
+    : titleMissing
+      ? 'Tytuł spotkania jest wymagany.'
+      : dateMissing
+        ? 'Termin spotkania jest wymagany.'
+        : durationMissing
+          ? 'Czas trwania jest wymagany.'
+          : '';
+  const canSubmit = !disabledReason;
+
+  const updateStartsAt = (nextDate: string, nextTime: string) => {
+    setMeetingDraft((previous) => ({
+      ...previous,
+      startsAt: nextDate ? `${nextDate}T${nextTime || '09:00'}` : '',
+    }));
+  };
 
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
       ariaLabel={selectedMeeting ? 'Edytuj spotkanie' : 'Nowe spotkanie'}
+      className="studio-brief-shell-card"
+      bodyClassName="studio-brief-shell-body"
       hideHeader
     >
       <div className="studio-brief-modal">
         <div className="studio-brief-modal-header">
           <div>
-            <div className="eyebrow">Meeting brief</div>
+            <div className="eyebrow">Brief spotkania</div>
             <h2>{selectedMeeting ? 'Edytuj spotkanie' : 'Nowe spotkanie'}</h2>
+            <p>Dodaj szczegóły spotkania, aby AI mogło lepiej przygotować analizę.</p>
           </div>
-          <button type="button" className="studio-brief-close" onClick={onClose} title="Zamknij">
+          <button
+            type="button"
+            className="studio-brief-close"
+            onClick={onClose}
+            aria-label="Zamknij brief spotkania"
+            title="Zamknij"
+          >
             <X size={20} />
           </button>
         </div>
 
         <div className="studio-brief-modal-body ms-todo" data-clarity-mask="true">
-          {/* Tytuł */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Tytuł">
               <Type size={18} />
@@ -71,6 +99,8 @@ export default function StudioBriefModal({
             <div className="todo-detail-row-fill">
               <input
                 className="todo-detail-unified-field"
+                aria-invalid={titleMissing}
+                aria-describedby={titleMissing ? 'studio-brief-title-error' : undefined}
                 value={meetingDraft.title || ''}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, title: event.target.value }))
@@ -78,10 +108,14 @@ export default function StudioBriefModal({
                 placeholder="np. Spotkanie z klientem"
                 disabled={!canEditWorkspace}
               />
+              {titleMissing ? (
+                <div id="studio-brief-title-error" className="studio-brief-field-error">
+                  Tytuł spotkania jest wymagany.
+                </div>
+              ) : null}
             </div>
           </div>
 
-          {/* Kontekst */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Kontekst">
               <AlignLeft size={18} />
@@ -91,6 +125,7 @@ export default function StudioBriefModal({
               <textarea
                 className="todo-detail-unified-field brief-textarea"
                 rows={2}
+                maxLength={1000}
                 value={meetingDraft.context || ''}
                 onChange={(event) =>
                   setMeetingDraft((previous) => ({ ...previous, context: event.target.value }))
@@ -98,39 +133,67 @@ export default function StudioBriefModal({
                 placeholder="O czym będzie to spotkanie?"
                 disabled={!canEditWorkspace}
               />
+              <div className="studio-brief-field-help studio-brief-field-help--split">
+                <span>Im więcej kontekstu, tym lepsza analiza AI.</span>
+                <span>{contextLength} / 1000</span>
+              </div>
             </div>
           </div>
 
-          {/* Termin */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Termin">
               <Calendar size={18} />
             </span>
-            <span className="todo-row-label">Termin</span>
-            <div className="todo-detail-row-fill">
-              <input
-                type="datetime-local"
-                className="todo-detail-unified-field"
-                value={meetingDraft.startsAt || ''}
-                onChange={(event) =>
-                  setMeetingDraft((previous) => ({ ...previous, startsAt: event.target.value }))
-                }
-                disabled={!canEditWorkspace}
-              />
+            <span className="todo-row-label">
+              Termin <span className="required-star">*</span>
+            </span>
+            <div className="todo-detail-row-fill studio-brief-date-time">
+              <label className="studio-brief-date-time-segment">
+                <Calendar size={17} aria-hidden="true" />
+                <input
+                  type="date"
+                  className="todo-detail-unified-field"
+                  aria-label="Data spotkania"
+                  aria-invalid={dateMissing}
+                  value={datePart}
+                  onChange={(event) => updateStartsAt(event.target.value, timePart)}
+                  disabled={!canEditWorkspace}
+                />
+              </label>
+              <span className="studio-brief-date-time-divider" aria-hidden="true" />
+              <label className="studio-brief-date-time-segment">
+                <Clock size={17} aria-hidden="true" />
+                <input
+                  type="time"
+                  className="todo-detail-unified-field"
+                  aria-label="Godzina spotkania"
+                  aria-invalid={dateMissing}
+                  value={timePart}
+                  onChange={(event) => updateStartsAt(datePart, event.target.value)}
+                  disabled={!canEditWorkspace || !datePart}
+                />
+                <ChevronDown
+                  className="studio-brief-date-time-chevron"
+                  size={17}
+                  aria-hidden="true"
+                />
+              </label>
             </div>
           </div>
 
-          {/* Czas trwania */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Czas trwania">
               <Clock size={18} />
             </span>
-            <span className="todo-row-label">Czas trwania</span>
+            <span className="todo-row-label">
+              Czas trwania <span className="required-star">*</span>
+            </span>
             <div className="todo-detail-row-fill duration-picker-fill">
               <select
                 className="todo-detail-unified-field"
+                aria-invalid={durationMissing}
                 value={
-                  [15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes))
+                  COMMON_DURATIONS.includes(Number(meetingDraft.durationMinutes))
                     ? String(meetingDraft.durationMinutes)
                     : 'custom'
                 }
@@ -150,7 +213,7 @@ export default function StudioBriefModal({
                 <option value="60">1 godz</option>
                 <option value="custom">Własny czas</option>
               </select>
-              {![15, 30, 45, 60].includes(Number(meetingDraft.durationMinutes)) && (
+              {!COMMON_DURATIONS.includes(Number(meetingDraft.durationMinutes)) && (
                 <input
                   type="number"
                   min="5"
@@ -170,7 +233,6 @@ export default function StudioBriefModal({
             </div>
           </div>
 
-          {/* Uczestnicy */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Uczestnicy">
               <Users size={18} />
@@ -182,7 +244,7 @@ export default function StudioBriefModal({
                   type="person"
                   tags={(meetingDraft.attendees || '')
                     .split('\n')
-                    .map((t) => t.trim())
+                    .map((item) => item.trim())
                     .filter(Boolean)}
                   suggestions={peopleOptions}
                   onChange={(newAttendees) => {
@@ -190,7 +252,7 @@ export default function StudioBriefModal({
                       ...previous,
                       attendees: newAttendees.join('\n'),
                     }));
-                    newAttendees.forEach((t) => addCustomTaskPerson(t));
+                    newAttendees.forEach((item) => addCustomTaskPerson(item));
                   }}
                   placeholder="Dodaj uczestnika..."
                 />
@@ -198,7 +260,7 @@ export default function StudioBriefModal({
                 <div className="brief-attendees-chips">
                   {(meetingDraft.attendees || '')
                     .split('\n')
-                    .map((t) => t.trim())
+                    .map((item) => item.trim())
                     .filter(Boolean)
                     .map((person) => (
                       <span key={person} className="brief-attendee-chip">
@@ -207,10 +269,10 @@ export default function StudioBriefModal({
                     ))}
                 </div>
               )}
+              <div className="studio-brief-field-help">Wpisz imię, nazwisko lub e-mail</div>
             </div>
           </div>
 
-          {/* Tagi */}
           <div className="todo-detail-row field-row">
             <span className="todo-row-icon" title="Tagi">
               <Tag size={18} />
@@ -221,7 +283,7 @@ export default function StudioBriefModal({
                 <TagInput
                   tags={(meetingDraft.tags || '')
                     .split(',')
-                    .map((t) => t.trim())
+                    .map((item) => item.trim())
                     .filter(Boolean)}
                   suggestions={tagOptions}
                   onChange={(newTags) => {
@@ -229,7 +291,7 @@ export default function StudioBriefModal({
                       ...previous,
                       tags: newTags.join(', '),
                     }));
-                    newTags.forEach((t) => addCustomTaskTag(t));
+                    newTags.forEach((item) => addCustomTaskTag(item));
                   }}
                   placeholder="Dodaj tag..."
                 />
@@ -237,7 +299,7 @@ export default function StudioBriefModal({
                 <div className="brief-attendees-chips">
                   {(meetingDraft.tags || '')
                     .split(',')
-                    .map((t) => t.trim())
+                    .map((item) => item.trim())
                     .filter(Boolean)
                     .map((tag) => (
                       <span key={tag} className="brief-attendee-chip">
@@ -246,6 +308,7 @@ export default function StudioBriefModal({
                     ))}
                 </div>
               )}
+              <div className="studio-brief-field-help">np. ad-hoc, klient, wewnętrzne</div>
             </div>
           </div>
 
@@ -254,14 +317,16 @@ export default function StudioBriefModal({
               type="button"
               className="brief-advanced-toggle"
               onClick={() => setShowAdvanced(!showAdvanced)}
+              aria-expanded={showAdvanced}
             >
-              Dodatkowe opcje {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              Dodatkowe opcje
+              <span>Mówcy, agenda, integracje i inne</span>
             </button>
           </div>
 
           {showAdvanced && (
             <div className="brief-advanced-section">
-              {/* Lokalizacja */}
               <div className="todo-detail-row field-row">
                 <span className="todo-row-icon" title="Lokalizacja">
                   <MapPin size={18} />
@@ -280,7 +345,6 @@ export default function StudioBriefModal({
                 </div>
               </div>
 
-              {/* Potrzeby rozmówców */}
               <div className="todo-detail-row field-row">
                 <span className="todo-row-icon" title="Potrzeby">
                   <Target size={18} />
@@ -300,7 +364,6 @@ export default function StudioBriefModal({
                 </div>
               </div>
 
-              {/* Oczekiwania */}
               <div className="todo-detail-row field-row">
                 <span className="todo-row-icon" title="Oczekiwania">
                   <ListTodo size={18} />
@@ -338,17 +401,24 @@ export default function StudioBriefModal({
           >
             Anuluj
           </button>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => {
-              saveMeeting();
-              if (onClose) onClose();
-            }}
-            disabled={!canEditWorkspace || !meetingDraft.title?.trim()}
-          >
-            {isDetachedMeetingDraft ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
-          </button>
+          <div className="studio-brief-submit-stack">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => {
+                saveMeeting();
+                if (onClose) onClose();
+              }}
+              disabled={!canSubmit}
+              data-disabled-reason={disabledReason}
+              title={disabledReason || undefined}
+            >
+              {isNewMeeting ? 'Utwórz spotkanie' : 'Zapisz zmiany'}
+            </button>
+            <span className="studio-brief-footer-hint">
+              {disabledReason ? 'Wypełnij wymagane pola (*)' : 'Gotowe do zapisania'}
+            </span>
+          </div>
         </div>
       </div>
     </Modal>

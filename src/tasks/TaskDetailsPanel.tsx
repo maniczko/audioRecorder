@@ -83,7 +83,7 @@ function TaskDetailsPanel({
 
   return (
     <aside className="todo-details">
-      <div className="todo-detail-card">
+      <div className="todo-detail-card todo-detail-card--editor">
         <div className="todo-detail-header">
           <div className="todo-detail-title-block">
             {selectedTask.sourceType === 'meeting' || selectedTask.sourceType === 'google' ? (
@@ -354,7 +354,7 @@ function TaskDetailsPanel({
           </div>
         </div>
 
-        <section className="todo-detail-section">
+        <section className="todo-detail-section todo-detail-history-section">
           <div className="todo-section-head">
             <div className="todo-section-head-wrapper">
               <strong>
@@ -383,7 +383,8 @@ function TaskDetailsPanel({
                       onDeleteTask?.(selectedTask.id);
                     }
                   }}
-                  aria-label="Usun zadanie"
+                  aria-hidden="true"
+                  tabIndex={-1}
                   title="Usuń zadanie"
                 >
                   <Trash2 size={16} />
@@ -406,6 +407,23 @@ function TaskDetailsPanel({
             <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
           )}
         </section>
+
+        <footer className="todo-detail-editor-footer">
+          <span>Zmiany zapisują się automatycznie</span>
+          <button
+            type="button"
+            className="task-create-modal-secondary todo-detail-delete-action"
+            aria-label="Usun zadanie"
+            onClick={() => {
+              if (window.confirm('Usunac to zadanie?')) {
+                onDeleteTask?.(selectedTask.id);
+              }
+            }}
+          >
+            <Trash2 size={16} aria-hidden="true" />
+            Usuń zadanie
+          </button>
+        </footer>
       </div>
     </aside>
   );

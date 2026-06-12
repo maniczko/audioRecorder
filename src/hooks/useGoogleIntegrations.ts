@@ -29,9 +29,13 @@ function isAfter(reference: string, baseline: string) {
   return new Date(reference || 0).getTime() > new Date(baseline || 0).getTime();
 }
 
+const GOOGLE_BACKEND_SESSION_MESSAGE =
+  'Sesja lokalna nie ma tokenu backendu. Zaloguj sie ponownie, aby polaczyc Google Calendar.';
+
 export default function useGoogleIntegrations({
   currentUser,
   currentWorkspaceId,
+  sessionToken = '',
   calendarMonth,
   taskColumns,
   meetingTasks,
@@ -76,7 +80,7 @@ export default function useGoogleIntegrations({
     manualTasksRef.current = manualTasks;
   }, [manualTasks]);
   const googleTasksEnabled = Boolean(GOOGLE_CLIENT_ID);
-  const googleCalendarBackendEnabled = Boolean(currentUser && currentWorkspaceId);
+  const googleCalendarBackendEnabled = Boolean(currentUser && currentWorkspaceId && sessionToken);
   const googleEnabled = googleTasksEnabled || googleCalendarBackendEnabled;
   const openTaskColumnId =
     taskColumns.find((column) => !column.isDone)?.id || taskColumns[0]?.id || 'todo';
@@ -161,7 +165,7 @@ export default function useGoogleIntegrations({
   );
 
   useEffect(() => {
-    if (!currentWorkspaceId || !currentUser) {
+    if (!currentWorkspaceId || !currentUser || !sessionToken) {
       return;
     }
 
@@ -190,6 +194,14 @@ export default function useGoogleIntegrations({
         if (cancelled) return;
         const message = error instanceof Error ? error.message : String(error || '');
         const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        if (
+          statusCode === 401 ||
+          /sesja wygasla|brak tokenu autoryzacyjnego|unauthorized/i.test(message)
+        ) {
+          setGoogleCalendarStatus('idle');
+          setGoogleCalendarMessage('');
+          return;
+        }
         if (statusCode === 404 || /not found/i.test(message)) {
           setGoogleCalendarStatus('idle');
           setGoogleCalendarMessage('');
@@ -203,10 +215,10 @@ export default function useGoogleIntegrations({
     return () => {
       cancelled = true;
     };
-  }, [calendarMonth, currentUser, currentWorkspaceId, loadGoogleMonthEvents]);
+  }, [calendarMonth, currentUser, currentWorkspaceId, loadGoogleMonthEvents, sessionToken]);
 
   useEffect(() => {
-    if (googleCalendarStatus !== 'connected') {
+    if (googleCalendarStatus !== 'connected' || !sessionToken) {
       return undefined;
     }
 
@@ -237,7 +249,7 @@ export default function useGoogleIntegrations({
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [calendarMonth, googleCalendarStatus, loadGoogleMonthEvents]);
+  }, [calendarMonth, googleCalendarStatus, loadGoogleMonthEvents, sessionToken]);
 
   useEffect(
     () => () => {
@@ -253,7 +265,11 @@ export default function useGoogleIntegrations({
 
     if (!googleCalendarBackendEnabled) {
       setGoogleCalendarStatus('error');
-      setGoogleCalendarMessage('Zaloguj sie i wybierz workspace, aby polaczyc Google Calendar.');
+      setGoogleCalendarMessage(
+        sessionToken
+          ? 'Zaloguj sie i wybierz workspace, aby polaczyc Google Calendar.'
+          : GOOGLE_BACKEND_SESSION_MESSAGE
+      );
       return;
     }
 
@@ -429,12 +445,27 @@ export default function useGoogleIntegrations({
   ]);
 
   const refreshGoogleCalendar = useCallback(async () => {
-    if (!currentWorkspaceId) {
-      throw new Error('Najpierw polacz Google Calendar.');
+    if (!currentWorkspaceId || !sessionToken) {
+      setGoogleCalendarStatus('error');
+      setGoogleCalendarMessage(
+        sessionToken ? 'Najpierw polacz Google Calendar.' : GOOGLE_BACKEND_SESSION_MESSAGE
+      );
+      return;
     }
 
-    await loadGoogleMonthEvents(calendarMonth);
-  }, [calendarMonth, currentWorkspaceId, loadGoogleMonthEvents]);
+    try {
+      await loadGoogleMonthEvents(calendarMonth);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error || '');
+      const statusCode = (error as any)?.status || (error as any)?.statusCode;
+      setGoogleCalendarStatus('error');
+      setGoogleCalendarMessage(
+        statusCode === 401 || /sesja wygasla|brak tokenu autoryzacyjnego/i.test(message)
+          ? GOOGLE_BACKEND_SESSION_MESSAGE
+          : 'Nie udalo sie zsynchronizowac Google Calendar.'
+      );
+    }
+  }, [calendarMonth, currentWorkspaceId, loadGoogleMonthEvents, sessionToken]);
 
   const refreshGoogleTasks = useCallback(async () => {
     if (!googleTasksTokenRef.current || !selectedGoogleTaskListId) {

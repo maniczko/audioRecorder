@@ -1,8 +1,12 @@
 function readEnv(key: string, fallback = '') {
-  if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
+  const env = (import.meta as any).env;
+  const isTestRuntime =
+    Boolean(env?.MODE === 'test') || Boolean(typeof process !== 'undefined' && process.env?.VITEST);
+
+  if (isTestRuntime && typeof process !== 'undefined' && process.env?.[key] !== undefined) {
     return process.env[key];
   }
-  const env = (import.meta as any).env;
+
   if (typeof import.meta !== 'undefined' && env) {
     if (key === 'VITE_DATA_PROVIDER' && env.VITE_DATA_PROVIDER !== undefined)
       return env.VITE_DATA_PROVIDER;
@@ -20,6 +24,9 @@ function readEnv(key: string, fallback = '') {
       return env.VITE_MEDIA_API_BASE_URL;
     if (key === 'REACT_APP_MEDIA_API_BASE_URL' && env.REACT_APP_MEDIA_API_BASE_URL !== undefined)
       return env.REACT_APP_MEDIA_API_BASE_URL;
+  }
+  if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
+    return process.env[key];
   }
   return fallback;
 }
@@ -89,10 +96,20 @@ function resolveApiBaseUrl() {
   return configuredValue || readDefaultApiBaseUrl();
 }
 
+function hasExplicitApiBaseUrl() {
+  return Boolean(
+    String(readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || '').trim()
+  );
+}
+
+const RAW_API_BASE_URL = String(resolveApiBaseUrl()).trim();
+
 export const APP_DATA_PROVIDER = readMode(
   isHostedBrowserRuntime()
     ? 'remote'
-    : readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
+    : hasExplicitApiBaseUrl()
+      ? 'remote'
+      : readEnv('VITE_DATA_PROVIDER') || readEnv('REACT_APP_DATA_PROVIDER') || 'local',
   'local'
 );
 
@@ -100,8 +117,6 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
   readEnv('VITE_MEDIA_PROVIDER') || readEnv('REACT_APP_MEDIA_PROVIDER') || 'local',
   'local'
 );
-
-const RAW_API_BASE_URL = String(resolveApiBaseUrl()).trim();
 
 export const API_BASE_URL = RAW_API_BASE_URL;
 export const MEDIA_API_BASE_URL = String(

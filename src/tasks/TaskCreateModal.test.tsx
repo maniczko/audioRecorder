@@ -1,38 +1,57 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import TaskCreateModal from './TaskCreateModal';
 
-// ─────────────────────────────────────────────────────────────────
-// Regression: Issue #0 — TaskCreateModal styling breaks in Studio
-// Date: 2026-03-29
-// Bug: TaskCreateModal lacked explicit import of tasks.css leading to
-//      unformatted UI when opened outside of the main Tasks view.
-// Fix: Added `import '../styles/tasks.css';` to the modal component.
-// ─────────────────────────────────────────────────────────────────
-describe('Regression: Issue #0 — TaskCreateModal layout relies on tasks.css', () => {
-  it('renders with the correct CSS context classes', () => {
-    render(
-      <TaskCreateModal
-        isOpen={true}
-        onClose={() => {}}
-        onSubmit={() => {}}
-        boardColumns={[{ id: 'todo', label: 'Todo' }]}
-        peopleOptions={['User A']}
-        tagOptions={['urgent']}
-      />
-    );
+// -----------------------------------------------------------------
+// Issue #0 - new task create must be a floating dialog
+// Date: 2026-06-11
+// Bug: Creating a task reused inline/aside detail UI, which narrowed the list
+//      workspace and mixed create mode with existing-task details.
+// Fix: Render create mode in a right-side modal with close/cancel/outside
+//      dismissal and without notes/activity detail-only sections.
+// -----------------------------------------------------------------
+describe('Regression: Issue #0 - task create uses floating modal', () => {
+  const baseProps = {
+    isOpen: true,
+    onClose: vi.fn(),
+    onSubmit: vi.fn(),
+    boardColumns: [{ id: 'todo', label: 'Todo' }],
+    peopleOptions: ['User A'],
+    tagOptions: ['urgent'],
+  };
 
-    // Verify modal content is rendered
-    expect(screen.getByText('Utwórz nowe zadanie')).toBeInTheDocument();
+  it('renders the create dialog anatomy and create-only form', () => {
+    render(<TaskCreateModal {...baseProps} />);
 
-    // The modal's styling relies on tasks-layout ms-todo wrapper
-    // We target it by looking around the form elements.
-    // The wrapper explicitly applies `.tasks-layout.ms-todo`
-    const wrapper = document.querySelector('.tasks-layout.ms-todo');
-    expect(wrapper).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
+    expect(screen.getByText('Tytuł zadania')).toBeInTheDocument();
+    expect(screen.getByText(/Uzupełnij opis z nagrania/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Anuluj' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dodaj zadanie' })).toBeInTheDocument();
+    expect(screen.queryByText('Notatka')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
+  });
 
-    // The form uses `.todo-detail-form` layout (unified with TaskDetailsPanel)
-    const formLayout = document.querySelector('.todo-detail-form');
-    expect(formLayout).toBeInTheDocument();
+  it('closes from Escape, outside click, X and cancel', () => {
+    const onClose = vi.fn();
+    const { rerender } = render(<TaskCreateModal {...baseProps} onClose={onClose} />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    onClose.mockClear();
+    const overlay = document.querySelector('.task-create-modal-overlay') as HTMLElement;
+    fireEvent.mouseDown(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    onClose.mockClear();
+    rerender(<TaskCreateModal {...baseProps} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Zamknij' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    onClose.mockClear();
+    rerender(<TaskCreateModal {...baseProps} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

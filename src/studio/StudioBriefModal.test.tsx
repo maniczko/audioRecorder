@@ -69,12 +69,19 @@ describe('StudioBriefModal', () => {
     render(<StudioBriefModal {...defaultProps} />);
 
     // Header
-    expect(screen.getByText('Meeting brief')).toBeInTheDocument();
+    expect(screen.getByText('Brief spotkania')).toBeInTheDocument();
     expect(screen.getByText('Nowe spotkanie')).toBeInTheDocument();
 
     // Inputs
     expect(screen.getByDisplayValue('Spotkanie projektowe')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Omówienie nowej architektury')).toBeInTheDocument();
+  });
+
+  it('renders the reference date and time controls with accessible labels', () => {
+    render(<StudioBriefModal {...defaultProps} />);
+
+    expect(screen.getByLabelText('Data spotkania')).toHaveAttribute('type', 'date');
+    expect(screen.getByLabelText('Godzina spotkania')).toHaveAttribute('type', 'time');
   });
 
   it('renders "Edytuj spotkanie" if selectedMeeting is provided', () => {
@@ -95,7 +102,7 @@ describe('StudioBriefModal', () => {
   it('calls saveMeeting and onClose when form is valid and Saved', () => {
     render(<StudioBriefModal {...defaultProps} />);
 
-    const saveButton = screen.getByRole('button', { name: /Zapisz zmiany/i });
+    const saveButton = screen.getByRole('button', { name: /Utwórz spotkanie/i });
     fireEvent.click(saveButton);
 
     expect(defaultProps.saveMeeting).toHaveBeenCalledOnce();
@@ -109,7 +116,7 @@ describe('StudioBriefModal', () => {
     };
     render(<StudioBriefModal {...emptyDraftProps} />);
 
-    const saveButton = screen.getByRole('button', { name: /Zapisz zmiany/i });
+    const saveButton = screen.getByRole('button', { name: /Utwórz spotkanie/i });
     expect(saveButton).toBeDisabled();
   });
 

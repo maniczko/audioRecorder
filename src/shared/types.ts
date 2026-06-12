@@ -339,6 +339,7 @@ export interface MeetingAnalysis {
 export interface WorkspaceState {
   meetings: unknown[];
   manualTasks: unknown[];
+  manualPeople?: unknown[];
   taskState: Record<string, unknown>;
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;

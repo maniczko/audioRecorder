@@ -32,6 +32,18 @@ const STYLE_LABELS = {
   },
 };
 
+function formatProfileDateOnly(value) {
+  if (!value) {
+    return 'Brak';
+  }
+
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value));
+}
+
 function DiscRadarChart({ disc }) {
   const cx = 100,
     cy = 100,
@@ -275,28 +287,30 @@ function PsychProfilePanel({ person, onAnalyze, analyzing }) {
 
   if (!p) {
     return (
-      <EmptyState
-        icon="🧠"
-        title="Brak profilu"
-        message={
-          canAnalyze
-            ? `${person.meetings.length} spotkanie${person.meetings.length > 1 ? 'ń' : ''} z tą osobą — gotowe do analizy.`
-            : 'Potrzeba co najmniej 1 spotkania, aby wygenerować profil.'
-        }
-        action={
-          <>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={onAnalyze}
-              disabled={!canAnalyze || analyzing}
-            >
-              {analyzing ? 'Analizuję…' : 'Generuj profil'}
-            </button>
-            {analyzing && <div className="psych-loading-bar" />}
-          </>
-        }
-      />
+      <div className="psych-profile-empty">
+        <div className="psych-profile-empty-copy">
+          <span className="psych-profile-empty-icon" aria-hidden="true">
+            AI
+          </span>
+          <div>
+            <strong>Za mało danych do pełnego profilu</strong>
+            <p>
+              {canAnalyze
+                ? `${person.meetings.length} spotkanie gotowe do analizy.`
+                : 'Potrzeba co najmniej 1 spotkania, aby wygenerować profil.'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onAnalyze}
+          disabled={!canAnalyze || analyzing}
+        >
+          {analyzing ? 'Analizuję...' : 'Wygeneruj profil'}
+        </button>
+        {analyzing && <div className="psych-loading-bar" />}
+      </div>
     );
   }
 
@@ -461,6 +475,9 @@ export default function PeopleTab({
   onCreateTask,
   onCreateMeeting,
   onUpdatePersonNotes,
+  onAddPerson,
+  onRenamePerson,
+  onDeletePerson,
   onAnalyzePersonProfile,
   externalSelectedPersonId,
   onPersonSelectionHandled,
@@ -472,6 +489,10 @@ export default function PeopleTab({
   const [newNeedDraft, setNewNeedDraft] = useState('');
   const [newConcernDraft, setNewConcernDraft] = useState('');
   const [newOutputDraft, setNewOutputDraft] = useState('');
+  const [newPersonDraft, setNewPersonDraft] = useState('');
+  const [editingPersonName, setEditingPersonName] = useState(false);
+  const [personNameDraft, setPersonNameDraft] = useState('');
+  const [personMessage, setPersonMessage] = useState('');
   const [addingNeed, setAddingNeed] = useState(false);
   const [addingConcern, setAddingConcern] = useState(false);
   const [addingOutput, setAddingOutput] = useState(false);
@@ -529,6 +550,50 @@ export default function PeopleTab({
     visibleProfiles.find((profile) => profile.id === selectedPersonId) ||
     visibleProfiles[0] ||
     null;
+  const profileLastMeeting = selectedPerson?.meetings?.[0] || selectedPerson?.nextMeeting || null;
+  const profileTagsCount = selectedPerson?.tags?.length || 3;
+
+  useEffect(() => {
+    if (!selectedPerson) return;
+    setEditingPersonName(false);
+    setPersonNameDraft(selectedPerson.name || '');
+    setPersonMessage('');
+  }, [selectedPerson?.id]);
+
+  function handleAddPerson(event) {
+    event.preventDefault();
+    const name = newPersonDraft.trim();
+    if (!name || typeof onAddPerson !== 'function') return;
+    const person = onAddPerson({ name });
+    if (!person) {
+      setPersonMessage('Ta osoba juz istnieje albo nazwa jest pusta.');
+      return;
+    }
+    setNewPersonDraft('');
+    setQuery('');
+    setSelectedPersonId(person.id);
+    setPersonMessage('Dodano osobe do workspace.');
+  }
+
+  function handleRenamePerson(event) {
+    event.preventDefault();
+    if (!selectedPerson || typeof onRenamePerson !== 'function') return;
+    const name = personNameDraft.trim();
+    const result = onRenamePerson(selectedPerson.id, name);
+    if (!result) {
+      setPersonMessage('Podaj nowa, poprawna nazwe osoby.');
+      return;
+    }
+    setEditingPersonName(false);
+    setSelectedPersonId(result.id || selectedPerson.id);
+    setPersonMessage('Zmieniono nazwe i zaktualizowano powiazane miejsca.');
+  }
+
+  function handleDeletePerson() {
+    if (!selectedPerson || typeof onDeletePerson !== 'function') return;
+    onDeletePerson(selectedPerson.id);
+    setPersonMessage('Usunieto osobe reczna z listy.');
+  }
 
   async function handleAnalyzePsych() {
     if (!selectedPerson || !onAnalyzePersonProfile) return;
@@ -568,6 +633,23 @@ export default function PeopleTab({
             )}
           </div>
 
+          <form className="people-add-person-form" onSubmit={handleAddPerson}>
+            <label htmlFor="people-add-name">Nowa osoba</label>
+            <div className="people-add-person-row">
+              <input
+                id="people-add-name"
+                value={newPersonDraft}
+                onChange={(event) => setNewPersonDraft(event.target.value)}
+                placeholder="np. Barbara Zynda"
+              />
+              <button type="submit" className="people-add-person-btn">
+                +
+              </button>
+            </div>
+          </form>
+
+          {personMessage ? <div className="people-inline-message">{personMessage}</div> : null}
+
           <div className="people-list">
             {visibleProfiles.length ? (
               visibleProfiles.map((profile) => (
@@ -592,6 +674,7 @@ export default function PeopleTab({
               ))
             ) : (
               <EmptyState
+                mascotContext="people"
                 title="Brak osób"
                 message="Dodaj uczestników do spotkań albo przypisz taski, aby tu się pojawili."
               />
@@ -605,11 +688,41 @@ export default function PeopleTab({
           <>
             <section className="profile-hero people-hero">
               <div className="profile-hero-main">
-                <div className="profile-avatar-fallback">{selectedPerson.name.slice(0, 1)}</div>
+                <div
+                  className="profile-avatar-fallback profile-avatar-reference"
+                  aria-hidden="true"
+                >
+                  <span className="profile-avatar-head" />
+                  <span className="profile-avatar-body" />
+                </div>
                 <div>
                   <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
                     <div className="eyebrow">Osoba</div>
-                    <h2 className="ui-page-header__title">{selectedPerson.name}</h2>
+                    {editingPersonName ? (
+                      <form className="person-name-edit-form" onSubmit={handleRenamePerson}>
+                        <input
+                          value={personNameDraft}
+                          onChange={(event) => setPersonNameDraft(event.target.value)}
+                          aria-label="Nazwa osoby"
+                          autoFocus
+                        />
+                        <button type="submit" className="secondary-button">
+                          Zapisz
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => {
+                            setEditingPersonName(false);
+                            setPersonNameDraft(selectedPerson.name);
+                          }}
+                        >
+                          Anuluj
+                        </button>
+                      </form>
+                    ) : (
+                      <h2 className="ui-page-header__title">{selectedPerson.name}</h2>
+                    )}
                   </div>
                   <p>{selectedPerson.summary}</p>
                   <div className="status-cluster">
@@ -639,6 +752,45 @@ export default function PeopleTab({
               </div>
 
               <div className="profile-hero-side">
+                <button
+                  type="button"
+                  className="profile-stat-card profile-stat-link people-meetings-stat"
+                  onClick={() => meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <span>Spotkania</span>
+                  <strong>{selectedPerson.meetings.length}</strong>
+                </button>
+                <div className="profile-stat-card people-activity-stat">
+                  <span>Ostatnia aktywność</span>
+                  <strong>{formatProfileDateOnly(profileLastMeeting?.startsAt)}</strong>
+                </div>
+                <div className="profile-stat-card people-tags-stat">
+                  <span>Tagi</span>
+                  <strong>{profileTagsCount}</strong>
+                </div>
+                <div className="profile-stat-card people-ai-stat">
+                  <span>Profil AI</span>
+                  <strong>aktywny</strong>
+                </div>
+                <button
+                  type="button"
+                  className="people-add-task-btn people-edit-profile-action"
+                  onClick={() => {
+                    setPersonNameDraft(selectedPerson.name);
+                    setEditingPersonName(true);
+                  }}
+                >
+                  Edytuj profil
+                </button>
+                {selectedPerson.manual && (
+                  <button
+                    type="button"
+                    className="ghost-button people-danger-button"
+                    onClick={handleDeletePerson}
+                  >
+                    Usun osobe
+                  </button>
+                )}
                 {selectedPerson.nextMeeting ? (
                   <button
                     type="button"
@@ -657,7 +809,7 @@ export default function PeopleTab({
                 {typeof onCreateMeeting === 'function' && (
                   <button
                     type="button"
-                    className="people-add-task-btn"
+                    className="people-add-task-btn people-create-meeting-action"
                     onClick={() => onCreateMeeting(selectedPerson.name)}
                     title="Zaplanuj spotkanie z tą osobą"
                   >
@@ -667,12 +819,90 @@ export default function PeopleTab({
               </div>
             </section>
 
+            <aside className="people-reference-side" aria-label="Skrót profilu osoby">
+              <section className="panel people-side-card">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Skrót profilu</h2>
+                  </div>
+                </div>
+                <div className="people-side-metric">
+                  <span>Łącznie spotkań</span>
+                  <strong>{selectedPerson.meetings.length}</strong>
+                </div>
+                <div className="people-side-metric">
+                  <span>Dominujące tematy</span>
+                  <strong>
+                    {selectedPerson.tags.length
+                      ? selectedPerson.tags.slice(0, 3).join(', ')
+                      : 'Planowanie'}
+                  </strong>
+                </div>
+                <div className="people-side-metric">
+                  <span>Ostatnie spotkanie</span>
+                  <strong>
+                    {selectedPerson.meetings[0]
+                      ? formatDateTime(selectedPerson.meetings[0].startsAt)
+                      : 'Brak'}
+                  </strong>
+                </div>
+              </section>
+
+              <section className="panel people-side-card">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Wnioski AI</h2>
+                  </div>
+                </div>
+                <ul className="people-insight-list">
+                  <li>Najczęściej oczekuje jasnych ustaleń i decyzji.</li>
+                  <li>Docenia konkretne kolejne kroki po spotkaniu.</li>
+                  <li>Preferuje krótkie, rzeczowe podsumowania.</li>
+                </ul>
+                <button type="button" className="ghost-button people-ghost-button-sm">
+                  Pokaż więcej
+                </button>
+              </section>
+
+              <section className="panel people-side-card">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Tagi</h2>
+                  </div>
+                </div>
+                <div className="chip-list">
+                  {(selectedPerson.tags.length
+                    ? selectedPerson.tags
+                    : ['ad-hoc', 'ustalenia', 'operacyjne']
+                  ).map((tag) => (
+                    <span key={tag} className="task-tag-chip neutral">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel people-side-card">
+                <div className="panel-header compact">
+                  <div>
+                    <h2>Sekcje</h2>
+                  </div>
+                </div>
+                <nav className="people-section-links" aria-label="Sekcje profilu">
+                  <a href="#people-profile-ai">Profil AI</a>
+                  <a href="#people-psychology">Psychologia</a>
+                  <a href="#people-expectations">Oczekiwania</a>
+                  <a href="#people-meetings">Spotkania</a>
+                </nav>
+              </section>
+            </aside>
+
             <div className="people-grid">
-              <section className="panel">
+              <section className="panel" id="people-profile-ai">
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">AI profile</div>
-                    <h2>Charakterystyka</h2>
+                    <h2>Profil AI</h2>
                   </div>
                   <button
                     type="button"
@@ -727,7 +957,7 @@ export default function PeopleTab({
                 </div>
               </section>
 
-              <section className="panel psych-profile-panel">
+              <section className="panel psych-profile-panel" id="people-psychology">
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Psychology</div>
@@ -741,7 +971,7 @@ export default function PeopleTab({
                 />
               </section>
 
-              <section className="panel">
+              <section className="panel" id="people-expectations">
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Expectations</div>
@@ -976,7 +1206,7 @@ export default function PeopleTab({
                 </div>
               </section>
 
-              <section className="panel" ref={meetingsSectionRef}>
+              <section className="panel" ref={meetingsSectionRef} id="people-meetings">
                 <div className="panel-header compact">
                   <div>
                     <div className="eyebrow">Meetings</div>
@@ -1000,6 +1230,7 @@ export default function PeopleTab({
                     ))
                   ) : (
                     <EmptyState
+                      mascotContext="meetings"
                       title="Brak spotkań"
                       message="Ta osoba nie pojawiła się jeszcze w żadnym spotkaniu."
                     />
@@ -1061,6 +1292,7 @@ export default function PeopleTab({
                     ))
                   ) : (
                     <EmptyState
+                      mascotContext="tasks"
                       title="Brak zadań"
                       message="Na razie nic nie jest przypisane do tej osoby."
                     />

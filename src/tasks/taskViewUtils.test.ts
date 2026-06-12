@@ -65,7 +65,7 @@ describe('formatListDueDate', () => {
   });
   it('formats a valid date', () => {
     const result = formatListDueDate('2026-01-15');
-    expect(result).toMatch(/01/);
+    expect(result).toMatch(/sty|01/i);
     expect(result).toMatch(/15/);
     expect(result).toMatch(/2026/);
   });
@@ -204,6 +204,22 @@ describe('sortVisibleTasks', () => {
     const sorted = sortVisibleTasks(tasks, 'due');
     expect(sorted.map((t) => t.id)).toEqual(['2', '1', '3']);
   });
+
+  it('sorts by due date descending with field direction syntax', () => {
+    const sorted = sortVisibleTasks(tasks, 'due:desc');
+    expect(sorted.map((t) => t.id)).toEqual(['3', '1', '2']);
+  });
+
+  it('keeps undated tasks last when sorting by due date', () => {
+    const sorted = sortVisibleTasks(
+      [
+        ...tasks,
+        { id: '4', title: 'No due', priority: 'low', owner: 'Ola', dueDate: '', order: 4 },
+      ],
+      'due:asc'
+    );
+    expect(sorted.map((t) => t.id)).toEqual(['2', '1', '3', '4']);
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -313,14 +329,28 @@ describe('applyMainListFilter', () => {
 /* ------------------------------------------------------------------ */
 describe('buildSidebarLists', () => {
   it('returns baseLists, workspaceLists, and customGroups', () => {
-    const columns = [{ id: 'c1', label: 'Col1' }];
+    const columns = [
+      { id: 'c1', label: 'Col1' },
+      { id: 'done', label: 'Zakonczone', isDone: true },
+    ];
     const tasks = [
       { id: '1', status: 'c1', important: true, group: 'Sprint1' },
       { id: '2', status: 'c1', group: '' },
     ];
     const result = buildSidebarLists(tasks, columns);
     expect(result.baseLists.length).toBeGreaterThan(0);
-    expect(result.workspaceLists).toHaveLength(1);
+    expect(result.taskLists.map((item) => item.label)).toEqual([
+      'Dziś',
+      'Ten tydzień',
+      'Zaplanowane',
+      'Zaległe',
+      'Ważne',
+      'Przypisane do mnie',
+      'Wszystkie',
+    ]);
+    expect(result.workspaceLists).toHaveLength(2);
+    expect(result.statusLists.map((item) => item.label)).toContain('Ukończone');
+    expect(result.statusLists.map((item) => item.label)).not.toContain('Zakonczone');
     expect(result.customGroups).toHaveLength(1);
     expect(result.customGroups[0].label).toBe('Sprint1');
   });

@@ -1,10 +1,90 @@
 import PropTypes from 'prop-types';
-import { memo, useState, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import { getTaskAssigneeSummary } from '../lib/tasks';
 
+const DEFAULT_SORT = 'due:asc';
+
 function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
+}
+
+function priorityLabel(priority = 'medium') {
+  const labels = {
+    high: 'Wysoki',
+    medium: 'Średni',
+    low: 'Niski',
+  };
+  return labels[priority] || priority || 'Średni';
+}
+
+function assigneeInitials(value = '') {
+  return String(value || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
+
+function taskCountLabel(count: number) {
+  if (count === 1) {
+    return '1 zadanie';
+  }
+
+  return `${count} zadań`;
+}
+
+function parseSort(sortBy = DEFAULT_SORT) {
+  const [field, rawDirection] = String(sortBy || DEFAULT_SORT).split(':');
+  const direction = rawDirection === 'desc' ? 'desc' : 'asc';
+  return { field: field || 'due', direction };
+}
+
+function nextSortValue(sortBy, field) {
+  const current = parseSort(sortBy);
+  if (current.field !== field) {
+    return `${field}:asc`;
+  }
+  if (current.direction === 'asc') {
+    return `${field}:desc`;
+  }
+  return DEFAULT_SORT;
+}
+
+function sortIcon(sortBy, field) {
+  const current = parseSort(sortBy);
+  if (current.field !== field) {
+    return '↕';
+  }
+  return current.direction === 'desc' ? '↓' : '↑';
+}
+
+function ariaSort(sortBy, field) {
+  const current = parseSort(sortBy);
+  if (current.field !== field) {
+    return 'none';
+  }
+  return current.direction === 'desc' ? 'descending' : 'ascending';
+}
+
+function SortHeader({ field, label, sortBy, setSortBy }) {
+  const active = parseSort(sortBy).field === field;
+  return (
+    <span role="columnheader" aria-sort={ariaSort(sortBy, field)}>
+      <button
+        type="button"
+        className={active ? 'todo-col-sort-btn active' : 'todo-col-sort-btn'}
+        onClick={() => setSortBy(nextSortValue(sortBy, field))}
+      >
+        <span>{label}</span>
+        <span className="todo-col-sort-icon" aria-hidden="true">
+          {sortIcon(sortBy, field)}
+        </span>
+      </button>
+    </span>
+  );
 }
 
 function buildPlacement(groupBy, groupId, previousTaskId = '', nextTaskId = '') {
@@ -16,7 +96,7 @@ function buildPlacement(groupBy, groupId, previousTaskId = '', nextTaskId = '') 
   };
 }
 
-function DropLine({ placement, onDropTask, label = 'Upusc tutaj zadanie' }) {
+function DropLine({ placement, onDropTask, label = 'Upuść tutaj zadanie' }) {
   const [isOver, setIsOver] = useState(false);
   return (
     <div
@@ -39,8 +119,8 @@ function TaskListView({
   groupedTasks,
   allTasks,
   groupBy,
-  sortBy = 'manual',
-  setSortBy = (value: string) => {},
+  sortBy = DEFAULT_SORT,
+  setSortBy = () => undefined,
   selectedTask,
   selectedTaskIds,
   toggleTaskSelection,
@@ -55,7 +135,11 @@ function TaskListView({
   setDragTaskId,
   dragTaskId,
 }) {
-  // UX Fix #5: Escape key cancels drag in List View
+  void toggleTaskSelection;
+  void onMoveTaskToColumn;
+  void peopleOptions;
+  void taskGroups;
+
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
       if (e.key === 'Escape' && dragTaskId) {
@@ -66,38 +150,20 @@ function TaskListView({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [dragTaskId, setDragTaskId]);
 
+  const visibleTaskCount = allTasks.length;
+  const pageSize = 25;
+  const totalPages = Math.max(1, Math.ceil(visibleTaskCount / pageSize));
+
   return (
     <div className="todo-table-wrap">
       <div className="todo-table-head">
-        <span />
-        <button
-          type="button"
-          className={`todo-col-sort-btn${sortBy === 'title' || sortBy === 'owner' ? ' active' : ''}`}
-          onClick={() => setSortBy(sortBy === 'title' ? 'owner' : 'title')}
-        >
-          Tytul i osoby {sortBy === 'title' ? '↑' : sortBy === 'owner' ? '↑' : ''}
-        </button>
-        <button
-          type="button"
-          className={`todo-col-sort-btn${sortBy === 'due' ? ' active' : ''}`}
-          onClick={() => setSortBy('due')}
-        >
-          Termin {sortBy === 'due' ? '↑' : ''}
-        </button>
-        <button
-          type="button"
-          className={`todo-col-sort-btn${sortBy === 'updated' ? ' active' : ''}`}
-          onClick={() => setSortBy('updated')}
-        >
-          Status {sortBy === 'updated' ? '↑' : ''}
-        </button>
-        <button
-          type="button"
-          className={`todo-col-sort-btn${sortBy === 'priority' ? ' active' : ''}`}
-          onClick={() => setSortBy('priority')}
-        >
-          Priorytet {sortBy === 'priority' ? '↑' : ''}
-        </button>
+        <span role="columnheader" aria-label="Zaznacz" />
+        <SortHeader field="title" label="Tytuł zadania" sortBy={sortBy} setSortBy={setSortBy} />
+        <SortHeader field="status" label="Status" sortBy={sortBy} setSortBy={setSortBy} />
+        <SortHeader field="priority" label="Priorytet" sortBy={sortBy} setSortBy={setSortBy} />
+        <SortHeader field="due" label="Termin" sortBy={sortBy} setSortBy={setSortBy} />
+        <SortHeader field="owner" label="Osoba" sortBy={sortBy} setSortBy={setSortBy} />
+        <span role="columnheader" aria-label="Ważne" />
       </div>
 
       {groupedTasks.map((group) => (
@@ -127,7 +193,7 @@ function TaskListView({
               <DropLine
                 placement={buildPlacement(groupBy, group.id, '', group.tasks[0]?.id || '')}
                 onDropTask={handleTaskDrop}
-                label={`Upusc na poczatku sekcji ${group.label || 'zadan'}`}
+                label={`Upuść na początku sekcji ${group.label || 'zadań'}`}
               />
 
               {group.tasks.map((task, index) => {
@@ -136,6 +202,7 @@ function TaskListView({
                 const nextTaskId = group.tasks[index].id;
                 const assigneeSummary = getTaskAssigneeSummary(task);
                 const hasMoreAssignees = (task.assignedTo || []).length > 1;
+                const tags = Array.isArray(task.tags) ? task.tags.filter(Boolean) : [];
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -159,7 +226,7 @@ function TaskListView({
                       <div className="todo-row-tools">
                         <span
                           className="todo-drag-handle"
-                          title="Przeciagnij zadanie"
+                          title="Przeciągnij zadanie"
                           draggable
                           onDragStart={(event) => {
                             setSelectedTaskId(task.id);
@@ -176,8 +243,8 @@ function TaskListView({
                           }
                           aria-label={
                             task.completed
-                              ? `Otworz ponownie zadanie ${task.title}`
-                              : `Zakoncz zadanie ${task.title}`
+                              ? `Otwórz ponownie zadanie ${task.title}`
+                              : `Zakończ zadanie ${task.title}`
                           }
                           onClick={(event) => {
                             event.stopPropagation();
@@ -188,15 +255,12 @@ function TaskListView({
 
                       <span className="todo-title-cell">
                         <strong>{task.title}</strong>
-                        <small>
-                          {assigneeSummary}
-                          {hasMoreAssignees ? ' | zespolowe' : ''}
-                          {task.reminderAt ? ' | przypomnienie' : ''}
+                        <small className="todo-title-meta">
+                          <span>{task.group || task.notes || 'Bez kategorii'}</span>
+                          {tags.length ? <span>{tags.slice(0, 2).join(', ')}</span> : null}
+                          {hasMoreAssignees ? <span>zespołowe</span> : null}
+                          {task.reminderAt ? <span>przypomnienie</span> : null}
                         </small>
-                      </span>
-
-                      <span className="todo-date">
-                        {formatListDueDate(task.dueDate) || 'Brak terminu'}
                       </span>
 
                       <span className="todo-status-cell">
@@ -204,30 +268,34 @@ function TaskListView({
                       </span>
 
                       <span className="todo-priority-cell">
-                        <div className="todo-inline-actions">
-                          <button
-                            type="button"
-                            className={task.myDay ? 'todo-star active' : 'todo-star'}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onUpdateTask(task.id, { myDay: !task.myDay });
-                            }}
-                            title="Dodaj do My Day"
-                          >
-                            {'+'}
-                          </button>
-                          <button
-                            type="button"
-                            className={task.important ? 'todo-star active' : 'todo-star'}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onUpdateTask(task.id, { important: !task.important });
-                            }}
-                            title="Oznacz jako wazne"
-                          >
-                            {'\u2605'}
-                          </button>
-                        </div>
+                        <span className={`todo-priority-badge ${task.priority || 'medium'}`}>
+                          {priorityLabel(task.priority)}
+                        </span>
+                      </span>
+
+                      <span className="todo-date">
+                        {formatListDueDate(task.dueDate) || 'Brak terminu'}
+                      </span>
+
+                      <span className="todo-assignee-cell">
+                        <span className="todo-assignee-avatar" aria-hidden="true">
+                          {assigneeInitials(assigneeSummary) || '?'}
+                        </span>
+                        <span>{assigneeSummary}</span>
+                      </span>
+
+                      <span className="todo-star-cell">
+                        <button
+                          type="button"
+                          className={task.important ? 'todo-star active' : 'todo-star'}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onUpdateTask(task.id, { important: !task.important });
+                          }}
+                          title="Oznacz jako ważne"
+                        >
+                          {'\u2605'}
+                        </button>
                       </span>
                     </div>
 
@@ -239,7 +307,7 @@ function TaskListView({
                         group.tasks[index + 1]?.id || ''
                       )}
                       onDropTask={handleTaskDrop}
-                      label={`Upusc po zadaniu ${task.title}`}
+                      label={`Upuść po zadaniu ${task.title}`}
                     />
                   </div>
                 );
@@ -253,14 +321,44 @@ function TaskListView({
                   ''
                 )}
                 onDropTask={handleTaskDrop}
-                label={`Upusc na koncu sekcji ${group.label || 'zadan'}`}
+                label={`Upuść na końcu sekcji ${group.label || 'zadań'}`}
               />
             </>
           ) : (
-            <div className="todo-empty">Brak zadan w tej sekcji.</div>
+            <div className="todo-empty">Brak zadań w tej sekcji.</div>
           )}
         </section>
       ))}
+
+      <div className="todo-table-footer" aria-label="Nawigacja listy zadań">
+        <div className="todo-table-footer-left">
+          <span>{taskCountLabel(visibleTaskCount)}</span>
+          <button type="button" className="todo-table-footer-action">
+            <RefreshCw size={15} aria-hidden="true" />
+            Odśwież
+          </button>
+        </div>
+        <div className="todo-table-pagination">
+          <span>Pokaż na stronie:</span>
+          <button type="button" className="todo-page-size">
+            {pageSize}
+          </button>
+          <button type="button" className="todo-page-icon" aria-label="Poprzednia strona">
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <button type="button" className="todo-page-number active" aria-current="page">
+            1
+          </button>
+          {totalPages > 1 ? (
+            <button type="button" className="todo-page-number">
+              2
+            </button>
+          ) : null}
+          <button type="button" className="todo-page-icon" aria-label="Następna strona">
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -286,11 +384,13 @@ TaskListView.propTypes = {
   dragTaskId: PropTypes.string,
 };
 
-// Memoize the entire list view to prevent unnecessary re-renders
 export default memo(TaskListView, (prevProps, nextProps) => {
-  // Only re-render if groupedTasks length or selectedTaskIds change
   return (
     prevProps.groupedTasks === nextProps.groupedTasks &&
+    prevProps.allTasks === nextProps.allTasks &&
+    prevProps.groupBy === nextProps.groupBy &&
+    prevProps.sortBy === nextProps.sortBy &&
+    prevProps.dragTaskId === nextProps.dragTaskId &&
     prevProps.selectedTaskIds === nextProps.selectedTaskIds &&
     prevProps.selectedTask === nextProps.selectedTask
   );

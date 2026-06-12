@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Loader2, X } from 'lucide-react';
+import { VoiceBobrAssistant } from '../components/brand/VoiceBobrBrand';
 import { createMediaService } from '../services/mediaService';
 import { Input } from '../ui/Input';
-import { X, Brain, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function AskAIPopover({ currentWorkspace, onClose }) {
   const [query, setQuery] = useState('');
@@ -9,7 +10,6 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
   const [loading, setLoading] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Close on ESC
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -21,10 +21,11 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  // Close on click outside
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) onClose();
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        onClose();
+      }
     }
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -49,27 +50,11 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
   return (
     <div ref={popoverRef} className="ask-ai-comic-bubble" onClick={(e) => e.stopPropagation()}>
       <div className="comic-bubble-header">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: 'var(--accent)',
-            fontWeight: 'bold',
-            fontSize: '1rem',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}
-        >
-          <Brain size={18} /> AI RAG Memory
-        </div>
+        <VoiceBobrAssistant eyebrow="VoiceBóbr summary" title="Zapytaj o archiwum" />
         <button type="button" onClick={onClose} className="comic-close-btn">
           <X size={16} />
         </button>
       </div>
-      <h3 style={{ margin: '12px 0 8px 0', fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
-        Zapytaj o Archiwum
-      </h3>
       <p
         style={{
           fontSize: '0.95rem',

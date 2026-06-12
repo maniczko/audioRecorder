@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState, memo } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { VoiceBobrAssistant } from '../components/brand/VoiceBobrBrand';
 import { suggestTasksFromTranscript } from '../lib/aiTaskSuggestions';
-import { remoteApiEnabled } from '../services/config';
 import { createId } from '../lib/storage';
-import './AiTaskSuggestionsPanelStyles.css';
+import { remoteApiEnabled } from '../services/config';
+import type { AiSuggestedTask } from '../shared/contracts';
 import TagBadge from '../shared/TagBadge';
 import TagInput from '../shared/TagInput';
-import type { AiSuggestedTask } from '../shared/contracts';
+import './AiTaskSuggestionsPanelStyles.css';
 
 const PRIORITY_LABELS = { high: 'Wysoki', medium: 'Średni', low: 'Niski' };
 const PRIORITY_FLAGS = { high: 'overdue', medium: 'in-progress', low: 'neutral' };
@@ -134,7 +135,7 @@ function AiTaskSuggestionsPanel({
     }
 
     onCreateTask({
-      title: suggestion.title || 'Zadanie AI',
+      title: suggestion.title || 'Zadanie VoiceBóbr',
       description: suggestion.description || '',
       assignedTo: suggestion.owner ? [suggestion.owner] : [],
       dueDate: suggestion.dueDate || null,
@@ -181,17 +182,16 @@ function AiTaskSuggestionsPanel({
   return (
     <section className="panel ai-suggestions-panel">
       <div className="panel-header compact">
-        <div>
-          <div className="eyebrow">AI — zadania</div>
-          <h2>Sugestie zadań ze spotkania</h2>
-        </div>
+        <VoiceBobrAssistant eyebrow="VoiceBóbr suggests" title="Sugestie zadań ze spotkania">
+          Trzymaj gotowe follow-upy blisko nagrania i zatwierdzaj tylko te, które mają sens.
+        </VoiceBobrAssistant>
         <button
           type="button"
           className="primary-button"
           onClick={handleGenerate}
           disabled={!selectedRecording || status === 'loading' || !canEdit}
         >
-          {status === 'loading' ? 'Generowanie...' : 'Generuj sugestie AI'}
+          {status === 'loading' ? 'Generowanie...' : 'Generuj sugestie'}
         </button>
       </div>
 
@@ -199,7 +199,7 @@ function AiTaskSuggestionsPanel({
 
       {status === 'done' && suggestions.length === 0 ? (
         <div className="inline-alert success">
-          Brak nowych sugestii — wszystkie zatwierdzone lub brak zadań w transkrypcji.
+          Brak nowych sugestii - wszystkie zatwierdzone lub brak zadań w transkrypcji.
         </div>
       ) : null}
 
@@ -270,7 +270,7 @@ function AiTaskSuggestionsPanel({
                   >
                     {PRIORITY_LABELS[suggestion.priority || 'medium'] || 'Średni'}
                   </span>
-                  <span className="task-flag neutral ai-badge">AI</span>
+                  <span className="task-flag neutral ai-badge">VoiceBóbr</span>
                 </div>
                 {suggestion.description ? (
                   <p className="ai-suggestion-desc">{suggestion.description}</p>

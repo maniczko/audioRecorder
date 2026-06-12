@@ -1347,6 +1347,195 @@
   color: var(--text);
 }
 
+/* Screenshot-first profile integrations: match approved desktop reference. */
+:root[data-theme='premium-light'] .modern-content-wrapper:has(.profile-integrations-reference) {
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .profile-layout-container:has(.profile-integrations-reference) {
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-sidebar {
+  padding: 42px 16px 28px;
+  background: rgba(255, 255, 255, 0.62);
+  border-right: 1px solid rgba(43, 82, 74, 0.11);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-sidebar-header {
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-sidebar-header
+  .eyebrow {
+  display: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-sidebar-header
+  h3 {
+  margin: 0;
+  color: #15213a;
+  font-size: 1.08rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav {
+  gap: 10px;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav-btn {
+  background: transparent;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 10px;
+  color: #526173;
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav-btn:hover:not(.active) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav-btn.active {
+  color: #007d6b;
+  background: rgba(230, 248, 243, 0.92);
+  border-color: rgba(0, 143, 122, 0.14);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  color: currentColor;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-sidebar-footer {
+  display: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-main-content {
+  max-width: none;
+  margin: 0;
+  padding: 8px 30px 34px;
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-reference {
+  gap: 10px;
+  width: min(100%, 1124px);
+  margin: 0 auto;
+}
+
+:root[data-theme='premium-light'] .profile-reference-header {
+  margin-bottom: 4px;
+}
+
+:root[data-theme='premium-light'] .profile-reference-header h1 {
+  font-size: 1.92rem;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel {
+  padding: 14px 20px;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel-head {
+  margin-bottom: 12px;
+}
+
+:root[data-theme='premium-light'] .integration-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-grid {
+  gap: 14px 18px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-card {
+  gap: 10px;
+  min-height: 216px;
+  padding: 16px 20px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo {
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo svg {
+  filter: drop-shadow(0 1px 1px rgba(9, 39, 58, 0.16));
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.google-calendar {
+  background:
+    linear-gradient(90deg, #4285f4 0 30%, #34a853 30% 56%, #fbbc04 56% 78%, #ea4335 78%), #ffffff;
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.outlook {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0b78d0, #46a7f5);
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.google-tasks {
+  border-radius: 999px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-status,
+:root[data-theme='premium-light'] .integration-reference-body {
+  min-height: 40px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-body {
+  min-height: 48px;
+  margin-top: -10px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-actions {
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .integration-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip {
+  gap: 18px;
+  padding: 18px 22px;
+}
+
 @media (max-width: 1180px) {
   .profile-layout-container {
     grid-template-columns: 1fr;

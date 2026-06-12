@@ -260,8 +260,10 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onResolveGoogleTaskConflict={google.resolveGoogleTaskConflict}
             workspaceName={workspace.currentWorkspace?.name || ''}
             workspaceInviteCode={workspace.currentWorkspace?.inviteCode || ''}
+            currentWorkspace={workspace.currentWorkspace}
             externalSelectedTaskId={ui.pendingTaskId}
             onTaskSelectionHandled={() => ui.setPendingTaskId('')}
+            onCreateFromRecording={() => ui.setActiveTab('studio')}
             currentUserName={workspace.currentUser?.name || workspace.currentUser?.email || 'Ty'}
             workspaceMembers={workspace.currentWorkspaceMembers}
             taskNotifications={meetings.taskNotifications}
@@ -284,6 +286,9 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             onCreateTask={ui.createTaskForPerson}
             onCreateMeeting={ui.createMeetingForPerson}
             onUpdatePersonNotes={meetings.updatePersonNotes}
+            onAddPerson={meetings.addManualPerson}
+            onRenamePerson={meetings.renamePerson}
+            onDeletePerson={meetings.deleteManualPerson}
             onAnalyzePersonProfile={meetings.analyzePersonPsychProfile}
             externalSelectedPersonId={ui.pendingPersonId}
             onPersonSelectionHandled={() => ui.setPendingPersonId('')}

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RefObject } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import TasksWorkspaceView from './TasksWorkspaceView';
 
 vi.mock('./TaskKanbanView', () => ({
@@ -20,6 +21,38 @@ vi.mock('./TaskChartsView', () => ({
 
 vi.mock('./TaskCreateForm', () => ({
   default: () => <div data-testid="task-create-form" />,
+}));
+
+vi.mock('./TaskCreateModal', () => ({
+  default: ({ isOpen, onClose, onSubmit }: any) =>
+    isOpen ? (
+      <div role="dialog" aria-label="Nowe zadanie" data-testid="task-create-modal">
+        <button type="button" onClick={onClose}>
+          Anuluj
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onSubmit({
+              title: 'Nowe zadanie z modala',
+              owner: '',
+              assignedTo: [],
+              group: '',
+              priority: 'medium',
+              status: 'todo',
+              dueDate: '',
+              reminderAt: '',
+              tags: '',
+              important: false,
+              description: '',
+              notes: '',
+            })
+          }
+        >
+          Zapisz
+        </button>
+      </div>
+    ) : null,
 }));
 
 function createBaseProps(overrides: Record<string, any> = {}) {
@@ -52,7 +85,7 @@ function createBaseProps(overrides: Record<string, any> = {}) {
     selectedListLabel: 'Todo',
     viewMode: 'kanban',
     setViewMode: vi.fn(),
-    sortBy: 'manual',
+    sortBy: 'due:asc',
     setSortBy: vi.fn(),
     groupBy: 'none',
     setGroupBy: vi.fn(),
@@ -103,126 +136,61 @@ function createBaseProps(overrides: Record<string, any> = {}) {
   };
 }
 
+function visibleTask() {
+  return {
+    id: 'task-1',
+    title: 'Alpha',
+    status: 'todo',
+    completed: false,
+    owner: '',
+    tags: [],
+    dueDate: '',
+    important: false,
+    reminderAt: '',
+    myDay: false,
+  };
+}
+
 describe('TasksWorkspaceView', () => {
-  it('renders view mode controls and forwards mode changes', () => {
+  it('renders view mode tabs and forwards mode changes', () => {
     const setViewMode = vi.fn();
     render(<TasksWorkspaceView {...createBaseProps({ viewMode: 'kanban', setViewMode })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Lista/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Lista/i }));
     expect(setViewMode).toHaveBeenCalledWith('list');
 
-    fireEvent.click(screen.getByRole('button', { name: /Harmonogram/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Harmonogram/i }));
     expect(setViewMode).toHaveBeenCalledWith('schedule');
+    expect(screen.getByRole('heading', { name: 'Zadania' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Filtry/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Kolumny/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Sortuj/i })).not.toBeInTheDocument();
   });
 
-  it('filters by query and updates quick draft on type', () => {
+  it('filters by query and keeps one add-task control', () => {
     const setQuery = vi.fn();
-    const setQuickDraft = vi.fn();
-    const submitQuickTask = vi.fn();
+    const setShowAdvancedCreate = vi.fn();
     render(
       <TasksWorkspaceView
         {...createBaseProps({
           viewMode: 'list',
           setQuery,
-          setQuickDraft,
-          submitQuickTask,
-          allVisibleTasks: [
-            {
-              id: 'task-1',
-              title: 'Alpha',
-              status: 'todo',
-              completed: false,
-              owner: '',
-              tags: [],
-              dueDate: '',
-              important: false,
-              reminderAt: '',
-              myDay: false,
-            },
-          ],
+          setShowAdvancedCreate,
+          allVisibleTasks: [visibleTask()],
           groupedTasks: [{ id: 'todo', label: 'Todo', tasks: [] }],
         })}
       />
     );
 
-    const search = screen.getByPlaceholderText('Szukaj w zadaniach...');
+    const search = screen.getByPlaceholderText('Szukaj zadań...');
     fireEvent.change(search, { target: { value: 'test' } });
     expect(setQuery).toHaveBeenCalledWith('test');
 
-    const quickInput = screen.getByPlaceholderText('Dodaj zadanie (N)...') as HTMLInputElement;
-    fireEvent.change(quickInput, { target: { value: 'Nowe zadanie' } });
-    fireEvent.keyDown(quickInput, { key: 'Enter' });
-    expect(setQuickDraft).toHaveBeenCalledWith(expect.any(Function));
-    expect(submitQuickTask).toHaveBeenCalledWith(
-      expect.any(Object),
-      expect.objectContaining({ title: 'Nowe zadanie' })
-    );
-  });
-
-  it('passes the live quick-add input value when the toolbar plus is clicked', () => {
-    const submitQuickTask = vi.fn();
-    render(
-      <TasksWorkspaceView
-        {...createBaseProps({
-          viewMode: 'list',
-          submitQuickTask,
-          allVisibleTasks: [
-            {
-              id: 'task-1',
-              title: 'Alpha',
-              status: 'todo',
-              completed: false,
-              owner: '',
-              tags: [],
-              dueDate: '',
-              important: false,
-              reminderAt: '',
-              myDay: false,
-            },
-          ],
-          groupedTasks: [{ id: 'todo', label: 'Todo', tasks: [] }],
-        })}
-      />
-    );
-
-    const quickInput = screen.getByPlaceholderText('Dodaj zadanie (N)...') as HTMLInputElement;
-    fireEvent.change(quickInput, { target: { value: 'Zadanie z plusa' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Dodaj zadanie' }));
-
-    expect(submitQuickTask).toHaveBeenCalledWith(
-      expect.any(Object),
-      expect.objectContaining({ title: 'Zadanie z plusa' })
-    );
-  });
-
-  it('renders a single quick-add control with one accessible plus action', () => {
-    const { container } = render(
-      <TasksWorkspaceView
-        {...createBaseProps({
-          viewMode: 'list',
-          allVisibleTasks: [
-            {
-              id: 'task-1',
-              title: 'Alpha',
-              status: 'todo',
-              completed: false,
-              owner: '',
-              tags: [],
-              dueDate: '',
-              important: false,
-              reminderAt: '',
-              myDay: false,
-            },
-          ],
-        })}
-      />
-    );
-
-    const quickAdd = container.querySelector('.todo-toolbar-quickadd');
-    expect(quickAdd).toBeTruthy();
-    expect(quickAdd?.querySelectorAll('input')).toHaveLength(1);
-    expect(quickAdd?.querySelectorAll('button[aria-label="Dodaj zadanie"]')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Ustawienia widoku' })).toBeInTheDocument();
+    const addButtons = screen.getAllByRole('button', { name: /Dodaj zadanie/i });
+    expect(addButtons).toHaveLength(1);
+    fireEvent.click(addButtons[0]);
+    expect(setShowAdvancedCreate).toHaveBeenCalledWith(true);
+    expect(screen.queryByRole('button', { name: 'Ustawienia widoku' })).not.toBeInTheDocument();
   });
 
   it('renders summary mode stats cards', () => {
@@ -230,58 +198,57 @@ describe('TasksWorkspaceView', () => {
 
     expect(screen.getByText('Otwarte')).toBeInTheDocument();
     expect(screen.getByText('Na dzisiaj')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('Szukaj w zadaniach...')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Szukaj zadań...')).not.toBeInTheDocument();
   });
 
-  it('renders advanced create form when enabled', () => {
+  it('renders create task modal when enabled instead of inline form', () => {
     render(
       <TasksWorkspaceView {...createBaseProps({ viewMode: 'list', showAdvancedCreate: true })} />
     );
-    expect(screen.getByTestId('task-create-form')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
+    expect(screen.queryByTestId('task-create-form')).not.toBeInTheDocument();
   });
 
-  it('opens settings menu and triggers list actions', () => {
-    const onExportCsv = vi.fn();
-    const shareWorkspace = vi.fn();
-    const setShowColumnManager = vi.fn();
+  it('does not duplicate advanced create form when parent renders it in the aside', () => {
     render(
       <TasksWorkspaceView
         {...createBaseProps({
-          onExportCsv,
-          shareWorkspace,
-          setShowColumnManager,
-          showColumnManager: false,
+          viewMode: 'list',
+          showAdvancedCreate: true,
+          createPlacement: 'aside',
         })}
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ustawienia widoku' }));
-    fireEvent.click(screen.getByText(/Eksport CSV/i));
-    fireEvent.click(screen.getByRole('button', { name: 'Ustawienia widoku' }));
-    fireEvent.click(screen.getByText(/Udostepnij workspace/i));
-    fireEvent.click(screen.getByRole('button', { name: 'Ustawienia widoku' }));
-    fireEvent.click(screen.getByText(/Konfiguracja kolumn/i));
+    expect(screen.getByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
+    expect(screen.queryByTestId('task-create-form')).not.toBeInTheDocument();
+    expect(screen.getByText('Brak zadań na dziś')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Utwórz z nagrania/i })).toBeInTheDocument();
+  });
 
-    expect(onExportCsv).toHaveBeenCalled();
-    expect(shareWorkspace).toHaveBeenCalled();
-    expect(setShowColumnManager).toHaveBeenCalledWith(expect.any(Function));
+  it('opens create modal from empty state and submits through the modal', () => {
+    const submitQuickTask = vi.fn();
+    render(
+      <TasksWorkspaceView
+        {...createBaseProps({
+          viewMode: 'list',
+          submitQuickTask,
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /\+ Dodaj zadanie/i }));
+    expect(screen.getByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz' }));
+    expect(submitQuickTask).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({ title: 'Nowe zadanie z modala' })
+    );
   });
 
   it('renders schedule view and list view panels', () => {
-    const tasks = [
-      {
-        id: 'task-1',
-        title: 'Plan',
-        owner: '',
-        status: 'todo',
-        completed: false,
-        tags: [],
-        dueDate: '',
-        important: false,
-        reminderAt: '',
-        myDay: false,
-      },
-    ];
+    const tasks = [visibleTask()];
 
     const { rerender } = render(
       <TasksWorkspaceView {...createBaseProps({ viewMode: 'list', allVisibleTasks: tasks })} />

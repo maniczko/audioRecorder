@@ -828,11 +828,55 @@
 
 /* Sidebar mini-calendar: tighter spacing */
 [data-layout='modern'] .mini-calendar-grid {
-  gap: 4px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-content: center;
+  gap: 3px;
 }
 
 [data-layout='modern'] .mini-day {
-  font-size: 0.8rem;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-layout='modern'] .mini-calendar-weekday {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+}
+
+:root[data-theme='premium-light'] [data-layout='modern'] .mini-day {
+  background: rgba(255, 255, 252, 0.92);
+  border-color: rgba(43, 82, 74, 0.1);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] [data-layout='modern'] .mini-day:hover:not(.selected) {
+  background: rgba(237, 250, 244, 0.95);
+  border-color: rgba(28, 141, 122, 0.2);
+}
+
+:root[data-theme='premium-light'] [data-layout='modern'] .mini-day.selected {
+  background: rgba(202, 246, 231, 0.95);
+  border-color: rgba(28, 141, 122, 0.32);
+  color: var(--accent-strong);
+  box-shadow:
+    0 8px 18px rgba(28, 141, 122, 0.12),
+    inset 0 0 0 1px rgba(28, 141, 122, 0.12);
 }
 
 /* Filter chips: slightly smaller in modern layout */
@@ -923,4 +967,82 @@
     padding: 10px;
     border-radius: 14px;
   }
+}
+
+/* Layout audit guardrails for calendar controls. Dense day cells and event pills
+   are audited for overflow separately, but view controls remain 44px targets. */
+.calendar-view-button,
+.calendar-nav-button,
+.calendar-today-button {
+  min-height: 44px;
+}
+
+/* Premium-light lower calendar panels: lighter, integrated event inspector. */
+:root[data-theme='premium-light'] .calendar-lower-grid {
+  align-items: stretch;
+  gap: 16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .selected-day-panel {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 22px 55px rgba(30, 70, 60, 0.08);
+  padding: 14px;
+}
+
+:root[data-theme='premium-light'] .agenda-list {
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .agenda-card.static {
+  border-radius: 18px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .agenda-card.static.selected {
+  border-color: rgba(20, 150, 128, 0.38);
+  background: linear-gradient(135deg, rgba(232, 250, 245, 0.95), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 14px 34px rgba(20, 150, 128, 0.12);
+}
+
+:root[data-theme='premium-light'] .calendar-editor-card {
+  min-height: 100%;
+  border-radius: 20px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .calendar-editor-meta {
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+:root[data-theme='premium-light'] .calendar-editor-field input {
+  min-height: 46px;
+  border-radius: 14px;
+  background: rgba(248, 251, 247, 0.88);
+  color: var(--text);
+  border: 1px solid rgba(31, 94, 82, 0.12);
+}
+
+:root[data-theme='premium-light'] .calendar-duration-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .calendar-duration-buttons .ghost-button {
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  background: rgba(255, 255, 255, 0.64);
 }

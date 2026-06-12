@@ -1,17 +1,21 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-function readClientEnv(...keys) {
+function readClientEnv(env, ...keys) {
   for (const key of keys) {
     if (process.env[key] !== undefined) {
       return process.env[key];
+    }
+    if (env[key] !== undefined) {
+      return env[key];
     }
   }
   return '';
 }
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), ['VITE_', 'REACT_APP_']);
   const plugins = [react()];
 
   if (process.env.ANALYZE_BUNDLE === 'true') {
@@ -21,14 +25,14 @@ export default defineConfig(async () => {
 
   const productionRemoteFallback = process.env.NODE_ENV === 'production' || process.env.VERCEL;
   const dataProvider =
-    readClientEnv('VITE_DATA_PROVIDER', 'REACT_APP_DATA_PROVIDER') ||
+    readClientEnv(env, 'VITE_DATA_PROVIDER', 'REACT_APP_DATA_PROVIDER') ||
     (productionRemoteFallback ? 'remote' : '');
   const mediaProvider =
-    readClientEnv('VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') ||
+    readClientEnv(env, 'VITE_MEDIA_PROVIDER', 'REACT_APP_MEDIA_PROVIDER') ||
     (productionRemoteFallback ? 'remote' : '');
-  const apiBaseUrl = readClientEnv('VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') || '';
+  const apiBaseUrl = readClientEnv(env, 'VITE_API_BASE_URL', 'REACT_APP_API_BASE_URL') || '';
   const googleClientId =
-    readClientEnv('VITE_GOOGLE_CLIENT_ID', 'REACT_APP_GOOGLE_CLIENT_ID') ||
+    readClientEnv(env, 'VITE_GOOGLE_CLIENT_ID', 'REACT_APP_GOOGLE_CLIENT_ID') ||
     (productionRemoteFallback ? 'demo' : '');
 
   return {

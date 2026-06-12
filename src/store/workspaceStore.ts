@@ -4,6 +4,7 @@ import { resolveWorkspaceForUser, workspaceMembers } from '../lib/workspace';
 import { getWorkspacePermissions } from '../lib/permissions';
 import { createWorkspaceService } from '../services/workspaceService';
 import { createStateService } from '../services/stateService';
+import { APP_DATA_PROVIDER } from '../services/config';
 import {
   clearPersistedSession,
   syncLegacySessionFromWorkspaceSession,
@@ -33,6 +34,15 @@ const stateService = createStateService();
 
 function persistSessionSnapshot(session: WorkspaceSession | null) {
   return syncLegacySessionFromWorkspaceSession(session);
+}
+
+export function isWorkspaceSessionUsable(session: WorkspaceSession | null) {
+  return Boolean(session?.userId) && (APP_DATA_PROVIDER !== 'remote' || Boolean(session?.token));
+}
+
+function invalidatedSessionState() {
+  clearPersistedSession();
+  return { session: null, users: [], workspaces: [] };
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -156,7 +166,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       bootstrapSession: async () => {
         if (stateService.mode !== 'remote') return;
         const { session } = get();
-        if (!session?.token || !session?.userId) return;
+        if (!isWorkspaceSessionUsable(session)) {
+          set(invalidatedSessionState());
+          return;
+        }
 
         set({ isHydratingSession: true, sessionError: '' });
         try {
@@ -175,8 +188,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           set(updates);
         } catch (error: any) {
           if (error.status === 401) {
-            clearPersistedSession();
-            set({ session: null, users: [], workspaces: [] });
+            set(invalidatedSessionState());
           } else {
             set({ sessionError: error.message });
           }
@@ -186,8 +198,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
 
       logout: () => {
-        clearPersistedSession();
-        set({ session: null });
+        set(invalidatedSessionState());
       },
     }),
     {
@@ -198,8 +209,16 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         session: state.session,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state?.session?.token) {
+        if (!state?.session) {
           clearPersistedSession();
+          return;
+        }
+
+        if (!isWorkspaceSessionUsable(state.session)) {
+          clearPersistedSession();
+          state.session = null;
+          state.users = [];
+          state.workspaces = [];
           return;
         }
 
@@ -218,7 +237,10 @@ export const useWorkspaceSelectors = () => {
   const updateWorkspaceMemberRole = useWorkspaceStore((state) => state.updateWorkspaceMemberRole);
   const removeWorkspaceMember = useWorkspaceStore((state) => state.removeWorkspaceMember);
 
-  const currentUser = users.find((user) => user.id === session?.userId) || null;
+  const hasUsableSession = isWorkspaceSessionUsable(session);
+  const currentUser = hasUsableSession
+    ? users.find((user) => user.id === session?.userId) || null
+    : null;
   const currentUserId = currentUser?.id || null;
   const currentWorkspaceId = currentUser
     ? resolveWorkspaceForUser(currentUser, workspaces, session?.workspaceId)

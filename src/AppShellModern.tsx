@@ -101,6 +101,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
         <AppHeader
           sidebarOpen={sidebarOpen}
           currentUser={workspace.currentUser}
+          activeTab={ui.activeTab}
           canRecordAudio={workspace.currentWorkspacePermissions?.canRecordAudio}
           recorder={recorder}
           notificationCenterOpen={ui.notificationCenterOpen}

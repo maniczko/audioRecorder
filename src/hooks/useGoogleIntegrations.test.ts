@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import useGoogleIntegrations from './useGoogleIntegrations';
 import { vi, describe, test, expect, beforeEach } from 'vitest';
 
@@ -86,6 +86,7 @@ describe('useGoogleIntegrations', () => {
   const baseProps = {
     currentUser: { id: 'u1' },
     currentWorkspaceId: 'w1',
+    sessionToken: 'token',
     tasks: [],
     meetingTasks: [],
     manualTasks: [],
@@ -189,5 +190,65 @@ describe('useGoogleIntegrations', () => {
     const { result } = renderHook(() => useGoogleIntegrations(baseProps as any));
     // googleEnabled should be a boolean
     expect(typeof result.current.googleEnabled).toBe('boolean');
+  });
+
+  test('keeps passive calendar status idle when local session token is not restored', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const missingSessionError = new Error(
+      'Sesja wygasla albo token nie zostal odtworzony. Odswiez sesje logowania.'
+    ) as Error & { status?: number };
+    missingSessionError.status = 401;
+    getGoogleCalendarStatusMock.mockRejectedValueOnce(missingSessionError);
+
+    const { result } = renderHook(() => useGoogleIntegrations(baseProps as any));
+
+    await waitFor(() => {
+      expect(getGoogleCalendarStatusMock).toHaveBeenCalledWith('w1');
+      expect(result.current.googleCalendarStatus).toBe('idle');
+    });
+    expect(result.current.googleCalendarMessage).toBe('');
+    expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+      'Google Calendar status refresh failed.',
+      missingSessionError
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  test('does not call backend calendar status when remote session token is missing', async () => {
+    const { result } = renderHook(() =>
+      useGoogleIntegrations({ ...baseProps, sessionToken: '' } as any)
+    );
+
+    expect(result.current.googleCalendarStatus).toBe('idle');
+    expect(getGoogleCalendarStatusMock).not.toHaveBeenCalled();
+  });
+
+  test('shows a clear message when connecting calendar without backend session token', async () => {
+    const { result } = renderHook(() =>
+      useGoogleIntegrations({ ...baseProps, sessionToken: '' } as any)
+    );
+
+    await act(async () => {
+      await result.current.connectGoogleCalendar();
+    });
+
+    expect(startGoogleCalendarConnectMock).not.toHaveBeenCalled();
+    expect(result.current.googleCalendarStatus).toBe('error');
+    expect(result.current.googleCalendarMessage).toContain('Zaloguj sie ponownie');
+  });
+
+  test('does not fetch events when syncing calendar without backend session token', async () => {
+    const { result } = renderHook(() =>
+      useGoogleIntegrations({ ...baseProps, sessionToken: '' } as any)
+    );
+
+    await act(async () => {
+      await result.current.refreshGoogleCalendar();
+    });
+
+    expect(fetchGoogleCalendarEventsMock).not.toHaveBeenCalled();
+    expect(result.current.googleCalendarStatus).toBe('error');
+    expect(result.current.googleCalendarMessage).toContain('Zaloguj sie ponownie');
   });
 });

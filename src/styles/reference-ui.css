@@ -1,0 +1,1387 @@
+/*
+ * Screenshot-first premium-light reference layer.
+ *
+ * This file intentionally sits after legacy screen styles. It does not change
+ * business logic; it normalizes approved reference screenshots: shell,
+ * integrations, tasks, brief modal, people, notes and recordings.
+ */
+
+:root[data-theme='premium-light'] {
+  --vb-font-ui:
+    'Geist Variable', Geist, Inter, 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --vb-bg: #f8faf7;
+  --vb-bg-warm: #fbf8ef;
+  --vb-surface: rgba(255, 255, 255, 0.92);
+  --vb-surface-soft: rgba(248, 253, 250, 0.82);
+  --vb-surface-mint: #e8f8f3;
+  --vb-stroke: rgba(17, 66, 58, 0.11);
+  --vb-stroke-strong: rgba(0, 137, 119, 0.24);
+  --vb-text: #102822;
+  --vb-muted: #6d7f79;
+  --vb-subtle: #94a5a0;
+  --vb-accent: #008f7a;
+  --vb-accent-2: #08c7cc;
+  --vb-accent-soft: #dff7f1;
+  --vb-danger: #ef4444;
+  --vb-warning: #f59e0b;
+  --vb-radius-sm: 10px;
+  --vb-radius: 16px;
+  --vb-radius-lg: 24px;
+  --vb-radius-xl: 32px;
+  --vb-shadow-card: 0 22px 60px rgba(20, 63, 55, 0.08);
+  --vb-shadow-float: 0 28px 80px rgba(19, 55, 48, 0.15);
+  --vb-control-h: 44px;
+  --vb-control-lg: 52px;
+  font-family: var(--vb-font-ui);
+}
+
+:root[data-theme='premium-light'] body,
+:root[data-theme='premium-light'] button,
+:root[data-theme='premium-light'] input,
+:root[data-theme='premium-light'] select,
+:root[data-theme='premium-light'] textarea {
+  font-family: var(--vb-font-ui);
+}
+
+:root[data-theme='premium-light'] .modern-app {
+  color: var(--vb-text);
+  background:
+    radial-gradient(circle at 18% 15%, rgba(216, 251, 241, 0.82), transparent 34%),
+    linear-gradient(115deg, #f7fbf8 0%, #f7faf5 48%, #fbf7ec 100%);
+}
+
+:root[data-theme='premium-light'] .modern-sidebar {
+  width: 220px;
+  background: rgba(255, 255, 255, 0.74);
+  border-right: 1px solid var(--vb-stroke);
+  box-shadow: 18px 0 55px rgba(23, 74, 64, 0.06);
+}
+
+:root[data-theme='premium-light'] .modern-brand {
+  padding: 18px 8px;
+}
+
+:root[data-theme='premium-light'] .modern-nav {
+  gap: 8px;
+  padding: 10px 8px;
+}
+
+:root[data-theme='premium-light'] .modern-nav button,
+:root[data-theme='premium-light'] .modern-nav a {
+  min-height: 44px;
+  border-radius: 12px;
+  color: #647873;
+  font-weight: 700;
+}
+
+:root[data-theme='premium-light'] .modern-nav button.active,
+:root[data-theme='premium-light'] .modern-nav a.active {
+  color: #007b6a;
+  background: linear-gradient(135deg, rgba(223, 249, 242, 0.95), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 14px 32px rgba(21, 118, 100, 0.1);
+}
+
+:root[data-theme='premium-light'] .modern-topbar {
+  min-height: 64px;
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid var(--vb-stroke);
+  backdrop-filter: blur(18px);
+}
+
+:root[data-theme='premium-light'] .modern-content {
+  padding: 28px 36px;
+}
+
+:root[data-theme='premium-light'] .panel,
+:root[data-theme='premium-light'] .hero-panel,
+:root[data-theme='premium-light'] .card,
+:root[data-theme='premium-light'] .profile-card,
+:root[data-theme='premium-light'] .profile-stat-card,
+:root[data-theme='premium-light'] .recordings-status-panel,
+:root[data-theme='premium-light'] .recordings-section-panel,
+:root[data-theme='premium-light'] .recordings-library-panel,
+:root[data-theme='premium-light'] .people-sidebar,
+:root[data-theme='premium-light'] .people-main .panel,
+:root[data-theme='premium-light'] .notes-sidebar,
+:root[data-theme='premium-light'] .notes-detail-panel,
+:root[data-theme='premium-light'] .note-card,
+:root[data-theme='premium-light'] .task-empty-state,
+:root[data-theme='premium-light'] .todo-sidebar,
+:root[data-theme='premium-light'] .todo-shell,
+:root[data-theme='premium-light'] .todo-detail-card,
+:root[data-theme='premium-light'] .todo-toolbar-panel,
+:root[data-theme='premium-light'] .todo-view-panel {
+  color: var(--vb-text);
+  background: var(--vb-surface);
+  border: 1px solid var(--vb-stroke);
+  box-shadow: var(--vb-shadow-card);
+}
+
+:root[data-theme='premium-light'] .panel *,
+:root[data-theme='premium-light'] .hero-panel *,
+:root[data-theme='premium-light'] .notes-sidebar *,
+:root[data-theme='premium-light'] .notes-detail-panel *,
+:root[data-theme='premium-light'] .people-sidebar *,
+:root[data-theme='premium-light'] .todo-sidebar *,
+:root[data-theme='premium-light'] .todo-shell * {
+  text-shadow: none;
+}
+
+:root[data-theme='premium-light'] .soft-copy,
+:root[data-theme='premium-light'] .muted,
+:root[data-theme='premium-light'] .note-card-preview,
+:root[data-theme='premium-light'] .notes-section-text,
+:root[data-theme='premium-light'] .todo-title-meta,
+:root[data-theme='premium-light'] .recordings-copy-md,
+:root[data-theme='premium-light'] .people-soft-copy-sm {
+  color: var(--vb-muted);
+}
+
+:root[data-theme='premium-light'] .primary-button,
+:root[data-theme='premium-light'] .todo-primary-action,
+:root[data-theme='premium-light'] .todo-add-inline-trigger,
+:root[data-theme='premium-light'] .notes-sidebar-actions .primary-button,
+:root[data-theme='premium-light'] .recordings-upload-trigger {
+  min-height: var(--vb-control-h);
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00a48c, #007c6b);
+  box-shadow: 0 18px 36px rgba(0, 137, 119, 0.23);
+}
+
+:root[data-theme='premium-light'] .ghost-button,
+:root[data-theme='premium-light'] .secondary-button,
+:root[data-theme='premium-light'] .todo-command-button,
+:root[data-theme='premium-light'] .todo-owner-filter-btn,
+:root[data-theme='premium-light'] .recordings-library-filter-control {
+  min-height: var(--vb-control-h);
+  border-radius: 14px;
+  color: var(--vb-text);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--vb-stroke);
+}
+
+:root[data-theme='premium-light'] input:not([type='checkbox']):not([type='radio']),
+:root[data-theme='premium-light'] textarea,
+:root[data-theme='premium-light'] select,
+:root[data-theme='premium-light'] .todo-toolbar-search,
+:root[data-theme='premium-light'] .notes-search-wrap,
+:root[data-theme='premium-light'] .people-search-wrap {
+  min-height: var(--vb-control-h);
+  border-radius: 14px;
+  color: var(--vb-text);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--vb-stroke);
+}
+
+:root[data-theme='premium-light'] input::placeholder,
+:root[data-theme='premium-light'] textarea::placeholder {
+  color: rgba(80, 100, 94, 0.55);
+}
+
+:root[data-theme='premium-light'] button:focus-visible,
+:root[data-theme='premium-light'] input:focus-visible,
+:root[data-theme='premium-light'] textarea:focus-visible,
+:root[data-theme='premium-light'] select:focus-visible,
+:root[data-theme='premium-light'] [role='button']:focus-visible {
+  outline: 3px solid rgba(0, 143, 122, 0.22);
+  outline-offset: 3px;
+}
+
+/* Profile integrations reference */
+:root[data-theme='premium-light'] .profile-layout-container {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+:root[data-theme='premium-light'] .profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+:root[data-theme='premium-light'] .profile-grid .panel {
+  border-radius: 18px;
+  padding: 22px;
+}
+
+:root[data-theme='premium-light'] .profile-grid .panel h2,
+:root[data-theme='premium-light'] .profile-grid .panel h3 {
+  margin: 0 0 6px;
+  color: #19362f;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .profile-grid .panel .button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+:root[data-theme='premium-light'] .profile-grid-span-two {
+  grid-column: 1 / -1;
+}
+
+:root[data-theme='premium-light'] .profile-layout-container:has(.profile-integrations-reference) {
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 0;
+  max-width: none;
+  min-height: calc(100vh - 64px);
+  margin: 0;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-sidebar {
+  padding: 42px 26px;
+  background: rgba(255, 255, 255, 0.68);
+  border-right: 1px solid var(--vb-stroke);
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-sidebar
+  .eyebrow {
+  display: none;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-sidebar
+  h2 {
+  margin: 0 0 30px;
+  color: #152b43;
+  font-size: 1.06rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-nav {
+  gap: 10px;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-nav
+  button {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  color: #536174;
+  font-weight: 750;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-nav-icon {
+  display: inline-flex;
+  color: currentColor;
+}
+
+:root[data-theme='premium-light']
+  .profile-layout-container:has(.profile-integrations-reference)
+  .profile-settings-nav
+  button.active {
+  color: var(--vb-accent);
+  background: #e6f8f3;
+}
+
+:root[data-theme='premium-light'] .profile-main-panel:has(.profile-integrations-reference) {
+  padding: 28px 30px 34px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
+}
+
+:root[data-theme='premium-light'] .profile-integrations-reference {
+  width: min(100%, 1124px);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+:root[data-theme='premium-light'] .profile-reference-header {
+  margin-bottom: 6px;
+}
+
+:root[data-theme='premium-light'] .profile-reference-header h1 {
+  margin: 0 0 8px;
+  color: #15213a;
+  font-size: 1.92rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .profile-reference-header p {
+  margin: 0;
+  color: #657289;
+  font-size: 0.98rem;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel {
+  padding: 20px;
+  border: 1px solid rgba(42, 68, 88, 0.11);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 48px rgba(31, 48, 65, 0.06);
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel-head h2 {
+  margin: 0 0 6px;
+  color: #16233d;
+  font-size: 1.08rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .profile-integrations-panel-head p {
+  margin: 0;
+  color: #657289;
+}
+
+:root[data-theme='premium-light'] .integration-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: #007d6b;
+  font-weight: 800;
+}
+
+:root[data-theme='premium-light'] .integration-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 16px 18px;
+}
+
+:root[data-theme='premium-light'] .integration-reference-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  min-height: 232px;
+  border: 1px solid rgba(42, 68, 88, 0.12);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 18px 46px rgba(27, 47, 64, 0.055);
+}
+
+:root[data-theme='premium-light'] .integration-reference-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 32px;
+  gap: 16px;
+  align-items: center;
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(37, 86, 118, 0.18);
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.google-calendar {
+  background:
+    linear-gradient(90deg, #4285f4 0 30%, #34a853 30% 56%, #fbbc04 56% 78%, #ea4335 78%), #ffffff;
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.outlook {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0b78d0, #46a7f5);
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.google-tasks {
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1a73e8, #3ba2ff);
+}
+
+:root[data-theme='premium-light'] .integration-reference-logo.microsoft-todo {
+  border-radius: 9px;
+  background: linear-gradient(135deg, #1f6feb, #45a0ff);
+}
+
+:root[data-theme='premium-light'] .integration-reference-head h3 {
+  margin: 0 0 4px;
+  color: #1d2940;
+  font-size: 1.06rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .integration-reference-head p {
+  margin: 0;
+  color: #6a758a;
+  font-size: 0.91rem;
+}
+
+:root[data-theme='premium-light'] .integration-reference-menu {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1e2b40;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+:root[data-theme='premium-light'] .integration-reference-status,
+:root[data-theme='premium-light'] .integration-reference-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(42, 68, 88, 0.11);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #fbfcfb);
+}
+
+:root[data-theme='premium-light'] .integration-reference-status {
+  margin-top: 2px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+:root[data-theme='premium-light'] .integration-reference-body {
+  margin-top: -14px;
+  min-height: 54px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+:root[data-theme='premium-light'] .integration-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #b8c2d1;
+}
+
+:root[data-theme='premium-light'] .integration-dot.connected {
+  background: #35bd8a;
+}
+
+:root[data-theme='premium-light'] .integration-reference-status strong,
+:root[data-theme='premium-light'] .integration-reference-body strong {
+  color: #1a253a;
+  font-size: 0.9rem;
+}
+
+:root[data-theme='premium-light'] .integration-reference-status span:last-child,
+:root[data-theme='premium-light'] .integration-reference-body span {
+  color: #707b8f;
+  font-size: 0.88rem;
+}
+
+:root[data-theme='premium-light'] .integration-reference-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .integration-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 8px;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .integration-action.primary {
+  color: #007d6b;
+  background: #ffffff;
+  border: 1px solid rgba(0, 125, 107, 0.55);
+}
+
+:root[data-theme='premium-light'] .integration-action.secondary {
+  color: #28354b;
+  background: #ffffff;
+  border: 1px solid rgba(42, 68, 88, 0.13);
+}
+
+:root[data-theme='premium-light'] .integration-action.connected {
+  color: #007d6b;
+  background: #b6ded7;
+  border: 1px solid #b6ded7;
+}
+
+:root[data-theme='premium-light'] .integration-action:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding: 18px 22px;
+  border: 1px solid rgba(42, 68, 88, 0.11);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 44px rgba(31, 48, 65, 0.045);
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip span {
+  grid-row: span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: #008f7a;
+  background: #dff7f1;
+  font-weight: 900;
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip strong {
+  color: #1d2940;
+  font-size: 0.9rem;
+}
+
+:root[data-theme='premium-light'] .integration-reference-info-strip p {
+  margin: 2px 0 0;
+  color: #758095;
+  font-size: 0.82rem;
+}
+
+/* Tasks reference: Microsoft To Do ergonomics with VoiceBobr styling */
+:root[data-theme='premium-light'] .tasks-layout.ms-todo {
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo[data-columns='two'] {
+  grid-template-columns: 300px minmax(0, 1fr) minmax(380px, 0.42fr);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+  border-radius: 0;
+  border-top: 0;
+  border-bottom: 0;
+  box-shadow: 18px 0 45px rgba(23, 74, 64, 0.05);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-title {
+  min-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-panel {
+  padding: 20px;
+  border-radius: 20px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+  display: grid;
+  grid-template-columns: minmax(500px, auto) minmax(420px, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+  height: 52px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--vb-stroke);
+  border-radius: 16px;
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button {
+  min-width: 120px;
+  height: 52px;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--vb-stroke);
+  background: transparent;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active {
+  color: var(--vb-accent);
+  background: var(--vb-accent-soft);
+  box-shadow: inset 0 -3px 0 var(--vb-accent);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search {
+  width: min(320px, 34vw);
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger {
+  min-width: 168px;
+  justify-content: center;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-panel {
+  margin-top: 16px;
+  border-radius: 20px;
+  padding: 0;
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  grid-template-columns: 56px minmax(260px, 1.7fr) 150px 150px 150px 170px 64px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-row-tools {
+  display: grid;
+  grid-template-columns: 18px 24px;
+  gap: 12px;
+  justify-content: center;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+  border: 2px solid rgba(0, 143, 122, 0.45);
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-empty-workbench {
+  min-height: 380px;
+  display: grid;
+  place-items: center;
+}
+
+/* Tasks reference - Microsoft To Do inspired workspace */
+:root[data-theme='premium-light'] .tasks-page-shell {
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo.ui-split-pane {
+  width: min(100%, 1420px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 300px minmax(520px, 1fr);
+  gap: 0;
+  min-height: calc(100vh - 96px);
+  border: 1px solid rgba(20, 64, 56, 0.1);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 22px 70px rgba(18, 54, 47, 0.08);
+  overflow: hidden;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo.ui-split-pane[data-columns='three'] {
+  grid-template-columns: 300px minmax(0, 1fr) 440px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__sidebar,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__main,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__aside {
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__sidebar,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__main {
+  border-right: 1px solid rgba(20, 64, 56, 0.09);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar {
+  width: 100%;
+  min-height: 100%;
+  padding: 26px 24px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar-scroll,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-nav-panel,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar-group,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-group {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-title {
+  min-height: 32px;
+  padding: 0 2px;
+  color: #172f2b;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-workspace-toggle-arrow {
+  width: 16px;
+  color: #7b8e89;
+  font-size: 0.82rem;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+  height: 42px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #233d37;
+  background: transparent;
+  border: 1px solid transparent;
+  font-weight: 650;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button {
+  grid-template-columns: 24px minmax(0, 1fr);
+  margin: 8px 0 18px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link:hover,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-manage-lists-button:hover {
+  background: rgba(237, 249, 246, 0.88);
+  border-color: rgba(0, 143, 122, 0.1);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link.active {
+  color: #007d6c;
+  background: linear-gradient(135deg, #edf9f6 0%, #f8fcfb 100%);
+  border-color: rgba(0, 143, 122, 0.16);
+  box-shadow: 0 12px 26px rgba(0, 143, 122, 0.09);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-side-link strong {
+  justify-self: end;
+  min-width: 24px;
+  color: inherit;
+  font-weight: 760;
+  text-align: right;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-main,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-shell {
+  min-height: 100%;
+  padding: 0;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-shell {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-panel {
+  padding: 26px 26px 16px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-left {
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+  width: 100%;
+  height: 54px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 64, 56, 0.13);
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button {
+  position: relative;
+  height: 100%;
+  border: 0;
+  border-right: 1px solid rgba(20, 64, 56, 0.08);
+  border-radius: 0;
+  color: #526762;
+  background: transparent;
+  font-weight: 720;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button:last-child {
+  border-right: 0;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active {
+  color: #006f61;
+  background: #e8f8f4;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-button.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: #008f7a;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-owner-filter-btn {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 64, 56, 0.12);
+  background: #fff;
+  color: #4b625c;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 64, 56, 0.12);
+  background: #fff;
+  color: #182f2a;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-input {
+  color: #182f2a;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger {
+  min-height: 44px;
+  min-width: 150px;
+  justify-content: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #009f88 0%, #007d6c 100%);
+  border: 0;
+  box-shadow: 0 16px 32px rgba(0, 143, 122, 0.22);
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger span {
+  color: currentColor;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-panel {
+  min-height: 0;
+  margin: 0;
+  padding: 0 26px 24px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: auto;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-wrap {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 64, 56, 0.1);
+  background: #fff;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  grid-template-columns: 48px minmax(220px, 1.35fr) 112px 122px 112px 120px 48px;
+  min-width: 860px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-head {
+  height: 58px;
+  background: #fff;
+  border-bottom: 1px solid rgba(20, 64, 56, 0.1);
+  color: #172f2b;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row {
+  min-height: 74px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(20, 64, 56, 0.08);
+  border-radius: 0;
+  background: #fff;
+  color: #172f2b;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row:hover,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-table-row.active {
+  background: #edf9f6;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-row-tools {
+  display: grid;
+  grid-template-columns: 0 24px;
+  gap: 0;
+  justify-content: center;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-drag-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle {
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+  border: 2px solid #9aa8b5;
+  background: #fff;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-task-circle.completed {
+  border-color: #008f7a;
+  background: #008f7a;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-cell {
+  gap: 4px;
+  padding: 0 10px;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-cell strong {
+  color: #172f2b;
+  font-size: 0.9rem;
+  font-weight: 820;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-title-meta {
+  gap: 8px;
+  color: #e22c2c;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-status-badge {
+  color: #e22c2c;
+  background: #ffe3e3;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-priority-badge,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-date,
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-assignee-cell {
+  color: #172f2b;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-star {
+  color: #8b99ab;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-empty-workbench {
+  min-height: 520px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 64, 56, 0.1);
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-empty-workbench .empty-state {
+  width: min(100%, 340px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__aside {
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .todo-inline-detail-pane {
+  position: relative;
+  height: 100%;
+  min-height: calc(100vh - 96px);
+  padding: 30px 34px;
+  background: #fff;
+}
+
+:root[data-theme='premium-light'] .todo-inline-detail-close {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: #30504a;
+  font-size: 1.35rem;
+}
+
+:root[data-theme='premium-light'] .todo-inline-detail-pane .todo-details,
+:root[data-theme='premium-light'] .todo-inline-detail-pane .todo-detail-card {
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .todo-inline-detail-pane .todo-detail-title-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+:root[data-theme='premium-light'] .todo-inline-detail-pane .todo-detail-title-input {
+  height: 58px;
+  border-radius: 8px;
+  border: 1px solid #008f7a;
+  background: #fff;
+  color: #172f2b;
+  font-size: 1rem;
+}
+
+@media (min-width: 921px) {
+  :root[data-theme='premium-light'] .todo-detail-overlay--responsive {
+    display: none;
+  }
+}
+
+@media (max-width: 920px) {
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo.ui-split-pane,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo.ui-split-pane[data-columns='three'] {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .ui-split-pane__aside {
+    display: none;
+  }
+}
+
+/* Brief modal reference */
+:root[data-theme='premium-light'] .modal-content:has(.studio-brief-modal),
+:root[data-theme='premium-light'] .studio-brief-modal {
+  color: var(--vb-text);
+  background: #ffffff;
+  border-radius: 24px;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal {
+  max-width: 660px;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal-header {
+  padding: 34px 36px 20px;
+  border-bottom: 0;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal-header .eyebrow {
+  color: var(--vb-accent);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal-header h2 {
+  font-size: 1.45rem;
+  font-weight: 820;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal-body {
+  padding: 20px 36px 18px;
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal .field-row {
+  display: grid;
+  grid-template-columns: 28px 118px minmax(0, 1fr);
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .studio-brief-modal .todo-detail-unified-field,
+:root[data-theme='premium-light'] .studio-brief-modal .tag-input-container {
+  min-height: 48px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(18, 48, 42, 0.14);
+}
+
+:root[data-theme='premium-light'] .studio-brief-date-time {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .studio-brief-field-help {
+  margin-top: 7px;
+  color: var(--vb-muted);
+  font-size: 0.78rem;
+}
+
+:root[data-theme='premium-light'] .studio-brief-field-error {
+  margin-top: 7px;
+  color: var(--vb-danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+:root[data-theme='premium-light'] .button-row.brief-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 20px 36px 28px;
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--vb-stroke);
+}
+
+:root[data-theme='premium-light'] .button-row.brief-actions .primary-button {
+  position: relative;
+}
+
+:root[data-theme='premium-light'] .button-row.brief-actions .primary-button:disabled::after {
+  content: attr(data-disabled-reason);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -22px;
+  color: var(--vb-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* People reference */
+:root[data-theme='premium-light'] .people-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 28px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+:root[data-theme='premium-light'] .people-main {
+  display: grid;
+  gap: 18px;
+}
+
+:root[data-theme='premium-light'] .profile-hero.people-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 24px;
+  border-radius: 18px;
+  background: var(--vb-surface);
+  border: 1px solid var(--vb-stroke);
+  box-shadow: var(--vb-shadow-card);
+}
+
+:root[data-theme='premium-light'] .people-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+  gap: 18px;
+}
+
+/* Notes reference */
+:root[data-theme='premium-light'] .notes-layout {
+  grid-template-columns: 280px minmax(420px, 1fr) minmax(360px, 0.48fr);
+  gap: 0;
+  min-height: calc(100vh - 64px);
+  max-width: 1440px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+:root[data-theme='premium-light'] .notes-sidebar,
+:root[data-theme='premium-light'] .notes-main,
+:root[data-theme='premium-light'] .notes-detail-panel {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .notes-main {
+  padding: 28px;
+  border-right: 1px solid var(--vb-stroke);
+}
+
+:root[data-theme='premium-light'] .notes-sidebar-actions .primary-button {
+  width: 100%;
+}
+
+:root[data-theme='premium-light'] .note-card.active {
+  border-color: var(--vb-stroke-strong);
+  box-shadow: 0 18px 48px rgba(0, 143, 122, 0.11);
+}
+
+/* Recordings reference */
+:root[data-theme='premium-light'] .recordings-tab-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  gap: 18px;
+}
+
+:root[data-theme='premium-light'] .recordings-tab-content,
+:root[data-theme='premium-light'] .recordings-library-panel {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .recordings-library-panel {
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .recordings-library-header {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) auto auto minmax(260px, 0.44fr);
+  gap: 16px;
+  align-items: start;
+}
+
+:root[data-theme='premium-light'] .recordings-stats-strip,
+:root[data-theme='premium-light'] .recordings-stats-bar,
+:root[data-theme='premium-light'] .recordings-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table-wrap {
+  border-radius: 18px;
+  border: 1px solid var(--vb-stroke);
+  background: #fff;
+  box-shadow: var(--vb-shadow-card);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table th {
+  height: 54px;
+  color: #667a74;
+  background: rgba(248, 252, 250, 0.9);
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table td {
+  height: 62px;
+  color: var(--vb-text);
+  border-color: rgba(17, 66, 58, 0.08);
+}
+
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr.active td,
+:root[data-theme='premium-light'] .studio-recordings-table tbody tr:hover td {
+  background: #edf9f6;
+}
+
+@media (max-width: 920px) {
+  :root[data-theme='premium-light'] .modern-content {
+    padding: 22px;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo[data-columns='two'],
+  :root[data-theme='premium-light'] .people-layout,
+  :root[data-theme='premium-light'] .profile-layout-container {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-commandbar-right {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  :root[data-theme='premium-light'] .notes-detail-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-theme='premium-light'] .modern-content {
+    padding: 14px;
+  }
+
+  :root[data-theme='premium-light'] .profile-grid,
+  :root[data-theme='premium-light'] .recordings-library-header,
+  :root[data-theme='premium-light'] .people-grid,
+  :root[data-theme='premium-light'] .notes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-view-switch {
+    overflow-x: auto;
+  }
+
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-toolbar-search,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-add-inline-trigger,
+  :root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-owner-filter-btn {
+    width: 100%;
+  }
+
+  :root[data-theme='premium-light'] .studio-brief-modal .field-row,
+  :root[data-theme='premium-light'] .studio-brief-date-time {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .studio-brief-modal .todo-row-icon {
+    display: none;
+  }
+}

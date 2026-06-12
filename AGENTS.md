@@ -421,3 +421,26 @@ Every completed change must report:
 ### 11.5 Refactor Control
 
 Refactor only the smallest boundary needed to complete the task. Do not rewrite unrelated UI, workflow, storage, or server modules in the same change.
+
+---
+
+## 12. Screenshot-First UI Implementation Rules
+
+Approved VoiceBobr reference screenshots are the source of truth for premium-light UI work.
+
+Priority order:
+
+1. Reference screenshots
+2. Shared design tokens
+3. Existing implementation
+4. Engineering interpretation
+
+Required workflow for visible UI changes:
+
+1. Inspect the reference screenshot for the target screen.
+2. Implement the layout without adding unrequested sections.
+3. Run the app or targeted visual check when feasible.
+4. Capture Playwright/browser evidence for `1440x900`, `1600x900`, `1920x1080`, and `1366x768`.
+5. Fix visual differences above the accepted threshold or document them as intentional.
+
+Do not creatively redesign approved screens. Keep Polish UI copy user-facing, hide technical/internal states, keep one UI font family, use shared spacing/radius/shadow tokens, and prefer reusable shell/card/button/input/tabs/table/modal primitives over per-screen one-off styling.

@@ -16,6 +16,17 @@ function groupedItems(items: CommandPaletteItem[]) {
   }, new Map<string, CommandPaletteItem[]>());
 }
 
+function commandTypeLabel(type?: string) {
+  const labels: Record<string, string> = {
+    meeting: 'Spotkanie',
+    task: 'Zadanie',
+    person: 'Osoba',
+    note: 'Notatka',
+  };
+
+  return labels[String(type || '').toLowerCase()] || type || 'Wynik';
+}
+
 export default function CommandPalette({
   open,
   items,
@@ -172,11 +183,17 @@ export default function CommandPalette({
 
   return (
     <div className="command-palette-backdrop" onClick={onClose}>
-      <section className="command-palette" onClick={(event) => event.stopPropagation()}>
+      <section
+        className="command-palette"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="command-palette-title"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="command-palette-header">
           <div>
-            <div className="eyebrow">Command palette</div>
-            <h2>Szybkie przejscie</h2>
+            <div className="eyebrow">Szybkie akcje</div>
+            <h2 id="command-palette-title">Szybkie przejście</h2>
           </div>
           <button type="button" className="ghost-button" onClick={onClose}>
             Zamknij
@@ -189,14 +206,20 @@ export default function CommandPalette({
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Zakladka, spotkanie, zadanie, osoba..."
+            placeholder="Zakładka, spotkanie, zadanie, osoba..."
           />
         </label>
 
         <div className="command-palette-hints">
-          <span>`Ctrl/Cmd + K` otwiera palette</span>
-          <span>`Enter` wybiera wynik</span>
-          <span>`Esc` zamyka</span>
+          <span>
+            <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>K</kbd> otwiera paletę
+          </span>
+          <span>
+            <kbd>Enter</kbd> wybiera wynik
+          </span>
+          <span>
+            <kbd>Esc</kbd> zamyka
+          </span>
         </div>
 
         <div className="command-palette-results">
@@ -226,7 +249,9 @@ export default function CommandPalette({
                             <strong>{item.title}</strong>
                             <span>{item.subtitle}</span>
                           </div>
-                          <small>{item.matchSource === 'ai' ? 'AI Match' : item.type}</small>
+                          <small>
+                            {item.matchSource === 'ai' ? 'AI Match' : commandTypeLabel(item.type)}
+                          </small>
                         </button>
                       );
                     })}
@@ -236,8 +261,8 @@ export default function CommandPalette({
             )
           ) : (
             <div className="empty-panel">
-              <strong>Brak wynikow</strong>
-              <span>Sprobuj innego hasla, np. nazwy spotkania albo osoby.</span>
+              <strong>Brak wyników</strong>
+              <span>Spróbuj innego hasła, np. nazwy spotkania albo osoby.</span>
             </div>
           )}
         </div>

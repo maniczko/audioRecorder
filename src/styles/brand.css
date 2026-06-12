@@ -1,0 +1,213 @@
+:root {
+  --voicebobr-deep-teal: #004640;
+  --voicebobr-deep-teal-strong: #003a36;
+  --voicebobr-mint-teal: #70a0a0;
+  --voicebobr-soft-cyan: #dff7f4;
+  --voicebobr-soft-cyan-strong: #c7eee8;
+  --voicebobr-ink: #102522;
+  --voicebobr-avatar-ring: rgba(0, 70, 64, 0.14);
+  --voicebobr-avatar-shadow: 0 10px 24px rgba(0, 70, 64, 0.12);
+}
+
+[data-theme='dark'],
+:root:not([data-theme='premium-light']) {
+  --voicebobr-avatar-ring: rgba(112, 160, 160, 0.22);
+  --voicebobr-avatar-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.voicebobr-logo {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--voicebobr-deep-teal);
+  line-height: 1;
+}
+
+.voicebobr-logo--compact,
+.voicebobr-logo--app-icon {
+  gap: 0;
+}
+
+.voicebobr-wordmark {
+  min-width: 0;
+  overflow: hidden;
+  color: currentColor;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voicebobr-avatar {
+  --voicebobr-avatar-size: 40px;
+
+  width: var(--voicebobr-avatar-size);
+  height: var(--voicebobr-avatar-size);
+  flex: 0 0 var(--voicebobr-avatar-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--voicebobr-avatar-ring);
+  border-radius: 30%;
+  background:
+    radial-gradient(circle at 36% 18%, rgba(255, 255, 255, 0.92), transparent 40%),
+    var(--voicebobr-soft-cyan);
+  box-shadow: var(--voicebobr-avatar-shadow);
+}
+
+.voicebobr-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.voicebobr-avatar--xs {
+  --voicebobr-avatar-size: 24px;
+}
+
+.voicebobr-avatar--sm {
+  --voicebobr-avatar-size: 36px;
+}
+
+.voicebobr-avatar--md {
+  --voicebobr-avatar-size: 48px;
+}
+
+.voicebobr-avatar--lg {
+  --voicebobr-avatar-size: 64px;
+}
+
+.voicebobr-avatar--xl {
+  --voicebobr-avatar-size: 116px;
+}
+
+.voicebobr-avatar--muted {
+  filter: saturate(0.72);
+  opacity: 0.92;
+}
+
+.voicebobr-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.voicebobr-empty-state__copy {
+  display: grid;
+  gap: 8px;
+  max-width: 460px;
+}
+
+.voicebobr-empty-state__copy strong {
+  color: var(--text, var(--voicebobr-ink));
+  font-size: 1.12rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.voicebobr-empty-state__copy p {
+  margin: 0;
+  color: var(--muted, rgba(16, 37, 34, 0.68));
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.voicebobr-empty-state__action {
+  margin-top: 4px;
+}
+
+.voicebobr-assistant {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.voicebobr-assistant__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.voicebobr-assistant__copy > span {
+  color: var(--voicebobr-deep-teal);
+  font-size: 0.72rem;
+  font-weight: 760;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.voicebobr-assistant__copy > strong {
+  color: var(--text, var(--voicebobr-ink));
+  font-size: 0.95rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.voicebobr-assistant__body {
+  color: var(--muted, rgba(16, 37, 34, 0.68));
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+[data-layout='modern'] .modern-brand .voicebobr-logo {
+  width: 100%;
+  gap: 6px;
+  color: var(--modern-text);
+}
+
+[data-layout='modern'] .modern-brand .voicebobr-wordmark {
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+[data-theme='premium-light'][data-layout='modern'] .modern-brand .voicebobr-logo {
+  color: #0b5f54;
+}
+
+[data-theme='premium-light'][data-layout='modern'] .modern-brand .voicebobr-wordmark {
+  color: #0b5f54;
+}
+
+[data-layout='modern'] .modern-brand .voicebobr-avatar {
+  --voicebobr-avatar-size: 32px;
+
+  box-shadow: none;
+}
+
+[data-layout='modern'] .modern-nav-mascot {
+  box-shadow: none;
+}
+
+[data-layout='modern'] .modern-nav-item .voicebobr-avatar {
+  margin-left: -3px;
+  margin-right: -3px;
+}
+
+.ask-ai-comic-bubble .voicebobr-assistant__copy > span {
+  color: var(--accent);
+}
+
+.ask-ai-comic-bubble .voicebobr-assistant__copy > strong {
+  color: #fff;
+}
+
+.ask-ai-comic-bubble .voicebobr-assistant .voicebobr-avatar {
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .voicebobr-wordmark {
+    font-size: 1rem;
+  }
+
+  [data-layout='modern'] .modern-brand .voicebobr-avatar {
+    --voicebobr-avatar-size: 32px;
+  }
+}

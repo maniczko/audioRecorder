@@ -1,5 +1,15 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Calendar, User, Flag, Tag, FileText, AlignLeft } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Calendar,
+  ChevronDown,
+  Clock3,
+  Flag,
+  Lightbulb,
+  Plus,
+  Sparkles,
+  Tag,
+  User,
+} from 'lucide-react';
 import TagInput from '../shared/TagInput';
 import MentionTextarea from '../shared/MentionTextarea';
 import { TASK_PRIORITIES } from '../lib/tasks';
@@ -31,6 +41,13 @@ interface TaskCreateFormProps {
   showCancel?: boolean;
   showQuickAdd?: boolean;
   autoFocus?: boolean;
+  formId?: string;
+}
+
+function splitDraftDateTime(value: string) {
+  if (!value) return { date: '', time: '' };
+  const [date, timeValue = ''] = value.split('T');
+  return { date, time: timeValue.slice(0, 5) };
 }
 
 export default function TaskCreateForm({
@@ -43,6 +60,7 @@ export default function TaskCreateForm({
   showCancel = false,
   showQuickAdd = true,
   autoFocus = true,
+  formId,
 }: TaskCreateFormProps) {
   const [draft, setDraft] = useState<TaskDraft>({
     title: initialDraft.title || '',
@@ -58,10 +76,24 @@ export default function TaskCreateForm({
       : initialDraft.tags || '',
     important: initialDraft.important || false,
     description: initialDraft.description || '',
-    notes: initialDraft.notes || '',
+    notes: '',
   });
 
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const dueParts = splitDraftDateTime(draft.dueDate);
+  const [allDay, setAllDay] = useState(false);
+
+  const updateDueDatePart = useCallback((part: 'date' | 'time', value: string) => {
+    setDraft((previous) => {
+      const current = splitDraftDateTime(previous.dueDate);
+      const nextDate = part === 'date' ? value : current.date;
+      const nextTime = part === 'time' ? value : current.time;
+      return {
+        ...previous,
+        dueDate: nextDate ? `${nextDate}T${nextTime || '00:00'}` : '',
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (autoFocus && titleInputRef.current) {
@@ -70,23 +102,48 @@ export default function TaskCreateForm({
   }, [autoFocus]);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
-      e.preventDefault();
+    (event: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
+      event.preventDefault();
       if (!draft.title.trim()) return;
-      onSubmit(draft);
-      setDraft((prev) => ({ ...prev, title: '' }));
-      if (titleInputRef.current) {
-        titleInputRef.current.focus();
-      }
+      onSubmit({ ...draft, title: draft.title.trim(), notes: '' });
+      setDraft((previous) => ({ ...previous, title: '' }));
+      titleInputRef.current?.focus();
     },
     [draft, onSubmit]
   );
 
   return (
-    <div className="task-create-form-container">
-      {/* Quick Add Row */}
-      {showQuickAdd && (
-        <div className="relative w-full flex mb-4">
+    <form
+      id={formId}
+      className="task-create-form-container task-create-form"
+      onSubmit={handleSubmit}
+    >
+      {!showQuickAdd ? (
+        <div className="todo-create-detail-header">
+          <label htmlFor="task-create-title">
+            Tytuł zadania <span aria-hidden="true">*</span>
+          </label>
+          <Input
+            id="task-create-title"
+            ref={titleInputRef}
+            className="todo-create-title-input"
+            value={draft.title}
+            onChange={(event) =>
+              setDraft((previous) => ({ ...previous, title: event.target.value }))
+            }
+            placeholder="Wpisz tytuł zadania..."
+            aria-label="Tytuł zadania"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleSubmit(event);
+              }
+            }}
+          />
+        </div>
+      ) : null}
+
+      {showQuickAdd ? (
+        <div className="todo-create-quick-row">
           <input
             ref={titleInputRef}
             value={draft.title}
@@ -94,161 +151,164 @@ export default function TaskCreateForm({
               setDraft((previous) => ({ ...previous, title: event.target.value }))
             }
             placeholder="Dodaj zadanie (N)..."
-            className="w-full pl-4 pr-10 py-2 bg-slate-800 border border-slate-700/80 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSubmit(e);
+            className="todo-create-quick-input"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleSubmit(event);
               }
             }}
           />
           <button
             type="button"
-            className="absolute right-1 top-1 bottom-1 aspect-square flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-none cursor-pointer"
+            className="todo-create-quick-submit"
             onClick={handleSubmit}
             disabled={!draft.title.trim()}
             title="Dodaj zadanie (Enter)"
+            aria-label="Dodaj zadanie"
           >
-            <Plus className="w-[18px] h-[18px]" />
+            <Plus size={18} aria-hidden="true" />
           </button>
         </div>
-      )}
+      ) : null}
 
-      {/* Form fields — identical to TaskDetailsPanel */}
-      <div className="todo-detail-form">
-        <div className="todo-detail-group">
-          {/* Termin */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Termin">
-              <Calendar size={18} />
+      <div className="todo-create-grid" data-density={showQuickAdd ? 'quick' : 'dialog'}>
+        <label className="todo-create-field">
+          <span>
+            <Calendar size={16} aria-hidden="true" />
+            Termin
+          </span>
+          <Input
+            className="todo-detail-unified-field"
+            type="date"
+            value={dueParts.date}
+            onChange={(event) => updateDueDatePart('date', event.target.value)}
+            aria-label="Wybierz datę"
+          />
+        </label>
+
+        <div className="todo-create-time-row">
+          <label className="todo-create-field">
+            <span>
+              <Clock3 size={16} aria-hidden="true" />
+              Godzina
             </span>
-            <span className="todo-row-label">Termin</span>
-            <div className="todo-detail-row-fill">
-              <Input
-                className="todo-detail-unified-field"
-                type="datetime-local"
-                value={draft.dueDate}
-                onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, dueDate: event.target.value }))
+            <Input
+              className="todo-detail-unified-field"
+              type="time"
+              value={dueParts.time}
+              disabled={allDay}
+              onChange={(event) => updateDueDatePart('time', event.target.value)}
+              aria-label="Wybierz godzinę"
+            />
+          </label>
+          <label className="todo-create-all-day">
+            <span>Cały dzień</span>
+            <input
+              type="checkbox"
+              checked={allDay}
+              onChange={(event) => {
+                setAllDay(event.target.checked);
+                if (event.target.checked) {
+                  updateDueDatePart('time', '00:00');
                 }
-              />
-            </div>
-          </div>
-
-          {/* Osoba */}
-          <div className="todo-detail-row field-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Przypisz osobę">
-              <User size={18} />
-            </span>
-            <span className="todo-row-label">Osoba</span>
-            <div className="todo-detail-row-fill">
-              <TagInput
-                tags={draft.owner ? [draft.owner] : []}
-                suggestions={peopleOptions}
-                onChange={(arr) => setDraft((previous) => ({ ...previous, owner: arr[0] || '' }))}
-                placeholder="Przypisz..."
-                type="person"
-              />
-            </div>
-          </div>
-
-          {/* Priorytet */}
-          <div className="todo-detail-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Priorytet">
-              <Flag size={18} />
-            </span>
-            <span className="todo-row-label">Priorytet</span>
-            <div className="todo-detail-row-fill">
-              <select
-                className="todo-detail-unified-field"
-                value={draft.priority}
-                onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, priority: event.target.value }))
-                }
-              >
-                {TASK_PRIORITIES.map((priority) => (
-                  <option key={priority.id} value={priority.id}>
-                    {priority.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Tagi */}
-          <div className="todo-detail-row field-row">
-            <span className="todo-row-icon" aria-hidden="true" title="Tagi">
-              <Tag size={18} />
-            </span>
-            <span className="todo-row-label">Tagi</span>
-            <div className="todo-detail-row-fill">
-              <TagInput
-                tags={(draft.tags || '')
-                  .split(',')
-                  .map((t: string) => t.trim())
-                  .filter(Boolean)}
-                suggestions={tagOptions}
-                onChange={(newTags: string[]) =>
-                  setDraft((p) => ({ ...p, tags: newTags.join(', ') }))
-                }
-                placeholder="Dodaj tag..."
-              />
-            </div>
-          </div>
+              }}
+              aria-label="Cały dzień"
+            />
+          </label>
         </div>
 
-        {/* --- Content group: Opis + Notatka --- */}
-        <div className="todo-detail-group todo-detail-group--content">
-          <label className="todo-detail-row note-row">
-            <div className="todo-row-label-container">
-              <span className="todo-row-icon" aria-hidden="true">
-                <FileText size={18} />
-              </span>
-              <span className="todo-row-label">Opis</span>
-            </div>
-            <MentionTextarea
-              rows={3}
-              value={draft.description}
-              onChange={(event) =>
-                setDraft((previous) => ({ ...previous, description: event.target.value }))
-              }
-              placeholder="Dodaj opis zadania..."
-              suggestions={peopleOptions.map((p) => (typeof p === 'string' ? p : p))}
-            />
-          </label>
+        <label className="todo-create-field">
+          <span>
+            <User size={16} aria-hidden="true" />
+            Osoba
+          </span>
+          <TagInput
+            tags={draft.owner ? [draft.owner] : []}
+            suggestions={peopleOptions}
+            onChange={(values) => setDraft((previous) => ({ ...previous, owner: values[0] || '' }))}
+            placeholder="Wybierz osobę..."
+            type="person"
+          />
+        </label>
 
-          <label className="todo-detail-row note-row">
-            <div className="todo-row-label-container">
-              <span className="todo-row-icon" aria-hidden="true">
-                <AlignLeft size={18} />
-              </span>
-              <span className="todo-row-label">Notatka</span>
-            </div>
-            <MentionTextarea
-              rows={4}
-              value={draft.notes}
+        <label className="todo-create-field">
+          <span>
+            <Flag size={16} aria-hidden="true" />
+            Priorytet
+          </span>
+          <div className="todo-create-select-wrap">
+            <select
+              className="todo-detail-unified-field"
+              value={draft.priority}
               onChange={(event) =>
-                setDraft((previous) => ({ ...previous, notes: event.target.value }))
+                setDraft((previous) => ({ ...previous, priority: event.target.value }))
               }
-              placeholder="Dodaj notatkę..."
-              suggestions={peopleOptions.map((p) => (typeof p === 'string' ? p : p))}
-            />
-          </label>
+            >
+              {TASK_PRIORITIES.map((priority) => (
+                <option key={priority.id} value={priority.id}>
+                  {priority.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} aria-hidden="true" />
+          </div>
+        </label>
+
+        <label className="todo-create-field todo-create-field--full">
+          <span>
+            <Tag size={16} aria-hidden="true" />
+            Tagi
+          </span>
+          <TagInput
+            tags={(draft.tags || '')
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean)}
+            suggestions={tagOptions}
+            onChange={(newTags) =>
+              setDraft((previous) => ({ ...previous, tags: newTags.join(', ') }))
+            }
+            placeholder="Dodaj tag..."
+          />
+        </label>
+
+        <label className="todo-create-field todo-create-field--full">
+          <span>
+            <Sparkles size={16} aria-hidden="true" />
+            Opis
+          </span>
+          <MentionTextarea
+            rows={4}
+            value={draft.description}
+            onChange={(event) =>
+              setDraft((previous) => ({ ...previous, description: event.target.value }))
+            }
+            placeholder="Dodaj opis zadania..."
+            suggestions={peopleOptions.map((person) =>
+              typeof person === 'string' ? person : person
+            )}
+          />
+        </label>
+
+        <div className="todo-create-ai-helper">
+          <span aria-hidden="true">
+            <Lightbulb size={15} />
+          </span>
+          <p>Uzupełnij opis z nagrania, notatki lub transkrypcji</p>
+          <button type="button">
+            Wybierz źródło
+            <ChevronDown size={14} aria-hidden="true" />
+          </button>
         </div>
       </div>
 
-      {showCancel && onCancel && (
-        <div className="flex justify-end mt-4">
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={onCancel}
-            style={{ fontSize: '13px', padding: '6px 16px' }}
-          >
-            Zamknij
+      {showCancel && onCancel ? (
+        <div className="todo-create-inline-footer">
+          <button type="button" className="todo-create-cancel-button" onClick={onCancel}>
+            Anuluj
           </button>
         </div>
-      )}
-    </div>
+      ) : null}
+    </form>
   );
 }

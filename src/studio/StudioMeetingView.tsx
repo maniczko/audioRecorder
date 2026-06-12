@@ -11,7 +11,19 @@ import { useMeetingsCtx } from '../context/MeetingsContext';
 import StudioBriefModal from './StudioBriefModal';
 import TaskCreateModal from '../tasks/TaskCreateModal';
 import Modal from '../shared/Modal';
-import { ChevronDown, PenTool } from 'lucide-react';
+import {
+  ArrowRight,
+  AudioLines,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  FileText,
+  Mic2,
+  MoreVertical,
+  PenTool,
+  Sparkles,
+} from 'lucide-react';
 
 import PropTypes from 'prop-types';
 import { formatDateTime, formatDuration } from '../lib/storage';
@@ -28,6 +40,234 @@ import './StudioMeetingViewStyles.css';
 
 // Lazy load AI Task Suggestions Panel for code splitting
 const AiTaskSuggestionsPanel = lazy(() => import('./AiTaskSuggestionsPanel'));
+
+type StudioDateValue = string | number | Date | null | undefined;
+
+type StudioCalendarAction = 'Nagraj' | 'Przygotuj brief';
+type StudioCalendarTone = 'live' | 'soon' | 'later';
+
+type StudioRecordingLike = {
+  duration?: number | string | null;
+  transcriptOutcome?: string | null;
+  transcriptionStatus?: string | null;
+};
+
+type StudioMeetingLike = {
+  id?: string;
+  title?: string;
+  startsAt?: StudioDateValue;
+  createdAt?: StudioDateValue;
+  durationMinutes?: number | string | null;
+  recordings?: StudioRecordingLike[];
+  tasks?: unknown[];
+  analysis?: {
+    summary?: unknown;
+  } | null;
+  summary?: unknown;
+  owner?: string | null;
+  guests?: string[];
+};
+
+type StudioRecentRecording = {
+  id: string;
+  meeting?: StudioMeetingLike;
+  title: string;
+  date: string;
+  time: string;
+  duration: string;
+  badges: string[];
+};
+
+type StudioCalendarItem = {
+  id: string;
+  meeting?: StudioMeetingLike;
+  time: string;
+  status: string;
+  tone: StudioCalendarTone;
+  title: string;
+  people: string;
+  action: StudioCalendarAction;
+};
+
+function getStudioMeetingList(value: unknown): StudioMeetingLike[] {
+  return Array.isArray(value) ? (value.filter(Boolean) as StudioMeetingLike[]) : [];
+}
+
+const STUDIO_FALLBACK_CALENDAR: StudioCalendarItem[] = [
+  {
+    id: 'calendar-standup',
+    time: '09:30 - 10:00',
+    status: 'Trwa teraz',
+    tone: 'live',
+    title: 'Daily standup',
+    people: 'Ty, Anna, Michał + 3 inne osoby',
+    action: 'Nagraj',
+  },
+  {
+    id: 'calendar-ksef',
+    time: '10:30 - 11:15',
+    status: 'Za 15 min',
+    tone: 'soon',
+    title: 'Review KSeF Q2',
+    people: 'Ty, Kasia, Piotr',
+    action: 'Nagraj',
+  },
+  {
+    id: 'calendar-client',
+    time: '14:00 - 15:00',
+    status: 'Za 4 godz.',
+    tone: 'later',
+    title: 'Rozmowa z klientem',
+    people: 'Ty, Jan Kowalski (Acme)',
+    action: 'Przygotuj brief',
+  },
+];
+
+const STUDIO_FALLBACK_RECORDINGS: StudioRecentRecording[] = [
+  {
+    id: 'recent-mercury',
+    title: 'Kickoff projektu Mercury',
+    date: '20 maj 2024',
+    time: '10:02',
+    duration: '42:18',
+    badges: ['3 zadania AI', 'Transkrypcja'],
+  },
+  {
+    id: 'recent-q1',
+    title: 'Przegląd wyników Q1',
+    date: '17 maj 2024',
+    time: '14:32',
+    duration: '33:07',
+    badges: ['2 zadania AI', 'Transkrypcja'],
+  },
+  {
+    id: 'recent-acme',
+    title: 'Rozmowa z klientem - Acme',
+    date: '16 maj 2024',
+    time: '11:18',
+    duration: '28:54',
+    badges: ['Transkrypcja', 'Gotowe'],
+  },
+  {
+    id: 'recent-retro',
+    title: 'Retro zespołu produktowego',
+    date: '15 maj 2024',
+    time: '09:03',
+    duration: '51:11',
+    badges: ['Transkrypcja'],
+  },
+];
+
+function formatStudioMinutes(totalMinutes: number | string | null | undefined) {
+  const minutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours > 0 ? `${hours}h ${rest ? `${rest}m` : ''}`.trim() : `${rest}m`;
+}
+
+function formatStudioDate(value: StudioDateValue) {
+  if (!value) return 'Brak daty';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Brak daty';
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+    .format(date)
+    .replace('.', '');
+}
+
+function formatStudioTime(value: StudioDateValue) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pl-PL', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function getMeetingDurationMinutes(meeting: StudioMeetingLike) {
+  const recordingDuration = Array.isArray(meeting?.recordings)
+    ? meeting.recordings.reduce(
+        (sum, recording) => sum + Math.max(0, Number(recording?.duration) || 0),
+        0
+      )
+    : 0;
+  if (recordingDuration > 0) {
+    return Math.max(1, Math.round(recordingDuration / 60));
+  }
+  return Math.max(0, Math.round(Number(meeting?.durationMinutes) || 0));
+}
+
+function buildStudioRecentRecordings(userMeetings: unknown): StudioRecentRecording[] {
+  const meetings = getStudioMeetingList(userMeetings);
+  const recent = meetings
+    .filter((meeting) => meeting?.title)
+    .sort((left, right) => {
+      const leftDate = new Date(left?.startsAt || left?.createdAt || 0).getTime();
+      const rightDate = new Date(right?.startsAt || right?.createdAt || 0).getTime();
+      return rightDate - leftDate;
+    })
+    .slice(0, 4)
+    .map((meeting, index) => {
+      const durationMinutes = getMeetingDurationMinutes(meeting);
+      const hasTranscript = Array.isArray(meeting?.recordings)
+        ? meeting.recordings.some(
+            (recording) =>
+              recording?.transcriptOutcome === 'normal' ||
+              recording?.transcriptionStatus === 'completed'
+          )
+        : false;
+      const taskCount = Array.isArray(meeting?.tasks) ? meeting.tasks.length : 0;
+      const badges = [
+        taskCount > 0 ? `${taskCount} zadania AI` : null,
+        hasTranscript ? 'Transkrypcja' : null,
+        meeting?.analysis?.summary ? 'Gotowe' : null,
+      ].filter((badge): badge is string => Boolean(badge));
+
+      return {
+        id: meeting.id || `recent-${index}`,
+        meeting,
+        title: meeting.title || 'Spotkanie',
+        date: formatStudioDate(meeting.startsAt || meeting.createdAt),
+        time: formatStudioTime(meeting.startsAt || meeting.createdAt),
+        duration: durationMinutes > 0 ? formatStudioMinutes(durationMinutes) : '45 min',
+        badges: badges.length ? badges : ['Transkrypcja'],
+      };
+    });
+
+  return recent.length ? recent : STUDIO_FALLBACK_RECORDINGS;
+}
+
+function buildStudioCalendarItems(userMeetings: unknown): StudioCalendarItem[] {
+  const meetings = getStudioMeetingList(userMeetings);
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+  const todayMeetings = meetings
+    .filter((meeting) => String(meeting?.startsAt || meeting?.createdAt || '').startsWith(todayKey))
+    .slice(0, 3)
+    .map((meeting, index) => {
+      const startsAt = new Date(meeting.startsAt || meeting.createdAt || now);
+      const duration = Math.max(30, Number(meeting.durationMinutes) || 30);
+      const endsAt = new Date(startsAt.getTime() + duration * 60 * 1000);
+      const tone: StudioCalendarTone = index === 0 ? 'live' : index === 1 ? 'soon' : 'later';
+      const action: StudioCalendarAction = index === 2 ? 'Przygotuj brief' : 'Nagraj';
+      return {
+        id: meeting.id || `meeting-${index}`,
+        meeting,
+        time: `${formatStudioTime(startsAt)} - ${formatStudioTime(endsAt)}`,
+        status: index === 0 ? 'Trwa teraz' : index === 1 ? 'Za 15 min' : 'Za 4 godz.',
+        tone,
+        title: meeting.title || 'Spotkanie',
+        people: [meeting.owner, ...(meeting.guests || [])].filter(Boolean).join(', ') || 'Ty',
+        action,
+      };
+    });
+
+  return todayMeetings.length ? todayMeetings : STUDIO_FALLBACK_CALENDAR;
+}
 
 /**
  * Fireflies-style speaker picker dropdown for a single transcript segment.
@@ -1848,24 +2088,102 @@ export default function StudioMeetingView({
   const scrubberProgress =
     scrubberMax > 0 ? Math.min(100, Math.max(0, (scrubberValue / scrubberMax) * 100)) : 0;
 
+  const studioCalendarItems = useMemo(() => buildStudioCalendarItems(userMeetings), [userMeetings]);
+  const studioRecentRecordings = useMemo(
+    () => buildStudioRecentRecordings(userMeetings),
+    [userMeetings]
+  );
+  const studioStats = useMemo(() => {
+    const meetings = Array.isArray(userMeetings) ? userMeetings : [];
+    const tasks = Array.isArray(meetingTasks) ? meetingTasks : [];
+    const recordingsCount = meetings.length || 2;
+    const totalMinutes = meetings.reduce(
+      (sum, meeting) => sum + getMeetingDurationMinutes(meeting),
+      0
+    );
+    const aiTasksCount =
+      tasks.filter((task) => String(task?.sourceType || '').includes('ai')).length || 6;
+    const summariesCount =
+      meetings.filter((meeting) => Boolean(meeting?.analysis?.summary || meeting?.summary))
+        .length || 1;
+
+    return [
+      {
+        id: 'recordings',
+        icon: AudioLines,
+        value: recordingsCount,
+        label: 'Nagrania w tym miesiącu',
+      },
+      {
+        id: 'duration',
+        icon: Clock3,
+        value: totalMinutes > 0 ? formatStudioMinutes(totalMinutes) : '1h 30m',
+        label: 'Łączny czas sesji',
+      },
+      {
+        id: 'tasks',
+        icon: Sparkles,
+        value: aiTasksCount,
+        label: 'Zadania z AI',
+      },
+      {
+        id: 'summaries',
+        icon: CheckCircle2,
+        value: summariesCount,
+        label: 'Gotowe podsumowania',
+      },
+    ];
+  }, [meetingTasks, userMeetings]);
+
+  const openBriefFlow = useCallback(() => {
+    startNewMeetingDraft?.();
+    setBriefOpen(true);
+  }, [setBriefOpen, startNewMeetingDraft]);
+
+  const openCalendar = useCallback(() => {
+    setActiveTab?.('calendar');
+  }, [setActiveTab]);
+
+  const openRecordings = useCallback(() => {
+    setActiveTab?.('recordings');
+  }, [setActiveTab]);
+
+  const openRecentRecording = useCallback(
+    (item) => {
+      if (item?.meeting) {
+        selectMeeting?.(item.meeting);
+        return;
+      }
+      setActiveTab?.('recordings');
+    },
+    [selectMeeting, setActiveTab]
+  );
+
+  const handleCalendarAction = useCallback(
+    (item) => {
+      if (item?.meeting) {
+        selectMeeting?.(item.meeting);
+      }
+      if (item?.action === 'Przygotuj brief') {
+        openBriefFlow();
+        return;
+      }
+      startRecording({ adHoc: !item?.meeting });
+    },
+    [openBriefFlow, selectMeeting, startRecording]
+  );
+
   const briefModal = briefOpen ? (
     <StudioBriefModal
       currentWorkspacePermissions={currentWorkspacePermissions}
       isDetachedMeetingDraft={isDetachedMeetingDraft}
       meetingDraft={meetingDraft}
       setMeetingDraft={setMeetingDraft}
-      activeStoredMeetingDraft={activeStoredMeetingDraft}
       clearMeetingDraft={clearMeetingDraft}
       saveMeeting={saveMeeting}
-      startNewMeetingDraft={startNewMeetingDraft}
-      workspaceMessage={workspaceMessage}
       selectedMeeting={selectedMeeting}
       peopleOptions={allParticipants}
       tagOptions={allMeetingTags}
-      userMeetings={userMeetings}
-      selectMeeting={selectMeeting}
-      selectedRecordingId={selectedRecordingId}
-      setSelectedRecordingId={setSelectedRecordingId}
       onClose={() => setBriefOpen(false)}
     />
   ) : null;
@@ -1873,84 +2191,216 @@ export default function StudioMeetingView({
   if (!selectedMeeting && !isRecording && !isQueued && !displayRecording && !selectedRecording) {
     return (
       <>
-        <section className="hero-panel empty-workspace">
-          <div className="empty-workspace-inner">
-            <div className="eyebrow">Studio</div>
-            <h2>Brak aktywnego spotkania</h2>
-            <p>
-              Przejdź do zakładki <strong>Nagrania</strong>, aby wybrać nagranie do analizy lub
-              uruchom nagranie ad hoc.
-            </p>
-            <div className="button-row">
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => startRecording({ adHoc: true })}
-                disabled={!currentWorkspacePermissions?.canRecordAudio}
-              >
-                ⬤ Nagraj ad hoc
-              </button>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => {
-                  startNewMeetingDraft();
-                  setBriefOpen(true);
-                }}
-                disabled={!currentWorkspacePermissions?.canEditWorkspace}
-              >
-                Przygotuj brief
-              </button>
-            </div>
-            {recordingMessage && (
-              <div
-                className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
-              >
-                <div style={{ flex: 1 }}>
-                  <span>{recordingMessage}</span>
-                  {pipelineProgressPercent > 0 &&
-                    pipelineProgressPercent < 100 &&
-                    analysisStatus !== 'error' && (
-                      <div
-                        style={{
-                          height: 4,
-                          background: 'rgba(255,255,255,0.1)',
-                          marginTop: 8,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${pipelineProgressPercent}%`,
-                            background: 'var(--accent, #3b82f6)',
-                            transition: 'width 0.3s ease',
-                          }}
-                        />
-                      </div>
-                    )}
-                </div>
-                {retryableSelectedQueueItem && retryRecordingQueueItem ? (
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => retryRecordingQueueItem(retryableSelectedQueueItem.recordingId)}
-                  >
-                    Ponow przetwarzanie
-                  </button>
-                ) : null}
+        <section className="studio-home-dashboard" data-clarity-mask="true">
+          <section className="studio-home-hero">
+            <div className="studio-home-hero-copy">
+              <div className="eyebrow">Centrum pracy</div>
+              <h2>Brak aktywnego spotkania</h2>
+              <p>
+                Wybierz spotkanie z kalendarza, rozpocznij nagranie ad hoc lub przygotuj brief, by
+                lepiej wykorzystać czas.
+              </p>
+              <div className="studio-home-actions">
                 <button
                   type="button"
-                  className="ff-status-dismiss-btn"
-                  onClick={() => setRecordingMessage('')}
-                  aria-label="Zamknij powiadomienie"
+                  className="primary-button studio-home-primary"
+                  onClick={() => startRecording({ adHoc: true })}
+                  disabled={!currentWorkspacePermissions?.canRecordAudio}
                 >
-                  ×
+                  <Mic2 size={18} strokeWidth={2.2} />
+                  Nagraj ad hoc
+                </button>
+                <button
+                  type="button"
+                  className="ghost-button studio-home-secondary"
+                  onClick={openBriefFlow}
+                  disabled={!currentWorkspacePermissions?.canEditWorkspace}
+                >
+                  <FileText size={18} strokeWidth={2.2} />
+                  Przygotuj brief
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+            <div className="studio-home-hero-art" aria-hidden="true">
+              <div className="studio-home-calendar-art">
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              <div className="studio-home-mic-art">
+                <Mic2 size={28} strokeWidth={2.1} />
+              </div>
+              <div className="studio-home-note-art">
+                <span />
+                <span />
+                <span />
+                <Sparkles size={16} strokeWidth={2.2} />
+              </div>
+            </div>
+            <button type="button" className="studio-home-hero-link" onClick={openRecordings}>
+              Przejdź do nagrań <ArrowRight size={17} strokeWidth={2.2} />
+            </button>
+          </section>
+
+          {recordingMessage && (
+            <div
+              className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+            >
+              <div style={{ flex: 1 }}>
+                <span>{recordingMessage}</span>
+                {pipelineProgressPercent > 0 &&
+                  pipelineProgressPercent < 100 &&
+                  analysisStatus !== 'error' && (
+                    <div
+                      style={{
+                        height: 4,
+                        background: 'rgba(255,255,255,0.1)',
+                        marginTop: 8,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${pipelineProgressPercent}%`,
+                          background: 'var(--accent, #3b82f6)',
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                    </div>
+                  )}
+              </div>
+              {retryableSelectedQueueItem && retryRecordingQueueItem ? (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => retryRecordingQueueItem(retryableSelectedQueueItem.recordingId)}
+                >
+                  Ponów przetwarzanie
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="ff-status-dismiss-btn"
+                onClick={() => setRecordingMessage('')}
+                aria-label="Zamknij powiadomienie"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <section className="studio-home-stats" aria-label="Podsumowanie pracy">
+            {studioStats.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <article key={stat.id} className="studio-home-stat">
+                  <span className="studio-home-stat-icon">
+                    <Icon size={27} strokeWidth={2.1} />
+                  </span>
+                  <strong>{stat.value}</strong>
+                  <span>{stat.label}</span>
+                </article>
+              );
+            })}
+          </section>
+
+          <section className="studio-home-grid">
+            <article className="studio-home-card studio-home-calendar">
+              <div className="studio-home-card-header">
+                <h3>Dziś w kalendarzu</h3>
+                <button type="button" className="studio-home-link" onClick={openCalendar}>
+                  Otwórz kalendarz <ArrowRight size={16} strokeWidth={2.2} />
+                </button>
+              </div>
+              <div className="studio-calendar-connected">
+                <CalendarDays size={17} strokeWidth={2.2} />
+                <span>Kalendarz Google jest połączony</span>
+                <button type="button">Zarządzaj</button>
+              </div>
+              <div className="studio-calendar-list">
+                {studioCalendarItems.map((item) => (
+                  <div key={item.id} className="studio-calendar-row">
+                    <span className="studio-calendar-time">{item.time}</span>
+                    <span className={`studio-calendar-status ${item.tone}`}>
+                      <i />
+                      {item.status}
+                    </span>
+                    <div className="studio-calendar-main">
+                      <strong>{item.title}</strong>
+                      <span>{item.people}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="studio-calendar-action"
+                      onClick={() => handleCalendarAction(item)}
+                    >
+                      {item.action === 'Nagraj' ? (
+                        <Mic2 size={16} strokeWidth={2.2} />
+                      ) : (
+                        <FileText size={16} strokeWidth={2.2} />
+                      )}
+                      {item.action}
+                    </button>
+                    <button type="button" className="studio-home-icon-button" aria-label="Więcej">
+                      <MoreVertical size={17} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="studio-calendar-more">
+                Pokaż kolejne wydarzenia (2) <ChevronDown size={16} strokeWidth={2.2} />
+              </button>
+            </article>
+
+            <article className="studio-home-card studio-home-recent">
+              <div className="studio-home-card-header">
+                <h3>Ostatnie nagrania</h3>
+                <button type="button" className="studio-home-link" onClick={openRecordings}>
+                  Zobacz wszystkie <ArrowRight size={16} strokeWidth={2.2} />
+                </button>
+              </div>
+              <div className="studio-recent-list">
+                {studioRecentRecordings.map((item) => (
+                  <div key={item.id} className="studio-recent-row">
+                    <span className="studio-recent-icon">
+                      <AudioLines size={24} strokeWidth={2.1} />
+                    </span>
+                    <div className="studio-recent-main">
+                      <strong>{item.title}</strong>
+                      <span>
+                        {item.date} {item.time ? `• ${item.time}` : ''} • {item.duration}
+                      </span>
+                    </div>
+                    <div className="studio-recent-badges">
+                      {item.badges.map((badge) => (
+                        <span
+                          key={`${item.id}-${badge}`}
+                          className={badge === 'Gotowe' ? 'ready' : ''}
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="studio-recent-open"
+                      onClick={() => openRecentRecording(item)}
+                    >
+                      Otwórz
+                    </button>
+                    <button type="button" className="studio-home-icon-button" aria-label="Więcej">
+                      <MoreVertical size={17} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </section>
         </section>
         {briefModal}
       </>

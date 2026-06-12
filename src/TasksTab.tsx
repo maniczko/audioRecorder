@@ -51,8 +51,10 @@ export default function TasksTab({
   onResolveGoogleTaskConflict,
   workspaceName,
   workspaceInviteCode,
+  currentWorkspace,
   externalSelectedTaskId,
   onTaskSelectionHandled,
+  onCreateFromRecording,
   currentUserName,
   workspaceMembers = [],
   taskNotifications = [],
@@ -61,7 +63,7 @@ export default function TasksTab({
   const [selectedListId, setSelectedListId] = useState('smart:all');
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('manual');
+  const [sortBy, setSortBy] = useState('due:asc');
   const [groupBy, setGroupBy] = useState('none');
   const [query, setQuery] = useState('');
   const [ownerFilter, setOwnerFilter] = useState('all');
@@ -602,7 +604,8 @@ export default function TasksTab({
 
       if (lowerKey === 'n') {
         event.preventDefault();
-        quickAddInputRef.current?.focus();
+        setSelectedTaskId('');
+        setShowAdvancedCreate(true);
         return;
       }
 
@@ -713,6 +716,7 @@ export default function TasksTab({
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}
             allTasks={tasks}
+            currentWorkspace={currentWorkspace}
             onFocusConflictTask={(taskId) => {
               setSelectedTaskId(taskId);
               setSelectedTaskIds([taskId]);
@@ -772,13 +776,42 @@ export default function TasksTab({
             showColumnManager={showColumnManager}
             setShowColumnManager={setShowColumnManager}
             currentUserName={currentUserName}
+            onCreateFromRecording={onCreateFromRecording}
+            createPlacement="aside"
           />
         }
-        aside={null}
+        aside={
+          selectedTask ? (
+            <div className="todo-inline-detail-pane">
+              <button
+                className="todo-inline-detail-close"
+                type="button"
+                onClick={() => setSelectedTaskId('')}
+                aria-label="Zamknij szczegoly zadania"
+              >
+                x
+              </button>
+              <TaskDetailsPanel
+                selectedTask={selectedTask}
+                tasks={tasks}
+                peopleOptions={peopleOptions}
+                tagOptions={tagOptions}
+                taskGroups={taskGroups}
+                boardColumns={boardColumns}
+                onUpdateTask={safeUpdateTask}
+                onMoveTaskToColumn={safeMoveTaskToColumn}
+                onDeleteTask={safeDeleteTask}
+                onOpenMeeting={onOpenMeeting}
+                currentUserName={currentUserName}
+                onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
+              />
+            </div>
+          ) : null
+        }
       />
       {selectedTask && (
         <div
-          className="ff-modal-overlay todo-detail-overlay"
+          className="ff-modal-overlay todo-detail-overlay todo-detail-overlay--responsive"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}

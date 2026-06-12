@@ -981,7 +981,8 @@ export function buildTaskPeople(
   meetings,
   currentUser,
   workspaceMembers: any[] = [],
-  tasks: any[] = []
+  tasks: any[] = [],
+  manualPeople: any[] = []
 ) {
   const displayUser = (user) =>
     normalizeWhitespace(user?.name) ||
@@ -992,6 +993,7 @@ export function buildTaskPeople(
   const assignableUsers = [
     displayUser(currentUser),
     ...safeArray(workspaceMembers).map(displayUser),
+    ...safeArray(manualPeople).map((person) => normalizeWhitespace(person?.name)),
   ];
 
   return uniqueStrings(assignableUsers).filter((person) => {

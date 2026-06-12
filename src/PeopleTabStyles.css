@@ -372,6 +372,103 @@
   font-size: 0.8rem;
 }
 
+.people-add-person-form {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 16px;
+  padding: 12px;
+  border: 1px solid rgba(116, 208, 191, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.people-add-person-form label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.people-add-person-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.people-add-person-row input,
+.person-name-edit-form input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(116, 208, 191, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 0 12px;
+  outline: none;
+}
+
+.people-add-person-row input:focus,
+.person-name-edit-form input:focus {
+  border-color: rgba(116, 208, 191, 0.48);
+  box-shadow: 0 0 0 3px rgba(116, 208, 191, 0.12);
+}
+
+.people-add-person-btn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(116, 208, 191, 0.95), rgba(89, 190, 230, 0.9));
+  color: #06221f;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.people-inline-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 208, 191, 0.18);
+  border-radius: 14px;
+  background: rgba(116, 208, 191, 0.08);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.person-name-edit-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.person-name-edit-form input {
+  min-width: min(420px, 100%);
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.people-danger-button {
+  border-color: rgba(241, 125, 114, 0.24);
+  color: rgba(241, 125, 114, 0.92);
+}
+
+:root[data-theme='premium-light'] .people-add-person-form,
+:root[data-theme='premium-light'] .people-inline-message {
+  background: rgba(255, 255, 252, 0.74);
+  border-color: rgba(43, 82, 74, 0.12);
+}
+
+:root[data-theme='premium-light'] .people-add-person-row input,
+:root[data-theme='premium-light'] .person-name-edit-form input {
+  background: rgba(255, 255, 252, 0.9);
+  border-color: rgba(43, 82, 74, 0.14);
+  color: var(--text);
+}
+
 /* ================================================================ */
 /* MOBILE RESPONSIVE - People Tab (2026-04-01)                     */
 /* ================================================================ */
@@ -469,5 +566,631 @@
 
   .people-soft-copy-sm {
     font-size: 0.8rem;
+  }
+}
+
+/* Layout audit target-size normalization for people controls. */
+:root[data-theme='premium-light'] .people-tab input:not([type='checkbox']):not([type='radio']),
+:root[data-theme='premium-light'] .people-page input:not([type='checkbox']):not([type='radio']),
+:root[data-theme='premium-light'] .people-view input:not([type='checkbox']):not([type='radio']) {
+  min-height: 44px;
+}
+
+:root[data-theme='premium-light'] .status-chip.status-chip-link {
+  min-height: 44px;
+}
+
+/* Premium-light people editor: make profile actions explicit and polished. */
+:root[data-theme='premium-light'] .person-name-edit-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+:root[data-theme='premium-light'] .person-name-edit-form input {
+  min-height: 52px;
+  border-radius: 16px;
+  padding-inline: 16px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+  border: 1px solid rgba(31, 94, 82, 0.12);
+}
+
+:root[data-theme='premium-light'] .person-name-edit-form .secondary-button,
+:root[data-theme='premium-light'] .person-name-edit-form .ghost-button {
+  min-height: 44px;
+  border-radius: 999px;
+  padding-inline: 18px;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side {
+  align-items: stretch;
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .people-add-task-btn,
+:root[data-theme='premium-light'] .people-danger-button {
+  min-height: 46px;
+  border-radius: 999px;
+  justify-content: center;
+  font-weight: 750;
+}
+
+:root[data-theme='premium-light'] .people-danger-button {
+  color: #a43d34;
+  border: 1px solid rgba(164, 61, 52, 0.18);
+  background: rgba(255, 244, 241, 0.76);
+}
+
+:root[data-theme='premium-light'] .profile-stat-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+/* Screenshot-first People profile layout for premium-light. */
+:root[data-theme='premium-light'] .people-layout {
+  display: block;
+  width: min(100%, 1360px);
+  margin: 0 auto;
+  padding: 28px 28px 48px;
+}
+
+:root[data-theme='premium-light'] .people-sidebar {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .people-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px 24px;
+  align-items: start;
+}
+
+:root[data-theme='premium-light'] .people-hero {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  min-height: 116px;
+  padding: 20px 24px;
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 46px rgba(25, 72, 62, 0.08);
+}
+
+:root[data-theme='premium-light'] .profile-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .profile-avatar-fallback {
+  width: 84px;
+  height: 84px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #0a6f61;
+  font-size: 2rem;
+  font-weight: 850;
+  background:
+    radial-gradient(circle at 45% 35%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.18) 42%),
+    linear-gradient(135deg, rgba(0, 143, 122, 0.2), rgba(91, 189, 231, 0.18));
+  box-shadow: inset 0 0 0 1px rgba(0, 143, 122, 0.12);
+}
+
+:root[data-theme='premium-light'] .people-hero .ui-page-header__copy {
+  margin: 0 !important;
+}
+
+:root[data-theme='premium-light'] .people-hero .eyebrow {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .people-hero .ui-page-header__title {
+  margin: 0;
+  color: #111827;
+  font-size: 1.9rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .people-hero p {
+  margin: 4px 0 0;
+  max-width: 520px;
+  color: #60706b;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+:root[data-theme='premium-light'] .people-hero p::before {
+  content: 'Uczestnik spotkań roboczych';
+  display: block;
+  margin-bottom: 2px;
+  color: #60706b;
+  font-weight: 650;
+}
+
+:root[data-theme='premium-light'] .status-cluster {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+:root[data-theme='premium-light'] .status-chip {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid rgba(31, 94, 82, 0.12);
+  border-radius: 10px;
+  color: #172f2b;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, auto));
+  align-items: center;
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card {
+  min-height: 58px;
+  padding: 10px 14px;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card span {
+  color: #6f7f89;
+  font-size: 0.72rem;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card strong {
+  color: #172f2b;
+  font-size: 0.86rem;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .people-add-task-btn {
+  min-height: 46px;
+  padding-inline: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, #009f88 0%, #007d6c 100%);
+  box-shadow: 0 14px 28px rgba(0, 143, 122, 0.2);
+}
+
+:root[data-theme='premium-light'] .people-reference-side {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  gap: 16px;
+}
+
+:root[data-theme='premium-light'] .people-grid {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+:root[data-theme='premium-light'] .people-grid .panel,
+:root[data-theme='premium-light'] .people-reference-side .panel {
+  border: 1px solid rgba(31, 94, 82, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 14px 34px rgba(25, 72, 62, 0.07);
+}
+
+:root[data-theme='premium-light'] .people-grid .panel {
+  padding: 18px 22px;
+}
+
+:root[data-theme='premium-light'] .people-side-card {
+  padding: 18px;
+}
+
+:root[data-theme='premium-light'] .people-grid .panel-header.compact,
+:root[data-theme='premium-light'] .people-side-card .panel-header.compact {
+  margin-bottom: 12px;
+}
+
+:root[data-theme='premium-light'] .people-grid .panel-header h2,
+:root[data-theme='premium-light'] .people-side-card h2 {
+  margin: 0;
+  color: #172f2b;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+:root[data-theme='premium-light'] .people-grid .eyebrow {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .analysis-block {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+:root[data-theme='premium-light'] .analysis-block p {
+  margin: 0;
+  color: #203631;
+  font-size: 0.94rem;
+  line-height: 1.58;
+}
+
+:root[data-theme='premium-light'] .psych-profile-panel {
+  grid-column: auto;
+}
+
+:root[data-theme='premium-light'] .psych-profile-panel .skeleton-empty,
+:root[data-theme='premium-light'] .psych-profile-panel [class*='empty'] {
+  min-height: auto;
+}
+
+:root[data-theme='premium-light'] .brief-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .brief-columns > div {
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .person-notes-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+:root[data-theme='premium-light'] .person-notes-item,
+:root[data-theme='premium-light'] .task-tag-chip.neutral {
+  border: 1px solid rgba(0, 143, 122, 0.14);
+  background: rgba(0, 143, 122, 0.08);
+  color: #087466;
+  border-radius: 999px;
+}
+
+:root[data-theme='premium-light'] .people-side-metric {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(31, 94, 82, 0.1);
+}
+
+:root[data-theme='premium-light'] .people-side-metric:last-child {
+  border-bottom: 0;
+}
+
+:root[data-theme='premium-light'] .people-side-metric span,
+:root[data-theme='premium-light'] .people-insight-list {
+  color: #60706b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+:root[data-theme='premium-light'] .people-side-metric strong {
+  color: #172f2b;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+:root[data-theme='premium-light'] .people-insight-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px 18px;
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .people-section-links {
+  display: grid;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light'] .people-section-links a {
+  color: #087466;
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Reference: people-profile-desktop. Keep this screen dense and calm. */
+:root[data-theme='premium-light'] .modern-content-wrapper:has(.people-layout) {
+  padding: 20px 22px 32px;
+}
+
+:root[data-theme='premium-light'] .people-layout {
+  width: min(100%, 1128px);
+  padding: 0;
+}
+
+:root[data-theme='premium-light'] .people-main {
+  grid-template-columns: minmax(0, 1fr) 342px;
+  gap: 16px 18px;
+}
+
+:root[data-theme='premium-light'] .people-hero {
+  gap: 18px;
+  min-height: 116px;
+  padding: 18px 20px;
+  border-color: rgba(21, 91, 79, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(20, 70, 61, 0.07);
+}
+
+:root[data-theme='premium-light'] .profile-hero-main {
+  gap: 18px;
+}
+
+:root[data-theme='premium-light'] .profile-avatar-reference {
+  position: relative;
+  overflow: hidden;
+  width: 76px;
+  height: 76px;
+  color: transparent;
+  background:
+    radial-gradient(circle at 50% 34%, #f1c7a7 0 17%, transparent 18%),
+    linear-gradient(160deg, transparent 0 46%, #254f48 47% 72%, transparent 73%),
+    radial-gradient(circle at 45% 28%, #263f3a 0 14%, transparent 15%),
+    linear-gradient(135deg, #b6e2dc 0%, #f7eadb 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(21, 91, 79, 0.12),
+    0 8px 18px rgba(18, 74, 65, 0.12);
+}
+
+:root[data-theme='premium-light'] .profile-avatar-reference::after {
+  position: absolute;
+  right: 13px;
+  bottom: 12px;
+  width: 50px;
+  height: 28px;
+  border-radius: 999px 999px 16px 16px;
+  background: linear-gradient(135deg, #e8b37e, #d78d67);
+  content: '';
+}
+
+:root[data-theme='premium-light'] .profile-avatar-head,
+:root[data-theme='premium-light'] .profile-avatar-body {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .people-hero .ui-page-header__title {
+  font-size: 1.88rem;
+  letter-spacing: 0;
+}
+
+:root[data-theme='premium-light'] .people-hero p {
+  max-width: 360px;
+  margin-top: 5px;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+:root[data-theme='premium-light'] .people-hero p::before {
+  margin: 0;
+  color: #66736e;
+  font-size: 0.94rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+:root[data-theme='premium-light'] .people-hero .status-cluster {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side {
+  grid-template-columns: repeat(4, minmax(82px, 104px)) auto;
+  gap: 8px;
+}
+
+:root[data-theme='premium-light']
+  .profile-hero-side
+  > .profile-stat-card:not(.people-meetings-stat):not(.people-activity-stat):not(
+    .people-tags-stat
+  ):not(.people-ai-stat),
+:root[data-theme='premium-light'] .profile-hero-side .people-create-meeting-action {
+  display: none;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(250, 253, 252, 0.92);
+  box-shadow: none;
+  text-align: left;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card span {
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .profile-stat-card strong {
+  margin-top: 2px;
+  color: #162d28;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .people-activity-stat strong {
+  font-size: 0.78rem;
+}
+
+:root[data-theme='premium-light'] .profile-hero-side .people-edit-profile-action {
+  min-width: 124px;
+  min-height: 42px;
+  padding-inline: 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+:root[data-theme='premium-light'] .people-grid,
+:root[data-theme='premium-light'] .people-reference-side {
+  gap: 14px;
+}
+
+:root[data-theme='premium-light'] .people-grid .panel,
+:root[data-theme='premium-light'] .people-reference-side .panel {
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(20, 70, 61, 0.06);
+}
+
+:root[data-theme='premium-light'] .people-grid .panel {
+  padding: 16px 18px;
+}
+
+:root[data-theme='premium-light'] .people-side-card {
+  padding: 16px;
+}
+
+:root[data-theme='premium-light'] .people-grid .panel-header.compact,
+:root[data-theme='premium-light'] .people-side-card .panel-header.compact {
+  min-height: 0;
+  margin-bottom: 10px;
+}
+
+:root[data-theme='premium-light'] .analysis-block p {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
+  padding: 14px;
+  border: 1px dashed rgba(21, 91, 79, 0.16);
+  border-radius: 10px;
+  background: rgba(247, 251, 250, 0.86);
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: #087466;
+  background: rgba(0, 143, 122, 0.1);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty strong {
+  display: block;
+  color: #172f2b;
+  font-size: 0.9rem;
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty p {
+  margin: 3px 0 0;
+  color: #66736e;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+:root[data-theme='premium-light'] .psych-profile-empty .secondary-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+:root[data-theme='premium-light'] .brief-columns {
+  gap: 12px;
+}
+
+:root[data-theme='premium-light'] .brief-col-head h3 {
+  font-size: 0.86rem;
+}
+
+:root[data-theme='premium-light'] .agenda-list {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(21, 91, 79, 0.1);
+  border-radius: 10px;
+}
+
+:root[data-theme='premium-light'] .agenda-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  align-items: center;
+  gap: 14px;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(21, 91, 79, 0.08);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.72);
+  text-align: left;
+}
+
+:root[data-theme='premium-light'] .agenda-card:last-child {
+  border-bottom: 0;
+}
+
+:root[data-theme='premium-light'] .agenda-card strong {
+  overflow: hidden;
+  color: #172f2b;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme='premium-light'] .agenda-card span {
+  color: #66736e;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+:root[data-theme='premium-light'] .agenda-card p {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  :root[data-theme='premium-light'] .people-main {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-theme='premium-light'] .people-reference-side,
+  :root[data-theme='premium-light'] .people-grid {
+    grid-column: 1;
+  }
+
+  :root[data-theme='premium-light'] .profile-hero-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
