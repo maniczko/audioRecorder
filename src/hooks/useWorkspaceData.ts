@@ -614,6 +614,7 @@ export default function useWorkspaceData() {
 
       setMeetings(nextState.meetings as any[]);
       setManualTasks(nextState.manualTasks as any[]);
+      setManualPeople(nextState.manualPeople as any[]);
       setTaskState(nextState.taskState as any);
       setTaskBoards(nextState.taskBoards as any);
       setCalendarMeta(nextState.calendarMeta as any);
@@ -628,6 +629,7 @@ export default function useWorkspaceData() {
       currentWorkspaceId,
       session?.token,
       setCalendarMeta,
+      setManualPeople,
       setManualTasks,
       setMeetings,
       setTaskBoards,

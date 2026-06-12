@@ -17,6 +17,8 @@ const { workspaceState, meetingsState, stateServiceMock, httpClientMock } = vi.h
     setMeetings: vi.fn(),
     manualTasks: [],
     setManualTasks: vi.fn(),
+    manualPeople: [],
+    setManualPeople: vi.fn(),
     taskState: {},
     setTaskState: vi.fn(),
     taskBoards: {},
@@ -84,12 +86,14 @@ describe('useWorkspaceData', () => {
 
     meetingsState.meetings = [];
     meetingsState.manualTasks = [];
+    meetingsState.manualPeople = [];
     meetingsState.taskState = {};
     meetingsState.taskBoards = {};
     meetingsState.calendarMeta = {};
     meetingsState.vocabulary = [];
     meetingsState.setMeetings.mockReset();
     meetingsState.setManualTasks.mockReset();
+    meetingsState.setManualPeople.mockReset();
     meetingsState.setTaskState.mockReset();
     meetingsState.setTaskBoards.mockReset();
     meetingsState.setCalendarMeta.mockReset();
