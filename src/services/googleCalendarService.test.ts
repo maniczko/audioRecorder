@@ -34,7 +34,24 @@ describe('googleCalendarService', () => {
     await startGoogleCalendarConnect('workspace 1', 'http://127.0.0.1:3000/?tab=calendar');
 
     expect(apiRequest).toHaveBeenCalledWith(
-      '/integrations/google/connect?workspaceId=workspace%201&returnTo=http%3A%2F%2F127.0.0.1%3A3000%2F%3Ftab%3Dcalendar'
+      '/integrations/google/connect?workspaceId=workspace%201&returnTo=http%3A%2F%2F127.0.0.1%3A3000%2F%3Ftab%3Dcalendar',
+      { retries: 0 }
+    );
+  });
+
+  it('Regression: #0 - does not retry OAuth connect when Google backend is unavailable', async () => {
+    const error = new Error('Backend jest chwilowo niedostepny.');
+    vi.mocked(apiRequest).mockRejectedValue(error);
+
+    await expect(
+      startGoogleCalendarConnect('workspace 1', 'https://voicelog-audiorecorder.vercel.app/')
+    ).rejects.toThrow(error);
+
+    expect(apiRequest).toHaveBeenCalledWith(
+      expect.stringContaining('/integrations/google/connect'),
+      {
+        retries: 0,
+      }
     );
   });
 

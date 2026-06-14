@@ -1,4 +1,5 @@
-import { Menu, Mic, Search, Square, X } from 'lucide-react';
+import { Menu, Mic, Search, Square, UserPlus, X } from 'lucide-react';
+import type { RefObject } from 'react';
 import type { WorkspaceNotificationItem } from '../../lib/notifications';
 import NotificationCenter from '../../NotificationCenter';
 
@@ -31,11 +32,13 @@ interface AppHeaderProps {
   setCommandPaletteOpen: (open: boolean) => void;
   setNotificationCenterOpen: (value: boolean | ((previous: boolean) => boolean)) => void;
   setSidebarOpen: (value: boolean | ((previous: boolean) => boolean)) => void;
+  menuButtonRef?: RefObject<HTMLButtonElement | null>;
 }
 
 export default function AppHeader({
   sidebarOpen,
   currentUser,
+  activeTab,
   canRecordAudio,
   recorder,
   notificationCenterOpen,
@@ -50,6 +53,7 @@ export default function AppHeader({
   setCommandPaletteOpen,
   setNotificationCenterOpen,
   setSidebarOpen,
+  menuButtonRef,
 }: AppHeaderProps) {
   const toggleRecording = () => {
     if (recorder.isRecording) {
@@ -61,18 +65,27 @@ export default function AppHeader({
     setActiveTab('studio');
   };
 
-  const recordingLabel = recorder.isRecording ? 'Zatrzymaj nagrywanie' : 'Nagrywaj';
+  const showPeopleAddShortcut = activeTab === 'people' && !recorder.isRecording;
+  const showGlobalRecordingShortcut =
+    (activeTab !== 'studio' && activeTab !== 'people') || recorder.isRecording;
+  const recordingLabel = recorder.isRecording ? 'Zatrzymaj nagrywanie' : 'Nowe nagranie';
+  const recordingTitle = recorder.isRecording
+    ? 'Zatrzymaj aktywne nagrywanie'
+    : 'Rozpocznij nowe nagranie ad hoc poza bieżącym spotkaniem';
 
   return (
     <header className="modern-header">
       <div className="modern-header-left">
         <button
+          ref={menuButtonRef}
           type="button"
           className="modern-hamburger-btn"
           onClick={() => setSidebarOpen((prev) => !prev)}
           aria-label={sidebarOpen ? 'Zamknij menu' : 'Otwórz menu'}
+          aria-expanded={sidebarOpen}
+          aria-controls="voicebobr-sidebar"
         >
-          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+          {sidebarOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
         </button>
       </div>
 
@@ -84,7 +97,7 @@ export default function AppHeader({
           onClick={() => setCommandPaletteOpen(true)}
         >
           <span className="modern-search-btn-left">
-            <Search size={16} />
+            <Search size={16} aria-hidden="true" />
             <span className="modern-search-text">Szukaj wszędzie...</span>
           </span>
           <span className="modern-search-shortcut">
@@ -105,32 +118,49 @@ export default function AppHeader({
           onActivate={activateNotification}
         />
 
-        <button
-          className={
-            recorder.isRecording
-              ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20'
-              : 'modern-record-btn modern-record-btn--compact text-teal-700'
-          }
-          type="button"
-          onClick={toggleRecording}
-          disabled={!canRecordAudio}
-          aria-label={recordingLabel}
-          title={recordingLabel}
-        >
-          <div className="flex items-center gap-2 px-2 py-1">
-            {recorder.isRecording ? (
-              <>
-                <Square size={16} className="fill-current text-red-500" />
-                <span className="modern-record-label">{recordingLabel}</span>
-              </>
-            ) : (
-              <>
-                <Mic size={16} className="text-teal-700" />
-                <span className="modern-record-label">{recordingLabel}</span>
-              </>
-            )}
-          </div>
-        </button>
+        {showPeopleAddShortcut ? (
+          <button
+            className="modern-record-btn modern-record-btn--compact text-teal-700"
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('voicebobr:add-person-request'))}
+            aria-label="Dodaj osobę"
+            title="Dodaj osobę"
+          >
+            <div className="flex items-center gap-2 px-2 py-1">
+              <UserPlus size={16} className="text-teal-700" aria-hidden="true" />
+              <span className="modern-record-label">Dodaj osobę</span>
+            </div>
+          </button>
+        ) : null}
+
+        {showGlobalRecordingShortcut ? (
+          <button
+            className={
+              recorder.isRecording
+                ? 'modern-record-btn recording bg-red-500/10 text-red-500 border border-red-500/30 shadow-[0_4px_14px_rgba(239,68,68,0.1)] hover:bg-red-500/20'
+                : 'modern-record-btn modern-record-btn--compact text-teal-700'
+            }
+            type="button"
+            onClick={toggleRecording}
+            disabled={!canRecordAudio}
+            aria-label={recordingLabel}
+            title={recordingTitle}
+          >
+            <div className="flex items-center gap-2 px-2 py-1">
+              {recorder.isRecording ? (
+                <>
+                  <Square size={16} className="fill-current text-red-500" aria-hidden="true" />
+                  <span className="modern-record-label">{recordingLabel}</span>
+                </>
+              ) : (
+                <>
+                  <Mic size={16} className="text-teal-700" aria-hidden="true" />
+                  <span className="modern-record-label">{recordingLabel}</span>
+                </>
+              )}
+            </div>
+          </button>
+        ) : null}
 
         <button
           type="button"

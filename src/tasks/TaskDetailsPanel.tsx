@@ -1,21 +1,10 @@
 import { memo, useEffect, useState } from 'react';
+import { AlignLeft, History, Link, Trash2 } from 'lucide-react';
 import { formatDateTime } from '../lib/storage';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
-import {
-  AlignLeft,
-  FileText,
-  History,
-  Trash2,
-  Link,
-  Calendar,
-  User,
-  Flag,
-  Tag,
-} from 'lucide-react';
-import TagInput from '../shared/TagInput';
 import MentionTextarea from '../shared/MentionTextarea';
-import { TASK_PRIORITIES } from '../lib/tasks';
+import TaskCreateForm, { TaskDraft } from './TaskCreateForm';
 import './TaskDetailsPanelStyles.css';
 
 function buildConflictDraft(conflict) {
@@ -27,20 +16,62 @@ function buildConflictDraft(conflict) {
   };
 }
 
-function TaskDetailsPanel({
-  selectedTask,
-  tasks,
-  peopleOptions,
-  tagOptions = [],
-  taskGroups,
-  boardColumns,
-  onUpdateTask,
-  onMoveTaskToColumn,
-  onDeleteTask,
-  onOpenMeeting,
-  currentUserName,
-  onResolveGoogleTaskConflict,
-}) {
+function buildSelectedTaskDraft(selectedTask, boardColumns): Partial<TaskDraft> {
+  return {
+    title: selectedTask.title || '',
+    owner: selectedTask.owner || '',
+    assignedTo: selectedTask.assignedTo || [],
+    group: selectedTask.group || '',
+    priority: selectedTask.priority || 'medium',
+    status: selectedTask.status || boardColumns[0]?.id || 'todo',
+    dueDate: selectedTask.dueDate || '',
+    reminderAt: selectedTask.reminderAt || '',
+    tags: selectedTask.tags || [],
+    important: Boolean(selectedTask.important),
+    description: selectedTask.description || '',
+    notes: selectedTask.notes || '',
+  };
+}
+
+function buildTaskUpdatePatch(patch: Partial<TaskDraft>) {
+  const nextPatch: Record<string, unknown> = {};
+
+  if ('title' in patch) nextPatch.title = patch.title;
+  if ('dueDate' in patch) nextPatch.dueDate = patch.dueDate;
+  if ('owner' in patch) nextPatch.owner = patch.owner;
+  if ('assignedTo' in patch) nextPatch.assignedTo = patch.assignedTo || [];
+  if ('priority' in patch) nextPatch.priority = patch.priority;
+  if ('description' in patch) nextPatch.description = patch.description;
+  if ('tags' in patch) {
+    nextPatch.tags = Array.isArray(patch.tags)
+      ? patch.tags
+      : String(patch.tags || '')
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+  }
+
+  return nextPatch;
+}
+
+function normalizePeopleSuggestions(peopleOptions) {
+  return (peopleOptions || [])
+    .map((person) => (typeof person === 'string' ? person : person.name || person.label || ''))
+    .filter(Boolean);
+}
+
+function TaskDetailsPanel(props: any) {
+  const {
+    selectedTask,
+    peopleOptions,
+    tagOptions = [],
+    boardColumns,
+    onUpdateTask,
+    onDeleteTask,
+    onOpenMeeting,
+    onResolveGoogleTaskConflict,
+    presentation = 'panel',
+  } = props;
   const [conflictDraft, setConflictDraft] = useState(
     buildConflictDraft(selectedTask?.googleSyncConflict)
   );
@@ -56,7 +87,7 @@ function TaskDetailsPanel({
       <aside className="todo-details">
         <div className="todo-detail-card empty">
           <h2>Wybierz zadanie</h2>
-          <p>Tutaj zobaczysz szczegoly zadania, status, grupe i notatki.</p>
+          <p>Tutaj zobaczysz szczegóły zadania, status, grupę i notatki.</p>
         </div>
       </aside>
     );
@@ -81,10 +112,37 @@ function TaskDetailsPanel({
     }
   }
 
+  const selectedTaskDraft = buildSelectedTaskDraft(selectedTask, boardColumns);
+  const peopleSuggestions = normalizePeopleSuggestions(peopleOptions);
+  const sharedTaskForm = (
+    <TaskCreateForm
+      key={selectedTask.id}
+      mode="edit"
+      showQuickAdd={false}
+      autoFocus={false}
+      resetOnSubmit={false}
+      initialDraft={selectedTaskDraft}
+      boardColumns={boardColumns}
+      peopleOptions={peopleSuggestions}
+      tagOptions={tagOptions}
+      onSubmit={() => {}}
+      onDraftChange={(_, patch) => {
+        const taskPatch = buildTaskUpdatePatch(patch);
+        if (Object.keys(taskPatch).length > 0) {
+          onUpdateTask(selectedTask.id, taskPatch);
+        }
+      }}
+    />
+  );
+
+  if (presentation === 'modal') {
+    return <div className="todo-details todo-details--modal-form">{sharedTaskForm}</div>;
+  }
+
   return (
     <aside className="todo-details">
       <div className="todo-detail-card todo-detail-card--editor">
-        <div className="todo-detail-header">
+        <div className="todo-detail-header todo-detail-header--task-form">
           <div className="todo-detail-title-block">
             {selectedTask.sourceType === 'meeting' || selectedTask.sourceType === 'google' ? (
               <span className="todo-detail-eyebrow">
@@ -106,14 +164,8 @@ function TaskDetailsPanel({
               >
                 {selectedTask.completed ? '✓' : ''}
               </button>
-              <Input
-                className="todo-detail-title-input"
-                value={selectedTask.title}
-                onChange={(event) => onUpdateTask(selectedTask.id, { title: event.target.value })}
-                aria-label="Tytuł zadania"
-              />
+              <span className="todo-detail-current-title">{selectedTask.title}</span>
             </div>
-            <div className="todo-detail-badges" />
           </div>
           <div className="todo-detail-header-actions">
             {selectedTask.sourceMeetingId ? (
@@ -122,7 +174,7 @@ function TaskDetailsPanel({
                 onClick={() => onOpenMeeting(selectedTask.sourceMeetingId)}
                 className="todo-command-button todo-command-button-icon"
               >
-                <Link size={16} />
+                <Link size={16} aria-hidden="true" />
                 Otwórz spotkanie
               </button>
             ) : null}
@@ -235,124 +287,25 @@ function TaskDetailsPanel({
           </section>
         ) : null}
 
-        <div className="todo-detail-form">
-          {/* --- Metadata group --- */}
-          <div className="todo-detail-group">
-            <div className="todo-detail-row">
-              <span className="todo-row-icon" aria-hidden="true" title="Termin">
-                <Calendar size={18} />
+        {sharedTaskForm}
+
+        <section className="todo-detail-section todo-detail-notes-section">
+          <label className="todo-detail-row note-row">
+            <div className="todo-row-label-container">
+              <span className="todo-row-icon" aria-hidden="true">
+                <AlignLeft size={18} />
               </span>
-              <span className="todo-row-label">Termin</span>
-              <div className="todo-detail-row-fill">
-                <Input
-                  className="todo-detail-unified-field"
-                  type="datetime-local"
-                  value={toInputDateTime(selectedTask.dueDate) || ''}
-                  onChange={(event) =>
-                    onUpdateTask(selectedTask.id, { dueDate: event.target.value })
-                  }
-                />
-              </div>
+              <span className="todo-row-label">Notatka</span>
             </div>
-
-            <div className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true" title="Przypisz osobę">
-                <User size={18} />
-              </span>
-              <span className="todo-row-label">Osoba</span>
-              <div className="todo-detail-row-fill">
-                <TagInput
-                  tags={(selectedTask.assignedTo?.length
-                    ? selectedTask.assignedTo
-                    : selectedTask.owner
-                      ? [selectedTask.owner]
-                      : []
-                  ).filter((p) => p && p !== 'Nieprzypisane')}
-                  suggestions={peopleOptions}
-                  onChange={(arr) =>
-                    onUpdateTask(selectedTask.id, { assignedTo: arr, owner: arr[0] || '' })
-                  }
-                  placeholder="Przypisz..."
-                  type="person"
-                />
-              </div>
-            </div>
-
-            <div className="todo-detail-row">
-              <span className="todo-row-icon" aria-hidden="true" title="Priorytet">
-                <Flag size={18} />
-              </span>
-              <span className="todo-row-label">Priorytet</span>
-              <div className="todo-detail-row-fill">
-                <select
-                  className="todo-detail-unified-field"
-                  value={selectedTask.priority || 'medium'}
-                  onChange={(event) =>
-                    onUpdateTask(selectedTask.id, { priority: event.target.value })
-                  }
-                >
-                  {TASK_PRIORITIES.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="todo-detail-row field-row">
-              <span className="todo-row-icon" aria-hidden="true" title="Tagi">
-                <Tag size={18} />
-              </span>
-              <span className="todo-row-label">Tagi</span>
-              <div className="todo-detail-row-fill">
-                <TagInput
-                  tags={selectedTask.tags || []}
-                  suggestions={tagOptions}
-                  onChange={(arr) => onUpdateTask(selectedTask.id, { tags: arr })}
-                  placeholder="Dodaj tag..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* --- Content group: Opis + Notatka --- */}
-          <div className="todo-detail-group todo-detail-group--content">
-            <label className="todo-detail-row note-row">
-              <div className="todo-row-label-container">
-                <span className="todo-row-icon" aria-hidden="true">
-                  <FileText size={18} />
-                </span>
-                <span className="todo-row-label">Opis</span>
-              </div>
-              <MentionTextarea
-                rows={3}
-                value={selectedTask.description || ''}
-                onChange={(event) =>
-                  onUpdateTask(selectedTask.id, { description: event.target.value })
-                }
-                placeholder="Dodaj opis zadania..."
-                suggestions={(peopleOptions || []).map((p) => (typeof p === 'string' ? p : p.name))}
-              />
-            </label>
-
-            <label className="todo-detail-row note-row">
-              <div className="todo-row-label-container">
-                <span className="todo-row-icon" aria-hidden="true">
-                  <AlignLeft size={18} />
-                </span>
-                <span className="todo-row-label">Notatka</span>
-              </div>
-              <MentionTextarea
-                rows={4}
-                value={selectedTask.notes || ''}
-                onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
-                placeholder="Dodaj notatkę..."
-                suggestions={(peopleOptions || []).map((p) => (typeof p === 'string' ? p : p.name))}
-              />
-            </label>
-          </div>
-        </div>
+            <MentionTextarea
+              rows={4}
+              value={selectedTask.notes || ''}
+              onChange={(event) => onUpdateTask(selectedTask.id, { notes: event.target.value })}
+              placeholder="Dodaj notatkę..."
+              suggestions={peopleSuggestions}
+            />
+          </label>
+        </section>
 
         <section className="todo-detail-section todo-detail-history-section">
           <div className="todo-section-head">
@@ -369,7 +322,7 @@ function TaskDetailsPanel({
                   <button
                     type="button"
                     className="todo-history-toggle"
-                    onClick={() => setHistoryExpanded((v) => !v)}
+                    onClick={() => setHistoryExpanded((value) => !value)}
                     title={historyExpanded ? 'Ukryj historię' : 'Pokaż historię'}
                   >
                     {historyExpanded ? '▲' : '▼'}
@@ -404,7 +357,7 @@ function TaskDetailsPanel({
             </div>
           )}
           {!historyExpanded && (selectedTask.history || []).length === 0 && (
-            <p className="todo-section-empty">Historia pojawi sie po pierwszych zmianach.</p>
+            <p className="todo-section-empty">Historia pojawi się po pierwszych zmianach.</p>
           )}
         </section>
 

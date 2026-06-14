@@ -20,7 +20,8 @@ export async function startGoogleCalendarConnect(workspaceId: string, returnTo: 
   return apiRequest(
     `/integrations/google/connect?workspaceId=${encodeURIComponent(workspaceId)}&returnTo=${encodeURIComponent(
       returnTo
-    )}`
+    )}`,
+    { retries: 0 }
   ) as Promise<{ url: string }>;
 }
 

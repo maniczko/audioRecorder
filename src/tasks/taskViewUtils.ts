@@ -52,6 +52,19 @@ export function dueTone(value) {
   return 'normal';
 }
 
+function priorityLabel(priority) {
+  const labels = {
+    high: 'Wysoki',
+    medium: 'Średni',
+    low: 'Niski',
+  };
+  return labels[priority] || priority || 'Średni';
+}
+
+function statusLabel(status, boardColumns) {
+  return boardColumns.find((column) => column.id === status)?.label || status;
+}
+
 export function buildSidebarLists(tasks, boardColumns) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -151,14 +164,23 @@ export function buildSidebarLists(tasks, boardColumns) {
     };
   });
 
+  const priorityLists = ['high', 'medium', 'low'].map((priority) => ({
+    id: `priority:${priority}`,
+    label: priorityLabel(priority),
+    icon: `priority-${priority}`,
+    count: tasks.filter((task) => (task.priority || 'medium') === priority).length,
+  }));
+
   const customLists = customGroups.map((item) => ({ ...item, icon: 'custom' }));
 
   return {
     taskLists,
     statusLists,
+    priorityLists,
     customLists,
     baseLists: taskLists,
     workspaceLists: statusLists,
+    priorityGroups: priorityLists,
     customGroups: customLists,
   };
 }
@@ -224,6 +246,11 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
     }
   }
 
+  if (mainListId.startsWith('priority:')) {
+    const priority = mainListId.slice('priority:'.length);
+    return tasks.filter((task) => (task.priority || 'medium') === priority);
+  }
+
   if (mainListId.startsWith('group:')) {
     const groupName = mainListId.slice('group:'.length);
     return tasks.filter((task) => task.group === groupName);
@@ -287,6 +314,11 @@ export function sortVisibleTasks(tasks, sortBy) {
       return (
         directionMultiplier * String(left.owner || '').localeCompare(String(right.owner || ''))
       );
+    }
+    if (field === 'source') {
+      const leftSource = left.sourceType || (left.sourceMeetingId ? 'meeting' : 'manual');
+      const rightSource = right.sourceType || (right.sourceMeetingId ? 'meeting' : 'manual');
+      return directionMultiplier * String(leftSource).localeCompare(String(rightSource));
     }
     if (field === 'priority') {
       return directionMultiplier * (priorityRank(left.priority) - priorityRank(right.priority));
@@ -391,6 +423,8 @@ export function getSelectedListLabel(sidebarLists, selectedListId) {
   return (
     sidebarLists.baseLists.find((item) => item.id === selectedListId)?.label ||
     sidebarLists.workspaceLists.find((item) => item.id === selectedListId)?.label ||
+    sidebarLists.priorityLists?.find((item) => item.id === selectedListId)?.label ||
+    sidebarLists.priorityGroups?.find((item) => item.id === selectedListId)?.label ||
     sidebarLists.customGroups.find((item) => item.id === selectedListId)?.label ||
     'Zadania'
   );
@@ -433,6 +467,8 @@ export function taskMatchesVisibleContext(task, filters) {
       task.group,
       task.description,
       task.notes,
+      statusLabel(task.status, filters.boardColumns || []),
+      priorityLabel(task.priority),
       safeArray(task.tags).join(' '),
     ]
       .join(' ')

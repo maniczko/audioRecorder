@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TasksTab from './TasksTab';
 import { ToastProvider } from './shared/Toast';
@@ -131,6 +131,79 @@ describe('TasksTab', () => {
     );
   }, 10000);
 
+  test('filters the list by priority text from the task search', async () => {
+    renderTasksTab({
+      defaultView: 'list',
+      tasks: [
+        {
+          id: 'task_high',
+          title: 'High priority review',
+          owner: 'Anna',
+          group: '',
+          description: 'Prepare release decision',
+          dueDate: '2026-03-20T10:00:00.000Z',
+          notes: '',
+          sourceType: 'manual',
+          sourceMeetingId: '',
+          sourceMeetingTitle: '',
+          sourceMeetingDate: '',
+          sourceRecordingId: '',
+          sourceQuote: '',
+          createdAt: '2026-03-14T09:00:00.000Z',
+          updatedAt: '2026-03-14T09:00:00.000Z',
+          status: 'todo',
+          important: false,
+          completed: false,
+          priority: 'high',
+          tags: [],
+          assignedTo: ['Anna'],
+          comments: [],
+          history: [],
+          dependencies: [],
+          subtasks: [],
+          order: -100,
+          assignedToMe: true,
+        },
+        {
+          id: 'task_low',
+          title: 'Low priority cleanup',
+          owner: 'Anna',
+          group: '',
+          description: 'Archive old notes',
+          dueDate: '2026-03-21T10:00:00.000Z',
+          notes: '',
+          sourceType: 'manual',
+          sourceMeetingId: '',
+          sourceMeetingTitle: '',
+          sourceMeetingDate: '',
+          sourceRecordingId: '',
+          sourceQuote: '',
+          createdAt: '2026-03-14T09:00:00.000Z',
+          updatedAt: '2026-03-14T09:00:00.000Z',
+          status: 'todo',
+          important: false,
+          completed: false,
+          priority: 'low',
+          tags: [],
+          assignedTo: ['Anna'],
+          comments: [],
+          history: [],
+          dependencies: [],
+          subtasks: [],
+          order: -99,
+          assignedToMe: true,
+        },
+      ],
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/Szukaj/i), { target: { value: 'wysoki' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('High priority review')).toBeInTheDocument();
+      expect(screen.queryByText('Low priority cleanup')).not.toBeInTheDocument();
+    });
+  });
+
   test('shows richer smart lists similar to task apps', () => {
     renderTasksTab({
       defaultView: 'list',
@@ -209,5 +282,22 @@ describe('TasksTab', () => {
     expect(await screen.findByRole('dialog', { name: 'Nowe zadanie' })).toBeInTheDocument();
     expect(screen.queryByText('Notatka')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
+  });
+  test('opens task preview in the same wide modal form shell as creation', async () => {
+    const { container } = renderTasksTab({ defaultView: 'list' });
+
+    await userEvent.click(await screen.findByText('Przenies zadanie'));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Podgląd zadania' });
+    expect(dialog).toHaveClass('task-create-modal');
+    expect(dialog).toHaveClass('task-detail-form-modal');
+    expect(container.querySelector('.todo-inline-detail-pane')).not.toBeInTheDocument();
+
+    const dialogScope = within(dialog);
+    expect(dialogScope.getByPlaceholderText(/Wpisz/)).toHaveValue('Przenies zadanie');
+    expect(dialogScope.getByText('Osoba')).toBeInTheDocument();
+    expect(dialogScope.getByText('Priorytet')).toBeInTheDocument();
+    expect(dialogScope.getByText('Tagi')).toBeInTheDocument();
+    expect(dialogScope.getByText('Opis')).toBeInTheDocument();
   });
 });

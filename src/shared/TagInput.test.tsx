@@ -45,6 +45,20 @@ describe('TagInput', () => {
     expect(addCustomTaskPerson).not.toHaveBeenCalled();
   });
 
+  it('adds an existing suggestion when clicked in the dropdown', () => {
+    const onChange = vi.fn();
+    const props = createProps({ suggestions: ['frontend', 'design'], tags: ['backend'], onChange });
+    render(<TagInput {...props} />);
+
+    const input = screen.getByRole('textbox');
+    fireEvent.focus(input);
+    fireEvent.mouseDown(screen.getByRole('button', { name: /design/i }));
+
+    expect(onChange).toHaveBeenCalledWith(['backend', 'design']);
+    expect(addCustomTaskTag).toHaveBeenCalledWith('design');
+    expect(addCustomTaskPerson).not.toHaveBeenCalled();
+  });
+
   it('creates a new value when no matching suggestion exists', () => {
     const onChange = vi.fn();
     const props = createProps({ onChange, suggestions: ['frontend'], tags: [] });

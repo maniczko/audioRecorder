@@ -9,6 +9,7 @@ function createBaseProps(overrides: Record<string, any> = {}) {
       { id: 'smart:all', label: 'All', icon: '*', count: 3 },
     ],
     workspaceLists: [{ id: 'column:todo', label: 'Todo', icon: '#', count: 2 }],
+    priorityLists: [{ id: 'priority:high', label: 'Wysoki', icon: 'priority-high', count: 1 }],
     customGroups: [],
   };
 
@@ -49,9 +50,11 @@ describe('TasksSidebar', () => {
 
     expect(screen.getByText('ZADANIA')).toBeInTheDocument();
     expect(screen.getByText('STATUSY')).toBeInTheDocument();
+    expect(screen.getByText('PRIORYTET')).toBeInTheDocument();
     expect(screen.getByText('LISTY WŁASNE')).toBeInTheDocument();
     expect(screen.getByText('Important')).toBeInTheDocument();
     expect(screen.getByText('Todo')).toBeInTheDocument();
+    expect(screen.getByText('Wysoki')).toBeInTheDocument();
     expect(screen.queryByText('Zapytaj AI')).not.toBeInTheDocument();
 
     const allButtonText = screen.getByText('All');
@@ -72,6 +75,7 @@ describe('TasksSidebar', () => {
               { id: 'column:todo', label: 'Do zrobienia', icon: 'todo', count: 0 },
               { id: 'column:done', label: 'Ukończone', icon: 'completed', count: 2 },
             ],
+            priorityLists: [],
             customGroups: [],
           },
         })}

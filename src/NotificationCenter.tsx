@@ -34,6 +34,12 @@ export default function NotificationCenter({
   onActivate: (item: WorkspaceNotificationItem) => void;
 }) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const unreadLabel =
+    unreadCount > 0
+      ? `${unreadCount} ${unreadCount === 1 ? 'nowe powiadomienie' : 'nowych powiadomień'}`
+      : 'Brak nowych powiadomień';
+  const unreadShortLabel =
+    unreadCount > 0 ? `${unreadCount} ${unreadCount === 1 ? 'nowe' : 'nowych'}` : 'Brak nowych';
 
   useEffect(() => {
     if (!open) {
@@ -66,8 +72,8 @@ export default function NotificationCenter({
       <button
         type="button"
         className={open ? 'notification-trigger active' : 'notification-trigger'}
-        aria-label="Powiadomienia"
-        title="Powiadomienia i przypomnienia"
+        aria-label={unreadCount > 0 ? `Powiadomienia, ${unreadLabel}` : 'Powiadomienia'}
+        title={unreadLabel}
         onClick={onToggle}
       >
         <span className="notification-trigger-icon">{'\u23f0'}</span>
@@ -79,22 +85,22 @@ export default function NotificationCenter({
           <div className="notification-panel-header">
             <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
               <div className="eyebrow">Powiadomienia</div>
-              <h2 className="ui-page-header__title">Centrum alertow</h2>
+              <h2 className="ui-page-header__title">Centrum alertów</h2>
             </div>
-            <span className="status-chip">{unreadCount} nowych</span>
+            <span className="status-chip">{unreadShortLabel}</span>
           </div>
 
           <div className="notification-panel-tools">
             <span className="microcopy">
               {browserNotificationsSupported
                 ? permissionState === 'granted'
-                  ? 'Browser notifications aktywne'
-                  : 'Mozesz wlaczyc alerty przegladarki'
-                : 'Ta przegladarka nie obsluguje browser notifications'}
+                  ? 'Powiadomienia przeglądarki aktywne'
+                  : 'Możesz włączyć alerty przeglądarki'
+                : 'Ta przeglądarka nie obsługuje powiadomień'}
             </span>
             {browserNotificationsSupported && permissionState !== 'granted' ? (
               <button type="button" className="ghost-button" onClick={onRequestPermission}>
-                Wlacz w przegladarce
+                Włącz w przeglądarce
               </button>
             ) : null}
           </div>
@@ -126,8 +132,8 @@ export default function NotificationCenter({
               ))
             ) : (
               <div className="empty-panel">
-                <strong>Na razie spokoj</strong>
-                <span>Tu pojawia sie przypomnienia o spotkaniach i taskach po SLA.</span>
+                <strong>Brak szczegółów powiadomień</strong>
+                <span>Gdy pojawią się nowe alerty, zobaczysz tu ich kontekst i akcje.</span>
               </div>
             )}
           </div>

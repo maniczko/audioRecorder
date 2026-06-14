@@ -220,6 +220,19 @@ describe('sortVisibleTasks', () => {
     );
     expect(sorted.map((t) => t.id)).toEqual(['2', '1', '3', '4']);
   });
+
+  it('sorts by source type for the source column', () => {
+    const sorted = sortVisibleTasks(
+      [
+        { id: 'manual', title: 'Manual', sourceType: 'manual', order: 1 },
+        { id: 'meeting', title: 'Meeting', sourceType: 'meeting', order: 2 },
+        { id: 'fallback-meeting', title: 'Fallback', sourceMeetingId: 'm1', order: 3 },
+      ],
+      'source:asc'
+    );
+
+    expect(sorted.map((t) => t.id)).toEqual(['manual', 'meeting', 'fallback-meeting']);
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -273,6 +286,7 @@ describe('applyMainListFilter', () => {
       status: 'col1',
       group: 'A',
       myDay: true,
+      priority: 'high',
     },
     {
       id: '2',
@@ -282,6 +296,7 @@ describe('applyMainListFilter', () => {
       status: 'col2',
       group: 'B',
       myDay: false,
+      priority: 'medium',
     },
     {
       id: '3',
@@ -291,6 +306,7 @@ describe('applyMainListFilter', () => {
       status: 'col1',
       group: 'A',
       myDay: false,
+      priority: 'low',
     },
   ];
 
@@ -322,6 +338,11 @@ describe('applyMainListFilter', () => {
   it('filters my_day tasks', () => {
     expect(applyMainListFilter(tasks, 'smart:my_day', columns)).toHaveLength(1);
   });
+  it('filters by priority list', () => {
+    const high = applyMainListFilter(tasks, 'priority:high', columns);
+    expect(high).toHaveLength(1);
+    expect(high[0].id).toBe('1');
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -334,8 +355,8 @@ describe('buildSidebarLists', () => {
       { id: 'done', label: 'Zakonczone', isDone: true },
     ];
     const tasks = [
-      { id: '1', status: 'c1', important: true, group: 'Sprint1' },
-      { id: '2', status: 'c1', group: '' },
+      { id: '1', status: 'c1', important: true, group: 'Sprint1', priority: 'high' },
+      { id: '2', status: 'c1', group: '', priority: 'medium' },
     ];
     const result = buildSidebarLists(tasks, columns);
     expect(result.baseLists.length).toBeGreaterThan(0);
@@ -351,6 +372,11 @@ describe('buildSidebarLists', () => {
     expect(result.workspaceLists).toHaveLength(2);
     expect(result.statusLists.map((item) => item.label)).toContain('Ukończone');
     expect(result.statusLists.map((item) => item.label)).not.toContain('Zakonczone');
+    expect(result.priorityLists.map((item) => item.id)).toEqual([
+      'priority:high',
+      'priority:medium',
+      'priority:low',
+    ]);
     expect(result.customGroups).toHaveLength(1);
     expect(result.customGroups[0].label).toBe('Sprint1');
   });

@@ -1,1318 +1,1214 @@
-import './styles/people.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  Filter,
+  LayoutPanelLeft,
+  Mic2,
+  Plus,
+  Search,
+  Sparkles,
+  Tag,
+  UserRound,
+  UsersRound,
+  X,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { formatDateTime } from './lib/storage';
-import { EmptyState } from './components/Skeleton';
+import './styles/people.css';
 import './PeopleTabStyles.css';
 
-const DISC_COLORS = { D: '#f17d72', I: '#ffd166', S: '#74d0bf', C: '#7b9eeb' };
+const ADD_PERSON_EVENT = 'voicebobr:add-person-request';
 
-const STYLE_LABELS = {
-  communicationStyle: {
-    direct: 'Bezpośredni',
-    diplomatic: 'Dyplomatyczny',
-    analytical: 'Analityczny',
-    expressive: 'Ekspresywny',
-  },
-  decisionStyle: {
-    'data-driven': 'Oparty na danych',
-    intuitive: 'Intuicyjny',
-    consensual: 'Konsensusowy',
-    authoritative: 'Autorytatywny',
-  },
-  conflictStyle: {
-    confrontational: 'Konfrontacyjny',
-    avoidant: 'Unikający',
-    collaborative: 'Współpracujący',
-    compromising: 'Kompromisowy',
-  },
-  listeningStyle: {
-    active: 'Aktywny słuchacz',
-    selective: 'Selektywny',
-    'task-focused': 'Zadaniowy',
-  },
-};
+interface MeetingSummary {
+  id: string;
+  title?: string;
+  startsAt?: string;
+  context?: string;
+}
 
-function formatProfileDateOnly(value) {
-  if (!value) {
-    return 'Brak';
-  }
+interface PeopleProfile {
+  id: string;
+  name: string;
+  summary?: string;
+  role?: string;
+  meetings?: MeetingSummary[];
+  nextMeeting?: MeetingSummary | null;
+  tasks?: Array<{ id: string; title: string }>;
+  traits?: string[];
+  tags?: string[];
+  needs?: string[];
+  concerns?: string[];
+  outputs?: string[];
+  openTasks?: number;
+  completedTasks?: number;
+  manual?: boolean;
+  assignedToMe?: boolean;
+  observed?: boolean;
+  unassigned?: boolean;
+  lastActiveThisWeek?: boolean;
+  lastActiveThisMonth?: boolean;
+  psychProfile?: Record<string, unknown> | null;
+  sentimentHistory?: Array<{ date: string; score: number }>;
+}
+
+interface DirectoryPerson {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  tags: string[];
+  meetingCount: number;
+  lastDateLabel: string;
+  lastMeetingLabel: string;
+  aiStatus: 'active' | 'low_data';
+  assignedToMe: boolean;
+  observed: boolean;
+  unassigned: boolean;
+  lastActiveThisWeek: boolean;
+  lastActiveThisMonth: boolean;
+  sourceProfile?: PeopleProfile;
+}
+
+interface PeopleTabProps {
+  profiles: PeopleProfile[];
+  onOpenMeeting?: (meetingId: string) => void;
+  onOpenTask?: (taskId: string) => void;
+  onCreateTask?: (payload: { owner: string; title: string }) => void;
+  onCreateMeeting?: (payload: { personName: string }) => void;
+  onUpdatePersonNotes?: (personId: string, notes: Record<string, string[]>) => void;
+  onAddPerson?: (payload: { name: string }) => PeopleProfile | void;
+  onRenamePerson?: (personId: string, name: string) => PeopleProfile | void;
+  onDeletePerson?: (personId: string) => void;
+  onAnalyzePersonProfile?: (personId: string) => Promise<void> | void;
+  externalSelectedPersonId?: string;
+  onPersonSelectionHandled?: () => void;
+}
+
+const REFERENCE_PEOPLE: DirectoryPerson[] = [
+  {
+    id: 'ref_iwo',
+    name: 'Iwo',
+    initials: 'IW',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['ad-hoc', 'ustalenia', 'operacyjne'],
+    meetingCount: 8,
+    lastDateLabel: '14 cze 2026',
+    lastMeetingLabel: '14 cze 2026 • Spotkanie projektowe',
+    aiStatus: 'active',
+    assignedToMe: true,
+    observed: true,
+    unassigned: false,
+    lastActiveThisWeek: true,
+    lastActiveThisMonth: true,
+  },
+  {
+    id: 'ref_marta',
+    name: 'Marta Kowalska',
+    initials: 'MK',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['klient', 'planowanie'],
+    meetingCount: 5,
+    lastDateLabel: '12 cze 2026',
+    lastMeetingLabel: '12 cze 2026 • Planowanie wdrożenia',
+    aiStatus: 'active',
+    assignedToMe: false,
+    observed: false,
+    unassigned: false,
+    lastActiveThisWeek: true,
+    lastActiveThisMonth: true,
+  },
+  {
+    id: 'ref_piotr',
+    name: 'Piotr Nowak',
+    initials: 'PN',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['klient', 'ad-hoc'],
+    meetingCount: 3,
+    lastDateLabel: '10 cze 2026',
+    lastMeetingLabel: '10 cze 2026 • Ustalenia operacyjne',
+    aiStatus: 'active',
+    assignedToMe: false,
+    observed: true,
+    unassigned: false,
+    lastActiveThisWeek: true,
+    lastActiveThisMonth: true,
+  },
+  {
+    id: 'ref_anna',
+    name: 'Anna Wiśniewska',
+    initials: 'AW',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['operacyjne'],
+    meetingCount: 1,
+    lastDateLabel: '5 cze 2026',
+    lastMeetingLabel: '5 cze 2026 • Spotkanie statusowe',
+    aiStatus: 'low_data',
+    assignedToMe: false,
+    observed: false,
+    unassigned: false,
+    lastActiveThisWeek: false,
+    lastActiveThisMonth: true,
+  },
+  {
+    id: 'ref_unassigned',
+    name: 'Nieprzypisane',
+    initials: 'NP',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['ad-hoc', 'ustalenia'],
+    meetingCount: 0,
+    lastDateLabel: 'Brak',
+    lastMeetingLabel: 'Brak',
+    aiStatus: 'low_data',
+    assignedToMe: false,
+    observed: false,
+    unassigned: true,
+    lastActiveThisWeek: false,
+    lastActiveThisMonth: false,
+  },
+  {
+    id: 'ref_tomasz',
+    name: 'Tomasz Zając',
+    initials: 'TZ',
+    role: 'Uczestnik spotkań roboczych',
+    tags: ['klient', 'planowanie', 'operacyjne', 'ustalenia', 'ad-hoc'],
+    meetingCount: 6,
+    lastDateLabel: '8 cze 2026',
+    lastMeetingLabel: '8 cze 2026 • Warsztat klienta',
+    aiStatus: 'active',
+    assignedToMe: true,
+    observed: false,
+    unassigned: false,
+    lastActiveThisWeek: false,
+    lastActiveThisMonth: true,
+  },
+];
+
+const AVATAR_COLORS = ['mint', 'violet', 'peach', 'blue', 'stone', 'amber'];
+
+function getInitials(name: string) {
+  if (!name.trim()) return '??';
+  if (name.toLowerCase().includes('nieprzypisane')) return 'NP';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+}
+
+function formatShortDate(value?: string) {
+  if (!value) return 'Brak';
 
   return new Intl.DateTimeFormat('pl-PL', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(value));
+  })
+    .format(new Date(value))
+    .replaceAll('.', '');
 }
 
-function DiscRadarChart({ disc }) {
-  const cx = 100,
-    cy = 100,
-    maxR = 70;
-  const { D = 50, I = 50, S = 50, C = 50 } = disc || {};
-
-  function pt(val, dir) {
-    const r = (Math.min(100, Math.max(0, val)) / 100) * maxR;
-    if (dir === 'N') return [cx, cy - r];
-    if (dir === 'E') return [cx + r, cy];
-    if (dir === 'S') return [cx, cy + r];
-    return [cx - r, cy];
-  }
-
-  const pts = [pt(D, 'N'), pt(I, 'E'), pt(S, 'S'), pt(C, 'W')];
-  const poly = pts.map((p) => p.join(',')).join(' ');
-  const rings = [25, 50, 75, 100];
-
-  return (
-    <svg viewBox="0 0 200 200" className="disc-radar" aria-label="Radar DISC">
-      {rings.map((v) => {
-        const r = (v / 100) * maxR;
-        return (
-          <polygon
-            key={v}
-            points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
-            fill="none"
-            stroke="rgba(255,255,255,0.07)"
-            strokeWidth="1"
-          />
-        );
-      })}
-      <line
-        x1={cx}
-        y1={cy - maxR}
-        x2={cx}
-        y2={cy + maxR}
-        stroke="rgba(255,255,255,0.1)"
-        strokeWidth="1"
-      />
-      <line
-        x1={cx - maxR}
-        y1={cy}
-        x2={cx + maxR}
-        y2={cy}
-        stroke="rgba(255,255,255,0.1)"
-        strokeWidth="1"
-      />
-      <polygon
-        points={poly}
-        fill="rgba(116,208,191,0.18)"
-        stroke="rgba(116,208,191,0.75)"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      {pts.map((p, i) => (
-        <circle
-          key={i}
-          cx={p[0]}
-          cy={p[1]}
-          r="4"
-          fill={[DISC_COLORS.D, DISC_COLORS.I, DISC_COLORS.S, DISC_COLORS.C][i]}
-        />
-      ))}
-      <text
-        x={cx}
-        y={cy - maxR - 11}
-        textAnchor="middle"
-        fill={DISC_COLORS.D}
-        fontSize="13"
-        fontWeight="700"
-      >
-        D
-      </text>
-      <text
-        x={cx + maxR + 13}
-        y={cy + 5}
-        textAnchor="start"
-        fill={DISC_COLORS.I}
-        fontSize="13"
-        fontWeight="700"
-      >
-        I
-      </text>
-      <text
-        x={cx}
-        y={cy + maxR + 19}
-        textAnchor="middle"
-        fill={DISC_COLORS.S}
-        fontSize="13"
-        fontWeight="700"
-      >
-        S
-      </text>
-      <text
-        x={cx - maxR - 13}
-        y={cy + 5}
-        textAnchor="end"
-        fill={DISC_COLORS.C}
-        fontSize="13"
-        fontWeight="700"
-      >
-        C
-      </text>
-      <text x={cx + 5} y={cy - maxR + 14} fill="rgba(255,255,255,0.55)" fontSize="10">
-        {D}
-      </text>
-      <text
-        x={cx + maxR - 6}
-        y={cy - 5}
-        textAnchor="end"
-        fill="rgba(255,255,255,0.55)"
-        fontSize="10"
-      >
-        {I}
-      </text>
-      <text x={cx + 5} y={cy + maxR - 4} fill="rgba(255,255,255,0.55)" fontSize="10">
-        {S}
-      </text>
-      <text x={cx - maxR + 6} y={cy - 5} fill="rgba(255,255,255,0.55)" fontSize="10">
-        {C}
-      </text>
-    </svg>
-  );
+function meetingWord(count: number) {
+  if (count === 1) return 'spotkanie';
+  if (count > 1 && count < 5) return 'spotkania';
+  return 'spotkań';
 }
 
-function SentimentTimelineChart({ history }) {
-  if (!history || history.length < 2) {
-    return (
-      <div className="psych-section people-psych-section-spaced">
-        <div className="psych-section-label">Temperatura relacji</div>
-        <p className="soft-copy people-soft-copy-sm">
-          Wygeneruj profil i zbierz 2 spotkania, aby zobaczyć EKG nastawienia.
-        </p>
-      </div>
-    );
-  }
+function normalizeProfile(profile: PeopleProfile): DirectoryPerson {
+  const meetings = profile.meetings || [];
+  const lastMeeting = meetings[0] || profile.nextMeeting || null;
+  const analyzedMeetings = profile.psychProfile?.meetingsAnalyzed || 0;
+  const meetingCount = Math.max(meetings.length, analyzedMeetings);
+  const tags = (profile.tags || []).map((tag) => tag.replace(/^#/, ''));
+  const unassigned =
+    Boolean(profile.unassigned) || profile.name.trim().toLowerCase().includes('nieprzypisane');
+  const aiStatus = profile.psychProfile || meetingCount >= 3 ? 'active' : 'low_data';
+  const lastDateLabel = formatShortDate(lastMeeting?.startsAt);
 
-  const width = 600;
-  const height = 180;
-  const padding = { top: 30, right: 30, bottom: 40, left: 30 };
-  const innerW = width - padding.left - padding.right;
-  const innerH = height - padding.top - padding.bottom;
+  return {
+    id: profile.id,
+    name: profile.name,
+    initials: getInitials(profile.name),
+    role: profile.role || profile.summary || 'Uczestnik spotkań roboczych',
+    tags,
+    meetingCount,
+    lastDateLabel,
+    lastMeetingLabel:
+      lastDateLabel === 'Brak'
+        ? 'Brak'
+        : `${lastDateLabel} • ${lastMeeting?.title || 'Spotkanie projektowe'}`,
+    aiStatus,
+    assignedToMe: Boolean(profile.assignedToMe),
+    observed: Boolean(profile.observed),
+    unassigned,
+    lastActiveThisWeek:
+      Boolean(profile.lastActiveThisWeek) ||
+      (lastMeeting?.startsAt ? new Date(lastMeeting.startsAt) >= new Date('2026-06-08') : false),
+    lastActiveThisMonth:
+      Boolean(profile.lastActiveThisMonth) ||
+      (lastMeeting?.startsAt ? new Date(lastMeeting.startsAt) >= new Date('2026-06-01') : false),
+    sourceProfile: profile,
+  };
+}
 
-  // Wymuszenie marginesów u góry i na dole wykresu by linia nie dotykała brzegów
-  const minScoreRaw = Math.min(...history.map((h) => h.score));
-  const maxScoreRaw = Math.max(...history.map((h) => h.score));
-  const minScore = Math.max(0, minScoreRaw - 10);
-  const maxScore = Math.min(100, maxScoreRaw + 10);
-  const range = Math.max(20, maxScore - minScore);
+function countTags(people: DirectoryPerson[]) {
+  return people.reduce<Record<string, number>>((acc, person) => {
+    person.tags.forEach((tag) => {
+      acc[tag] = (acc[tag] || 0) + 1;
+    });
+    return acc;
+  }, {});
+}
 
-  const getX = (index) => padding.left + (index / (history.length - 1)) * innerW;
-  const getY = (score) => padding.top + innerH - ((score - minScore) / range) * innerH;
+function filterPeople(
+  people: DirectoryPerson[],
+  query: string,
+  view: string,
+  chip: string,
+  tag: string | null
+) {
+  const term = query.trim().toLowerCase();
 
-  const pts = history.map((h, i) => `${getX(i)},${getY(h.score)}`).join(' ');
+  return people.filter((person) => {
+    const haystack = [
+      person.name,
+      person.role,
+      person.aiStatus === 'active' ? 'profil ai aktywny active' : 'za mało danych low_data',
+      ...person.tags,
+    ]
+      .join(' ')
+      .toLowerCase();
 
+    if (term && !haystack.includes(term)) return false;
+    if (tag && !person.tags.includes(tag)) return false;
+    if (view === 'assigned' && !person.assignedToMe) return false;
+    if (view === 'observed' && !person.observed) return false;
+    if (view === 'recent' && !person.lastActiveThisWeek) return false;
+    if (chip === 'active' && person.aiStatus !== 'active') return false;
+    if (chip === 'unassigned' && !person.unassigned) return false;
+    if (chip === 'week' && !person.lastActiveThisWeek) return false;
+    if (chip === 'month' && !person.lastActiveThisMonth) return false;
+
+    return true;
+  });
+}
+
+function StatBlock({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: typeof Mic2;
+  value: string;
+  label: string;
+}) {
   return (
-    <div className="sentiment-timeline-chart people-sentiment-chart">
-      <div className="psych-section-label">Temperatura Relacji w Czasie (AI Sentyment)</div>
-      <p className="people-sentiment-copy">
-        Wizualna ewolucja zaangażowania podczas kolejnych spotkań – od chłodu po głębokie
-        partnerstwo.
-      </p>
-      <svg viewBox={`0 0 ${width} ${height}`} className="people-sentiment-svg">
-        {/* Grid */}
-        <line
-          x1={padding.left}
-          y1={padding.top}
-          x2={width - padding.right}
-          y2={padding.top}
-          stroke="rgba(255,255,255,0.05)"
-          strokeDasharray="4 4"
-        />
-        <line
-          x1={padding.left}
-          y1={height - padding.bottom}
-          x2={width - padding.right}
-          y2={height - padding.bottom}
-          stroke="rgba(255,255,255,0.2)"
-        />
-
-        {/* Line */}
-        <polyline
-          points={pts}
-          fill="none"
-          stroke="url(#tempGradient)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        <defs>
-          <linearGradient id="tempGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#7b9eeb" />
-            <stop offset="50%" stopColor="#feca57" />
-            <stop offset="100%" stopColor="#f17d72" />
-          </linearGradient>
-        </defs>
-
-        {/* Nodes */}
-        {history.map((h, i) => (
-          <g key={i}>
-            <circle
-              cx={getX(i)}
-              cy={getY(h.score)}
-              r="5"
-              fill="#121212"
-              stroke="#fff"
-              strokeWidth="2"
-            />
-            <text
-              x={getX(i)}
-              y={getY(h.score) - 12}
-              fill="#fff"
-              fontSize="12"
-              fontWeight="600"
-              textAnchor="middle"
-            >
-              {h.score}
-            </text>
-            <text
-              x={getX(i)}
-              y={height - padding.bottom + 20}
-              fill="rgba(255,255,255,0.5)"
-              fontSize="10"
-              textAnchor="middle"
-            >
-              {new Date(h.date).toLocaleDateString()}
-            </text>
-          </g>
-        ))}
-      </svg>
+    <div className="people-preview-stat">
+      <Icon size={18} aria-hidden="true" />
+      <strong>{value}</strong>
+      <span>{label}</span>
     </div>
   );
 }
 
-function PsychProfilePanel({ person, onAnalyze, analyzing }) {
-  const [showRedFlags, setShowRedFlags] = useState(false);
-  const p = person.psychProfile;
-  const canAnalyze = person.meetings.length >= 1;
+function profileSummary(person: DirectoryPerson) {
+  return (
+    person.sourceProfile?.summary ||
+    person.sourceProfile?.role ||
+    person.role ||
+    'Profil roboczy tej osoby będzie uzupełniany na podstawie spotkań, zadań i notatek.'
+  );
+}
 
-  if (!p) {
-    return (
-      <div className="psych-profile-empty">
-        <div className="psych-profile-empty-copy">
-          <span className="psych-profile-empty-icon" aria-hidden="true">
-            AI
-          </span>
-          <div>
-            <strong>Za mało danych do pełnego profilu</strong>
-            <p>
-              {canAnalyze
-                ? `${person.meetings.length} spotkanie gotowe do analizy.`
-                : 'Potrzeba co najmniej 1 spotkania, aby wygenerować profil.'}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={onAnalyze}
-          disabled={!canAnalyze || analyzing}
-        >
-          {analyzing ? 'Analizuję...' : 'Wygeneruj profil'}
-        </button>
-        {analyzing && <div className="psych-loading-bar" />}
-      </div>
-    );
-  }
+function profileMeetings(person: DirectoryPerson) {
+  return person.sourceProfile?.meetings || [];
+}
+
+function profileTasks(person: DirectoryPerson) {
+  return person.sourceProfile?.tasks || [];
+}
+
+function profileNeeds(person: DirectoryPerson) {
+  return person.sourceProfile?.needs || [];
+}
+
+function profileConcerns(person: DirectoryPerson) {
+  return person.sourceProfile?.concerns || [];
+}
+
+function profileOutputs(person: DirectoryPerson) {
+  return person.sourceProfile?.outputs || [];
+}
+
+function profileTraits(person: DirectoryPerson) {
+  return person.sourceProfile?.traits || [];
+}
+
+function profileOpenTasks(person: DirectoryPerson) {
+  return person.sourceProfile?.openTasks ?? profileTasks(person).length;
+}
+
+function profileCompletedTasks(person: DirectoryPerson) {
+  return person.sourceProfile?.completedTasks ?? 0;
+}
+
+function PersonAvatar({
+  person,
+  index,
+  large = false,
+}: {
+  person: DirectoryPerson;
+  index: number;
+  large?: boolean;
+}) {
+  return (
+    <span
+      className={`people-avatar people-avatar--${AVATAR_COLORS[index % AVATAR_COLORS.length]} ${
+        large ? 'people-avatar--large' : ''
+      }`}
+      aria-hidden="true"
+    >
+      {person.initials}
+    </span>
+  );
+}
+
+function PersonCard({
+  person,
+  index,
+  selected,
+  onSelect,
+}: {
+  person: DirectoryPerson;
+  index: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const visibleTags = person.tags.slice(0, 3);
+  const hiddenTags = person.tags.length - visibleTags.length;
 
   return (
-    <div className="psych-profile-content">
-      <div className="psych-disc-section">
-        <DiscRadarChart disc={p.disc} />
-        <div className="psych-disc-info">
-          <div className="psych-disc-style">{p.discStyle}</div>
-          {p.discDescription && <p className="psych-disc-description">{p.discDescription}</p>}
-          <div className="psych-disc-bars">
-            {['D', 'I', 'S', 'C'].map((key) => (
-              <div key={key} className="psych-disc-bar-row">
-                <span className={`psych-disc-label psych-disc-${key.toLowerCase()}`}>{key}</span>
-                <div className="psych-disc-bar-track">
-                  <div
-                    className={`psych-disc-bar-fill psych-disc-fill-${key.toLowerCase()}`}
-                    style={{ width: `${p.disc?.[key] || 0}%` }}
-                  />
-                </div>
-                <span className="psych-disc-value">{p.disc?.[key] || 0}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {p.values?.length > 0 && (
-        <div className="psych-section">
-          <div className="psych-section-label">Wartości</div>
-          <div className="psych-values-grid">
-            {p.values.map((v, i) => (
-              <div key={i} className="psych-value-card">
-                {v.icon && <span className="psych-value-icon">{v.icon}</span>}
-                <span className="psych-value-name">{v.value}</span>
-                {v.quote && <span className="psych-value-quote">„{v.quote}"</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="psych-section">
-        <div className="psych-section-label">Style</div>
-        <div className="psych-style-badges">
-          {[
-            ['Komunikacja', 'communicationStyle'],
-            ['Decyzje', 'decisionStyle'],
-            ['Konflikt', 'conflictStyle'],
-            ['Słuchanie', 'listeningStyle'],
-          ].map(([label, key]) =>
-            p[key] ? (
-              <div key={key} className="psych-style-badge">
-                <span className="psych-style-badge-label">{label}</span>
-                <span className="psych-style-badge-value">
-                  {STYLE_LABELS[key]?.[p[key]] || p[key]}
-                </span>
-              </div>
-            ) : null
-          )}
-        </div>
-      </div>
-
-      {p.stressResponse && (
-        <div className="psych-section">
-          <div className="psych-section-label">Pod presją</div>
-          <p className="psych-stress-text">{p.stressResponse}</p>
-        </div>
-      )}
-
-      {(p.communicationDos?.length > 0 ||
-        p.communicationDonts?.length > 0 ||
-        p.workingWithTips?.length > 0) && (
-        <div className="psych-section">
-          <div className="psych-section-label">Jak z nią pracować</div>
-          {(p.communicationDos?.length > 0 || p.communicationDonts?.length > 0) && (
-            <div className="psych-tips-columns">
-              {p.communicationDos?.length > 0 && (
-                <div>
-                  <div className="psych-tips-col-head psych-do">Do ✓</div>
-                  <ul className="clean-list psych-tip-list">
-                    {p.communicationDos.map((tip, i) => (
-                      <li key={i}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {p.communicationDonts?.length > 0 && (
-                <div>
-                  <div className="psych-tips-col-head psych-dont">Don't ✗</div>
-                  <ul className="clean-list psych-tip-list">
-                    {p.communicationDonts.map((tip, i) => (
-                      <li key={i}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-          {p.workingWithTips?.length > 0 && (
-            <ul className="clean-list psych-tips-main">
-              {p.workingWithTips.map((tip, i) => (
-                <li key={i} className="psych-tip-item">
-                  → {tip}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {p.coachingNote && (
-        <div className="psych-coaching-box">
-          <span className="psych-coaching-icon">💡</span>
-          <p>{p.coachingNote}</p>
-        </div>
-      )}
-
-      {p.redFlags?.length > 0 && (
-        <div className="psych-redflags-section">
-          <button
-            type="button"
-            className="psych-redflags-toggle"
-            onClick={() => setShowRedFlags((v) => !v)}
-          >
-            ⚠ Red flags ({p.redFlags.length}) {showRedFlags ? '▲' : '▼'}
-          </button>
-          {showRedFlags && (
-            <ul className="clean-list psych-redflags-list">
-              {p.redFlags.map((flag, i) => (
-                <li key={i}>{flag}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      <SentimentTimelineChart history={person.sentimentHistory} />
-
-      <div className="psych-footer">
-        <span>
-          Na podstawie {p.meetingsAnalyzed || person.meetings.length} spotkań · model
-          probabilistyczny
+    <li>
+      <button
+        type="button"
+        className={`people-card ${selected ? 'is-selected' : ''}`}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
+        aria-pressed={selected}
+        aria-label={`${person.name}, ${person.role}`}
+      >
+        <span
+          className={`people-status-dot ${person.aiStatus === 'active' ? 'is-active' : 'is-muted'}`}
+          aria-hidden="true"
+        />
+        <PersonAvatar person={person} index={index} />
+        <span className="people-card-main">
+          <strong>{person.name}</strong>
+          <span>{person.role}</span>
         </span>
-        <button
-          type="button"
-          className="ghost-button people-ghost-button-xs"
-          onClick={onAnalyze}
-          disabled={analyzing}
-        >
-          {analyzing ? 'Aktualizuję…' : 'Odśwież'}
+        <span className="people-card-tags">
+          {visibleTags.map((tagItem) => (
+            <span key={tagItem} className="people-tag-chip">
+              #{tagItem}
+            </span>
+          ))}
+          {hiddenTags > 0 ? <span className="people-tag-chip">+{hiddenTags}</span> : null}
+        </span>
+        <span className="people-card-meta">
+          <span
+            className={`people-ai-pill ${
+              person.aiStatus === 'active' ? 'people-ai-pill--active' : ''
+            }`}
+          >
+            <Sparkles size={14} aria-hidden="true" />
+            {person.aiStatus === 'active' ? 'Profil AI' : 'Za mało danych'}
+          </span>
+          <span>
+            <Mic2 size={13} aria-hidden="true" /> {person.meetingCount}{' '}
+            {meetingWord(person.meetingCount)}
+          </span>
+          <span>{person.lastDateLabel}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function EmptyPeopleState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="people-empty-state">
+      <UsersRound size={28} aria-hidden="true" />
+      <h2>Nie znaleziono osób</h2>
+      <p>Zmień filtry albo dodaj nową osobę.</p>
+      <button type="button" className="people-primary-btn" onClick={onAdd}>
+        <Plus size={17} aria-hidden="true" />
+        Dodaj osobę
+      </button>
+    </div>
+  );
+}
+
+function PersonPreviewPanel({
+  person,
+  index,
+  onClose,
+  onOpenDetails,
+}: {
+  person: DirectoryPerson;
+  index: number;
+  onClose: () => void;
+  onOpenDetails: () => void;
+}) {
+  const hasActiveProfile = person.aiStatus === 'active';
+
+  return (
+    <aside className="people-preview-panel" aria-label="Podgląd profilu">
+      <div className="people-preview-header">
+        <h2>{person.name}</h2>
+        <button type="button" aria-label="Zamknij podgląd profilu" onClick={onClose}>
+          <X size={20} aria-hidden="true" />
         </button>
       </div>
+
+      <div className="people-preview-identity">
+        <span className="people-preview-avatar-wrap">
+          <PersonAvatar person={person} index={index} large />
+          <span
+            className={`people-preview-status ${hasActiveProfile ? 'is-active' : 'is-muted'}`}
+            aria-hidden="true"
+          />
+        </span>
+        <div>
+          <strong>{person.name}</strong>
+          <span>{person.role}</span>
+        </div>
+      </div>
+
+      <div className="people-preview-stats">
+        <StatBlock
+          icon={Mic2}
+          value={String(person.meetingCount)}
+          label={meetingWord(person.meetingCount)}
+        />
+        <StatBlock icon={Tag} value={String(person.tags.length)} label="Tagi" />
+        <StatBlock icon={CalendarDays} value={person.lastDateLabel} label="Ostatnia aktywność" />
+      </div>
+
+      <section className="people-preview-section people-preview-ai-section">
+        <div className="people-preview-section-head">
+          <h3>Profil AI</h3>
+          <span className={hasActiveProfile ? 'people-state-badge active' : 'people-state-badge'}>
+            {hasActiveProfile ? 'Aktywny' : 'Za mało danych'}
+          </span>
+        </div>
+        <p>
+          {hasActiveProfile
+            ? `Profil zawiera kluczowe ustalenia, preferencje i wzorce komunikacji z ${person.meetingCount} spotkań.`
+            : 'Zbierz co najmniej kilka spotkań, aby uzupełnić profil AI tej osoby.'}
+        </p>
+        <ul className="people-preview-checklist">
+          {[
+            'Preferencje i styl komunikacji',
+            'Najczęściej poruszane tematy',
+            'Decyzje i ustalenia',
+            'Rekomendacje i działania',
+          ].map((item) => (
+            <li key={item}>
+              <CheckCircle2 size={16} aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="people-preview-section">
+        <h3>Najczęstsze tagi</h3>
+        <div className="people-preview-tags">
+          {person.tags.length ? (
+            person.tags.slice(0, 4).map((tagItem) => (
+              <span key={tagItem} className="people-tag-chip people-tag-chip--strong">
+                #{tagItem}
+              </span>
+            ))
+          ) : (
+            <span className="people-muted-copy">Brak tagów</span>
+          )}
+        </div>
+      </section>
+
+      <section className="people-preview-section">
+        <h3>Ostatnie spotkanie</h3>
+        <p className="people-last-meeting">{person.lastMeetingLabel}</p>
+      </section>
+
+      <button
+        type="button"
+        className="people-primary-btn people-profile-open-btn"
+        onClick={onOpenDetails}
+      >
+        Otwórz profil
+        <ExternalLink size={16} aria-hidden="true" />
+      </button>
+    </aside>
+  );
+}
+
+function PersonDetailView({
+  person,
+  index,
+  onBack,
+  onOpenMeeting,
+  onOpenTask,
+  onCreateTask,
+  onCreateMeeting,
+}: {
+  person: DirectoryPerson;
+  index: number;
+  onBack: () => void;
+  onOpenMeeting?: (meetingId: string) => void;
+  onOpenTask?: (taskId: string) => void;
+  onCreateTask?: (payload: { owner: string; title: string }) => void;
+  onCreateMeeting?: (payload: { personName: string }) => void;
+}) {
+  const meetingsSectionRef = useRef<HTMLElement | null>(null);
+  const tasksSectionRef = useRef<HTMLElement | null>(null);
+  const meetings = profileMeetings(person);
+  const tasks = profileTasks(person);
+  const needs = profileNeeds(person);
+  const concerns = profileConcerns(person);
+  const outputs = profileOutputs(person);
+  const traits = profileTraits(person);
+  const summary = profileSummary(person);
+  const lastMeeting = meetings[0] || person.sourceProfile?.nextMeeting || null;
+  const hasActiveProfile = person.aiStatus === 'active';
+
+  return (
+    <div className="people-detail-page">
+      <button type="button" className="people-back-button" onClick={onBack}>
+        <ArrowLeft size={18} aria-hidden="true" />
+        Wróć do listy osób
+      </button>
+
+      <div className="people-layout people-detail-layout">
+        <section className="people-main">
+          <section className="profile-hero people-hero">
+            <div className="profile-hero-main">
+              <PersonAvatar person={person} index={index} large />
+              <div>
+                <div className="ui-page-header__copy">
+                  <div className="eyebrow">Osoba</div>
+                  <h1 className="ui-page-header__title">{person.name}</h1>
+                </div>
+                <p>{summary}</p>
+                <div className="status-cluster">
+                  <button
+                    type="button"
+                    className="status-chip status-chip-link"
+                    onClick={() =>
+                      meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  >
+                    {person.meetingCount} {meetingWord(person.meetingCount)}
+                  </button>
+                  <button
+                    type="button"
+                    className="status-chip status-chip-link"
+                    onClick={() => tasksSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    {profileOpenTasks(person)} otwartych zadań
+                  </button>
+                  <span className="status-chip">{profileCompletedTasks(person)} zakończonych</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-hero-side">
+              <button
+                type="button"
+                className="profile-stat-card profile-stat-link people-meetings-stat"
+                onClick={() => meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <span>Spotkania</span>
+                <strong>{person.meetingCount}</strong>
+              </button>
+              <div className="profile-stat-card people-activity-stat">
+                <span>Ostatnia aktywność</span>
+                <strong>{person.lastDateLabel}</strong>
+              </div>
+              <div className="profile-stat-card people-tags-stat">
+                <span>Tagi</span>
+                <strong>{person.tags.length}</strong>
+              </div>
+              <div className="profile-stat-card people-ai-stat">
+                <span>Profil AI</span>
+                <strong>{hasActiveProfile ? 'aktywny' : 'za mało danych'}</strong>
+              </div>
+              {onCreateMeeting ? (
+                <button
+                  type="button"
+                  className="people-add-task-btn people-create-meeting-action"
+                  onClick={() => onCreateMeeting({ personName: person.name })}
+                >
+                  + spotkanie
+                </button>
+              ) : null}
+            </div>
+          </section>
+
+          <aside className="people-reference-side" aria-label="Skrót profilu osoby">
+            <section className="panel people-side-card">
+              <div className="panel-header compact">
+                <h2>Skrót profilu</h2>
+              </div>
+              <div className="people-side-metric">
+                <span>Łącznie spotkań</span>
+                <strong>{person.meetingCount}</strong>
+              </div>
+              <div className="people-side-metric">
+                <span>Dominujące tematy</span>
+                <strong>{person.tags.length ? person.tags.slice(0, 3).join(', ') : 'Brak'}</strong>
+              </div>
+              <div className="people-side-metric">
+                <span>Ostatnie spotkanie</span>
+                <strong>{lastMeeting ? formatDateTime(lastMeeting.startsAt) : 'Brak'}</strong>
+              </div>
+            </section>
+
+            <section className="panel people-side-card">
+              <div className="panel-header compact">
+                <h2>Wnioski AI</h2>
+              </div>
+              <ul className="people-insight-list">
+                <li>Najczęściej oczekuje jasnych ustaleń i decyzji.</li>
+                <li>Docenia konkretne kolejne kroki po spotkaniu.</li>
+                <li>Preferuje krótkie, rzeczowe podsumowania.</li>
+              </ul>
+            </section>
+
+            <section className="panel people-side-card">
+              <div className="panel-header compact">
+                <h2>Sekcje</h2>
+              </div>
+              <nav className="people-section-links" aria-label="Sekcje profilu">
+                <a href="#people-profile-ai">Profil AI</a>
+                <a href="#people-expectations">Oczekiwania</a>
+                <a href="#people-meetings">Spotkania</a>
+                <a href="#people-tasks">Zadania</a>
+              </nav>
+            </section>
+          </aside>
+
+          <div className="people-grid">
+            <section className="panel" id="people-profile-ai">
+              <div className="panel-header compact">
+                <div>
+                  <div className="eyebrow">AI profile</div>
+                  <h2>Profil AI</h2>
+                </div>
+              </div>
+              <div className="analysis-block">
+                <p>{summary}</p>
+              </div>
+              <div className="chip-list">
+                {(traits.length ? traits : person.tags).map((item) => (
+                  <span key={item} className="task-tag-chip neutral">
+                    {traits.length ? item : `#${item}`}
+                  </span>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel psych-profile-panel">
+              <div className="panel-header compact">
+                <div>
+                  <div className="eyebrow">Psychology</div>
+                  <h2>Profil psychologiczny</h2>
+                </div>
+              </div>
+              <div className="psych-profile-empty">
+                <div className="psych-profile-empty-copy">
+                  <span className="psych-profile-empty-icon" aria-hidden="true">
+                    AI
+                  </span>
+                  <div>
+                    <strong>
+                      {hasActiveProfile ? 'Profil aktywny' : 'Za mało danych do pełnego profilu'}
+                    </strong>
+                    <p>
+                      {hasActiveProfile
+                        ? `Na podstawie ${person.meetingCount} spotkań wykryto wzorce komunikacji.`
+                        : 'Zbierz kilka spotkań, aby uzupełnić profil psychologiczny.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel" id="people-expectations">
+              <div className="panel-header compact">
+                <div>
+                  <div className="eyebrow">Expectations</div>
+                  <h2>Potrzeby i oczekiwania</h2>
+                </div>
+              </div>
+              <div className="brief-columns">
+                <div>
+                  <h3>Potrzeby</h3>
+                  <ul className="clean-list person-notes-list">
+                    {(needs.length ? needs : ['Brak danych.']).map((need) => (
+                      <li key={need} className="person-notes-item">
+                        <span>{need}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3>Obawy i ryzyka</h3>
+                  <ul className="clean-list person-notes-list">
+                    {(concerns.length ? concerns : ['Brak nagranych obaw.']).map((concern) => (
+                      <li key={concern} className="person-notes-item">
+                        <span>{concern}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3>Outputy</h3>
+                  <ul className="clean-list person-notes-list">
+                    {(outputs.length ? outputs : ['Brak danych.']).map((output) => (
+                      <li key={output} className="person-notes-item">
+                        <span>{output}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel" id="people-meetings" ref={meetingsSectionRef}>
+              <div className="panel-header compact">
+                <div>
+                  <div className="eyebrow">Meetings</div>
+                  <h2>Historia spotkań</h2>
+                </div>
+              </div>
+              <div className="agenda-list">
+                {meetings.length ? (
+                  meetings.slice(0, 8).map((meeting) => (
+                    <button
+                      type="button"
+                      key={meeting.id}
+                      className="agenda-card"
+                      onClick={() => onOpenMeeting?.(meeting.id)}
+                    >
+                      <strong>{meeting.title || 'Spotkanie'}</strong>
+                      <span>{formatDateTime(meeting.startsAt)}</span>
+                      <p>{meeting.context || 'Brak dodatkowego kontekstu.'}</p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="soft-copy">Ta osoba nie pojawiła się jeszcze w żadnym spotkaniu.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="panel" id="people-tasks" ref={tasksSectionRef}>
+              <div className="panel-header compact">
+                <div>
+                  <div className="eyebrow">Tasks</div>
+                  <h2>Zadania tej osoby</h2>
+                </div>
+                {onCreateTask ? (
+                  <button
+                    type="button"
+                    className="people-add-task-btn"
+                    onClick={() =>
+                      onCreateTask({ owner: person.name, title: `Zadanie dla ${person.name}` })
+                    }
+                  >
+                    + zadanie
+                  </button>
+                ) : null}
+              </div>
+              <div className="people-task-list">
+                {tasks.length ? (
+                  tasks.map((task) => (
+                    <button
+                      type="button"
+                      key={task.id}
+                      className="person-task-card person-task-card-clickable"
+                      onClick={() => onOpenTask?.(task.id)}
+                    >
+                      <strong>{task.title}</strong>
+                    </button>
+                  ))
+                ) : (
+                  <p className="soft-copy">Na razie nic nie jest przypisane do tej osoby.</p>
+                )}
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function AddPersonModal({
+  open,
+  draft,
+  onDraftChange,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  draft: string;
+  onDraftChange: (value: string) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="people-modal-backdrop" role="presentation">
+      <form
+        className="people-add-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="people-add-modal-title"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <div className="people-modal-head">
+          <h2 id="people-add-modal-title">Dodaj osobę</h2>
+          <button type="button" aria-label="Zamknij modal dodawania osoby" onClick={onClose}>
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <label htmlFor="people-new-person-name">Imię i nazwisko</label>
+        <input
+          id="people-new-person-name"
+          value={draft}
+          onChange={(event) => onDraftChange(event.target.value)}
+          placeholder="np. Barbara Zynda"
+          autoFocus
+        />
+        <div className="people-modal-actions">
+          <button type="button" className="people-secondary-btn" onClick={onClose}>
+            Anuluj
+          </button>
+          <button type="submit" className="people-primary-btn">
+            Dodaj osobę
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
 
 export default function PeopleTab({
-  profiles,
+  profiles = [],
   onOpenMeeting,
   onOpenTask,
   onCreateTask,
   onCreateMeeting,
-  onUpdatePersonNotes,
-  onAddPerson,
-  onRenamePerson,
-  onDeletePerson,
-  onAnalyzePersonProfile,
-  externalSelectedPersonId,
+  externalSelectedPersonId = '',
   onPersonSelectionHandled,
-}) {
-  const [selectedPersonId, setSelectedPersonId] = useState('');
+  onAddPerson,
+}: PeopleTabProps) {
   const [query, setQuery] = useState('');
-  const [editingSummary, setEditingSummary] = useState(false);
-  const [summaryDraft, setSummaryDraft] = useState('');
-  const [newNeedDraft, setNewNeedDraft] = useState('');
-  const [newConcernDraft, setNewConcernDraft] = useState('');
-  const [newOutputDraft, setNewOutputDraft] = useState('');
+  const [activeView, setActiveView] = useState<'all' | 'assigned' | 'observed' | 'recent'>('all');
+  const [activeChip, setActiveChip] = useState<'all' | 'active' | 'unassigned' | 'week' | 'month'>(
+    'all'
+  );
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState('');
+  const [viewMode, setViewMode] = useState<'directory' | 'detail'>('directory');
+  const [previewOpen, setPreviewOpen] = useState(true);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [newPersonDraft, setNewPersonDraft] = useState('');
-  const [editingPersonName, setEditingPersonName] = useState(false);
-  const [personNameDraft, setPersonNameDraft] = useState('');
-  const [personMessage, setPersonMessage] = useState('');
-  const [addingNeed, setAddingNeed] = useState(false);
-  const [addingConcern, setAddingConcern] = useState(false);
-  const [addingOutput, setAddingOutput] = useState(false);
-  const [analyzingPsych, setAnalyzingPsych] = useState(false);
-  const meetingsSectionRef = useRef<HTMLDivElement | null>(null);
-  const tasksSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const usingReferenceData = profiles.length === 0;
+  const people = useMemo(
+    () => (usingReferenceData ? REFERENCE_PEOPLE : profiles.map(normalizeProfile)),
+    [profiles, usingReferenceData]
+  );
+  const tagCounts = useMemo(() => countTags(people), [people]);
+  const featuredTags: Array<[string, number]> = usingReferenceData
+    ? [
+        ['ad-hoc', 5],
+        ['klient', 4],
+        ['operacyjne', 3],
+      ]
+    : Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+  const filteredPeople = useMemo(
+    () => filterPeople(people, query, activeView, activeChip, activeTag),
+    [activeChip, activeTag, activeView, people, query]
+  );
 
   useEffect(() => {
-    setAnalyzingPsych(false);
-  }, [selectedPersonId]);
-
-  const visibleProfiles = useMemo(() => {
-    const term = String(query || '')
-      .trim()
-      .toLowerCase();
-    if (!term) {
-      return profiles;
-    }
-
-    return profiles.filter((profile) => {
-      const haystack =
-        `${profile.name} ${profile.summary} ${(profile.tags || []).join(' ')}`.toLowerCase();
-      return haystack.includes(term);
-    });
-  }, [profiles, query]);
-
-  useEffect(() => {
-    if (!visibleProfiles.length) {
+    const firstPerson = filteredPeople[0];
+    if (!firstPerson) {
       setSelectedPersonId('');
       return;
     }
 
-    if (!visibleProfiles.some((profile) => profile.id === selectedPersonId)) {
-      setSelectedPersonId(visibleProfiles[0].id);
+    if (!filteredPeople.some((person) => person.id === selectedPersonId)) {
+      setSelectedPersonId(firstPerson.id);
     }
-  }, [selectedPersonId, visibleProfiles]);
+  }, [filteredPeople, selectedPersonId]);
 
   useEffect(() => {
-    if (!externalSelectedPersonId) {
-      return;
-    }
+    if (!externalSelectedPersonId) return;
 
-    const matchingProfile = profiles.find((profile) => profile.id === externalSelectedPersonId);
-    if (!matchingProfile) {
-      onPersonSelectionHandled?.();
-      return;
+    const matchingPerson = people.find((person) => person.id === externalSelectedPersonId);
+    if (matchingPerson) {
+      setSelectedPersonId(matchingPerson.id);
+      setViewMode('detail');
+      setPreviewOpen(true);
     }
-
-    setQuery('');
-    setSelectedPersonId(matchingProfile.id);
     onPersonSelectionHandled?.();
-  }, [externalSelectedPersonId, onPersonSelectionHandled, profiles]);
+  }, [externalSelectedPersonId, onPersonSelectionHandled, people]);
+
+  useEffect(() => {
+    const openModal = () => setAddModalOpen(true);
+    window.addEventListener(ADD_PERSON_EVENT, openModal);
+    return () => window.removeEventListener(ADD_PERSON_EVENT, openModal);
+  }, []);
 
   const selectedPerson =
-    visibleProfiles.find((profile) => profile.id === selectedPersonId) ||
-    visibleProfiles[0] ||
-    null;
-  const profileLastMeeting = selectedPerson?.meetings?.[0] || selectedPerson?.nextMeeting || null;
-  const profileTagsCount = selectedPerson?.tags?.length || 3;
+    filteredPeople.find((person) => person.id === selectedPersonId) || filteredPeople[0] || null;
+  const selectedPersonIndex = people.findIndex((person) => person.id === selectedPerson?.id);
+  const sidebarCounts = usingReferenceData
+    ? { all: 12, assigned: 4, observed: 3, recent: 0 }
+    : {
+        all: people.length,
+        assigned: people.filter((person) => person.assignedToMe).length,
+        observed: people.filter((person) => person.observed).length,
+        recent: people.filter((person) => person.lastActiveThisWeek).length,
+      };
+  const viewItems: Array<{
+    id: typeof activeView;
+    label: string;
+    count: number;
+    icon: LucideIcon;
+  }> = [
+    { id: 'all', label: 'Wszystkie osoby', count: sidebarCounts.all, icon: UsersRound },
+    { id: 'assigned', label: 'Przypisane do mnie', count: sidebarCounts.assigned, icon: UserRound },
+    { id: 'observed', label: 'Obserwowane', count: sidebarCounts.observed, icon: Sparkles },
+    { id: 'recent', label: 'Ostatnio aktywne', count: sidebarCounts.recent, icon: Clock3 },
+  ];
+  const filterItems: Array<{ id: typeof activeChip; label: string; icon: LucideIcon }> = [
+    { id: 'all', label: 'Wszyscy', icon: UsersRound },
+    { id: 'active', label: 'Profil AI aktywny', icon: Sparkles },
+    { id: 'unassigned', label: 'Nieprzypisane', icon: Clock3 },
+    { id: 'week', label: 'Ten tydzień', icon: CalendarDays },
+    { id: 'month', label: 'Ten miesiąc', icon: CalendarDays },
+  ];
 
-  useEffect(() => {
-    if (!selectedPerson) return;
-    setEditingPersonName(false);
-    setPersonNameDraft(selectedPerson.name || '');
-    setPersonMessage('');
-  }, [selectedPerson?.id]);
+  function resetFilters() {
+    setActiveView('all');
+    setActiveChip('all');
+    setActiveTag(null);
+    setQuery('');
+  }
 
-  function handleAddPerson(event) {
-    event.preventDefault();
+  function selectPerson(personId: string) {
+    setSelectedPersonId(personId);
+    setViewMode('directory');
+    setPreviewOpen(true);
+  }
+
+  function openPersonDetails(personId = selectedPerson?.id || '') {
+    if (personId) {
+      setSelectedPersonId(personId);
+    }
+    setPreviewOpen(true);
+    setViewMode('detail');
+  }
+
+  function submitNewPerson() {
     const name = newPersonDraft.trim();
-    if (!name || typeof onAddPerson !== 'function') return;
-    const person = onAddPerson({ name });
-    if (!person) {
-      setPersonMessage('Ta osoba juz istnieje albo nazwa jest pusta.');
-      return;
+    if (!name) return;
+
+    const addedPerson = onAddPerson?.({ name });
+    if (addedPerson?.id) {
+      setSelectedPersonId(addedPerson.id);
+      setViewMode('detail');
+      setPreviewOpen(true);
     }
     setNewPersonDraft('');
-    setQuery('');
-    setSelectedPersonId(person.id);
-    setPersonMessage('Dodano osobe do workspace.');
+    setAddModalOpen(false);
   }
 
-  function handleRenamePerson(event) {
-    event.preventDefault();
-    if (!selectedPerson || typeof onRenamePerson !== 'function') return;
-    const name = personNameDraft.trim();
-    const result = onRenamePerson(selectedPerson.id, name);
-    if (!result) {
-      setPersonMessage('Podaj nowa, poprawna nazwe osoby.');
-      return;
-    }
-    setEditingPersonName(false);
-    setSelectedPersonId(result.id || selectedPerson.id);
-    setPersonMessage('Zmieniono nazwe i zaktualizowano powiazane miejsca.');
-  }
-
-  function handleDeletePerson() {
-    if (!selectedPerson || typeof onDeletePerson !== 'function') return;
-    onDeletePerson(selectedPerson.id);
-    setPersonMessage('Usunieto osobe reczna z listy.');
-  }
-
-  async function handleAnalyzePsych() {
-    if (!selectedPerson || !onAnalyzePersonProfile) return;
-    setAnalyzingPsych(true);
-    try {
-      await onAnalyzePersonProfile(selectedPerson.id);
-    } finally {
-      setAnalyzingPsych(false);
-    }
+  if (viewMode === 'detail' && selectedPerson) {
+    return (
+      <PersonDetailView
+        person={selectedPerson}
+        index={selectedPersonIndex >= 0 ? selectedPersonIndex : 0}
+        onBack={() => setViewMode('directory')}
+        onOpenMeeting={onOpenMeeting}
+        onOpenTask={onOpenTask}
+        onCreateTask={onCreateTask}
+        onCreateMeeting={onCreateMeeting}
+      />
+    );
   }
 
   return (
-    <div className="people-layout">
-      <aside className="people-sidebar">
-        <section className="tasks-list-panel">
-          <div className="people-search-wrap">
-            <span className="people-search-icon" aria-hidden="true">
-              ⌕
-            </span>
-            <input
-              className="people-search-input"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Szukaj po imieniu…"
-              autoFocus={false}
-            />
-            {query && (
+    <div className="people-directory-page">
+      <div className={`people-directory-layout ${previewOpen ? '' : 'no-preview'}`}>
+        <aside className="people-directory-sidebar" aria-label="Widoki osób">
+          <section>
+            <h2>Widoki</h2>
+            {viewItems.map(({ id, label, count, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={activeView === id ? 'is-active' : ''}
+                onClick={() => {
+                  setActiveView(id);
+                  setActiveChip('all');
+                }}
+              >
+                <Icon size={17} aria-hidden="true" />
+                <span>{label}</span>
+                {count ? <strong>{count}</strong> : null}
+              </button>
+            ))}
+          </section>
+
+          <section>
+            <h2>Tagi</h2>
+            {featuredTags.map(([tagItem, count]) => (
+              <button
+                key={tagItem}
+                type="button"
+                className={activeTag === tagItem ? 'is-active' : ''}
+                onClick={() => {
+                  setActiveTag(activeTag === tagItem ? null : tagItem);
+                  setActiveChip('all');
+                }}
+              >
+                <Tag size={17} aria-hidden="true" />
+                <span>#{tagItem}</span>
+                <strong>{count}</strong>
+              </button>
+            ))}
+          </section>
+
+          <section>
+            <div className="people-sidebar-section-head">
+              <h2>Grupy</h2>
+              <button type="button" aria-label="Utwórz grupę">
+                <Plus size={18} aria-hidden="true" />
+              </button>
+            </div>
+          </section>
+        </aside>
+
+        <main className="people-directory-main">
+          <header className="people-directory-header">
+            <div>
+              <h1>Osoby</h1>
+              <p>Zarządzaj uczestnikami i ich profilami AI</p>
+            </div>
+            <div className="people-directory-actions">
+              <label className="people-directory-search">
+                <Search size={17} aria-hidden="true" />
+                <span className="sr-only">Szukaj osób</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Szukaj osób..."
+                  aria-label="Szukaj osób"
+                />
+              </label>
+              <button type="button" className="people-tool-btn">
+                <Filter size={17} aria-hidden="true" />
+                Filtry
+              </button>
+              <button type="button" className="people-tool-btn">
+                <LayoutPanelLeft size={17} aria-hidden="true" />
+                Widok
+              </button>
               <button
                 type="button"
-                className="people-search-clear"
-                onClick={() => setQuery('')}
-                aria-label="Wyczyść wyszukiwanie"
+                className="people-icon-btn"
+                aria-label="Dodaj osobę"
+                onClick={() => setAddModalOpen(true)}
               >
-                ×
-              </button>
-            )}
-          </div>
-
-          <form className="people-add-person-form" onSubmit={handleAddPerson}>
-            <label htmlFor="people-add-name">Nowa osoba</label>
-            <div className="people-add-person-row">
-              <input
-                id="people-add-name"
-                value={newPersonDraft}
-                onChange={(event) => setNewPersonDraft(event.target.value)}
-                placeholder="np. Barbara Zynda"
-              />
-              <button type="submit" className="people-add-person-btn">
-                +
+                <Plus size={20} aria-hidden="true" />
               </button>
             </div>
-          </form>
+          </header>
 
-          {personMessage ? <div className="people-inline-message">{personMessage}</div> : null}
-
-          <div className="people-list">
-            {visibleProfiles.length ? (
-              visibleProfiles.map((profile) => (
-                <button
-                  type="button"
-                  key={profile.id}
-                  className={selectedPerson?.id === profile.id ? 'person-row active' : 'person-row'}
-                  onClick={
-                    typeof setSelectedPersonId === 'function'
-                      ? () => setSelectedPersonId(profile.id)
-                      : undefined
+          <div className="people-filter-chips" role="toolbar" aria-label="Filtry osób">
+            {filterItems.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={activeChip === id ? 'is-active' : ''}
+                onClick={() => {
+                  if (id === 'all') {
+                    resetFilters();
+                    return;
                   }
-                >
-                  <div>
-                    <strong>{profile.name}</strong>
-                    <span>
-                      {profile.meetings.length} spotkań • {profile.tasks.length} zadań
-                    </span>
-                  </div>
-                  <span className="task-filter-count">{profile.openTasks}</span>
-                </button>
-              ))
-            ) : (
-              <EmptyState
-                mascotContext="people"
-                title="Brak osób"
-                message="Dodaj uczestników do spotkań albo przypisz taski, aby tu się pojawili."
-              />
-            )}
+                  setActiveChip(id);
+                }}
+              >
+                <Icon size={16} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
           </div>
-        </section>
-      </aside>
 
-      <section className="people-main">
-        {selectedPerson ? (
-          <>
-            <section className="profile-hero people-hero">
-              <div className="profile-hero-main">
-                <div
-                  className="profile-avatar-fallback profile-avatar-reference"
-                  aria-hidden="true"
-                >
-                  <span className="profile-avatar-head" />
-                  <span className="profile-avatar-body" />
-                </div>
-                <div>
-                  <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
-                    <div className="eyebrow">Osoba</div>
-                    {editingPersonName ? (
-                      <form className="person-name-edit-form" onSubmit={handleRenamePerson}>
-                        <input
-                          value={personNameDraft}
-                          onChange={(event) => setPersonNameDraft(event.target.value)}
-                          aria-label="Nazwa osoby"
-                          autoFocus
-                        />
-                        <button type="submit" className="secondary-button">
-                          Zapisz
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => {
-                            setEditingPersonName(false);
-                            setPersonNameDraft(selectedPerson.name);
-                          }}
-                        >
-                          Anuluj
-                        </button>
-                      </form>
-                    ) : (
-                      <h2 className="ui-page-header__title">{selectedPerson.name}</h2>
-                    )}
-                  </div>
-                  <p>{selectedPerson.summary}</p>
-                  <div className="status-cluster">
-                    <button
-                      type="button"
-                      className="status-chip status-chip-link"
-                      onClick={() =>
-                        meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-                      }
-                    >
-                      {selectedPerson.meetings.length} spotkań
-                    </button>
-                    <button
-                      type="button"
-                      className="status-chip status-chip-link"
-                      onClick={() =>
-                        tasksSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-                      }
-                    >
-                      {selectedPerson.openTasks} otwartych zadań
-                    </button>
-                    <span className="status-chip">
-                      {selectedPerson.completedTasks} zakończonych
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-hero-side">
-                <button
-                  type="button"
-                  className="profile-stat-card profile-stat-link people-meetings-stat"
-                  onClick={() => meetingsSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  <span>Spotkania</span>
-                  <strong>{selectedPerson.meetings.length}</strong>
-                </button>
-                <div className="profile-stat-card people-activity-stat">
-                  <span>Ostatnia aktywność</span>
-                  <strong>{formatProfileDateOnly(profileLastMeeting?.startsAt)}</strong>
-                </div>
-                <div className="profile-stat-card people-tags-stat">
-                  <span>Tagi</span>
-                  <strong>{profileTagsCount}</strong>
-                </div>
-                <div className="profile-stat-card people-ai-stat">
-                  <span>Profil AI</span>
-                  <strong>aktywny</strong>
-                </div>
-                <button
-                  type="button"
-                  className="people-add-task-btn people-edit-profile-action"
-                  onClick={() => {
-                    setPersonNameDraft(selectedPerson.name);
-                    setEditingPersonName(true);
-                  }}
-                >
-                  Edytuj profil
-                </button>
-                {selectedPerson.manual && (
-                  <button
-                    type="button"
-                    className="ghost-button people-danger-button"
-                    onClick={handleDeletePerson}
-                  >
-                    Usun osobe
-                  </button>
-                )}
-                {selectedPerson.nextMeeting ? (
-                  <button
-                    type="button"
-                    className="profile-stat-card profile-stat-link"
-                    onClick={() => onOpenMeeting(selectedPerson.nextMeeting.id)}
-                  >
-                    <span>Następne spotkanie</span>
-                    <strong>{formatDateTime(selectedPerson.nextMeeting.startsAt)}</strong>
-                  </button>
-                ) : (
-                  <div className="profile-stat-card">
-                    <span>Następne spotkanie</span>
-                    <strong>Brak</strong>
-                  </div>
-                )}
-                {typeof onCreateMeeting === 'function' && (
-                  <button
-                    type="button"
-                    className="people-add-task-btn people-create-meeting-action"
-                    onClick={() => onCreateMeeting(selectedPerson.name)}
-                    title="Zaplanuj spotkanie z tą osobą"
-                  >
-                    + spotkanie
-                  </button>
-                )}
-              </div>
-            </section>
-
-            <aside className="people-reference-side" aria-label="Skrót profilu osoby">
-              <section className="panel people-side-card">
-                <div className="panel-header compact">
-                  <div>
-                    <h2>Skrót profilu</h2>
-                  </div>
-                </div>
-                <div className="people-side-metric">
-                  <span>Łącznie spotkań</span>
-                  <strong>{selectedPerson.meetings.length}</strong>
-                </div>
-                <div className="people-side-metric">
-                  <span>Dominujące tematy</span>
-                  <strong>
-                    {selectedPerson.tags.length
-                      ? selectedPerson.tags.slice(0, 3).join(', ')
-                      : 'Planowanie'}
-                  </strong>
-                </div>
-                <div className="people-side-metric">
-                  <span>Ostatnie spotkanie</span>
-                  <strong>
-                    {selectedPerson.meetings[0]
-                      ? formatDateTime(selectedPerson.meetings[0].startsAt)
-                      : 'Brak'}
-                  </strong>
-                </div>
-              </section>
-
-              <section className="panel people-side-card">
-                <div className="panel-header compact">
-                  <div>
-                    <h2>Wnioski AI</h2>
-                  </div>
-                </div>
-                <ul className="people-insight-list">
-                  <li>Najczęściej oczekuje jasnych ustaleń i decyzji.</li>
-                  <li>Docenia konkretne kolejne kroki po spotkaniu.</li>
-                  <li>Preferuje krótkie, rzeczowe podsumowania.</li>
-                </ul>
-                <button type="button" className="ghost-button people-ghost-button-sm">
-                  Pokaż więcej
-                </button>
-              </section>
-
-              <section className="panel people-side-card">
-                <div className="panel-header compact">
-                  <div>
-                    <h2>Tagi</h2>
-                  </div>
-                </div>
-                <div className="chip-list">
-                  {(selectedPerson.tags.length
-                    ? selectedPerson.tags
-                    : ['ad-hoc', 'ustalenia', 'operacyjne']
-                  ).map((tag) => (
-                    <span key={tag} className="task-tag-chip neutral">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </section>
-
-              <section className="panel people-side-card">
-                <div className="panel-header compact">
-                  <div>
-                    <h2>Sekcje</h2>
-                  </div>
-                </div>
-                <nav className="people-section-links" aria-label="Sekcje profilu">
-                  <a href="#people-profile-ai">Profil AI</a>
-                  <a href="#people-psychology">Psychologia</a>
-                  <a href="#people-expectations">Oczekiwania</a>
-                  <a href="#people-meetings">Spotkania</a>
-                </nav>
-              </section>
-            </aside>
-
-            <div className="people-grid">
-              <section className="panel" id="people-profile-ai">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">AI profile</div>
-                    <h2>Profil AI</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className="ghost-button people-ghost-button-sm"
-                    onClick={() => {
-                      setSummaryDraft(selectedPerson.summary);
-                      setEditingSummary(true);
-                    }}
-                    title="Edytuj profil"
-                  >
-                    Edytuj
-                  </button>
-                </div>
-
-                <div className="analysis-block">
-                  {editingSummary ? (
-                    <div className="profile-edit-form">
-                      <textarea
-                        className="profile-summary-edit"
-                        value={summaryDraft}
-                        onChange={(e) => setSummaryDraft(e.target.value)}
-                        rows={4}
-                        autoFocus
-                      />
-                      <div className="button-row">
-                        <button
-                          type="button"
-                          className="ghost-button people-ghost-button-sm"
-                          onClick={() => setEditingSummary(false)}
-                        >
-                          Anuluj
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p>{selectedPerson.summary}</p>
-                  )}
-                </div>
-
-                <div className="chip-list">
-                  {selectedPerson.traits.length ? (
-                    selectedPerson.traits.map((trait) => (
-                      <span key={trait} className="task-tag-chip neutral">
-                        {trait}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="soft-copy">
-                      Potrzeba wiecej spotkan, aby lepiej scharakteryzowac te osobe.
-                    </span>
-                  )}
-                </div>
-              </section>
-
-              <section className="panel psych-profile-panel" id="people-psychology">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Psychology</div>
-                    <h2>Profil psychologiczny</h2>
-                  </div>
-                </div>
-                <PsychProfilePanel
-                  person={selectedPerson}
-                  onAnalyze={handleAnalyzePsych}
-                  analyzing={analyzingPsych}
+          {filteredPeople.length ? (
+            <ul className="people-card-list" aria-label="Lista osób">
+              {filteredPeople.map((person, index) => (
+                <PersonCard
+                  key={person.id}
+                  person={person}
+                  index={people.findIndex((item) => item.id === person.id) || index}
+                  selected={person.id === selectedPerson?.id}
+                  onSelect={() => selectPerson(person.id)}
                 />
-              </section>
+              ))}
+            </ul>
+          ) : (
+            <EmptyPeopleState onAdd={() => setAddModalOpen(true)} />
+          )}
+        </main>
 
-              <section className="panel" id="people-expectations">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Expectations</div>
-                    <h2>Potrzeby i oczekiwania</h2>
-                  </div>
-                </div>
+        {previewOpen && selectedPerson ? (
+          <PersonPreviewPanel
+            person={selectedPerson}
+            index={selectedPersonIndex >= 0 ? selectedPersonIndex : 0}
+            onClose={() => setPreviewOpen(false)}
+            onOpenDetails={() => openPersonDetails(selectedPerson.id)}
+          />
+        ) : null}
+      </div>
 
-                <div className="brief-columns">
-                  <div>
-                    <div className="brief-col-head">
-                      <h3>Potrzeby</h3>
-                      <button
-                        type="button"
-                        className="what-matters-add-btn"
-                        onClick={() => {
-                          setAddingNeed(true);
-                          setNewNeedDraft('');
-                        }}
-                        title="Dodaj potrzebę"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {addingNeed && (
-                      <form
-                        className="person-notes-add-form"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const val = newNeedDraft.trim();
-                          if (!val) return;
-                          onUpdatePersonNotes?.(selectedPerson.id, {
-                            needs: [...selectedPerson.needs, val],
-                          });
-                          setAddingNeed(false);
-                          setNewNeedDraft('');
-                        }}
-                      >
-                        <input
-                          autoFocus
-                          value={newNeedDraft}
-                          onChange={(e) => setNewNeedDraft(e.target.value)}
-                          placeholder="np. Jasne priorytety"
-                        />
-                        <button type="submit" className="ghost-button">
-                          Dodaj
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => setAddingNeed(false)}
-                        >
-                          ×
-                        </button>
-                      </form>
-                    )}
-                    <ul className="clean-list person-notes-list">
-                      {selectedPerson.needs.length ? (
-                        selectedPerson.needs.map((need) => (
-                          <li key={need} className="person-notes-item">
-                            <span>{need}</span>
-                            <button
-                              type="button"
-                              className="person-notes-remove"
-                              onClick={() =>
-                                onUpdatePersonNotes?.(selectedPerson.id, {
-                                  needs: selectedPerson.needs.filter((n) => n !== need),
-                                })
-                              }
-                              title="Usuń"
-                            >
-                              ×
-                            </button>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="soft-copy">Brak danych.</li>
-                      )}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <div className="brief-col-head">
-                      <h3>Obawy i ryzyka</h3>
-                      <button
-                        type="button"
-                        className="what-matters-add-btn"
-                        onClick={() => {
-                          setAddingConcern(true);
-                          setNewConcernDraft('');
-                        }}
-                        title="Dodaj obawę lub ryzyko"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {addingConcern && (
-                      <form
-                        className="person-notes-add-form"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const val = newConcernDraft.trim();
-                          if (!val) return;
-                          onUpdatePersonNotes?.(selectedPerson.id, {
-                            concerns: [...(selectedPerson.concerns || []), val],
-                          });
-                          setAddingConcern(false);
-                          setNewConcernDraft('');
-                        }}
-                      >
-                        <input
-                          autoFocus
-                          value={newConcernDraft}
-                          onChange={(e) => setNewConcernDraft(e.target.value)}
-                          placeholder="np. Ograniczony budżet"
-                        />
-                        <button type="submit" className="ghost-button">
-                          Dodaj
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => setAddingConcern(false)}
-                        >
-                          ×
-                        </button>
-                      </form>
-                    )}
-                    <ul className="clean-list person-notes-list">
-                      {selectedPerson.concerns && selectedPerson.concerns.length ? (
-                        selectedPerson.concerns.map((concern) => (
-                          <li key={concern} className="person-notes-item">
-                            <span>{concern}</span>
-                            <button
-                              type="button"
-                              className="person-notes-remove"
-                              onClick={() =>
-                                onUpdatePersonNotes?.(selectedPerson.id, {
-                                  concerns: selectedPerson.concerns.filter((c) => c !== concern),
-                                })
-                              }
-                              title="Usuń"
-                            >
-                              ×
-                            </button>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="soft-copy">Brak nagranych obaw.</li>
-                      )}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <div className="brief-col-head">
-                      <h3>Outputy</h3>
-                      <button
-                        type="button"
-                        className="what-matters-add-btn"
-                        onClick={() => {
-                          setAddingOutput(true);
-                          setNewOutputDraft('');
-                        }}
-                        title="Dodaj output"
-                      >
-                        +
-                      </button>
-                    </div>
-                    {addingOutput && (
-                      <form
-                        className="person-notes-add-form"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const val = newOutputDraft.trim();
-                          if (!val) return;
-                          onUpdatePersonNotes?.(selectedPerson.id, {
-                            outputs: [...selectedPerson.outputs, val],
-                          });
-                          setAddingOutput(false);
-                          setNewOutputDraft('');
-                        }}
-                      >
-                        <input
-                          autoFocus
-                          value={newOutputDraft}
-                          onChange={(e) => setNewOutputDraft(e.target.value)}
-                          placeholder="np. Lista decyzji"
-                        />
-                        <button type="submit" className="ghost-button">
-                          Dodaj
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() => setAddingOutput(false)}
-                        >
-                          ×
-                        </button>
-                      </form>
-                    )}
-                    <ul className="clean-list person-notes-list">
-                      {selectedPerson.outputs.length ? (
-                        selectedPerson.outputs.map((item) => (
-                          <li key={item} className="person-notes-item">
-                            <span>{item}</span>
-                            <button
-                              type="button"
-                              className="person-notes-remove"
-                              onClick={() =>
-                                onUpdatePersonNotes?.(selectedPerson.id, {
-                                  outputs: selectedPerson.outputs.filter((o) => o !== item),
-                                })
-                              }
-                              title="Usuń"
-                            >
-                              ×
-                            </button>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="soft-copy">Brak danych.</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="chip-list">
-                  {selectedPerson.tags.map((tag) => (
-                    <span key={tag} className="task-tag-chip neutral">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </section>
-
-              <section className="panel" ref={meetingsSectionRef} id="people-meetings">
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Meetings</div>
-                    <h2>Historia spotkan</h2>
-                  </div>
-                </div>
-
-                <div className="agenda-list">
-                  {selectedPerson.meetings.length ? (
-                    selectedPerson.meetings.slice(0, 8).map((meeting) => (
-                      <button
-                        type="button"
-                        key={meeting.id}
-                        className="agenda-card"
-                        onClick={() => onOpenMeeting(meeting.id)}
-                      >
-                        <strong>{meeting.title}</strong>
-                        <span>{formatDateTime(meeting.startsAt)}</span>
-                        <p>{meeting.context || 'Brak dodatkowego kontekstu.'}</p>
-                      </button>
-                    ))
-                  ) : (
-                    <EmptyState
-                      mascotContext="meetings"
-                      title="Brak spotkań"
-                      message="Ta osoba nie pojawiła się jeszcze w żadnym spotkaniu."
-                    />
-                  )}
-                </div>
-              </section>
-
-              <section className="panel" ref={tasksSectionRef}>
-                <div className="panel-header compact">
-                  <div>
-                    <div className="eyebrow">Tasks</div>
-                    <h2>Zadania tej osoby</h2>
-                  </div>
-                  {typeof onCreateTask === 'function' && (
-                    <button
-                      type="button"
-                      className="people-add-task-btn"
-                      onClick={() =>
-                        onCreateTask({
-                          owner: selectedPerson.name,
-                          title: `Zadanie dla ${selectedPerson.name}`,
-                        })
-                      }
-                      title="Dodaj zadanie dla tej osoby"
-                    >
-                      + zadanie
-                    </button>
-                  )}
-                </div>
-
-                <div className="people-task-list">
-                  {selectedPerson.tasks.length ? (
-                    selectedPerson.tasks.map((task) => (
-                      <button
-                        type="button"
-                        key={task.id}
-                        className="person-task-card person-task-card-clickable"
-                        onClick={() => typeof onOpenTask === 'function' && onOpenTask(task.id)}
-                        title="Przejdź do zadania"
-                      >
-                        <div className="kanban-card-top">
-                          <strong>{task.title}</strong>
-                          <span className={`task-status-chip ${task.status}`}>
-                            {task.completed ? 'Done' : task.priority}
-                          </span>
-                        </div>
-                        {task.description ||
-                        (task.sourceType !== 'manual' && task.sourceMeetingTitle) ? (
-                          <p>{task.description || task.sourceMeetingTitle}</p>
-                        ) : null}
-                        <div className="chip-list">
-                          {(task.tags || []).map((tag) => (
-                            <span key={`${task.id}-${tag}`} className="task-tag-chip neutral">
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <EmptyState
-                      mascotContext="tasks"
-                      title="Brak zadań"
-                      message="Na razie nic nie jest przypisane do tej osoby."
-                    />
-                  )}
-                </div>
-              </section>
-            </div>
-          </>
-        ) : (
-          <section className="hero-panel empty-workspace">
-            <div className="ui-page-header__copy" style={{ marginBottom: 'var(--space-2)' }}>
-              <div className="eyebrow">Osoby</div>
-              <h2 className="ui-page-header__title">Dodaj uczestnikow do spotkan</h2>
-            </div>
-            <p>
-              Gdy pojawia sie ludzie w spotkaniach i taskach, tutaj zbuduje sie ich profil roboczy.
-            </p>
-          </section>
-        )}
-      </section>
+      <AddPersonModal
+        open={addModalOpen}
+        draft={newPersonDraft}
+        onDraftChange={setNewPersonDraft}
+        onClose={() => setAddModalOpen(false)}
+        onSubmit={submitNewPerson}
+      />
     </div>
   );
 }

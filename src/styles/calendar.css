@@ -1046,3 +1046,30 @@
   border: 1px solid rgba(31, 94, 82, 0.12);
   background: rgba(255, 255, 255, 0.64);
 }
+
+/* Layout audit follow-up: tablet week views must scroll intentionally, not clip. */
+@media (max-width: 1120px) and (min-width: 721px) {
+  .calendar-week-view,
+  .calendar-week-grid,
+  .calendar-week {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 10px;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendar-week-view > *,
+  .calendar-week-grid > *,
+  .calendar-week > * {
+    min-width: 132px;
+  }
+
+  .calendar-toolbar,
+  .calendar-controls,
+  .calendar-view-controls,
+  .calendar-view-switcher {
+    flex-wrap: wrap;
+  }
+}

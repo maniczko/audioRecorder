@@ -1,5 +1,6 @@
 import './styles/tasks.css';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
 import { useToast } from './shared/Toast';
 import { PageShell, SplitPane } from './ui/LayoutPrimitives';
 import { buildTaskGroups, taskListStats } from './lib/tasks';
@@ -76,7 +77,9 @@ export default function TasksTab({
   const toast = useToast();
   const [quickDraft, setQuickDraft] = useState(() => createQuickDraft(boardColumns));
   const [columnDraft, setColumnDraft] = useState({ label: '', color: '#5a92ff', isDone: false });
+  const [taskPreviewSaveState, setTaskPreviewSaveState] = useState('saved');
   const dragTaskIdRef = useRef('');
+  const taskPreviewSaveTimerRef = useRef<number | null>(null);
   const quickAddInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -121,7 +124,17 @@ export default function TasksTab({
   const visibleTasks = useMemo(() => {
     const filtered = applyMainListFilter(tasks, selectedListId, boardColumns).filter((task) => {
       if (task._softDeleted) return false;
-      if (ownerFilter !== 'all' && task.owner !== ownerFilter) {
+      if (
+        ownerFilter === 'me' &&
+        !(
+          task.assignedToMe ||
+          task.owner === currentUserName ||
+          safeArray(task.assignedTo).includes(currentUserName)
+        )
+      ) {
+        return false;
+      }
+      if (ownerFilter !== 'all' && ownerFilter !== 'me' && task.owner !== ownerFilter) {
         return false;
       }
       if (tagFilter !== 'all' && !(task.tags || []).includes(tagFilter)) {
@@ -134,6 +147,12 @@ export default function TasksTab({
           task.group,
           task.description,
           task.notes,
+          boardColumns.find((column) => column.id === task.status)?.label,
+          task.status,
+          task.priority,
+          task.priority === 'high' ? 'wysoki' : '',
+          task.priority === 'medium' ? 'sredni' : '',
+          task.priority === 'low' ? 'niski' : '',
           safeArray(task.tags).join(' '),
         ]
           .join(' ')
@@ -146,7 +165,16 @@ export default function TasksTab({
     });
 
     return sortVisibleTasks(filtered, sortBy);
-  }, [boardColumns, deferredQuery, ownerFilter, selectedListId, sortBy, tagFilter, tasks]);
+  }, [
+    boardColumns,
+    currentUserName,
+    deferredQuery,
+    ownerFilter,
+    selectedListId,
+    sortBy,
+    tagFilter,
+    tasks,
+  ]);
 
   const visibleStats = useMemo(() => taskListStats(visibleTasks), [visibleTasks]);
 
@@ -192,6 +220,33 @@ export default function TasksTab({
   }, [externalSelectedTaskId, onTaskSelectionHandled, tasks, toast]);
 
   const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) || null;
+
+  useEffect(() => {
+    if (!selectedTask) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedTask]);
+
+  useEffect(() => {
+    setTaskPreviewSaveState('saved');
+  }, [selectedTask?.id]);
+
+  useEffect(
+    () => () => {
+      if (taskPreviewSaveTimerRef.current) {
+        window.clearTimeout(taskPreviewSaveTimerRef.current);
+      }
+    },
+    []
+  );
+
   const groupedTasks = useMemo(
     () => groupTasks(visibleTasks, groupBy, boardColumns),
     [boardColumns, groupBy, visibleTasks]
@@ -204,6 +259,18 @@ export default function TasksTab({
       })),
     [boardColumns, visibleTasks]
   );
+  const visibleTaskIds = useMemo(() => visibleTasks.map((task) => task.id), [visibleTasks]);
+  const selectedVisibleTaskIds = useMemo(
+    () => selectedTaskIds.filter((taskId) => visibleTaskIds.includes(taskId)),
+    [selectedTaskIds, visibleTaskIds]
+  );
+  const allVisibleSelected =
+    visibleTaskIds.length > 0 && selectedVisibleTaskIds.length === visibleTaskIds.length;
+  const someVisibleSelected = selectedVisibleTaskIds.length > 0 && !allVisibleSelected;
+  const activeFilterCount =
+    (selectedListId !== 'smart:all' ? 1 : 0) +
+    (ownerFilter !== 'all' ? 1 : 0) +
+    (tagFilter !== 'all' ? 1 : 0);
 
   const runSafely = useCallback(
     (action, successMessage = '') => {
@@ -225,6 +292,29 @@ export default function TasksTab({
     (taskId, updates, successMessage = '') =>
       runSafely(() => onUpdateTask(taskId, updates), successMessage),
     [onUpdateTask, runSafely]
+  );
+
+  const handlePreviewTaskUpdate = useCallback(
+    (taskId, updates) => {
+      setTaskPreviewSaveState('saving');
+      try {
+        onUpdateTask(taskId, updates);
+      } catch (err) {
+        setTaskPreviewSaveState('error');
+        toast.error(err.message || 'Nie udało się zapisać zadania.');
+        return;
+      }
+
+      if (taskPreviewSaveTimerRef.current) {
+        window.clearTimeout(taskPreviewSaveTimerRef.current);
+      }
+
+      taskPreviewSaveTimerRef.current = window.setTimeout(() => {
+        setTaskPreviewSaveState('saved');
+        taskPreviewSaveTimerRef.current = null;
+      }, 450);
+    },
+    [onUpdateTask, toast]
   );
 
   const safeMoveTaskToColumn = useCallback(
@@ -282,7 +372,6 @@ export default function TasksTab({
       return;
     }
 
-    setSelectedTaskId(normalizedTaskId);
     setSelectedTaskIds((previous) => {
       const alreadySelected = previous.includes(normalizedTaskId);
       const shouldSelect = forceValue === undefined ? !alreadySelected : Boolean(forceValue);
@@ -297,16 +386,48 @@ export default function TasksTab({
     setSelectedTaskIds([]);
   }, []);
 
+  const toggleAllVisibleTasks = useCallback(
+    (forceValue) => {
+      setSelectedTaskIds((previous) => {
+        const visibleSet = new Set(visibleTaskIds);
+        const shouldSelect =
+          forceValue === undefined
+            ? !visibleTaskIds.every((taskId) => previous.includes(taskId))
+            : Boolean(forceValue);
+        if (shouldSelect) {
+          return [...new Set([...previous, ...visibleTaskIds])];
+        }
+        return previous.filter((taskId) => !visibleSet.has(taskId));
+      });
+    },
+    [visibleTaskIds]
+  );
+
   const handleBulkUpdate = useCallback(
     (updates, successMessage) => {
-      if (!selectedTaskIds.length || typeof onBulkUpdateTasks !== 'function') {
+      if (!selectedTaskIds.length) {
         return;
       }
 
-      runSafely(() => onBulkUpdateTasks(selectedTaskIds, updates), successMessage);
+      runSafely(() => {
+        if (typeof onBulkUpdateTasks === 'function') {
+          onBulkUpdateTasks(selectedTaskIds, updates);
+        } else {
+          selectedTaskIds.forEach((taskId) => onUpdateTask(taskId, updates));
+        }
+        setSelectedTaskIds([]);
+      }, successMessage);
     },
-    [onBulkUpdateTasks, runSafely, selectedTaskIds]
+    [onBulkUpdateTasks, onUpdateTask, runSafely, selectedTaskIds]
   );
+
+  const handleBulkAssignToMe = useCallback(() => {
+    const assignee = currentUserName || 'Nieprzypisane';
+    handleBulkUpdate(
+      { owner: assignee, assignedTo: assignee === 'Nieprzypisane' ? [] : [assignee] },
+      'Przypisano zaznaczone zadania.'
+    );
+  }, [currentUserName, handleBulkUpdate]);
 
   const handleBulkDelete = useCallback(() => {
     if (!selectedTaskIds.length) {
@@ -320,7 +441,7 @@ export default function TasksTab({
         selectedTaskIds.forEach((taskId) => onDeleteTask(taskId));
       }
       setSelectedTaskIds([]);
-    }, 'Usunieto zaznaczone zadania.');
+    }, 'Usunięto zaznaczone zadania.');
   }, [onBulkDeleteTasks, onDeleteTask, runSafely, selectedTaskIds]);
 
   function rememberDraggedTask(taskId) {
@@ -757,7 +878,9 @@ export default function TasksTab({
             selectedTask={selectedTask}
             setSelectedTaskId={setSelectedTaskId}
             onUpdateTask={safeUpdateTask}
+            onDeleteTask={safeDeleteTask}
             onMoveTaskToColumn={safeMoveTaskToColumn}
+            onOpenMeeting={onOpenMeeting}
             kanbanColumns={kanbanColumns}
             dropColumnId={dropColumnId}
             setDropColumnId={setDropColumnId}
@@ -772,6 +895,15 @@ export default function TasksTab({
             visibleStats={visibleStats}
             selectedTaskIds={selectedTaskIds}
             toggleTaskSelection={toggleTaskSelection}
+            activeFilterCount={activeFilterCount}
+            allVisibleSelected={allVisibleSelected}
+            someVisibleSelected={someVisibleSelected}
+            onToggleAllVisibleTasks={toggleAllVisibleTasks}
+            onBulkStatusChange={(status) =>
+              handleBulkUpdate({ status }, 'Zmieniono status zaznaczonych zadan.')
+            }
+            onBulkAssignToMe={handleBulkAssignToMe}
+            onBulkDelete={handleBulkDelete}
             taskNotifications={taskNotifications}
             showColumnManager={showColumnManager}
             setShowColumnManager={setShowColumnManager}
@@ -780,72 +912,43 @@ export default function TasksTab({
             createPlacement="aside"
           />
         }
-        aside={
-          selectedTask ? (
-            <div className="todo-inline-detail-pane">
-              <button
-                className="todo-inline-detail-close"
-                type="button"
-                onClick={() => setSelectedTaskId('')}
-                aria-label="Zamknij szczegoly zadania"
-              >
-                x
-              </button>
-              <TaskDetailsPanel
-                selectedTask={selectedTask}
-                tasks={tasks}
-                peopleOptions={peopleOptions}
-                tagOptions={tagOptions}
-                taskGroups={taskGroups}
-                boardColumns={boardColumns}
-                onUpdateTask={safeUpdateTask}
-                onMoveTaskToColumn={safeMoveTaskToColumn}
-                onDeleteTask={safeDeleteTask}
-                onOpenMeeting={onOpenMeeting}
-                currentUserName={currentUserName}
-                onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
-              />
-            </div>
-          ) : null
-        }
+        aside={null}
       />
       {selectedTask && (
         <div
-          className="ff-modal-overlay todo-detail-overlay todo-detail-overlay--responsive"
+          className="task-create-modal-overlay task-detail-form-overlay"
+          role="presentation"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedTaskId('');
           }}
         >
-          <div className="todo-detail-modal">
-            <button
-              className="todo-detail-modal-close"
-              type="button"
-              onClick={() => setSelectedTaskId('')}
-              title="Zamknij"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div
+            className="task-create-modal task-detail-form-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Podgląd zadania"
+          >
+            <header className="task-create-modal-header task-detail-form-modal-header">
+              <h2>Podgląd zadania</h2>
+              <button
+                className="task-create-modal-close"
+                type="button"
+                onClick={() => setSelectedTaskId('')}
+                aria-label="Zamknij podgląd zadania"
               >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-            <div className="todo-detail-modal-scroll ms-todo">
+                <X size={18} aria-hidden="true" />
+              </button>
+            </header>
+            <div className="task-create-modal-body task-detail-form-modal-body">
               <TaskDetailsPanel
+                presentation="modal"
                 selectedTask={selectedTask}
                 tasks={tasks}
                 peopleOptions={peopleOptions}
                 tagOptions={tagOptions}
                 taskGroups={taskGroups}
                 boardColumns={boardColumns}
-                onUpdateTask={safeUpdateTask}
+                onUpdateTask={handlePreviewTaskUpdate}
                 onMoveTaskToColumn={safeMoveTaskToColumn}
                 onDeleteTask={safeDeleteTask}
                 onOpenMeeting={onOpenMeeting}
@@ -853,6 +956,61 @@ export default function TasksTab({
                 onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
               />
             </div>
+            <footer className="task-create-modal-footer task-detail-form-modal-footer">
+              <span
+                className="task-create-modal-shortcut task-detail-save-status"
+                data-state={taskPreviewSaveState}
+                aria-live="polite"
+              >
+                <CheckCircle2 size={16} aria-hidden="true" />
+                <span className="task-detail-save-status-copy">
+                  <strong>
+                    {taskPreviewSaveState === 'error'
+                      ? 'Błąd zapisu'
+                      : taskPreviewSaveState === 'saving'
+                        ? 'Zapisywanie...'
+                        : 'Zapisano automatycznie'}
+                  </strong>
+                  <small>
+                    {taskPreviewSaveState === 'error'
+                      ? 'Spróbuj ponownie za chwilę'
+                      : taskPreviewSaveState === 'saving'
+                        ? 'Aktualizujemy podgląd zadania'
+                        : 'Zmiany zapisują się na bieżąco'}
+                  </small>
+                </span>
+              </span>
+              <div className="task-detail-form-modal-actions">
+                <button
+                  type="button"
+                  className="task-create-modal-secondary task-detail-complete-action"
+                  onClick={() =>
+                    safeUpdateTask(selectedTask.id, { completed: !selectedTask.completed })
+                  }
+                >
+                  {selectedTask.completed ? (
+                    <RotateCcw size={16} aria-hidden="true" />
+                  ) : (
+                    <CheckCircle2 size={16} aria-hidden="true" />
+                  )}
+                  {selectedTask.completed ? 'Otwórz ponownie' : 'Oznacz jako gotowe'}
+                </button>
+                <button
+                  type="button"
+                  className="task-create-modal-secondary todo-detail-delete-action"
+                  aria-label="Usuń zadanie"
+                  onClick={() => {
+                    if (window.confirm('Usunąć to zadanie?')) {
+                      safeDeleteTask(selectedTask.id);
+                      setSelectedTaskId('');
+                    }
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                  Usuń zadanie
+                </button>
+              </div>
+            </footer>
           </div>
         </div>
       )}

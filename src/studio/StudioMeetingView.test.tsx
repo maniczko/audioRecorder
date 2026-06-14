@@ -1559,6 +1559,10 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText('Centrum pracy')).toBeInTheDocument();
     expect(screen.getByText('Dziś w kalendarzu')).toBeInTheDocument();
     expect(screen.getByText('Ostatnie nagrania')).toBeInTheDocument();
+    expect(screen.getByText('Brak wydarzeń na dziś')).toBeInTheDocument();
+    expect(screen.getByText('Brak nagrań')).toBeInTheDocument();
+    expect(screen.queryByText('Daily standup')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kickoff projektu Mercury')).not.toBeInTheDocument();
     expect(screen.getByText('Nagrania w tym miesiącu')).toBeInTheDocument();
     expect(screen.getByText('Gotowe podsumowania')).toBeInTheDocument();
   });
@@ -1738,6 +1742,39 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Eksport/i)).toBeInTheDocument();
     expect(screen.getByText(/Transkrypcja/i)).toBeInTheDocument();
     expect(screen.getByText(/Rozpocznij nagrywanie/i)).toBeInTheDocument();
+  });
+
+  test('Regression: meeting summary uses Polish copy and clear brief action', () => {
+    renderWithContext(<StudioMeetingView {...defaultProps} />);
+
+    expect(screen.getByRole('button', { name: /Dodaj brief/i })).toHaveAttribute(
+      'title',
+      'Dodaj kontekst spotkania, cele i oczekiwane rezultaty.'
+    );
+    expect(screen.getByText('PODSUMOWANIE AI')).toBeInTheDocument();
+    expect(screen.queryByText(/Share of Voice/i)).not.toBeInTheDocument();
+  });
+
+  test('Regression: speaker share legend maps colors to names and percentages', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          transcript: [
+            { text: 'A', speakerId: 's1', timestamp: 0, endTimestamp: 62 },
+            { text: 'B', speakerId: 's2', timestamp: 62, endTimestamp: 88 },
+            { text: 'C', speakerId: 's3', timestamp: 88, endTimestamp: 100 },
+          ],
+          duration: 100,
+        }}
+        displaySpeakerNames={{ s1: 'Iwo', s2: 'Mówca 2', s3: 'Mówca 3' }}
+      />
+    );
+
+    expect(screen.getByText('Udział w rozmowie')).toBeInTheDocument();
+    expect(screen.getByText('Iwo — 62%')).toBeInTheDocument();
+    expect(screen.getByText('Mówca 2 — 26%')).toBeInTheDocument();
+    expect(screen.getByText('Mówca 3 — 12%')).toBeInTheDocument();
   });
 
   test('shows recording controls when isRecording is true', () => {

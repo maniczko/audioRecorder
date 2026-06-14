@@ -2,8 +2,8 @@
 [data-layout='modern'],
 .app-shell-modern {
   --modern-bg: #0a0a0f;
-  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
-  --modern-header-height: var(--layout-topbar-height, 64px);
+  --modern-sidebar-width: var(--layout-global-sidebar-width, var(--sidebar-width, 260px));
+  --modern-header-height: var(--layout-topbar-height, var(--topbar-height, 64px));
   --modern-text: #e2e8f0;
   --modern-muted: #94a3b8;
   --modern-border: rgba(255, 255, 255, 0.08);
@@ -28,6 +28,7 @@
 
 .modern-sidebar {
   width: var(--modern-sidebar-width);
+  flex: 0 0 var(--modern-sidebar-width);
   height: 100vh;
   border-right: 1px solid var(--modern-border);
   background: rgba(15, 23, 42, 0.4);
@@ -55,7 +56,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 var(--page-padding-x, 24px);
   border-bottom: 1px solid var(--modern-border);
   background: rgba(10, 10, 15, 0.6);
   backdrop-filter: blur(12px);
@@ -69,7 +70,10 @@
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 32px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--page-padding-y, 24px) var(--page-padding-x, 24px);
   padding-bottom: 160px;
   position: relative;
 }
@@ -104,8 +108,8 @@
 
 [data-layout='modern'] {
   --modern-bg: #0a0a0f;
-  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
-  --modern-header-height: var(--layout-topbar-height, 64px);
+  --modern-sidebar-width: var(--layout-global-sidebar-width, var(--sidebar-width, 260px));
+  --modern-header-height: var(--layout-topbar-height, var(--topbar-height, 64px));
   --modern-text: #e2e8f0;
   --modern-muted: #94a3b8;
   --modern-border: rgba(255, 255, 255, 0.08);
@@ -153,6 +157,7 @@
 /* Sidebar */
 [data-layout='modern'] .modern-sidebar {
   width: var(--modern-sidebar-width);
+  flex: 0 0 var(--modern-sidebar-width);
   height: 100vh;
   border-right: 1px solid var(--modern-border);
   background: rgba(15, 23, 42, 0.4);
@@ -167,15 +172,16 @@
 
 [data-theme='premium-light'][data-layout='modern'] .app-shell-modern,
 [data-theme='premium-light'] .app-shell-modern {
-  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
-  --modern-header-height: var(--layout-topbar-height, 64px);
+  --modern-sidebar-width: var(--layout-global-sidebar-width, var(--sidebar-width, 260px));
+  --modern-header-height: var(--layout-topbar-height, var(--topbar-height, 64px));
 }
 
 [data-theme='premium-light'][data-layout='modern'] .modern-sidebar,
 [data-theme='premium-light'] .app-shell-modern .modern-sidebar,
 [data-theme='premium-light'] .modern-app .modern-sidebar {
-  width: var(--layout-global-sidebar-width, 160px);
-  padding: 20px 12px;
+  width: var(--modern-sidebar-width);
+  flex-basis: var(--modern-sidebar-width);
+  padding: 20px 16px;
 }
 
 [data-theme='premium-light'][data-layout='modern'] .modern-sidebar {
@@ -237,8 +243,8 @@
 [data-layout='modern'] .modern-nav-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px;
+  gap: 12px;
+  padding: 10px 12px;
   border-radius: 12px;
   color: var(--modern-muted);
   text-decoration: none;
@@ -284,8 +290,8 @@
 
 [data-layout='modern'] .modern-nav-label {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -327,7 +333,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 var(--page-padding-x, 24px);
   border-bottom: 1px solid var(--modern-border);
   background: rgba(10, 10, 15, 0.6);
   backdrop-filter: blur(12px);
@@ -474,7 +480,10 @@
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 32px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--page-padding-y, 24px) var(--page-padding-x, 24px);
   padding-bottom: 160px;
   /* offset for player */
   position: relative;
@@ -1333,5 +1342,134 @@
 
   .modern-header {
     gap: 8px;
+  }
+}
+
+/* ================================================================ */
+/* Global shell contract hardening                                  */
+/* ================================================================ */
+
+:root {
+  --layout-page-padding-tablet: 20px;
+  --layout-page-padding-mobile: 16px;
+  --layout-focus-ring: 0 0 0 3px rgba(0, 143, 122, 0.14);
+}
+
+[data-layout='modern'] .app-shell-modern,
+.app-shell-modern {
+  --modern-sidebar-width: var(--layout-global-sidebar-width, var(--sidebar-width, 260px));
+  --modern-header-height: var(--layout-topbar-height, var(--topbar-height, 64px));
+}
+
+[data-layout='modern'] .modern-sidebar,
+.app-shell-modern .modern-sidebar,
+:root[data-theme='premium-light'] .app-shell-modern .modern-sidebar {
+  width: var(--modern-sidebar-width) !important;
+  min-width: var(--modern-sidebar-width) !important;
+  max-width: var(--modern-sidebar-width) !important;
+  flex: 0 0 var(--modern-sidebar-width) !important;
+  padding-inline: 16px;
+}
+
+[data-layout='modern'] .modern-main,
+.app-shell-modern .modern-main {
+  min-width: 0;
+  width: calc(100vw - var(--modern-sidebar-width));
+}
+
+[data-layout='modern'] .modern-header,
+.app-shell-modern .modern-header {
+  min-height: var(--modern-header-height);
+  height: var(--modern-header-height);
+  padding-inline: var(--page-padding-x, 24px);
+}
+
+[data-layout='modern'] .modern-content-wrapper,
+.app-shell-modern .modern-content-wrapper {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--page-padding-y, 24px) var(--page-padding-x, 24px);
+  padding-bottom: 160px;
+}
+
+[data-layout='modern'] .modern-nav-item,
+.app-shell-modern .modern-nav-item {
+  min-height: 44px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+[data-layout='modern'] .modern-nav-label,
+.app-shell-modern .modern-nav-label {
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+[data-layout='modern'] .modern-brand:focus-visible,
+[data-layout='modern'] .modern-nav-item:focus-visible,
+[data-layout='modern'] .modern-hamburger-btn:focus-visible,
+[data-layout='modern'] .modern-search-btn:focus-visible,
+[data-layout='modern'] .modern-record-btn:focus-visible,
+[data-layout='modern'] .modern-workspace-selector select:focus-visible {
+  outline: 0;
+  box-shadow: var(--layout-focus-ring);
+}
+
+[data-layout='modern'] button:not(:disabled),
+[data-layout='modern'] a[href],
+[data-layout='modern'] [role='button']:not([aria-disabled='true']),
+.app-shell-modern button:not(:disabled),
+.app-shell-modern a[href],
+.app-shell-modern [role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  :root {
+    --page-padding-x: var(--layout-page-padding-tablet);
+    --page-padding-y: var(--layout-page-padding-tablet);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-padding-x: var(--layout-page-padding-mobile);
+    --page-padding-y: var(--layout-page-padding-mobile);
+  }
+
+  [data-layout='modern'] .app-shell-modern,
+  .app-shell-modern {
+    --modern-sidebar-width: 0px;
+    --modern-header-height: 60px;
+  }
+
+  [data-layout='modern'] .modern-sidebar,
+  .app-shell-modern .modern-sidebar,
+  :root[data-theme='premium-light'] .app-shell-modern .modern-sidebar {
+    width: min(84vw, 280px) !important;
+    min-width: min(84vw, 280px) !important;
+    max-width: min(84vw, 280px) !important;
+    flex-basis: min(84vw, 280px) !important;
+  }
+
+  [data-layout='modern'] .modern-main,
+  .app-shell-modern .modern-main {
+    width: 100%;
+  }
+
+  [data-layout='modern'] .modern-content-wrapper,
+  .app-shell-modern .modern-content-wrapper {
+    padding: var(--page-padding-y) var(--page-padding-x);
+    padding-bottom: var(--mobile-bottom-safe, 140px);
+  }
+}
+
+@media (max-width: 480px) {
+  [data-layout='modern'] .app-shell-modern,
+  .app-shell-modern {
+    --modern-header-height: 56px;
   }
 }

@@ -1,58 +1,72 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { beforeEach } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import PeopleTab from './PeopleTab';
 
-describe('PeopleTab', () => {
+describe('PeopleTab directory view', () => {
   const mockProfiles = [
     {
-      id: 'person_1',
-      name: 'Anna Nowak',
-      summary: 'Project Manager in Warsaw',
-      meetings: [{ id: 'm1', title: 'Sync', startsAt: '2026-03-18T10:00:00Z' }],
-      tasks: [
-        {
-          id: 't1',
-          title: 'Prepare report',
-          status: 'todo',
-          priority: 'high',
-          completed: false,
-          tags: ['urgent'],
-        },
-      ],
-      traits: ['Organized', 'Communicative'],
-      tags: ['PM', 'Warsaw'],
-      needs: ['Clear goals'],
-      outputs: ['Monthly report'],
-      openTasks: 1,
-      completedTasks: 0,
-    },
-    {
-      id: 'person_2',
-      name: 'Jan Kowalski',
-      summary: 'Lead Developer',
-      meetings: [],
+      id: 'person_iwo',
+      name: 'Iwo',
+      summary: 'Uczestnik spotkań roboczych',
+      meetings: [{ id: 'm1', title: 'Spotkanie projektowe', startsAt: '2026-06-14T10:00:00Z' }],
       tasks: [],
       traits: [],
-      tags: ['Dev'],
+      tags: ['ad-hoc', 'ustalenia', 'operacyjne'],
       needs: [],
       outputs: [],
       openTasks: 0,
-      completedTasks: 5,
+      completedTasks: 0,
+      assignedToMe: true,
+      observed: true,
+      psychProfile: { meetingsAnalyzed: 8 },
     },
     {
-      id: 'manual_barbara',
-      name: 'Barbara Zynda',
-      summary: 'Manual person',
-      meetings: [],
+      id: 'person_marta',
+      name: 'Marta Kowalska',
+      summary: 'Uczestnik spotkań roboczych',
+      meetings: [{ id: 'm2', title: 'Planowanie', startsAt: '2026-06-12T09:00:00Z' }],
       tasks: [],
       traits: [],
-      tags: [],
+      tags: ['klient', 'planowanie'],
       needs: [],
-      concerns: [],
       outputs: [],
       openTasks: 0,
       completedTasks: 0,
-      manual: true,
+      assignedToMe: false,
+      observed: false,
+      psychProfile: { meetingsAnalyzed: 5 },
+    },
+    {
+      id: 'person_anna',
+      name: 'Anna Wisniewska',
+      summary: 'Uczestnik spotkań roboczych',
+      meetings: [{ id: 'm3', title: 'Status', startsAt: '2026-06-05T09:00:00Z' }],
+      tasks: [],
+      traits: [],
+      tags: ['operacyjne'],
+      needs: [],
+      outputs: [],
+      openTasks: 0,
+      completedTasks: 0,
+      assignedToMe: false,
+      observed: false,
+    },
+    {
+      id: 'person_unassigned',
+      name: 'Nieprzypisane',
+      summary: 'Uczestnik spotkań roboczych',
+      meetings: [],
+      tasks: [],
+      traits: [],
+      tags: ['ad-hoc', 'ustalenia'],
+      needs: [],
+      outputs: [],
+      openTasks: 0,
+      completedTasks: 0,
+      assignedToMe: false,
+      observed: false,
+      unassigned: true,
     },
   ];
 
@@ -75,103 +89,124 @@ describe('PeopleTab', () => {
     vi.clearAllMocks();
   });
 
-  test('renders profile sidebar and selected person details', async () => {
-    render(<PeopleTab {...defaultProps} />);
-    expect(screen.getAllByText('Anna Nowak').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Jan Kowalski').length).toBeGreaterThan(0);
-
-    // Check main panel (Anna should be selected by default)
-    expect(screen.getByRole('heading', { name: 'Anna Nowak' })).toBeInTheDocument();
-  });
-
-  test('filters people list by search query', async () => {
-    render(<PeopleTab {...defaultProps} />);
-    const searchInput = screen.getByPlaceholderText(/Szukaj po imieniu/i);
-
-    fireEvent.change(searchInput, { target: { value: 'Jan' } });
-
-    expect(screen.queryByText('Anna Nowak')).not.toBeInTheDocument();
-    expect((await screen.findAllByText('Jan Kowalski'))[0]).toBeInTheDocument();
-  });
-
-  test('switches between people when sidebar item is clicked', async () => {
-    render(<PeopleTab {...defaultProps} />);
-    const janText = screen.getByText('Jan Kowalski');
-    const janBtn = janText.closest('button');
-
-    fireEvent.click(janBtn);
-
-    expect(screen.getByRole('heading', { name: 'Jan Kowalski' })).toBeInTheDocument();
-  });
-
-  test('adds a new need for the selected person', () => {
+  test('renders the people directory shell with views, filters, list and preview', () => {
     render(<PeopleTab {...defaultProps} />);
 
-    // Find add need button
-    const addBtn = screen.getByTitle('Dodaj potrzebę');
-    fireEvent.click(addBtn);
-
-    const input = screen.getByPlaceholderText(/np. Jasne priorytety/i);
-    fireEvent.change(input, { target: { value: 'Quiet space' } });
-    fireEvent.submit(input);
-
-    expect(defaultProps.onUpdatePersonNotes).toHaveBeenCalledWith(
-      'person_1',
-      expect.objectContaining({
-        needs: ['Clear goals', 'Quiet space'],
-      })
+    expect(screen.getByRole('heading', { name: 'Osoby' })).toBeInTheDocument();
+    expect(screen.getByText('Zarządzaj uczestnikami i ich profilami AI')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wszystkie osoby/i })).toBeInTheDocument();
+    const filters = screen.getByRole('toolbar', { name: /Filtry osób/i });
+    expect(within(filters).getByRole('button', { name: /Profil AI aktywny/i })).toBeInTheDocument();
+    expect(within(filters).getByRole('button', { name: /Nieprzypisane/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Dodaj osobę/i })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
+      'Iwo'
     );
   });
 
-  test('adds a manual person from sidebar form', () => {
-    defaultProps.onAddPerson.mockReturnValueOnce({ id: 'manual_ewa', name: 'Ewa Test' });
+  test('filters people by search across name, tags, role and AI status', async () => {
     render(<PeopleTab {...defaultProps} />);
+    const input = screen.getByRole('searchbox', { name: /Szukaj osób/i });
 
-    fireEvent.change(screen.getByPlaceholderText(/Barbara Zynda/i), {
-      target: { value: 'Ewa Test' },
-    });
-    fireEvent.submit(screen.getByPlaceholderText(/Barbara Zynda/i).closest('form')!);
+    await userEvent.type(input, 'klient');
 
-    expect(defaultProps.onAddPerson).toHaveBeenCalledWith({ name: 'Ewa Test' });
+    const list = screen.getByRole('list', { name: /Lista osób/i });
+    expect(within(list).getByText('Marta Kowalska')).toBeInTheDocument();
+    expect(within(list).queryByText('Iwo')).not.toBeInTheDocument();
   });
 
-  test('renames selected person from hero editor', () => {
-    defaultProps.onRenamePerson.mockReturnValueOnce({ id: 'person_1', name: 'Anna Premium' });
+  test('applies profile and unassigned filter chips', async () => {
     render(<PeopleTab {...defaultProps} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Edytuj profil/i }));
-    fireEvent.change(screen.getByLabelText('Nazwa osoby'), {
-      target: { value: 'Anna Premium' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Zapisz' }));
+    await userEvent.click(screen.getByRole('button', { name: /Profil AI aktywny/i }));
+    let list = screen.getByRole('list', { name: /Lista osób/i });
+    expect(within(list).getByText('Iwo')).toBeInTheDocument();
+    expect(within(list).queryByText('Anna Wisniewska')).not.toBeInTheDocument();
 
-    expect(defaultProps.onRenamePerson).toHaveBeenCalledWith('person_1', 'Anna Premium');
+    await userEvent.click(
+      within(screen.getByRole('toolbar', { name: /Filtry osób/i })).getByRole('button', {
+        name: /Nieprzypisane/i,
+      })
+    );
+    list = screen.getByRole('list', { name: /Lista osób/i });
+    expect(within(list).getByText('Nieprzypisane')).toBeInTheDocument();
+    expect(within(list).queryByText('Iwo')).not.toBeInTheDocument();
   });
 
-  test('renders reference profile hero metrics', () => {
+  test('selects people with mouse and keyboard and updates the preview panel', async () => {
     render(<PeopleTab {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: /Spotkania\s*1/i })).toBeInTheDocument();
-    expect(screen.getByText('Ostatnia aktywność')).toBeInTheDocument();
-    expect(screen.getAllByText('Profil AI').length).toBeGreaterThan(0);
-    expect(screen.getByText('aktywny')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Marta Kowalska/i }));
+    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
+      'Marta Kowalska'
+    );
+
+    const annaCard = screen.getByRole('button', { name: /Anna Wisniewska/i });
+    annaCard.focus();
+    fireEvent.keyDown(annaCard, { key: 'Enter' });
+
+    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
+      'Anna Wisniewska'
+    );
   });
 
-  test('allows deleting manual people', () => {
+  test('opens the full person detail layout from the preview panel and returns to the list', async () => {
     render(<PeopleTab {...defaultProps} />);
-    const barbaraButton = screen.getByText('Barbara Zynda').closest('button');
-    fireEvent.click(barbaraButton);
 
-    fireEvent.click(screen.getByRole('button', { name: /Usun osobe/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Marta Kowalska/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Otwórz profil/i }));
 
-    expect(defaultProps.onDeletePerson).toHaveBeenCalledWith('manual_barbara');
+    expect(screen.getByRole('button', { name: /Wróć do listy osób/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Marta Kowalska' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Profil AI' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Historia spotkań' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Zadania tej osoby' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('complementary', { name: /Podgląd profilu/i })
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Wróć do listy osób/i }));
+
+    expect(screen.getByRole('heading', { name: 'Osoby' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
+      'Marta Kowalska'
+    );
   });
 
-  test('calls onOpenMeeting when history item is clicked', () => {
+  test('closes the preview panel and opens add person modal placeholder', async () => {
     render(<PeopleTab {...defaultProps} />);
-    const meetingCard = screen.getByText('Sync');
-    fireEvent.click(meetingCard);
 
-    expect(defaultProps.onOpenMeeting).toHaveBeenCalledWith('m1');
+    await userEvent.click(screen.getByRole('button', { name: 'Zamknij podgląd profilu' }));
+    expect(
+      screen.queryByRole('complementary', { name: /Podgląd profilu/i })
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Dodaj osobę/i }));
+    expect(screen.getByRole('dialog', { name: /Dodaj osobę/i })).toBeInTheDocument();
+  });
+
+  test('shows empty state when filters return no people', async () => {
+    render(<PeopleTab {...defaultProps} />);
+
+    await userEvent.type(screen.getByRole('searchbox', { name: /Szukaj osób/i }), 'brak wyniku');
+
+    expect(screen.getByText('Nie znaleziono osób')).toBeInTheDocument();
+    expect(screen.getByText('Zmień filtry albo dodaj nową osobę.')).toBeInTheDocument();
+  });
+
+  test('uses reference mock people when backend profiles are empty', () => {
+    render(<PeopleTab {...defaultProps} profiles={[]} />);
+
+    expect(screen.getByRole('button', { name: /Iwo/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Tomasz Zając/i })).toBeInTheDocument();
+  });
+
+  test('external selected person opens that person and marks selection handled', () => {
+    render(<PeopleTab {...defaultProps} externalSelectedPersonId="person_marta" />);
+
+    expect(screen.getByRole('button', { name: /Wróć do listy osób/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Marta Kowalska' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Profil AI' })).toBeInTheDocument();
+    expect(defaultProps.onPersonSelectionHandled).toHaveBeenCalled();
   });
 });

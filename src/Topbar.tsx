@@ -200,31 +200,37 @@ export default function Topbar() {
           Szukaj
           <span>Ctrl+K</span>
         </button>
-        <button
-          type="button"
-          className={recorder.isRecording ? 'topbar-record-btn recording' : 'topbar-record-btn'}
-          onClick={() => {
-            if (recorder.isRecording) {
-              ui.setActiveTab('studio');
-            } else {
-              recorder.startRecording({ adHoc: true });
-              ui.setActiveTab('studio');
+        {ui.activeTab !== 'studio' || recorder.isRecording ? (
+          <button
+            type="button"
+            className={recorder.isRecording ? 'topbar-record-btn recording' : 'topbar-record-btn'}
+            onClick={() => {
+              if (recorder.isRecording) {
+                ui.setActiveTab('studio');
+              } else {
+                recorder.startRecording({ adHoc: true });
+                ui.setActiveTab('studio');
+              }
+            }}
+            disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
+            title={
+              recorder.isRecording
+                ? 'Przejdź do aktywnego nagrania'
+                : 'Rozpocznij nowe nagranie ad hoc poza bieżącym spotkaniem'
             }
-          }}
-          disabled={!workspace.currentWorkspacePermissions?.canRecordAudio}
-          title={recorder.isRecording ? 'Przejdz do aktywnego nagrania' : 'Nagranie ad hoc'}
-          aria-label={recorder.isRecording ? 'Przejdz do aktywnego nagrania' : 'Nagraj ad hoc'}
-        >
-          <span className="topbar-record-dot" />
-          {recorder.isRecording ? (
-            <>
-              <span className="topbar-record-timer">{formatDuration(recorder.elapsed)}</span>
-              <span className="topbar-record-label">Nagrywam</span>
-            </>
-          ) : (
-            'Nagraj'
-          )}
-        </button>
+            aria-label={recorder.isRecording ? 'Przejdź do aktywnego nagrania' : 'Nowe nagranie'}
+          >
+            <span className="topbar-record-dot" />
+            {recorder.isRecording ? (
+              <>
+                <span className="topbar-record-timer">{formatDuration(recorder.elapsed)}</span>
+                <span className="topbar-record-label">Nagrywam</span>
+              </>
+            ) : (
+              'Nowe nagranie'
+            )}
+          </button>
+        ) : null}
         {workspace.availableWorkspaces.length > 1 ? (
           <label className="workspace-switch">
             <span>Workspace</span>

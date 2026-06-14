@@ -44,8 +44,11 @@ export default function TaskCreateModal({
     document.body.style.overflow = 'hidden';
 
     window.requestAnimationFrame(() => {
+      const preferredInput = modalRef.current?.querySelector<HTMLElement>(
+        '[data-modal-initial-focus="true"]'
+      );
       const firstInput = modalRef.current?.querySelector<HTMLElement>(FOCUSABLE);
-      firstInput?.focus();
+      (preferredInput || firstInput)?.focus();
     });
 
     return () => {

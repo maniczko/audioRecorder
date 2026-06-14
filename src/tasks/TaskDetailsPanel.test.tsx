@@ -53,7 +53,7 @@ describe('TaskDetailsPanel', () => {
 
     expect(screen.getByText('Wybierz zadanie')).toBeInTheDocument();
     expect(
-      screen.getByText('Tutaj zobaczysz szczegoly zadania, status, grupe i notatki.')
+      screen.getByText('Tutaj zobaczysz szczegóły zadania, status, grupę i notatki.')
     ).toBeInTheDocument();
   });
 
@@ -124,7 +124,7 @@ describe('TaskDetailsPanel', () => {
     const taskWithoutHistory = { ...mockSelectedTask, history: [] };
     render(<TaskDetailsPanel {...mockProps} selectedTask={taskWithoutHistory} />);
 
-    expect(screen.getByText('Historia pojawi sie po pierwszych zmianach.')).toBeInTheDocument();
+    expect(screen.getByText('Historia pojawi się po pierwszych zmianach.')).toBeInTheDocument();
   });
 
   it('renders delete button and confirms deletion', async () => {
@@ -392,5 +392,42 @@ describe('TaskDetailsPanel', () => {
     it('is wrapped with memo', () => {
       expect(TaskDetailsPanel.$$typeof).toBe(Symbol.for('react.memo'));
     });
+  });
+});
+
+// -----------------------------------------------------------------
+// Issue #0 - preview and edit must share the approved task form
+// Date: 2026-06-14
+// Bug: Task details had a separate metadata editor, so preview/edit looked
+//      different from the new-task modal used in Tasks and Studio.
+// Fix: Render the same unified task form shell for selected-task editing.
+// -----------------------------------------------------------------
+describe('Regression: Issue #0 - details panel uses unified task form', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders the screenshot-first task form controls in task details', () => {
+    render(<TaskDetailsPanel {...mockProps} />);
+
+    expect(screen.getByText('Tytuł zadania')).toBeInTheDocument();
+    expect(screen.getByLabelText('Wybierz datę')).toBeInTheDocument();
+    expect(screen.getByLabelText('Wybierz godzinę')).toBeInTheDocument();
+    expect(screen.getByText('Cały dzień')).toBeInTheDocument();
+    expect(screen.getByText('Osoba')).toBeInTheDocument();
+    expect(screen.getByText('Priorytet')).toBeInTheDocument();
+    expect(screen.getByText('Tagi')).toBeInTheDocument();
+    expect(screen.getByText('Opis')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wybierz źródło/i })).toBeInTheDocument();
+  });
+
+  it('autosaves edits from the shared title field', () => {
+    render(<TaskDetailsPanel {...mockProps} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Wpisz tytuł zadania...'), {
+      target: { value: 'Updated Task' },
+    });
+
+    expect(mockProps.onUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated Task' });
   });
 });

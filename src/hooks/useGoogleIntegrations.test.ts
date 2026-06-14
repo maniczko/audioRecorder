@@ -251,4 +251,31 @@ describe('useGoogleIntegrations', () => {
     expect(result.current.googleCalendarStatus).toBe('error');
     expect(result.current.googleCalendarMessage).toContain('Zaloguj sie ponownie');
   });
+
+  test('Regression: #0 - treats missing Google Calendar connection during event load as idle', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    getGoogleCalendarStatusMock.mockResolvedValueOnce({
+      configured: true,
+      connected: true,
+      writable: false,
+    });
+    const missingConnectionError = new Error('Najpierw polacz Google Calendar.') as Error & {
+      status?: number;
+    };
+    missingConnectionError.status = 404;
+    fetchGoogleCalendarEventsMock.mockRejectedValueOnce(missingConnectionError);
+
+    const { result } = renderHook(() => useGoogleIntegrations(baseProps as any));
+
+    await waitFor(() => {
+      expect(fetchGoogleCalendarEventsMock).toHaveBeenCalled();
+      expect(result.current.googleCalendarStatus).toBe('idle');
+    });
+
+    expect(result.current.googleCalendarEvents).toEqual([]);
+    expect(result.current.googleCalendarMessage).toBe('Najpierw polacz Google Calendar.');
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
 });

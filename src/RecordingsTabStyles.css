@@ -888,17 +888,21 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
 
 /* Screenshot-first premium-light recordings reference */
 :root[data-theme='premium-light'] .recordings-tab-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 18px 14px 32px;
 }
 
 :root[data-theme='premium-light'] .app-shell-modern:has(.recordings-tab-shell),
 :root[data-theme='premium-light'] .modern-app:has(.recordings-tab-shell) {
-  --modern-sidebar-width: var(--layout-global-sidebar-width, 160px);
+  --modern-sidebar-width: var(--layout-global-sidebar-width, var(--sidebar-width, 260px));
 }
 
 :root[data-theme='premium-light'] .app-shell-modern:has(.recordings-tab-shell) .modern-sidebar,
 :root[data-theme='premium-light'] .modern-app:has(.recordings-tab-shell) .modern-sidebar {
-  width: var(--layout-global-sidebar-width, 160px);
+  width: var(--modern-sidebar-width);
+  flex-basis: var(--modern-sidebar-width);
 }
 
 :root[data-theme='premium-light']
@@ -924,9 +928,9 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
 }
 
 :root[data-theme='premium-light'] .recordings-tab-content {
-  width: min(1600px, calc(100% - 40px));
+  width: 100%;
   max-width: none;
-  margin: 0 auto;
+  margin: 0;
 }
 
 :root[data-theme='premium-light'] .recordings-library-panel {
@@ -1392,4 +1396,27 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
     align-items: stretch;
     flex-direction: column;
   }
+}
+
+/* Layout audit follow-up: recordings is a page surface, not a centered modal. */
+:root[data-theme='premium-light'] .recordings-tab-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+:root[data-theme='premium-light'] .recordings-tab-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+:root[data-theme='premium-light'] .recordings-library-panel,
+:root[data-theme='premium-light'] .recordings-empty-state,
+:root[data-theme='premium-light'] .recordings-table-section {
+  width: 100%;
+}
+
+:root[data-theme='premium-light'] .recordings-empty-state > * {
+  max-width: 720px;
 }

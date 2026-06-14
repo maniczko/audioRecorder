@@ -127,7 +127,7 @@ describe('TaskCreateForm', () => {
       />
     );
 
-    expect(screen.getByLabelText('Wybierz datę')).toHaveValue('2026-06-09');
+    expect(screen.getByLabelText('Wybierz datę')).toHaveValue('09.06.2026');
     expect(screen.getByLabelText('Wybierz godzinę')).toHaveValue('08:32');
     expect(screen.queryByRole('heading', { name: 'Aktywność' })).not.toBeInTheDocument();
   });
@@ -253,6 +253,113 @@ describe('TaskCreateForm', () => {
         description: 'Opis zadania',
         notes: '',
       })
+    );
+  });
+});
+
+// -----------------------------------------------------------------
+// Issue #0 - task forms must use one screenshot-first form everywhere
+// Date: 2026-06-14
+// Bug: Create/edit task forms used native date/time inputs and divergent
+//      layouts, so Studio, Tasks and details did not match the approved modal.
+// Fix: Reuse the same form shell with custom date, time and source pickers.
+// -----------------------------------------------------------------
+describe('Regression: Issue #0 - unified screenshot task form', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('opens a calendar popover and writes selected date in Polish format', () => {
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{ dueDate: '2026-06-09T08:32' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Otwórz kalendarz' }));
+    expect(screen.getByRole('dialog', { name: 'Kalendarz terminu' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wybierz 14.06.2026' }));
+
+    expect(screen.getByLabelText('Wybierz datę')).toHaveValue('14.06.2026');
+  });
+
+  it('opens a time list and selects a 15-minute slot', () => {
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{ dueDate: '2026-06-09T08:32' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Otwórz listę godzin' }));
+    expect(screen.getByRole('listbox', { name: 'Lista godzin' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('option', { name: '09:00' }));
+
+    expect(screen.getByLabelText('Wybierz godzinę')).toHaveValue('09:00');
+  });
+
+  it('shows required title validation only after submit attempt', () => {
+    render(<TaskCreateForm {...defaultProps} showQuickAdd={false} />);
+
+    expect(screen.queryByText('* Pole wymagane')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz formularz zadania' }));
+
+    expect(screen.getByText('* Pole wymagane')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Wpisz tytuł zadania...')).toHaveFocus();
+  });
+
+  it('renders source picker options for description enrichment', () => {
+    render(<TaskCreateForm {...defaultProps} showQuickAdd={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Wybierz źródło/i }));
+
+    expect(screen.getByRole('option', { name: 'Z nagrania' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Z notatki' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Z transkrypcji' })).toBeInTheDocument();
+  });
+});
+
+// -----------------------------------------------------------------
+// Issue #0 - task assignee could not replace "Nieprzypisane"
+// Date: 2026-06-14
+// Bug: The person field appended a selected person after the existing
+//      "Nieprzypisane" token, while the form kept values[0] as owner.
+// Fix: Treat the person field as single-select and use the newest value.
+// -----------------------------------------------------------------
+describe('Regression: Issue #0 - task assignee selection', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('replaces the unassigned token when a person is selected', () => {
+    const onDraftChange = vi.fn();
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{
+          title: 'Test',
+          owner: 'Nieprzypisane',
+          assignedTo: ['Nieprzypisane'],
+        }}
+        peopleOptions={['iwo']}
+        onDraftChange={onDraftChange}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Wybierz osobę...'), {
+      target: { value: 'iwo' },
+    });
+
+    expect(onDraftChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ owner: 'iwo', assignedTo: ['iwo'] }),
+      { owner: 'iwo', assignedTo: ['iwo'] }
     );
   });
 });

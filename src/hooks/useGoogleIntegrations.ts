@@ -151,15 +151,28 @@ export default function useGoogleIntegrations({
       }
       const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1).toISOString();
       const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
-      const payload = await fetchGoogleCalendarEvents({
-        workspaceId: currentWorkspaceId,
-        timeMin: monthStart,
-        timeMax: monthEnd,
-      });
-      setGoogleCalendarEvents(payload.items || []);
-      setGoogleCalendarLastSyncedAt(new Date().toISOString());
-      setGoogleCalendarStatus('connected');
-      setGoogleCalendarMessage('Pobrano wydarzenia z podstawowego kalendarza Google.');
+      try {
+        const payload = await fetchGoogleCalendarEvents({
+          workspaceId: currentWorkspaceId,
+          timeMin: monthStart,
+          timeMax: monthEnd,
+        });
+        setGoogleCalendarEvents(payload.items || []);
+        setGoogleCalendarLastSyncedAt(new Date().toISOString());
+        setGoogleCalendarStatus('connected');
+        setGoogleCalendarMessage('Pobrano wydarzenia z podstawowego kalendarza Google.');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error || '');
+        const statusCode = (error as any)?.status || (error as any)?.statusCode;
+        if (statusCode === 404 || /najpierw polacz google calendar|not found/i.test(message)) {
+          setGoogleCalendarEvents([]);
+          setGoogleCalendarLastSyncedAt('');
+          setGoogleCalendarStatus('idle');
+          setGoogleCalendarMessage('Najpierw polacz Google Calendar.');
+          return;
+        }
+        throw error;
+      }
     },
     [currentWorkspaceId]
   );

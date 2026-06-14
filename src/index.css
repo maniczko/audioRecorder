@@ -149,12 +149,16 @@ html {
   --panel-blur: 18px;
   --panel-radius: var(--radius-xl);
 
-  --layout-shell-max: 1680px;
-  --layout-content-max: 1440px;
-  --layout-global-sidebar-width: 160px;
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+  --page-padding-x: 24px;
+  --page-padding-y: 24px;
+  --layout-shell-max: none;
+  --layout-content-max: none;
+  --layout-global-sidebar-width: var(--sidebar-width);
   --layout-secondary-sidebar-width: 240px;
-  --layout-topbar-height: 64px;
-  --layout-page-padding-desktop: var(--space-7);
+  --layout-topbar-height: var(--topbar-height);
+  --layout-page-padding-desktop: var(--page-padding-x);
   --layout-page-padding-laptop: var(--space-6);
   --layout-page-padding-mobile: var(--space-4);
   --layout-card-radius: 20px;

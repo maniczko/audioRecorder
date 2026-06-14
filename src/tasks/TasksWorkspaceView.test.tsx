@@ -58,14 +58,28 @@ vi.mock('./TaskCreateModal', () => ({
 function createBaseProps(overrides: Record<string, any> = {}) {
   const boardColumns = [{ id: 'todo', label: 'Todo', color: '#000', isDone: false, system: true }];
   const stats = {
+    all: 5,
     open: 0,
     dueToday: 0,
     dueThisWeek: 0,
     overdue: 0,
+    waiting: 0,
+    unassigned: 0,
     blocked: 0,
     progress: 50,
+    byStatus: { todo: 0 },
   };
-  const visibleStats = { open: 1, dueToday: 0, dueThisWeek: 0, overdue: 0, blocked: 0 };
+  const visibleStats = {
+    all: 1,
+    open: 1,
+    dueToday: 0,
+    dueThisWeek: 0,
+    overdue: 0,
+    waiting: 0,
+    unassigned: 0,
+    blocked: 0,
+    byStatus: { todo: 1 },
+  };
   const quickDraft = {
     title: '',
     owner: '',
@@ -129,6 +143,13 @@ function createBaseProps(overrides: Record<string, any> = {}) {
     visibleStats,
     selectedTaskIds: [],
     toggleTaskSelection: vi.fn(),
+    activeFilterCount: 0,
+    allVisibleSelected: false,
+    someVisibleSelected: false,
+    onToggleAllVisibleTasks: vi.fn(),
+    onBulkStatusChange: vi.fn(),
+    onBulkAssignToMe: vi.fn(),
+    onBulkDelete: vi.fn(),
     taskNotifications: [],
     showColumnManager: false,
     setShowColumnManager: vi.fn(),
@@ -167,6 +188,37 @@ describe('TasksWorkspaceView', () => {
     expect(screen.queryByRole('button', { name: /Sortuj/i })).not.toBeInTheDocument();
   });
 
+  it('renders dismissible AI confirmation banner on task views', () => {
+    render(
+      <TasksWorkspaceView
+        {...createBaseProps({
+          viewMode: 'list',
+          stats: { ...createBaseProps().stats, waiting: 3 },
+        })}
+      />
+    );
+
+    expect(screen.getByText('3 zadania z AI wymagają potwierdzenia')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Przejrzyj 3 zadania AI/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Zamknij komunikat/i }));
+    expect(screen.queryByText('3 zadania z AI wymagają potwierdzenia')).not.toBeInTheDocument();
+  });
+
+  it('shows filter badge only when filters are active', () => {
+    const { rerender } = render(
+      <TasksWorkspaceView {...createBaseProps({ viewMode: 'list', activeFilterCount: 2 })} />
+    );
+
+    expect(screen.getByRole('button', { name: /Filtry 2/i })).toBeInTheDocument();
+
+    rerender(
+      <TasksWorkspaceView {...createBaseProps({ viewMode: 'list', activeFilterCount: 0 })} />
+    );
+    expect(screen.getByRole('button', { name: /^Filtry$/i })).toBeInTheDocument();
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+  });
+
   it('filters by query and keeps one add-task control', () => {
     const setQuery = vi.fn();
     const setShowAdvancedCreate = vi.fn();
@@ -196,9 +248,29 @@ describe('TasksWorkspaceView', () => {
   it('renders summary mode stats cards', () => {
     render(<TasksWorkspaceView {...createBaseProps({ viewMode: 'summary' })} />);
 
-    expect(screen.getByText('Otwarte')).toBeInTheDocument();
-    expect(screen.getByText('Na dzisiaj')).toBeInTheDocument();
+    expect(screen.getAllByText('Wszystkie').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Do zrobienia').length).toBeGreaterThan(0);
     expect(screen.queryByPlaceholderText('Szukaj zadań...')).not.toBeInTheDocument();
+  });
+
+  it('renders reference summary cards and toggles the only-mine filter', () => {
+    const setOwnerFilter = vi.fn();
+    render(
+      <TasksWorkspaceView
+        {...createBaseProps({
+          viewMode: 'list',
+          setOwnerFilter,
+          currentUserName: 'Alice',
+        })}
+      />
+    );
+
+    expect(screen.getByText('Wszystkie')).toBeInTheDocument();
+    expect(screen.getByText('Po terminie')).toBeInTheDocument();
+    expect(screen.getByText('AI do potwierdzenia')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Tylko moje/i }));
+    expect(setOwnerFilter).toHaveBeenCalledWith('me');
   });
 
   it('renders create task modal when enabled instead of inline form', () => {

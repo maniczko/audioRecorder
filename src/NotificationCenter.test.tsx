@@ -67,17 +67,26 @@ describe('NotificationCenter', () => {
       expect(badge).toBeInTheDocument();
     });
 
+    it('explains the unread badge in the trigger label and tooltip', () => {
+      render(<NotificationCenter {...defaultProps} unreadCount={10} />);
+
+      const trigger = screen.getByRole('button', {
+        name: 'Powiadomienia, 10 nowych powiadomień',
+      });
+      expect(trigger).toHaveAttribute('title', '10 nowych powiadomień');
+    });
+
     it('renders panel when open', () => {
       render(<NotificationCenter {...defaultProps} open={true} />);
 
       expect(screen.getByText('Powiadomienia')).toBeInTheDocument();
-      expect(screen.getByText('Centrum alertow')).toBeInTheDocument();
+      expect(screen.getByText('Centrum alertów')).toBeInTheDocument();
     });
 
     it('shows empty state when no notifications', () => {
       render(<NotificationCenter {...defaultProps} open={true} items={[]} />);
 
-      expect(screen.getByText('Na razie spokoj')).toBeInTheDocument();
+      expect(screen.getByText('Brak szczegółów powiadomień')).toBeInTheDocument();
     });
   });
 
@@ -134,19 +143,19 @@ describe('NotificationCenter', () => {
     it('shows enable button when notifications not granted', () => {
       render(<NotificationCenter {...defaultProps} open={true} />);
 
-      expect(screen.getByText('Wlacz w przegladarce')).toBeInTheDocument();
+      expect(screen.getByText('Włącz w przeglądarce')).toBeInTheDocument();
     });
 
     it('hides enable button when permission granted', () => {
       render(<NotificationCenter {...defaultProps} open={true} permissionState="granted" />);
 
-      expect(screen.queryByText('Wlacz w przegladarce')).not.toBeInTheDocument();
+      expect(screen.queryByText('Włącz w przeglądarce')).not.toBeInTheDocument();
     });
 
     it('calls onRequestPermission when enable button clicked', () => {
       render(<NotificationCenter {...defaultProps} open={true} />);
 
-      fireEvent.click(screen.getByText('Wlacz w przegladarce'));
+      fireEvent.click(screen.getByText('Włącz w przeglądarce'));
       expect(defaultProps.onRequestPermission).toHaveBeenCalledTimes(1);
     });
   });

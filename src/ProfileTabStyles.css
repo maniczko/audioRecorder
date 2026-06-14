@@ -1583,3 +1583,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Layout audit follow-up: profile uses the same shell width and form rhythm. */
+:root[data-theme='premium-light'] .profile-layout-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+:root[data-theme='premium-light'] .profile-grid,
+:root[data-theme='premium-light'] .profile-content-grid {
+  min-width: 0;
+}
+
+:root[data-theme='premium-light'] .profile-card,
+:root[data-theme='premium-light'] .profile-panel {
+  border-radius: 16px;
+}
+
+:root[data-theme='premium-light'] .profile-layout-container input,
+:root[data-theme='premium-light'] .profile-layout-container select,
+:root[data-theme='premium-light'] .profile-layout-container textarea {
+  min-height: 44px;
+}
+
+:root[data-theme='premium-light'] .profile-layout-container button:not(:disabled) {
+  cursor: pointer;
+}

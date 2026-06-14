@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 import UnifiedPlayer from './UnifiedPlayer';
 
@@ -53,5 +53,52 @@ describe('UnifiedPlayer', () => {
 
     expect(screen.queryByRole('button', { name: /Ponow/i })).not.toBeInTheDocument();
     expect(retryRecordingQueueItem).not.toHaveBeenCalled();
+  });
+
+  test('Regression: waveform keyboard shortcuts seek the playback position', () => {
+    const audio = document.createElement('audio');
+    Object.defineProperty(audio, 'currentTime', { value: 30, writable: true });
+    const audioRef = { current: audio };
+
+    render(
+      <UnifiedPlayer
+        {...defaultProps}
+        audioRef={audioRef}
+        selectedRecordingAudioUrl="blob:test"
+        audioDuration={90}
+        currentTime={30}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(audio.currentTime).toBe(35);
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft', shiftKey: true });
+    expect(audio.currentTime).toBe(20);
+  });
+
+  test('Regression: waveform hover explains the target seek time', () => {
+    const audio = document.createElement('audio');
+    const audioRef = { current: audio };
+
+    render(
+      <UnifiedPlayer
+        {...defaultProps}
+        audioRef={audioRef}
+        selectedRecordingAudioUrl="blob:test"
+        audioDuration={100}
+        currentTime={25}
+      />
+    );
+
+    const scrubber = screen.getByLabelText('Pozycja odtwarzania');
+    const waveform = scrubber.closest('.uplayer-waveform-shell') as HTMLElement;
+    Object.defineProperty(waveform, 'getBoundingClientRect', {
+      value: () => ({ left: 0, width: 200, top: 0, bottom: 42, right: 200, height: 42 }),
+    });
+
+    fireEvent.mouseMove(waveform, { clientX: 100 });
+
+    expect(waveform).toHaveAttribute('title', 'Przejdź do 00:50');
   });
 });

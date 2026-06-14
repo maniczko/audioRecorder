@@ -46,7 +46,7 @@ describe('AppSidebar', () => {
     await userEvent.click(screen.getByRole('button', { name: /studio/i }));
 
     expect(props.openStudio).toHaveBeenCalledTimes(1);
-    expect(props.closeSidebar).toHaveBeenCalledTimes(1);
+    expect(props.closeSidebar).toHaveBeenCalledWith({ returnFocus: true });
     expect(props.setActiveTab).not.toHaveBeenCalled();
   });
 
@@ -56,7 +56,21 @@ describe('AppSidebar', () => {
     await userEvent.click(screen.getByRole('button', { name: /zadania/i }));
 
     expect(props.setActiveTab).toHaveBeenCalledWith('tasks');
-    expect(props.closeSidebar).toHaveBeenCalledTimes(1);
+    expect(props.closeSidebar).toHaveBeenCalledWith({ returnFocus: true });
+  });
+
+  test('marks navigation landmarks and the active item for mobile drawers', () => {
+    renderSidebar({ activeTab: 'calendar' });
+
+    expect(screen.getByRole('complementary', { name: /główna nawigacja/i })).toHaveAttribute(
+      'id',
+      'voicebobr-sidebar'
+    );
+    expect(screen.getByRole('navigation', { name: /widoki aplikacji/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Kalendarz' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 
   test('renders the Ask AI popover when requested', () => {
@@ -73,7 +87,7 @@ describe('AppSidebar', () => {
       ],
     });
 
-    await userEvent.selectOptions(screen.getByRole('combobox'), 'ws-2');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: /workspace/i }), 'ws-2');
 
     expect(props.switchWorkspace).toHaveBeenCalledWith('ws-2');
   });

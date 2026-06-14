@@ -9,7 +9,7 @@ export default function AuthHeroSection() {
           <VoiceBobrLogo className="auth-voicebobr-lockup" />
         </div>
         <p className="auth-hero-guide">
-          Hi, I&apos;m VoiceBóbr. I&apos;ll help organize your meetings.
+          Cześć, jestem VoiceBóbr. Pomogę uporządkować Twoje spotkania.
         </p>
         <h1>Więcej niż transkrypcja.</h1>
         <p className="auth-hero-copy">

@@ -35,6 +35,7 @@ export default function UnifiedPlayer({
   displaySpeakerNames,
 }) {
   const [playError, setPlayError] = useState<string | null>(null);
+  const [hoverSeekTime, setHoverSeekTime] = useState<number | null>(null);
 
   // Clear play error when audio source changes
   useEffect(() => {
@@ -81,6 +82,33 @@ export default function UnifiedPlayer({
     }
   }, [audioRef, playError, mode]);
 
+  const seekBy = useCallback(
+    (deltaSeconds: number) => {
+      const a = audioRef?.current;
+      if (!a || mode !== 'playback') return;
+
+      const duration = Math.max(0, Number(audioDuration || a.duration || 0));
+      const baseTime = Number.isFinite(a.currentTime) ? a.currentTime : currentTime;
+      const nextTime =
+        duration > 0
+          ? Math.min(duration, Math.max(0, baseTime + deltaSeconds))
+          : Math.max(0, baseTime + deltaSeconds);
+      a.currentTime = nextTime;
+    },
+    [audioDuration, audioRef, currentTime, mode]
+  );
+
+  const getSeekTimeFromPointer = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!audioDuration) return null;
+      const rect = event.currentTarget.getBoundingClientRect();
+      if (!rect.width) return null;
+      const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      return ratio * audioDuration;
+    },
+    [audioDuration]
+  );
+
   useHotkeys([
     {
       key: ' ',
@@ -90,6 +118,24 @@ export default function UnifiedPlayer({
           togglePlayback();
         }
       },
+    },
+    {
+      key: 'ArrowLeft',
+      handler: () => seekBy(-5),
+    },
+    {
+      key: 'ArrowRight',
+      handler: () => seekBy(5),
+    },
+    {
+      key: 'ArrowLeft',
+      shiftKey: true,
+      handler: () => seekBy(-15),
+    },
+    {
+      key: 'ArrowRight',
+      shiftKey: true,
+      handler: () => seekBy(15),
     },
   ]);
 
@@ -232,6 +278,16 @@ export default function UnifiedPlayer({
               <div
                 className="uplayer-waveform-shell"
                 style={{ '--uplayer-progress': `${fillPct}%` } as React.CSSProperties}
+                title={
+                  hoverSeekTime !== null
+                    ? `Przejdź do ${formatDuration(Math.floor(hoverSeekTime))}`
+                    : 'Kliknij lub przeciągnij, aby przewinąć nagranie'
+                }
+                onMouseMove={(event) => {
+                  const nextHoverTime = getSeekTimeFromPointer(event);
+                  setHoverSeekTime(nextHoverTime);
+                }}
+                onMouseLeave={() => setHoverSeekTime(null)}
               >
                 <div className="uplayer-waveform-visual" aria-hidden="true" />
                 <input

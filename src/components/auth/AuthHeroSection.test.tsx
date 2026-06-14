@@ -7,7 +7,7 @@ describe('AuthHeroSection', () => {
 
     expect(screen.getByRole('img', { name: 'VoiceBóbr' })).toBeInTheDocument();
     expect(container.querySelector('.auth-hero-branding')).toHaveTextContent('VoiceBóbr');
-    expect(screen.getByText(/Hi, I'm VoiceBóbr/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cześć, jestem VoiceBóbr/i)).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { level: 1, name: 'Więcej niż transkrypcja.' })
     ).toBeInTheDocument();

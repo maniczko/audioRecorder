@@ -742,6 +742,7 @@
   display: grid;
   align-items: center;
   isolation: isolate;
+  cursor: pointer;
 }
 
 .uplayer-waveform-visual {
@@ -818,6 +819,12 @@
   height: 42px;
   background: transparent !important;
   opacity: 0;
+  cursor: pointer;
+}
+
+.uplayer-waveform-shell:focus-within .uplayer-waveform-visual {
+  outline: 2px solid rgba(8, 112, 98, 0.36);
+  outline-offset: 4px;
 }
 
 :root[data-theme='premium-light'] .uplayer-play-btn {

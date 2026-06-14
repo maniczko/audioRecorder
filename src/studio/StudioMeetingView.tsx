@@ -93,71 +93,6 @@ function getStudioMeetingList(value: unknown): StudioMeetingLike[] {
   return Array.isArray(value) ? (value.filter(Boolean) as StudioMeetingLike[]) : [];
 }
 
-const STUDIO_FALLBACK_CALENDAR: StudioCalendarItem[] = [
-  {
-    id: 'calendar-standup',
-    time: '09:30 - 10:00',
-    status: 'Trwa teraz',
-    tone: 'live',
-    title: 'Daily standup',
-    people: 'Ty, Anna, Michał + 3 inne osoby',
-    action: 'Nagraj',
-  },
-  {
-    id: 'calendar-ksef',
-    time: '10:30 - 11:15',
-    status: 'Za 15 min',
-    tone: 'soon',
-    title: 'Review KSeF Q2',
-    people: 'Ty, Kasia, Piotr',
-    action: 'Nagraj',
-  },
-  {
-    id: 'calendar-client',
-    time: '14:00 - 15:00',
-    status: 'Za 4 godz.',
-    tone: 'later',
-    title: 'Rozmowa z klientem',
-    people: 'Ty, Jan Kowalski (Acme)',
-    action: 'Przygotuj brief',
-  },
-];
-
-const STUDIO_FALLBACK_RECORDINGS: StudioRecentRecording[] = [
-  {
-    id: 'recent-mercury',
-    title: 'Kickoff projektu Mercury',
-    date: '20 maj 2024',
-    time: '10:02',
-    duration: '42:18',
-    badges: ['3 zadania AI', 'Transkrypcja'],
-  },
-  {
-    id: 'recent-q1',
-    title: 'Przegląd wyników Q1',
-    date: '17 maj 2024',
-    time: '14:32',
-    duration: '33:07',
-    badges: ['2 zadania AI', 'Transkrypcja'],
-  },
-  {
-    id: 'recent-acme',
-    title: 'Rozmowa z klientem - Acme',
-    date: '16 maj 2024',
-    time: '11:18',
-    duration: '28:54',
-    badges: ['Transkrypcja', 'Gotowe'],
-  },
-  {
-    id: 'recent-retro',
-    title: 'Retro zespołu produktowego',
-    date: '15 maj 2024',
-    time: '09:03',
-    duration: '51:11',
-    badges: ['Transkrypcja'],
-  },
-];
-
 function formatStudioMinutes(totalMinutes: number | string | null | undefined) {
   const minutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
   const hours = Math.floor(minutes / 60);
@@ -233,12 +168,12 @@ function buildStudioRecentRecordings(userMeetings: unknown): StudioRecentRecordi
         title: meeting.title || 'Spotkanie',
         date: formatStudioDate(meeting.startsAt || meeting.createdAt),
         time: formatStudioTime(meeting.startsAt || meeting.createdAt),
-        duration: durationMinutes > 0 ? formatStudioMinutes(durationMinutes) : '45 min',
-        badges: badges.length ? badges : ['Transkrypcja'],
+        duration: durationMinutes > 0 ? formatStudioMinutes(durationMinutes) : 'Brak czasu',
+        badges,
       };
     });
 
-  return recent.length ? recent : STUDIO_FALLBACK_RECORDINGS;
+  return recent;
 }
 
 function buildStudioCalendarItems(userMeetings: unknown): StudioCalendarItem[] {
@@ -266,7 +201,7 @@ function buildStudioCalendarItems(userMeetings: unknown): StudioCalendarItem[] {
       };
     });
 
-  return todayMeetings.length ? todayMeetings : STUDIO_FALLBACK_CALENDAR;
+  return todayMeetings;
 }
 
 /**
@@ -1566,6 +1501,11 @@ export default function StudioMeetingView({
     () => speakerStats.reduce((acc, s) => acc + s.speakingSeconds, 0),
     [speakerStats]
   );
+  const hasMeetingBrief = Boolean(
+    String(
+      selectedMeeting?.description || selectedMeeting?.summary || meetingDraft?.description || ''
+    ).trim()
+  );
 
   const activeSeg = useMemo(
     () =>
@@ -2323,38 +2263,43 @@ export default function StudioMeetingView({
                 <button type="button">Zarządzaj</button>
               </div>
               <div className="studio-calendar-list">
-                {studioCalendarItems.map((item) => (
-                  <div key={item.id} className="studio-calendar-row">
-                    <span className="studio-calendar-time">{item.time}</span>
-                    <span className={`studio-calendar-status ${item.tone}`}>
-                      <i />
-                      {item.status}
-                    </span>
-                    <div className="studio-calendar-main">
-                      <strong>{item.title}</strong>
-                      <span>{item.people}</span>
+                {studioCalendarItems.length ? (
+                  studioCalendarItems.map((item) => (
+                    <div key={item.id} className="studio-calendar-row">
+                      <span className="studio-calendar-time">{item.time}</span>
+                      <span className={`studio-calendar-status ${item.tone}`}>
+                        <i />
+                        {item.status}
+                      </span>
+                      <div className="studio-calendar-main">
+                        <strong>{item.title}</strong>
+                        <span>{item.people}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="studio-calendar-action"
+                        onClick={() => handleCalendarAction(item)}
+                      >
+                        {item.action === 'Nagraj' ? (
+                          <Mic2 size={16} strokeWidth={2.2} />
+                        ) : (
+                          <FileText size={16} strokeWidth={2.2} />
+                        )}
+                        {item.action}
+                      </button>
+                      <button type="button" className="studio-home-icon-button" aria-label="Więcej">
+                        <MoreVertical size={17} strokeWidth={2.2} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="studio-calendar-action"
-                      onClick={() => handleCalendarAction(item)}
-                    >
-                      {item.action === 'Nagraj' ? (
-                        <Mic2 size={16} strokeWidth={2.2} />
-                      ) : (
-                        <FileText size={16} strokeWidth={2.2} />
-                      )}
-                      {item.action}
-                    </button>
-                    <button type="button" className="studio-home-icon-button" aria-label="Więcej">
-                      <MoreVertical size={17} strokeWidth={2.2} />
-                    </button>
+                  ))
+                ) : (
+                  <div className="studio-home-empty">
+                    <CalendarDays size={24} strokeWidth={2.1} />
+                    <strong>Brak wydarzeń na dziś</strong>
+                    <span>Połącz kalendarz lub dodaj spotkanie, aby zobaczyć plan dnia.</span>
                   </div>
-                ))}
+                )}
               </div>
-              <button type="button" className="studio-calendar-more">
-                Pokaż kolejne wydarzenia (2) <ChevronDown size={16} strokeWidth={2.2} />
-              </button>
             </article>
 
             <article className="studio-home-card studio-home-recent">
@@ -2365,39 +2310,47 @@ export default function StudioMeetingView({
                 </button>
               </div>
               <div className="studio-recent-list">
-                {studioRecentRecordings.map((item) => (
-                  <div key={item.id} className="studio-recent-row">
-                    <span className="studio-recent-icon">
-                      <AudioLines size={24} strokeWidth={2.1} />
-                    </span>
-                    <div className="studio-recent-main">
-                      <strong>{item.title}</strong>
-                      <span>
-                        {item.date} {item.time ? `• ${item.time}` : ''} • {item.duration}
+                {studioRecentRecordings.length ? (
+                  studioRecentRecordings.map((item) => (
+                    <div key={item.id} className="studio-recent-row">
+                      <span className="studio-recent-icon">
+                        <AudioLines size={24} strokeWidth={2.1} />
                       </span>
-                    </div>
-                    <div className="studio-recent-badges">
-                      {item.badges.map((badge) => (
-                        <span
-                          key={`${item.id}-${badge}`}
-                          className={badge === 'Gotowe' ? 'ready' : ''}
-                        >
-                          {badge}
+                      <div className="studio-recent-main">
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.date} {item.time ? `• ${item.time}` : ''} • {item.duration}
                         </span>
-                      ))}
+                      </div>
+                      <div className="studio-recent-badges">
+                        {item.badges.map((badge) => (
+                          <span
+                            key={`${item.id}-${badge}`}
+                            className={badge === 'Gotowe' ? 'ready' : ''}
+                          >
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="studio-recent-open"
+                        onClick={() => openRecentRecording(item)}
+                      >
+                        Otwórz
+                      </button>
+                      <button type="button" className="studio-home-icon-button" aria-label="Więcej">
+                        <MoreVertical size={17} strokeWidth={2.2} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="studio-recent-open"
-                      onClick={() => openRecentRecording(item)}
-                    >
-                      Otwórz
-                    </button>
-                    <button type="button" className="studio-home-icon-button" aria-label="Więcej">
-                      <MoreVertical size={17} strokeWidth={2.2} />
-                    </button>
+                  ))
+                ) : (
+                  <div className="studio-home-empty">
+                    <AudioLines size={24} strokeWidth={2.1} />
+                    <strong>Brak nagrań</strong>
+                    <span>Rozpocznij nagranie, aby w tym miejscu pojawiła się historia.</span>
                   </div>
-                ))}
+                )}
               </div>
             </article>
           </section>
@@ -2557,8 +2510,13 @@ export default function StudioMeetingView({
               Eksport
             </button>
 
-            <button type="button" className="ff-tb-btn" onClick={() => setBriefOpen(true)}>
-              + Brief
+            <button
+              type="button"
+              className="ff-tb-btn"
+              onClick={() => setBriefOpen(true)}
+              title="Dodaj kontekst spotkania, cele i oczekiwane rezultaty."
+            >
+              {hasMeetingBrief ? 'Edytuj brief' : 'Dodaj brief'}
             </button>
 
             {/* ── Separator ── */}
@@ -2743,7 +2701,7 @@ export default function StudioMeetingView({
               <section className="panel studio-analysis-summary-panel">
                 <div className="panel-header compact analysis-shell-header">
                   <div className="analysis-shell-copy">
-                    <div className="eyebrow">AI ? podsumowanie</div>
+                    <div className="eyebrow">PODSUMOWANIE AI</div>
                     <div className="analysis-edit-header">
                       <h2>Podsumowanie spotkania</h2>
                       {!isEditingAnalysis ? (
@@ -2793,7 +2751,7 @@ export default function StudioMeetingView({
                 {speakerStats.length > 0 && (
                   <div className="ff-sov-card">
                     <div className="ff-sov-card-head">
-                      <h3>Udział w rozmowie (Share of Voice)</h3>
+                      <h3>Udział w rozmowie</h3>
                       <span>{speakerStats.length} uczestników</span>
                     </div>
                     <div className="ff-sov-visual">
@@ -2817,9 +2775,8 @@ export default function StudioMeetingView({
                               className="ff-sov-dot"
                               style={{ backgroundColor: getSpeakerColor(s.speakerId) }}
                             />
-                            <span className="ff-sov-name">{s.speakerName}</span>
-                            <span className="ff-sov-time">{formatDuration(s.speakingSeconds)}</span>
-                            <span className="ff-sov-percent">
+                            <span className="ff-sov-name">
+                              {s.speakerName} —{' '}
                               {Math.round((s.speakingSeconds / (totalSpeakingSeconds || 1)) * 100)}%
                             </span>
                           </div>
@@ -4012,7 +3969,10 @@ export default function StudioMeetingView({
                   <rect x="5" y="2" width="2" height="9" rx="1" fill="currentColor" />
                   <rect x="9" y="5" width="2" height="6" rx="1" fill="currentColor" />
                 </svg>
-                Voice analytics
+                <span className="ff-voice-analytics-copy">
+                  <strong>Analiza głosu</strong>
+                  <span>Tempo, pauzy, udział mówców i wykryte wzorce rozmowy.</span>
+                </span>
                 <svg
                   className={voiceStatsOpen ? 'ff-chevron open' : 'ff-chevron'}
                   width="10"

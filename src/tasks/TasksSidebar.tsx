@@ -5,6 +5,9 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
+  ArrowDown,
+  ArrowUp,
+  Minus,
   Layers3,
   ListTodo,
   PlusCircle,
@@ -28,6 +31,9 @@ const iconMap = {
   completed: CheckCircle2,
   done: CheckCircle2,
   custom: ListTodo,
+  'priority-high': ArrowUp,
+  'priority-medium': Minus,
+  'priority-low': ArrowDown,
 };
 
 function getListIcon(icon) {
@@ -85,6 +91,10 @@ function TasksSidebar({
     () => sidebarLists.statusLists || sidebarLists.workspaceLists || [],
     [sidebarLists]
   );
+  const priorityLists = useMemo(
+    () => sidebarLists.priorityLists || sidebarLists.priorityGroups || [],
+    [sidebarLists]
+  );
 
   return (
     <aside className="todo-sidebar">
@@ -100,6 +110,12 @@ function TasksSidebar({
             <SidebarSection
               title="STATUSY"
               items={statusLists}
+              selectedListId={selectedListId}
+              setSelectedListId={setSelectedListId}
+            />
+            <SidebarSection
+              title="PRIORYTET"
+              items={priorityLists}
               selectedListId={selectedListId}
               setSelectedListId={setSelectedListId}
             />
@@ -136,6 +152,7 @@ function TasksSidebar({
                 type="button"
                 className="todo-manage-lists-button"
                 onClick={() => setShowColumnManager((previous) => !previous)}
+                aria-label="Dodaj liste wlasna Utwórz listę"
                 aria-pressed={showColumnManager}
               >
                 <span className="todo-side-icon" aria-hidden="true">

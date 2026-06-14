@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import './styles/modern-layout.css';
 import AuthScreen from './AuthScreen';
 import CommandPalette from './CommandPalette';
@@ -26,8 +26,15 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
   const google = useGoogleCtx();
   const [showAskAI, setShowAskAI] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  const closeSidebar = () => setSidebarOpen(false);
+  const closeSidebar = useCallback((options?: { returnFocus?: boolean }) => {
+    setSidebarOpen(false);
+
+    if (options?.returnFocus) {
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
+    }
+  }, []);
 
   useHotkeys([
     { key: '1', ctrlKey: true, handler: () => ui.setActiveTab('studio') },
@@ -81,7 +88,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
   return (
     <div className={`app-shell-modern${sidebarOpen ? ' sidebar-open' : ''}`}>
       {sidebarOpen && (
-        <div className="modern-sidebar-overlay" onClick={closeSidebar} aria-hidden="true" />
+        <div className="modern-sidebar-overlay" onClick={() => closeSidebar()} aria-hidden="true" />
       )}
 
       <AppSidebar
@@ -116,6 +123,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
           setCommandPaletteOpen={ui.setCommandPaletteOpen}
           setNotificationCenterOpen={ui.setNotificationCenterOpen}
           setSidebarOpen={setSidebarOpen}
+          menuButtonRef={menuButtonRef}
         />
 
         <div className="modern-content-wrapper">

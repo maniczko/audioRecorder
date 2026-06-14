@@ -131,25 +131,32 @@ describe('Topbar', () => {
   });
 
   it('record button starts ad-hoc recording', async () => {
+    mockState.ui.activeTab = 'recordings';
     render(<Topbar />);
-    await userEvent.click(screen.getByRole('button', { name: 'Nagraj ad hoc' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Nowe nagranie' }));
     expect(mockState.recorder.startRecording).toHaveBeenCalledWith({ adHoc: true });
     expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('studio');
+  });
+
+  it('hides global recording shortcut on the Studio tab when idle', () => {
+    render(<Topbar />);
+    expect(screen.queryByRole('button', { name: 'Nowe nagranie' })).not.toBeInTheDocument();
   });
 
   it('record button switches to studio when already recording', async () => {
     mockState.recorder.isRecording = true;
     mockState.recorder.elapsed = 15;
     render(<Topbar />);
-    await userEvent.click(screen.getByRole('button', { name: 'Przejdz do aktywnego nagrania' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Przejdź do aktywnego nagrania' }));
     expect(mockState.recorder.startRecording).not.toHaveBeenCalled();
     expect(mockState.ui.setActiveTab).toHaveBeenCalledWith('studio');
   });
 
   it('record button is disabled when no recording permission', () => {
+    mockState.ui.activeTab = 'recordings';
     mockState.workspace.currentWorkspacePermissions = { canRecordAudio: false };
     render(<Topbar />);
-    expect(screen.getByRole('button', { name: 'Nagraj ad hoc' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Nowe nagranie' })).toBeDisabled();
   });
 
   it('shows Google ready chip when googleEnabled', () => {

@@ -22,7 +22,7 @@ interface AppSidebarProps {
   currentWorkspace?: CurrentWorkspace | null;
   currentWorkspaceId?: string | null;
   availableWorkspaces: WorkspaceOption[];
-  closeSidebar: () => void;
+  closeSidebar: (options?: { returnFocus?: boolean }) => void;
   openStudio: () => void;
   setActiveTab: (tab: AppShellTab) => void;
   setShowAskAI: Dispatch<SetStateAction<boolean>>;
@@ -62,23 +62,25 @@ export default function AppSidebar({
   };
 
   return (
-    <aside className="modern-sidebar">
+    <aside id="voicebobr-sidebar" className="modern-sidebar" aria-label="Główna nawigacja">
       <div
         className="modern-brand"
         onClick={openHome}
         role="button"
         tabIndex={0}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
             openHome();
           }
         }}
         title="Strona główna"
+        aria-label="Strona główna"
       >
         <VoiceBobrLogo />
       </div>
 
-      <nav className="modern-nav">
+      <nav className="modern-nav" aria-label="Widoki aplikacji">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -86,16 +88,18 @@ export default function AppSidebar({
               key={item.id}
               type="button"
               className={`modern-nav-item ${activeTab === item.id ? 'active' : ''}`}
+              aria-current={activeTab === item.id ? 'page' : undefined}
+              aria-label={item.label}
               onClick={() => {
                 if (item.id === 'studio') {
                   openStudio();
                 } else {
                   setActiveTab(item.id);
                 }
-                closeSidebar();
+                closeSidebar({ returnFocus: true });
               }}
             >
-              <Icon size={18} />
+              <Icon size={18} aria-hidden="true" />
               <span className="modern-nav-label">{item.label}</span>
             </button>
           );
@@ -106,9 +110,11 @@ export default function AppSidebar({
             <button
               type="button"
               className={`modern-nav-item ${showAskAI ? 'active' : ''}`}
+              aria-label="Zapytaj AI"
+              aria-expanded={showAskAI}
               onClick={() => {
                 setShowAskAI((current) => !current);
-                closeSidebar();
+                closeSidebar({ returnFocus: true });
               }}
               style={{ width: '100%' }}
             >
@@ -128,6 +134,7 @@ export default function AppSidebar({
       <div className="modern-workspace-selector">
         {availableWorkspaces.length > 1 ? (
           <select
+            aria-label="Przełącz workspace"
             value={currentWorkspaceId || ''}
             onChange={(e) => switchWorkspace(e.target.value)}
           >
