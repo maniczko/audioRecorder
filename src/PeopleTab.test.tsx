@@ -89,7 +89,7 @@ describe('PeopleTab directory view', () => {
     vi.clearAllMocks();
   });
 
-  test('renders the people directory shell with views, filters, list and preview', () => {
+  test('renders the people directory shell with views, filters and full-width list', () => {
     render(<PeopleTab {...defaultProps} />);
 
     expect(screen.getByRole('heading', { name: 'Osoby' })).toBeInTheDocument();
@@ -99,9 +99,9 @@ describe('PeopleTab directory view', () => {
     expect(within(filters).getByRole('button', { name: /Profil AI aktywny/i })).toBeInTheDocument();
     expect(within(filters).getByRole('button', { name: /Nieprzypisane/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Dodaj osobę/i })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
-      'Iwo'
-    );
+    expect(
+      screen.queryByRole('complementary', { name: /Podgląd profilu/i })
+    ).not.toBeInTheDocument();
   });
 
   test('filters people by search across name, tags, role and AI status', async () => {
@@ -133,28 +133,26 @@ describe('PeopleTab directory view', () => {
     expect(within(list).queryByText('Iwo')).not.toBeInTheDocument();
   });
 
-  test('selects people with mouse and keyboard and updates the preview panel', async () => {
+  test('opens person details directly from mouse and keyboard selection', async () => {
     render(<PeopleTab {...defaultProps} />);
 
     await userEvent.click(screen.getByRole('button', { name: /Marta Kowalska/i }));
-    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
-      'Marta Kowalska'
-    );
+    expect(screen.getByRole('button', { name: /Wróć do listy osób/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Marta Kowalska' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Wróć do listy osób/i }));
 
     const annaCard = screen.getByRole('button', { name: /Anna Wisniewska/i });
     annaCard.focus();
     fireEvent.keyDown(annaCard, { key: 'Enter' });
 
-    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
-      'Anna Wisniewska'
-    );
+    expect(screen.getByRole('heading', { name: 'Anna Wisniewska' })).toBeInTheDocument();
   });
 
-  test('opens the full person detail layout from the preview panel and returns to the list', async () => {
+  test('opens the full person detail layout from a person card and returns to the list', async () => {
     render(<PeopleTab {...defaultProps} />);
 
     await userEvent.click(screen.getByRole('button', { name: /Marta Kowalska/i }));
-    await userEvent.click(screen.getByRole('button', { name: /Otwórz profil/i }));
 
     expect(screen.getByRole('button', { name: /Wróć do listy osób/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Marta Kowalska' })).toBeInTheDocument();
@@ -168,18 +166,37 @@ describe('PeopleTab directory view', () => {
     await userEvent.click(screen.getByRole('button', { name: /Wróć do listy osób/i }));
 
     expect(screen.getByRole('heading', { name: 'Osoby' })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: /Podgląd profilu/i })).toHaveTextContent(
-      'Marta Kowalska'
-    );
-  });
-
-  test('closes the preview panel and opens add person modal placeholder', async () => {
-    render(<PeopleTab {...defaultProps} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Zamknij podgląd profilu' }));
     expect(
       screen.queryByRole('complementary', { name: /Podgląd profilu/i })
     ).not.toBeInTheDocument();
+  });
+
+  test('supports edit, AI management and delete actions in person details', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<PeopleTab {...defaultProps} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /Iwo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Edytuj profil/i }));
+
+    const nameInput = screen.getByLabelText(/Nazwa osoby/i);
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'Iwo Nowy');
+    await userEvent.click(screen.getByRole('button', { name: /Zapisz/i }));
+
+    expect(defaultProps.onRenamePerson).toHaveBeenCalledWith('person_iwo', 'Iwo Nowy');
+    expect(screen.getByText(/Zapisano zmiany profilu/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Zarządzaj AI/i }));
+    expect(defaultProps.onAnalyzePersonProfile).toHaveBeenCalledWith('person_iwo');
+
+    await userEvent.click(screen.getByRole('button', { name: /Usuń osobę/i }));
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(defaultProps.onDeletePerson).toHaveBeenCalledWith('person_iwo');
+    confirmSpy.mockRestore();
+  });
+
+  test('opens add person modal from the directory action', async () => {
+    render(<PeopleTab {...defaultProps} />);
 
     await userEvent.click(screen.getByRole('button', { name: /Dodaj osobę/i }));
     expect(screen.getByRole('dialog', { name: /Dodaj osobę/i })).toBeInTheDocument();

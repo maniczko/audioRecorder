@@ -456,6 +456,55 @@
   color: rgba(241, 125, 114, 0.92);
 }
 
+.people-management-card {
+  display: grid;
+  gap: 12px;
+}
+
+.people-management-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.people-management-actions .people-secondary-btn,
+.people-management-actions .people-danger-button {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.people-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid rgba(164, 61, 52, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 244, 241, 0.78);
+  color: #a43d34;
+  padding: 0 16px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.people-danger-button:hover,
+.people-danger-button:focus-visible {
+  border-color: rgba(164, 61, 52, 0.34);
+  background: rgba(255, 237, 232, 0.94);
+  outline: none;
+}
+
+.people-danger-button:focus-visible {
+  box-shadow: 0 0 0 3px rgba(164, 61, 52, 0.14);
+}
+
+.people-action-status {
+  margin: 0;
+  color: #667386;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
 :root[data-theme='premium-light'] .people-add-person-form,
 :root[data-theme='premium-light'] .people-inline-message {
   background: rgba(255, 255, 252, 0.74);
@@ -601,7 +650,9 @@
 }
 
 :root[data-theme='premium-light'] .person-name-edit-form .secondary-button,
-:root[data-theme='premium-light'] .person-name-edit-form .ghost-button {
+:root[data-theme='premium-light'] .person-name-edit-form .ghost-button,
+:root[data-theme='premium-light'] .person-name-edit-form .people-secondary-btn,
+:root[data-theme='premium-light'] .person-name-edit-form .people-primary-btn {
   min-height: 44px;
   border-radius: 999px;
   padding-inline: 18px;
@@ -624,6 +675,29 @@
   color: #a43d34;
   border: 1px solid rgba(164, 61, 52, 0.18);
   background: rgba(255, 244, 241, 0.76);
+}
+
+:root[data-theme='premium-light'] .people-management-card {
+  background:
+    linear-gradient(180deg, rgba(234, 250, 247, 0.64), rgba(255, 255, 255, 0.9)),
+    rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme='premium-light'] .people-management-actions {
+  display: grid;
+  gap: 10px;
+}
+
+:root[data-theme='premium-light'] .people-management-actions .people-secondary-btn,
+:root[data-theme='premium-light'] .people-management-actions .people-danger-button {
+  min-height: 44px;
+  justify-content: flex-start;
+}
+
+:root[data-theme='premium-light'] .people-action-status {
+  margin: 0;
+  color: #5f716c;
+  font-size: 0.84rem;
 }
 
 :root[data-theme='premium-light'] .profile-stat-card {

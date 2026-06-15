@@ -181,6 +181,32 @@ function normalizeDraftTags(tags: string | string[] | undefined) {
     .filter(Boolean);
 }
 
+function isUnassignedPerson(value: string) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  return normalized === 'nieprzypisane' || normalized === 'unassigned';
+}
+
+function normalizeAssignees(values: string | string[] | undefined) {
+  const list = Array.isArray(values)
+    ? values
+    : String(values || '')
+        .split(',')
+        .map((value) => value.trim());
+
+  const seen = new Set<string>();
+  return list
+    .map((value) => String(value || '').trim())
+    .filter((value) => value && !isUnassignedPerson(value))
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 function buildInitialDraft(
   initialDraft: Partial<TaskDraft>,
   boardColumns: any[],
@@ -188,11 +214,16 @@ function buildInitialDraft(
 ) {
   const today = new Date();
   const defaultDueDate = showQuickAdd ? '' : `${formatIsoDate(today)}T09:00`;
+  const assignedTo = normalizeAssignees(
+    initialDraft.assignedTo?.length ? initialDraft.assignedTo : initialDraft.owner
+  );
+  const owner =
+    assignedTo[0] || (isUnassignedPerson(initialDraft.owner || '') ? '' : initialDraft.owner || '');
 
   return {
     title: initialDraft.title || '',
-    owner: initialDraft.owner || '',
-    assignedTo: initialDraft.assignedTo || [],
+    owner,
+    assignedTo,
     group: initialDraft.group || '',
     priority: initialDraft.priority || 'medium',
     status: initialDraft.status || boardColumns[0]?.id || 'todo',
@@ -249,6 +280,9 @@ export default function TaskCreateForm({
   const peopleLabels = useMemo(() => normalizePeopleOptions(peopleOptions), [peopleOptions]);
   const timeOptions = useMemo(buildTimeOptions, []);
   const requiresDetailedValidation = !showQuickAdd;
+  const selectedAssignees = normalizeAssignees(
+    draft.assignedTo?.length ? draft.assignedTo : draft.owner
+  );
 
   const initialDraftKey = [
     initialDraft.title,
@@ -655,18 +689,21 @@ export default function TaskCreateForm({
             Osoba <span aria-hidden="true">*</span>
           </span>
           <TagInput
-            tags={draft.owner ? [draft.owner] : []}
+            tags={selectedAssignees}
             suggestions={peopleLabels}
             onChange={(values) => {
-              const owner = values.at(-1) || '';
+              const assignedTo = normalizeAssignees(values);
               applyDraftPatch({
-                owner,
-                assignedTo: owner ? [owner] : [],
+                owner: assignedTo[0] || '',
+                assignedTo,
               });
             }}
-            placeholder="Wybierz osobę..."
+            placeholder="Wybierz osoby..."
             type="person"
           />
+          <small className="todo-create-field-hint">
+            Możesz przypisać kilka osób. Pierwsza osoba zostanie głównym ownerem.
+          </small>
         </label>
 
         <label className="todo-create-field">

@@ -1501,6 +1501,14 @@
   min-width: 0;
 }
 
+.todo-create-field-hint {
+  margin-top: -2px;
+  color: #667085;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .todo-create-field--full,
 .todo-create-ai-helper {
   grid-column: 1 / -1;
@@ -1850,6 +1858,26 @@
   color: #14213a;
 }
 
+.task-create-form .tag-input-container {
+  padding: 9px 12px;
+  cursor: text;
+}
+
+.task-create-form .tag-input-tokens {
+  gap: 8px;
+}
+
+.task-create-form .tag-input-field {
+  min-height: 34px;
+  color: #14213a;
+  font-size: 1rem;
+}
+
+.task-create-form .tag-input-field::placeholder {
+  color: #8b98a8;
+  opacity: 1;
+}
+
 .task-create-form .todo-detail-unified-field:focus,
 .task-create-form .tag-input-container:focus-within,
 .task-create-form textarea:focus {
@@ -1879,19 +1907,22 @@
 }
 
 .todo-details--modal-form .tag-badge {
-  min-height: 24px;
-  padding: 3px 8px;
-  border-color: rgba(0, 143, 128, 0.16);
-  background: rgba(236, 252, 247, 0.92);
-  color: #0f4f47;
-  font-size: 0.78rem;
-  font-weight: 720;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-color: rgba(0, 143, 128, 0.24);
+  border-radius: 999px;
+  background: rgba(227, 249, 244, 0.98);
+  color: #0b5148;
+  font-size: 0.86rem;
+  font-weight: 760;
+  max-height: none;
 }
 
 .todo-details--modal-form .tag-badge-remove {
-  width: 18px;
-  height: 18px;
-  opacity: 0.72;
+  width: 22px;
+  height: 22px;
+  margin-right: -5px;
+  opacity: 0.78;
 }
 
 .todo-details--modal-form .tag-badge-remove:hover,

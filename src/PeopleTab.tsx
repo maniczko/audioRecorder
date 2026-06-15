@@ -2,16 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CalendarDays,
-  CheckCircle2,
   Clock3,
-  ExternalLink,
   Filter,
   LayoutPanelLeft,
   Mic2,
+  Pencil,
   Plus,
   Search,
   Sparkles,
   Tag,
+  Trash2,
   UserRound,
   UsersRound,
   X,
@@ -294,24 +294,6 @@ function filterPeople(
   });
 }
 
-function StatBlock({
-  icon: Icon,
-  value,
-  label,
-}: {
-  icon: typeof Mic2;
-  value: string;
-  label: string;
-}) {
-  return (
-    <div className="people-preview-stat">
-      <Icon size={18} aria-hidden="true" />
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
-  );
-}
-
 function profileSummary(person: DirectoryPerson) {
   return (
     person.sourceProfile?.summary ||
@@ -454,111 +436,6 @@ function EmptyPeopleState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-function PersonPreviewPanel({
-  person,
-  index,
-  onClose,
-  onOpenDetails,
-}: {
-  person: DirectoryPerson;
-  index: number;
-  onClose: () => void;
-  onOpenDetails: () => void;
-}) {
-  const hasActiveProfile = person.aiStatus === 'active';
-
-  return (
-    <aside className="people-preview-panel" aria-label="Podgląd profilu">
-      <div className="people-preview-header">
-        <h2>{person.name}</h2>
-        <button type="button" aria-label="Zamknij podgląd profilu" onClick={onClose}>
-          <X size={20} aria-hidden="true" />
-        </button>
-      </div>
-
-      <div className="people-preview-identity">
-        <span className="people-preview-avatar-wrap">
-          <PersonAvatar person={person} index={index} large />
-          <span
-            className={`people-preview-status ${hasActiveProfile ? 'is-active' : 'is-muted'}`}
-            aria-hidden="true"
-          />
-        </span>
-        <div>
-          <strong>{person.name}</strong>
-          <span>{person.role}</span>
-        </div>
-      </div>
-
-      <div className="people-preview-stats">
-        <StatBlock
-          icon={Mic2}
-          value={String(person.meetingCount)}
-          label={meetingWord(person.meetingCount)}
-        />
-        <StatBlock icon={Tag} value={String(person.tags.length)} label="Tagi" />
-        <StatBlock icon={CalendarDays} value={person.lastDateLabel} label="Ostatnia aktywność" />
-      </div>
-
-      <section className="people-preview-section people-preview-ai-section">
-        <div className="people-preview-section-head">
-          <h3>Profil AI</h3>
-          <span className={hasActiveProfile ? 'people-state-badge active' : 'people-state-badge'}>
-            {hasActiveProfile ? 'Aktywny' : 'Za mało danych'}
-          </span>
-        </div>
-        <p>
-          {hasActiveProfile
-            ? `Profil zawiera kluczowe ustalenia, preferencje i wzorce komunikacji z ${person.meetingCount} spotkań.`
-            : 'Zbierz co najmniej kilka spotkań, aby uzupełnić profil AI tej osoby.'}
-        </p>
-        <ul className="people-preview-checklist">
-          {[
-            'Preferencje i styl komunikacji',
-            'Najczęściej poruszane tematy',
-            'Decyzje i ustalenia',
-            'Rekomendacje i działania',
-          ].map((item) => (
-            <li key={item}>
-              <CheckCircle2 size={16} aria-hidden="true" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="people-preview-section">
-        <h3>Najczęstsze tagi</h3>
-        <div className="people-preview-tags">
-          {person.tags.length ? (
-            person.tags.slice(0, 4).map((tagItem) => (
-              <span key={tagItem} className="people-tag-chip people-tag-chip--strong">
-                #{tagItem}
-              </span>
-            ))
-          ) : (
-            <span className="people-muted-copy">Brak tagów</span>
-          )}
-        </div>
-      </section>
-
-      <section className="people-preview-section">
-        <h3>Ostatnie spotkanie</h3>
-        <p className="people-last-meeting">{person.lastMeetingLabel}</p>
-      </section>
-
-      <button
-        type="button"
-        className="people-primary-btn people-profile-open-btn"
-        onClick={onOpenDetails}
-      >
-        Otwórz profil
-        <ExternalLink size={16} aria-hidden="true" />
-      </button>
-    </aside>
-  );
-}
-
 function PersonDetailView({
   person,
   index,
@@ -567,6 +444,9 @@ function PersonDetailView({
   onOpenTask,
   onCreateTask,
   onCreateMeeting,
+  onRenamePerson,
+  onDeletePerson,
+  onAnalyzePersonProfile,
 }: {
   person: DirectoryPerson;
   index: number;
@@ -575,9 +455,16 @@ function PersonDetailView({
   onOpenTask?: (taskId: string) => void;
   onCreateTask?: (payload: { owner: string; title: string }) => void;
   onCreateMeeting?: (payload: { personName: string }) => void;
+  onRenamePerson?: (personId: string, name: string) => PeopleProfile | void;
+  onDeletePerson?: (personId: string) => void;
+  onAnalyzePersonProfile?: (personId: string) => Promise<void> | void;
 }) {
   const meetingsSectionRef = useRef<HTMLElement | null>(null);
   const tasksSectionRef = useRef<HTMLElement | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(person.name);
+  const [displayName, setDisplayName] = useState(person.name);
+  const [actionStatus, setActionStatus] = useState('');
   const meetings = profileMeetings(person);
   const tasks = profileTasks(person);
   const needs = profileNeeds(person);
@@ -587,6 +474,45 @@ function PersonDetailView({
   const summary = profileSummary(person);
   const lastMeeting = meetings[0] || person.sourceProfile?.nextMeeting || null;
   const hasActiveProfile = person.aiStatus === 'active';
+
+  useEffect(() => {
+    setEditedName(person.name);
+    setDisplayName(person.name);
+    setIsEditingName(false);
+    setActionStatus('');
+  }, [person.id, person.name]);
+
+  function savePersonName() {
+    const nextName = editedName.trim();
+    if (!nextName) {
+      setActionStatus('Podaj nazwę osoby przed zapisem.');
+      return;
+    }
+
+    onRenamePerson?.(person.id, nextName);
+    setDisplayName(nextName);
+    setEditedName(nextName);
+    setIsEditingName(false);
+    setActionStatus('Zapisano zmiany profilu.');
+  }
+
+  async function manageAiProfile() {
+    setActionStatus('Aktualizuję profil AI...');
+    try {
+      await onAnalyzePersonProfile?.(person.id);
+      setActionStatus('Profil AI został zaktualizowany.');
+    } catch {
+      setActionStatus('Nie udało się zaktualizować profilu AI.');
+    }
+  }
+
+  function deletePerson() {
+    const confirmed = window.confirm(`Usunąć osobę "${displayName}"? Tej akcji nie można cofnąć.`);
+    if (!confirmed) return;
+
+    onDeletePerson?.(person.id);
+    onBack();
+  }
 
   return (
     <div className="people-detail-page">
@@ -603,7 +529,40 @@ function PersonDetailView({
               <div>
                 <div className="ui-page-header__copy">
                   <div className="eyebrow">Osoba</div>
-                  <h1 className="ui-page-header__title">{person.name}</h1>
+                  {isEditingName ? (
+                    <form
+                      className="person-name-edit-form"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        savePersonName();
+                      }}
+                    >
+                      <label className="sr-only" htmlFor="person-profile-name">
+                        Nazwa osoby
+                      </label>
+                      <input
+                        id="person-profile-name"
+                        value={editedName}
+                        onChange={(event) => setEditedName(event.target.value)}
+                        autoFocus
+                      />
+                      <button type="submit" className="people-primary-btn">
+                        Zapisz
+                      </button>
+                      <button
+                        type="button"
+                        className="people-secondary-btn"
+                        onClick={() => {
+                          setEditedName(displayName);
+                          setIsEditingName(false);
+                        }}
+                      >
+                        Anuluj
+                      </button>
+                    </form>
+                  ) : (
+                    <h1 className="ui-page-header__title">{displayName}</h1>
+                  )}
                 </div>
                 <p>{summary}</p>
                 <div className="status-cluster">
@@ -653,7 +612,7 @@ function PersonDetailView({
                 <button
                   type="button"
                   className="people-add-task-btn people-create-meeting-action"
-                  onClick={() => onCreateMeeting({ personName: person.name })}
+                  onClick={() => onCreateMeeting({ personName: displayName })}
                 >
                   + spotkanie
                 </button>
@@ -662,6 +621,35 @@ function PersonDetailView({
           </section>
 
           <aside className="people-reference-side" aria-label="Skrót profilu osoby">
+            <section className="panel people-side-card people-management-card">
+              <div className="panel-header compact">
+                <h2>Zarządzanie</h2>
+              </div>
+              <div className="people-management-actions">
+                <button
+                  type="button"
+                  className="people-secondary-btn"
+                  onClick={() => {
+                    setEditedName(displayName);
+                    setIsEditingName(true);
+                    setActionStatus('');
+                  }}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                  Edytuj profil
+                </button>
+                <button type="button" className="people-secondary-btn" onClick={manageAiProfile}>
+                  <Sparkles size={16} aria-hidden="true" />
+                  Zarządzaj AI
+                </button>
+                <button type="button" className="people-danger-button" onClick={deletePerson}>
+                  <Trash2 size={16} aria-hidden="true" />
+                  Usuń osobę
+                </button>
+              </div>
+              {actionStatus ? <p className="people-action-status">{actionStatus}</p> : null}
+            </section>
+
             <section className="panel people-side-card">
               <div className="panel-header compact">
                 <h2>Skrót profilu</h2>
@@ -829,7 +817,7 @@ function PersonDetailView({
                     type="button"
                     className="people-add-task-btn"
                     onClick={() =>
-                      onCreateTask({ owner: person.name, title: `Zadanie dla ${person.name}` })
+                      onCreateTask({ owner: displayName, title: `Zadanie dla ${displayName}` })
                     }
                   >
                     + zadanie
@@ -923,6 +911,9 @@ export default function PeopleTab({
   externalSelectedPersonId = '',
   onPersonSelectionHandled,
   onAddPerson,
+  onRenamePerson,
+  onDeletePerson,
+  onAnalyzePersonProfile,
 }: PeopleTabProps) {
   const [query, setQuery] = useState('');
   const [activeView, setActiveView] = useState<'all' | 'assigned' | 'observed' | 'recent'>('all');
@@ -932,7 +923,6 @@ export default function PeopleTab({
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState('');
   const [viewMode, setViewMode] = useState<'directory' | 'detail'>('directory');
-  const [previewOpen, setPreviewOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newPersonDraft, setNewPersonDraft] = useState('');
 
@@ -976,7 +966,6 @@ export default function PeopleTab({
     if (matchingPerson) {
       setSelectedPersonId(matchingPerson.id);
       setViewMode('detail');
-      setPreviewOpen(true);
     }
     onPersonSelectionHandled?.();
   }, [externalSelectedPersonId, onPersonSelectionHandled, people]);
@@ -988,7 +977,11 @@ export default function PeopleTab({
   }, []);
 
   const selectedPerson =
-    filteredPeople.find((person) => person.id === selectedPersonId) || filteredPeople[0] || null;
+    viewMode === 'detail'
+      ? people.find((person) => person.id === selectedPersonId) || filteredPeople[0] || null
+      : filteredPeople.find((person) => person.id === selectedPersonId) ||
+        filteredPeople[0] ||
+        null;
   const selectedPersonIndex = people.findIndex((person) => person.id === selectedPerson?.id);
   const sidebarCounts = usingReferenceData
     ? { all: 12, assigned: 4, observed: 3, recent: 0 }
@@ -1024,17 +1017,10 @@ export default function PeopleTab({
     setQuery('');
   }
 
-  function selectPerson(personId: string) {
-    setSelectedPersonId(personId);
-    setViewMode('directory');
-    setPreviewOpen(true);
-  }
-
   function openPersonDetails(personId = selectedPerson?.id || '') {
     if (personId) {
       setSelectedPersonId(personId);
     }
-    setPreviewOpen(true);
     setViewMode('detail');
   }
 
@@ -1046,7 +1032,6 @@ export default function PeopleTab({
     if (addedPerson?.id) {
       setSelectedPersonId(addedPerson.id);
       setViewMode('detail');
-      setPreviewOpen(true);
     }
     setNewPersonDraft('');
     setAddModalOpen(false);
@@ -1062,13 +1047,16 @@ export default function PeopleTab({
         onOpenTask={onOpenTask}
         onCreateTask={onCreateTask}
         onCreateMeeting={onCreateMeeting}
+        onRenamePerson={onRenamePerson}
+        onDeletePerson={onDeletePerson}
+        onAnalyzePersonProfile={onAnalyzePersonProfile}
       />
     );
   }
 
   return (
     <div className="people-directory-page">
-      <div className={`people-directory-layout ${previewOpen ? '' : 'no-preview'}`}>
+      <div className="people-directory-layout no-preview">
         <aside className="people-directory-sidebar" aria-label="Widoki osób">
           <section>
             <h2>Widoki</h2>
@@ -1183,7 +1171,7 @@ export default function PeopleTab({
                   person={person}
                   index={people.findIndex((item) => item.id === person.id) || index}
                   selected={person.id === selectedPerson?.id}
-                  onSelect={() => selectPerson(person.id)}
+                  onSelect={() => openPersonDetails(person.id)}
                 />
               ))}
             </ul>
@@ -1191,15 +1179,6 @@ export default function PeopleTab({
             <EmptyPeopleState onAdd={() => setAddModalOpen(true)} />
           )}
         </main>
-
-        {previewOpen && selectedPerson ? (
-          <PersonPreviewPanel
-            person={selectedPerson}
-            index={selectedPersonIndex >= 0 ? selectedPersonIndex : 0}
-            onClose={() => setPreviewOpen(false)}
-            onOpenDetails={() => openPersonDetails(selectedPerson.id)}
-          />
-        ) : null}
       </div>
 
       <AddPersonModal

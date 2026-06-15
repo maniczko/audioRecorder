@@ -330,7 +330,7 @@ describe('Regression: Issue #0 - unified screenshot task form', () => {
 // Date: 2026-06-14
 // Bug: The person field appended a selected person after the existing
 //      "Nieprzypisane" token, while the form kept values[0] as owner.
-// Fix: Treat the person field as single-select and use the newest value.
+// Fix: Treat the person field as a multi-select and keep owner as the first real assignee.
 // -----------------------------------------------------------------
 describe('Regression: Issue #0 - task assignee selection', () => {
   afterEach(() => {
@@ -353,13 +353,38 @@ describe('Regression: Issue #0 - task assignee selection', () => {
       />
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Wybierz osobę...'), {
+    fireEvent.change(screen.getByPlaceholderText('Wybierz osoby...'), {
       target: { value: 'iwo' },
     });
 
     expect(onDraftChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ owner: 'iwo', assignedTo: ['iwo'] }),
       { owner: 'iwo', assignedTo: ['iwo'] }
+    );
+  });
+
+  it('keeps multiple selected people and uses the first person as owner', () => {
+    const onDraftChange = vi.fn();
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{ title: 'Test' }}
+        peopleOptions={['iwo', 'Anna']}
+        onDraftChange={onDraftChange}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Wybierz osoby...'), {
+      target: { value: 'iwo' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Wybierz osoby...'), {
+      target: { value: 'Anna' },
+    });
+
+    expect(onDraftChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ owner: 'iwo', assignedTo: ['iwo', 'Anna'] }),
+      { owner: 'iwo', assignedTo: ['iwo', 'Anna'] }
     );
   });
 });
