@@ -432,10 +432,18 @@ export function parseTagInput(value) {
 }
 
 export function normalizeTaskPeopleList(value) {
-  if (typeof value === 'string') {
-    return uniqueStrings(value.split(/\r?\n|,/));
-  }
-  return uniqueStrings(value);
+  const source = typeof value === 'string' ? value.split(/\r?\n|,/) : safeArray(value);
+  const seen = new Set();
+  return source
+    .map((item) => normalizeWhitespace(item))
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (!key || key === 'nieprzypisane' || key === 'unassigned' || seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
 }
 
 export function normalizeTaskDependencies(value) {
@@ -1259,11 +1267,6 @@ export function buildTasksFromMeetings(
 ) {
   const normalizedColumns = normalizeColumns(columns);
 
-  const meetingTasks = safeArray(meetings)
-    .flatMap((meeting) => extractMeetingTasks(meeting, normalizedColumns))
-    .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser, normalizedColumns))
-    .filter((task) => !task.archived);
-
   const standaloneTasks = safeArray(manualTasks)
     .filter(isTaskRecord)
     .filter((task) =>
@@ -1272,7 +1275,7 @@ export function buildTasksFromMeetings(
     .map((task) => mergeTaskState(task, taskState?.[task.id], currentUser, normalizedColumns))
     .filter((task) => !task.archived);
 
-  return dedupeTasksById([...meetingTasks, ...standaloneTasks]).sort((left, right) => {
+  return dedupeTasksById(standaloneTasks).sort((left, right) => {
     const orderDelta = getTaskOrder(left) - getTaskOrder(right);
     if (orderDelta !== 0) {
       return orderDelta;

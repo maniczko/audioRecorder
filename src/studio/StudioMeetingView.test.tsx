@@ -379,6 +379,52 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Build: abcdef1/i)).toBeInTheDocument();
   });
 
+  test('Regression: empty transcript retry shows loading state', async () => {
+    const retryStoredRecording = vi.fn(() => new Promise(() => {}));
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{
+          id: 'rec-empty-loading',
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: 'empty',
+        }}
+        retryStoredRecording={retryStoredRecording}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Ponow transkrypcje/i })[0]);
+
+    const retryButtons = await screen.findAllByRole('button', {
+      name: /Ponawiam transkrypcje/i,
+    });
+    const retryButton = retryButtons[0];
+    expect(retryButton).toBeDisabled();
+    expect(retryButton).toHaveAttribute('aria-busy', 'true');
+  });
+
+  test('Regression: empty transcript retry shows error state', async () => {
+    const retryStoredRecording = vi.fn().mockRejectedValue(new Error('Retry failed'));
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{
+          id: 'rec-empty-error',
+          transcript: [],
+          duration: 60,
+          transcriptOutcome: 'empty',
+        }}
+        retryStoredRecording={retryStoredRecording}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Ponow transkrypcje/i })[0]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Retry failed');
+    expect(screen.getAllByRole('button', { name: /Ponow transkrypcje/i })[0]).not.toBeDisabled();
+  });
+
   test('shows summary fallback for empty transcript', () => {
     renderWithContext(
       <StudioMeetingView
@@ -1632,6 +1678,105 @@ describe('StudioMeetingView', () => {
     expect(
       screen.getByText(/Zamien ustalenia ze spotkania w konkretne zadania/i)
     ).toBeInTheDocument();
+  });
+
+  test('Regression: keeps meeting tasks tab manual-only without AI suggestions panel', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        selectedRecording={{
+          id: 'rec-with-transcript',
+          duration: 60,
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '0',
+              text: 'Prosze przygotowac follow-up po spotkaniu.',
+              timestamp: 0,
+              endTimestamp: 4,
+            },
+          ],
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Zadania/i }));
+
+    expect(screen.getByRole('button', { name: /\+ Dodaj zadanie/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('ai-task-suggestions')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Generuj sugestie/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sugestie zada/i)).not.toBeInTheDocument();
+  });
+
+  test('Regression: does not auto-create tasks from meeting analysis without user action', () => {
+    const onCreateTask = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        onCreateTask={onCreateTask}
+        selectedMeeting={{ id: 'meeting-auto-task', title: 'Manual tasks only' }}
+        selectedRecording={{ id: 'recording-auto-task', duration: 60, transcript: [] }}
+        studioAnalysis={{
+          summary: 'Spotkanie ma action items.',
+          decisions: [],
+          actionItems: ['Wyslac podsumowanie'],
+          tasks: [
+            {
+              title: 'Przygotowac follow-up',
+              description: 'Opis z analizy',
+              owner: 'Iwo',
+              priority: 'high',
+              tags: ['follow-up'],
+              sourceQuote: 'Ustalmy follow-up',
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(onCreateTask).not.toHaveBeenCalled();
+  });
+
+  test('Regression: creates a Studio task manually with multiple assignees', async () => {
+    const onCreateTask = vi.fn();
+
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        onCreateTask={onCreateTask}
+        selectedMeeting={{ id: 'meeting-manual-task', title: 'Manual task meeting' }}
+        selectedRecording={{ id: 'recording-manual-task', duration: 60, transcript: [] }}
+        peopleProfiles={[{ name: 'Iwo' }, { name: 'Marta' }]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Zadania/i }));
+    fireEvent.click(screen.getByRole('button', { name: /\+ Dodaj zadanie/i }));
+
+    fireEvent.change(await screen.findByLabelText(/Tytuł zadania/i), {
+      target: { value: 'Przygotowac follow-up' },
+    });
+
+    const personInput = screen.getByPlaceholderText('Wybierz osoby...');
+    fireEvent.focus(personInput);
+    fireEvent.change(personInput, { target: { value: 'Iw' } });
+    fireEvent.keyDown(personInput, { key: 'Enter' });
+    fireEvent.change(personInput, { target: { value: 'Mar' } });
+    fireEvent.keyDown(personInput, { key: 'Enter' });
+
+    const submitButtons = screen.getAllByRole('button', { name: /^Dodaj zadanie$/i });
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => expect(onCreateTask).toHaveBeenCalledTimes(1));
+    expect(onCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Przygotowac follow-up',
+        assignedTo: ['Iwo', 'Marta'],
+        owner: 'Iwo',
+        meetingId: 'recording-manual-task',
+      })
+    );
   });
 
   test('renders detailed feedback cards and category scores', () => {

@@ -123,12 +123,12 @@ export default function useGoogleIntegrations({
 
     let active = true;
 
-    renderGoogleSignInButton(googleButtonNode, (profile) => {
+    renderGoogleSignInButton(googleButtonNode, (profile, response) => {
       if (!active) {
         return;
       }
 
-      onGoogleProfile(profile);
+      onGoogleProfile({ ...profile, idToken: response?.credential || '' });
     }).catch((error) => {
       console.error('Google sign-in render failed.', error);
       if (active) {

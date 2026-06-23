@@ -36,7 +36,9 @@ function persistSessionSnapshot(session: WorkspaceSession | null) {
   return syncLegacySessionFromWorkspaceSession(session);
 }
 
-export function isWorkspaceSessionUsable(session: WorkspaceSession | null) {
+export function isWorkspaceSessionUsable(
+  session: WorkspaceSession | null
+): session is WorkspaceSession {
   return Boolean(session?.userId) && (APP_DATA_PROVIDER !== 'remote' || Boolean(session?.token));
 }
 

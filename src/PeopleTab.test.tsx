@@ -195,6 +195,25 @@ describe('PeopleTab directory view', () => {
     confirmSpy.mockRestore();
   });
 
+  test('Regression: delete person failure keeps details open and shows error state', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const onDeletePerson = vi.fn(() => {
+      throw new Error('delete failed');
+    });
+
+    render(<PeopleTab {...defaultProps} onDeletePerson={onDeletePerson} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /Iwo/i }));
+    await userEvent.click(screen.getByRole('button', { name: /Usuń osobę/i }));
+
+    expect(onDeletePerson).toHaveBeenCalledWith('person_iwo');
+    expect(screen.getByRole('heading', { name: 'Iwo' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/Nie udało się usunąć osoby/i);
+    expect(screen.queryByRole('heading', { name: 'Osoby' })).not.toBeInTheDocument();
+
+    confirmSpy.mockRestore();
+  });
+
   test('opens add person modal from the directory action', async () => {
     render(<PeopleTab {...defaultProps} />);
 

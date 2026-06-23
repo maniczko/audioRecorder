@@ -33,6 +33,18 @@ describe('RecordingPipelineStatus', () => {
     expect(screen.getByText('Transkrypcja gotowa')).toBeInTheDocument();
   });
 
+  test('renders status chip for empty transcript', () => {
+    const { container } = render(<RecordingPipelineStatus status="empty" />);
+    expect(screen.getByText('Brak mowy')).toBeInTheDocument();
+    expect(container.querySelector('.status-chip')).toHaveClass('empty');
+  });
+
+  test('renders status chip for no audio', () => {
+    const { container } = render(<RecordingPipelineStatus status="no_audio" />);
+    expect(screen.getByText('Brak audio')).toBeInTheDocument();
+    expect(container.querySelector('.status-chip')).toHaveClass('empty');
+  });
+
   test('renders status chip for failed', () => {
     render(<RecordingPipelineStatus status="failed" />);
     expect(screen.getByText('Błąd przetwarzania')).toBeInTheDocument();
@@ -178,6 +190,21 @@ describe('RecordingPipelineStatus', () => {
     expect(btn).toBeNull();
   });
 
+  test('renders custom retry action for in-progress status when explicitly allowed', () => {
+    const onRetry = vi.fn();
+    render(
+      <RecordingPipelineStatus
+        status="processing"
+        onRetry={onRetry}
+        retryLabel="Odswiez status"
+        allowInProgressRetry
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Odswiez status/ }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
   test('calls onRetry when retry button is clicked', () => {
     const onRetry = vi.fn();
     render(<RecordingPipelineStatus status="failed" errorMessage="Error" onRetry={onRetry} />);
@@ -222,7 +249,7 @@ describe('RecordingPipelineStatus', () => {
       <RecordingPipelineStatus status="processing" progressMessage="x" />
     );
     const meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toHaveAttribute('aria-label', 'Postep przetwarzania nagrania');
+    expect(meter).toHaveAttribute('aria-label', 'Postęp przetwarzania nagrania');
   });
 
   test('shows spinner for in-progress statuses', () => {

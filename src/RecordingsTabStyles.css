@@ -251,6 +251,11 @@
   font-size: 0.8rem;
 }
 
+.recordings-diagnostics-error {
+  color: #b42318;
+  font-weight: 600;
+}
+
 .recordings-library-header {
   gap: 16px;
 }
@@ -1332,10 +1337,26 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   color: #067766;
 }
 
-:root[data-theme='premium-light'] .recordings-status-chip.analysis {
+:root[data-theme='premium-light'] .recordings-status-chip.uploading,
+:root[data-theme='premium-light'] .recordings-status-chip.uploaded,
+:root[data-theme='premium-light'] .recordings-status-chip.processing {
   border-color: rgba(245, 158, 11, 0.24);
   background: rgba(255, 247, 237, 0.92);
   color: #c66512;
+}
+
+:root[data-theme='premium-light'] .recordings-status-chip.empty,
+:root[data-theme='premium-light'] .recordings-ai-chip.empty {
+  border-color: rgba(86, 99, 112, 0.14);
+  background: rgba(247, 248, 248, 0.92);
+  color: #68737c;
+}
+
+:root[data-theme='premium-light'] .recordings-status-chip.failed,
+:root[data-theme='premium-light'] .recordings-ai-chip.failed {
+  border-color: rgba(220, 38, 38, 0.2);
+  background: rgba(254, 242, 242, 0.94);
+  color: #b42318;
 }
 
 :root[data-theme='premium-light'] .recordings-ai-chip.waiting {

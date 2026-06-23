@@ -85,6 +85,58 @@ describe('TagInput', () => {
     expect(onChange).toHaveBeenCalledWith(['backend']);
   });
 
+  it('removes a selected chip without clearing the remaining values', () => {
+    const onChange = vi.fn();
+    const props = createProps({ tags: ['Iwo', 'Anna', 'Marta'], onChange, type: 'person' });
+    render(<TagInput {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Usun Anna/i }));
+
+    expect(onChange).toHaveBeenCalledWith(['Iwo', 'Marta']);
+  });
+
+  it('supports keyboard multi-select for people suggestions', () => {
+    const onChangeFirst = vi.fn();
+    const { rerender } = render(
+      <TagInput
+        {...createProps({
+          type: 'person',
+          suggestions: ['Iwo', 'Anna', 'Marta'],
+          tags: [],
+          onChange: onChangeFirst,
+          placeholder: 'Wybierz osoby...',
+        })}
+      />
+    );
+
+    const input = screen.getByRole('textbox');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'iw' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onChangeFirst).toHaveBeenCalledWith(['Iwo']);
+
+    const onChangeSecond = vi.fn();
+    rerender(
+      <TagInput
+        {...createProps({
+          type: 'person',
+          suggestions: ['Iwo', 'Anna', 'Marta'],
+          tags: ['Iwo'],
+          onChange: onChangeSecond,
+          placeholder: 'Wybierz osoby...',
+        })}
+      />
+    );
+
+    const nextInput = screen.getByRole('textbox');
+    fireEvent.focus(nextInput);
+    fireEvent.change(nextInput, { target: { value: 'an' } });
+    fireEvent.keyDown(nextInput, { key: 'Enter' });
+
+    expect(onChangeSecond).toHaveBeenCalledWith(['Iwo', 'Anna']);
+  });
+
   it('uses addCustomTaskPerson for person mode', () => {
     const onChange = vi.fn();
     const props = createProps({

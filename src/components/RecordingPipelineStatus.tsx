@@ -10,12 +10,16 @@ interface RecordingPipelineStatusProps {
   progressPercent?: number;
   stageLabel?: string;
   onRetry?: () => void;
+  retryLabel?: string;
+  allowInProgressRetry?: boolean;
   className?: string;
-  /** ISO timestamp when processing started — shows elapsed time during processing */
+  /** ISO timestamp when processing started - shows elapsed time during processing */
   processingStartedAt?: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  no_audio: 'Brak audio',
+  empty: 'Brak mowy',
   uploading: 'Wysyłanie...',
   queued: 'W kolejce',
   processing: 'Przetwarzanie...',
@@ -33,13 +37,17 @@ export function RecordingPipelineStatus({
   progressPercent = 0,
   stageLabel = '',
   onRetry,
+  retryLabel = 'Spróbuj ponownie',
+  allowInProgressRetry = false,
   className = '',
   processingStartedAt,
 }: RecordingPipelineStatusProps) {
   const isFailed = status === 'failed' || status === 'failed_permanent';
+  const isEmpty = status === 'empty' || status === 'no_audio';
   const inProgress = ['uploading', 'queued', 'processing', 'diarization'].includes(status);
   const isDone = status === 'done' || status === 'review';
-  const retryHandler = status === 'failed' ? onRetry : undefined;
+  const retryHandler =
+    status === 'failed' || (allowInProgressRetry && inProgress) ? onRetry : undefined;
 
   const label = STATUS_LABELS[status] || STATUS_LABELS.queued;
 
@@ -48,7 +56,7 @@ export function RecordingPipelineStatus({
       <span
         className={`status-chip status-chip-sm ${inProgress ? 'processing' : ''} ${
           isDone ? 'done' : ''
-        } ${isFailed ? 'failed' : ''}`}
+        } ${isFailed ? 'failed' : ''} ${isEmpty ? 'empty' : ''}`}
       >
         {inProgress && <span className="status-spinner" />}
         {label}
@@ -67,7 +75,7 @@ export function RecordingPipelineStatus({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.max(0, Math.min(100, Math.round(progressPercent)))}
-            aria-label="Postep przetwarzania nagrania"
+            aria-label="Postęp przetwarzania nagrania"
           >
             <ProgressBar value={progressPercent} animated={false} />
           </div>
@@ -82,6 +90,33 @@ export function RecordingPipelineStatus({
           )}
         </div>
       )}
+
+      {retryHandler && inProgress ? (
+        <button
+          type="button"
+          className="pipeline-retry-btn pipeline-retry-btn-inline"
+          onClick={(e) => {
+            e.stopPropagation();
+            retryHandler();
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          {retryLabel}
+        </button>
+      ) : null}
 
       {isFailed && (
         <div className="pipeline-error-box">
@@ -127,7 +162,7 @@ export function RecordingPipelineStatus({
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
               </svg>
-              Spróbuj ponownie
+              {retryLabel}
             </button>
           )}
         </div>

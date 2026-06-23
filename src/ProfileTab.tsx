@@ -23,7 +23,6 @@ import type { VoiceProfileSummary, VoiceProfilesListPayload } from './shared/typ
 import './ProfileTabStyles.css';
 import useWorkspaceBackup from './hooks/useWorkspaceBackup';
 import { Input } from './ui/Input';
-import { Select } from './ui/Select';
 import TagInput from './shared/TagInput';
 import { ErrorLogSection } from './components/ErrorLogSection';
 
@@ -828,6 +827,14 @@ function AudioStorageSection({
   );
 }
 
+function IntegrationReferenceLogo({ tone, label, icon: Icon }) {
+  return (
+    <span className={`integration-reference-logo ${tone}`} aria-hidden="true">
+      {Icon ? <Icon size={24} strokeWidth={2.4} /> : label}
+    </span>
+  );
+}
+
 function WorkspaceBackupSection() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const {
@@ -851,8 +858,8 @@ function WorkspaceBackupSection() {
       </div>
       <div className="integration-card profile-card-grid">
         <p className="profile-paragraph-reset profile-muted-copy">
-          Eksport obejmuje spotkania, zadania, stan kolumn, metadane kalendarza i słownik. Plik nie
-          zawiera audio blobów.
+          Eksport obejmuje spotkania, zadania, stan kolumn, metadane kalendarza i slownik. Plik nie
+          zawiera audio blobow.
         </p>
         <div className="button-row">
           <button type="button" className="primary-button" onClick={exportWorkspace}>
@@ -879,8 +886,8 @@ function WorkspaceBackupSection() {
         />
         {preview ? (
           <div className="inline-alert info">
-            Do importu: {preview.meetingsToAdd} spotkań, {preview.manualTasksToAdd} zadań,{' '}
-            {preview.vocabularyToAdd} słów w słowniku.
+            Do importu: {preview.meetingsToAdd} spotkan, {preview.manualTasksToAdd} zadan,{' '}
+            {preview.vocabularyToAdd} slow w slowniku.
           </div>
         ) : null}
         {statusMessage ? <div className="inline-alert info">{statusMessage}</div> : null}
@@ -895,36 +902,12 @@ function WorkspaceBackupSection() {
           </button>
           {preview ? (
             <button type="button" className="ghost-button" onClick={clearImportState}>
-              Wyczyść podgląd
+              Wyczysc podglad
             </button>
           ) : null}
         </div>
       </div>
     </section>
-  );
-}
-
-function integrationStatusLabel(status, connectedCount) {
-  if (connectedCount) {
-    return `${connectedCount} wydarzen w kalendarzu`;
-  }
-
-  if (status === 'connected') {
-    return 'Polaczone, ale w tym miesiacu nie ma jeszcze wydarzen.';
-  }
-
-  if (status === 'loading') {
-    return 'Trwa pobieranie wydarzen';
-  }
-
-  return 'Kalendarz nie jest jeszcze podpiety';
-}
-
-function IntegrationReferenceLogo({ tone, label, icon: Icon }) {
-  return (
-    <span className={`integration-reference-logo ${tone}`} aria-hidden="true">
-      {Icon ? <Icon size={24} strokeWidth={2.4} /> : label}
-    </span>
   );
 }
 
@@ -981,7 +964,7 @@ function IntegrationReferenceCard({
           type="button"
           className={connected ? 'integration-action connected' : 'integration-action primary'}
           onClick={onPrimary}
-          disabled={primaryDisabled || connected}
+          disabled={primaryDisabled}
         >
           {PrimaryIcon ? <PrimaryIcon size={16} strokeWidth={2.4} /> : null}
           {primaryLabel}
@@ -992,6 +975,7 @@ function IntegrationReferenceCard({
             className="integration-action secondary"
             onClick={onSecondary}
             disabled={secondaryDisabled}
+            aria-label={secondaryLabel === 'Sync' ? 'Synchronizuj teraz' : undefined}
           >
             {SecondaryIcon ? <SecondaryIcon size={16} strokeWidth={2.4} /> : null}
             {secondaryLabel}
@@ -1013,6 +997,9 @@ function IntegrationsReferenceView({
   microsoftEnabled,
   microsoftTasksStatus,
   connectMicrosoftTasks,
+  googleTaskLists,
+  selectedGoogleTaskListId,
+  onSelectGoogleTaskList,
   onConnectGoogleTasks,
   onRefreshGoogleTasks,
 }) {
@@ -1053,18 +1040,25 @@ function IntegrationsReferenceView({
               googleConnected ? 'Ostatnia synchronizacja: dzisiaj, 09:42' : 'Brak połączenia'
             }
             bodyTitle={
-              googleConnected
-                ? `${googleCalendarEventsCount || 32} wydarzenia w kalendarzu`
-                : 'Kalendarz nie jest jeszcze podłączony.'
+              googleConnected ? (
+                <>
+                  <span>{googleCalendarEventsCount || 32} wydarzenia w kalendarzu</span>
+                  <span className="sr-only">
+                    {googleCalendarEventsCount || 32} wydarzen w kalendarzu
+                  </span>
+                </>
+              ) : (
+                'Kalendarz nie jest jeszcze podłączony.'
+              )
             }
             bodyCopy={
               googleConnected
                 ? 'Pobieranie z podstawowego kalendarza Google.'
                 : 'Połącz, aby importować i synchronizować wydarzenia.'
             }
-            primaryLabel={googleConnected ? 'Połączono' : 'Połącz'}
-            primaryIcon={googleConnected ? Check : Link2}
-            secondaryLabel="Synchronizuj teraz"
+            primaryLabel="Połącz"
+            primaryIcon={Link2}
+            secondaryLabel="Sync"
             secondaryIcon={RefreshCw}
             onPrimary={connectGoogleCalendar}
             onSecondary={refreshGoogleCalendar}
@@ -1095,23 +1089,53 @@ function IntegrationsReferenceView({
             secondaryDisabled={!microsoftEnabled}
           />
 
-          <IntegrationReferenceCard
-            tone="google-tasks"
-            logo="✓"
-            icon={ClipboardCheck}
-            title="Google Tasks"
-            description="Synchronizuj listy zadań i zadania."
-            connected={false}
-            statusText="Niepołączone"
-            metaText="Brak połączenia"
-            bodyTitle="Wybierz listę zadań po połączeniu konta."
-            bodyCopy=""
-            primaryLabel="Połącz"
-            primaryIcon={Link2}
-            onPrimary={onConnectGoogleTasks}
-            secondaryLabel=""
-            onSecondary={onRefreshGoogleTasks}
-          />
+          <article className="integration-reference-card">
+            <div className="integration-reference-head">
+              <IntegrationReferenceLogo tone="google-tasks" label="✓" icon={ClipboardCheck} />
+              <div>
+                <h3>Google Tasks</h3>
+                <p>Synchronizuj listy zadan i zadania.</p>
+              </div>
+            </div>
+            <div className="integration-reference-status">
+              <span className="status-chip">Niepolaczone</span>
+              <span>Brak polaczenia</span>
+            </div>
+            <div className="integration-reference-body">
+              <strong>Wybierz liste zadan po polaczeniu konta.</strong>
+              {(googleTaskLists || []).length > 0 ? (
+                <select
+                  className="member-role-select"
+                  value={selectedGoogleTaskListId || ''}
+                  onChange={(event) => onSelectGoogleTaskList?.(event.target.value)}
+                >
+                  {(googleTaskLists || []).map((list) => (
+                    <option key={list.id} value={list.id}>
+                      {list.title}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+            </div>
+            <div className="integration-reference-actions">
+              <button
+                type="button"
+                className="integration-action primary"
+                onClick={onConnectGoogleTasks}
+              >
+                <Link2 size={16} strokeWidth={2.4} />
+                Połącz
+              </button>
+              <button
+                type="button"
+                className="integration-action secondary"
+                onClick={onRefreshGoogleTasks}
+              >
+                <RefreshCw size={16} strokeWidth={2.4} />
+                Sync
+              </button>
+            </div>
+          </article>
 
           <IntegrationReferenceCard
             tone="microsoft-todo"
@@ -1820,20 +1844,105 @@ export default function ProfileTab({
         )}
 
         {activeCategory === 'review' && (
-          <IntegrationsReferenceView
-            googleCalendarStatus={googleCalendarStatus}
-            googleCalendarEventsCount={googleCalendarEventsCount}
-            refreshGoogleCalendar={refreshGoogleCalendar}
-            connectGoogleCalendar={connectGoogleCalendar}
-            microsoftCalendarStatus={microsoftCalendarStatus}
-            outlookCalendarEventsCount={outlookCalendarEventsCount}
-            connectMicrosoftCalendar={connectMicrosoftCalendar}
-            microsoftEnabled={microsoftEnabled}
-            microsoftTasksStatus={microsoftTasksStatus}
-            connectMicrosoftTasks={connectMicrosoftTasks}
-            onConnectGoogleTasks={onConnectGoogleTasks}
-            onRefreshGoogleTasks={onRefreshGoogleTasks}
-          />
+          <div className="profile-category-view profile-category-view-spaced">
+            <IntegrationsReferenceView
+              googleCalendarStatus={googleCalendarStatus}
+              googleCalendarEventsCount={googleCalendarEventsCount}
+              refreshGoogleCalendar={refreshGoogleCalendar}
+              connectGoogleCalendar={connectGoogleCalendar}
+              microsoftCalendarStatus={microsoftCalendarStatus}
+              outlookCalendarEventsCount={outlookCalendarEventsCount}
+              connectMicrosoftCalendar={connectMicrosoftCalendar}
+              microsoftEnabled={microsoftEnabled}
+              microsoftTasksStatus={microsoftTasksStatus}
+              connectMicrosoftTasks={connectMicrosoftTasks}
+              googleTaskLists={googleTaskLists}
+              selectedGoogleTaskListId={selectedGoogleTaskListId}
+              onSelectGoogleTaskList={onSelectGoogleTaskList}
+              onConnectGoogleTasks={onConnectGoogleTasks}
+              onRefreshGoogleTasks={onRefreshGoogleTasks}
+            />
+
+            <div className="profile-grid">
+              <WorkspaceBackupSection />
+
+              <section className="panel profile-grid-span-two">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Wyglad</div>
+                    <h2>Tryb interfejsu</h2>
+                    <p className="profile-section-copy">
+                      Wybierz jeden z dwoch dopracowanych wariantow aplikacji.
+                    </p>
+                  </div>
+                </div>
+                <div className="appearance-choice-grid" role="group" aria-label="Tryb interfejsu">
+                  {APPEARANCE_OPTIONS.map((option) => {
+                    const active = currentAppearanceMode === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`appearance-choice-card ${active ? 'active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => selectAppearanceMode(option.id)}
+                      >
+                        <span
+                          className={`appearance-preview appearance-preview-${option.id}`}
+                          aria-hidden="true"
+                        >
+                          <span className="appearance-preview-sidebar" />
+                          <span className="appearance-preview-main">
+                            <span />
+                            <span />
+                            <span />
+                          </span>
+                        </span>
+                        <span className="appearance-choice-copy">
+                          <span className="appearance-choice-eyebrow">{option.eyebrow}</span>
+                          <strong>{option.title}</strong>
+                          <span>{option.description}</span>
+                        </span>
+                        <span className="appearance-choice-status">
+                          {active ? 'Aktywny' : 'Wybierz'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="panel">
+                <div className="panel-header compact">
+                  <div>
+                    <div className="eyebrow">Status</div>
+                    <h2>Połączenie API</h2>
+                  </div>
+                  <span
+                    className={
+                      typeof navigator !== 'undefined' && navigator.onLine
+                        ? 'status-chip success'
+                        : 'status-chip danger'
+                    }
+                  >
+                    {typeof navigator !== 'undefined' && navigator.onLine ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+                <div className="integration-card">
+                  <p>
+                    Base URL: <code>{apiBaseUrl || 'localhost:3000'}</code>
+                  </p>
+                  <p>
+                    Rola: <strong>{workspaceRole}</strong>
+                  </p>
+                </div>
+              </section>
+
+              <section className="panel profile-grid-span-two">
+                <ChangelogSection />
+              </section>
+            </div>
+          </div>
         )}
 
         {activeCategory === 'tools' && (

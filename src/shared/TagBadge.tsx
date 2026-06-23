@@ -43,6 +43,7 @@ export default function TagBadge({
         <button
           type="button"
           className="tag-badge-remove"
+          aria-label={`Usun ${tag}`}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();

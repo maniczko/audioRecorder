@@ -176,5 +176,6 @@ export interface WorkspaceState {
   taskBoards: any;
   calendarMeta: any;
   vocabulary: string[];
+  retentionDays: number;
   updatedAt: string;
 }

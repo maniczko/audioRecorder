@@ -60,10 +60,11 @@ describe('server runtime startup', () => {
     const startPeriodicCleanup = vi.fn(() => cleanupTimer);
     const createShutdown = vi.fn(() => shutdown) as unknown as typeof createGracefulShutdown;
     const registerFatalHandlers = vi.fn() as unknown as typeof registerFatalProcessHandlers;
+    const db = {};
 
     const result = startVoiceLogServer({
       server,
-      db: {},
+      db,
       host: '127.0.0.1',
       port: 4000,
       uploadDir: '/tmp/uploads',
@@ -75,10 +76,10 @@ describe('server runtime startup', () => {
     });
 
     expect(server.listen).toHaveBeenCalledWith(4000, '127.0.0.1', expect.any(Function));
-    expect(startPeriodicCleanup).toHaveBeenCalledWith({ uploadDir: '/tmp/uploads', logger });
+    expect(startPeriodicCleanup).toHaveBeenCalledWith({ uploadDir: '/tmp/uploads', logger, db });
     expect(createShutdown).toHaveBeenCalledWith({
       server,
-      db: {},
+      db,
       cleanupTimer,
       logger,
       exit: expect.any(Function),

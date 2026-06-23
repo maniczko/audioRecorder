@@ -10,6 +10,7 @@ type ShutdownFunction = (signal: string, exitCode?: number) => Promise<void>;
 
 interface RuntimeDatabaseLike {
   shutdown?: () => Promise<void>;
+  cleanupExpiredRecordingsByRetention?: () => Promise<{ checked: number; deleted: number }>;
 }
 
 interface RuntimeProcessLike {
@@ -30,7 +31,11 @@ interface StartVoiceLogServerOptions {
   logger: LoggerLike;
   processLike?: RuntimeProcessLike;
   exit?: (code: number) => void;
-  startPeriodicCleanup?: (options: { uploadDir: string; logger: LoggerLike }) => TimerLike;
+  startPeriodicCleanup?: (options: {
+    uploadDir: string;
+    logger: LoggerLike;
+    db?: RuntimeDatabaseLike;
+  }) => TimerLike;
   createShutdown?: typeof createGracefulShutdown;
   registerFatalHandlers?: typeof registerFatalProcessHandlers;
   handleListenError?: typeof handleServerListenError;
@@ -70,7 +75,7 @@ export function startVoiceLogServer({
     logger.info(`VoiceLog API listening on http://${host}:${port} (test-ready architecture)`);
   });
 
-  const cleanupTimer = startPeriodicCleanup({ uploadDir, logger });
+  const cleanupTimer = startPeriodicCleanup({ uploadDir, logger, db });
   const shutdown = createShutdown({
     server,
     db,

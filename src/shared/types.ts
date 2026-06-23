@@ -344,5 +344,6 @@ export interface WorkspaceState {
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];
+  retentionDays: number;
   updatedAt?: string;
 }

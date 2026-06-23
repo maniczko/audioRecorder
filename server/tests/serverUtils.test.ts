@@ -80,9 +80,20 @@ describe('serverUtils', () => {
     });
   });
 
-  it('allows configured wildcard origins for direct Vercel-to-Railway media requests', () => {
+  it('rejects wildcard Vercel origins in production unless previews are explicitly enabled', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+
+    expect(
+      corsHeaders(
+        'https://voicelog-audiorecorder.vercel.app',
+        'https://*.vercel.app,http://localhost:3000'
+      )
+    ).toMatchObject({
+      'Access-Control-Allow-Origin': 'http://localhost:3000',
+    });
+
+    process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS = 'true';
 
     expect(
       corsHeaders(

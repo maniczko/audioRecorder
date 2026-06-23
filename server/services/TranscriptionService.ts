@@ -293,8 +293,12 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.getMediaAsset(recordingId);
   }
 
-  async deleteMediaAsset(recordingId: string, workspaceId: string) {
-    return await this.db.deleteMediaAsset(recordingId, workspaceId);
+  async deleteMediaAsset(
+    recordingId: string,
+    workspaceId: string,
+    options?: { actorUserId?: string }
+  ) {
+    return await this.db.deleteMediaAsset(recordingId, workspaceId, options);
   }
 
   async saveAudioQualityDiagnostics(recordingId: string, audioQuality: any) {

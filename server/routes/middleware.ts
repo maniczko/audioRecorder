@@ -1,5 +1,6 @@
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { checkRateLimit } from '../lib/serverUtils.ts';
+import { verifyProgressToken } from '../lib/progressTokens.ts';
 
 export type AppServices = {
   authService: any;
@@ -32,12 +33,27 @@ export function createMiddlewares(services: AppServices) {
   const authMiddleware = async (c: any, next: any) => {
     // Pass OPTIONS preflight requests through — cors middleware handles them.
     if (c.req.method === 'OPTIONS') {
-      await next();
-      return;
+      return await next();
     }
     const authHeader = c.req.header('Authorization') || '';
     const queryToken = String(c.req.query?.('token') || '').trim();
+    const progressToken = String(c.req.query?.('progressToken') || '').trim();
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+
+    if (!bearerToken && progressToken) {
+      const recordingId = String(c.req.param?.('recordingId') || '').trim();
+      const progressSession = verifyProgressToken(progressToken, recordingId);
+      if (!progressSession) {
+        return c.json({ message: 'Token postepu wygasl lub jest nieprawidlowy.' }, 401);
+      }
+      c.set('session', progressSession);
+      return await next();
+    }
+
+    if (!bearerToken && queryToken && String(process.env.NODE_ENV).toLowerCase() === 'production') {
+      return c.json({ message: 'Query token is disabled in production.' }, 401);
+    }
+
     const token = bearerToken || queryToken;
     if (!token) {
       return c.json({ message: 'Brak tokenu autoryzacyjnego.' }, 401);
@@ -47,7 +63,7 @@ export function createMiddlewares(services: AppServices) {
       return c.json({ message: 'Sesja wygasla lub jest nieprawidlowa.' }, 401);
     }
     c.set('session', session);
-    await next();
+    return await next();
   };
 
   const ensureWorkspaceAccess = async (c: any, workspaceId: string) => {

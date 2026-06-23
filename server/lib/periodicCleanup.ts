@@ -19,6 +19,9 @@ interface PeriodicCleanupOptions {
 interface StartPeriodicCleanupOptions {
   uploadDir: string;
   logger: LoggerLike;
+  db?: {
+    cleanupExpiredRecordingsByRetention?: () => Promise<{ checked: number; deleted: number }>;
+  };
   intervalMs?: number;
   setIntervalFn?: typeof setInterval;
 }
@@ -91,12 +94,27 @@ export function runPeriodicTempCleanup({
 export function startPeriodicTempCleanup({
   uploadDir,
   logger,
+  db,
   intervalMs = CLEANUP_INTERVAL_MS,
   setIntervalFn = setInterval,
 }: StartPeriodicCleanupOptions): TimerLike {
   const cleanupTimer = setIntervalFn(() => {
     try {
       runPeriodicTempCleanup({ uploadDir, logger });
+      if (typeof db?.cleanupExpiredRecordingsByRetention === 'function') {
+        void db
+          .cleanupExpiredRecordingsByRetention()
+          .then((result) => {
+            if (result.deleted > 0) {
+              logger.info(
+                `[Cleanup] Retention: deleted ${result.deleted}/${result.checked} expired recordings.`
+              );
+            }
+          })
+          .catch((error) => {
+            logger.warn('[Cleanup] Retention cleanup error:', error);
+          });
+      }
     } catch (error) {
       logger.warn('[Cleanup] Periodic cleanup error:', error);
     }

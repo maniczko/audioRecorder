@@ -75,6 +75,42 @@ describe('RecordingsTab', () => {
     expect(screen.getByText('Project Alpha')).toBeInTheDocument();
   });
 
+  test('Regression: shows the currently selected fresh recording before workspace sync catches up', () => {
+    const selectedMeeting = {
+      id: 'meeting_fresh_recording',
+      workspaceId: 'ws1',
+      title: 'Ad hoc 15 cze, 15:26',
+      startsAt: '2026-06-15T13:26:00.000Z',
+      updatedAt: '2026-06-15T13:26:08.000Z',
+      latestRecordingId: 'recording_fresh_1526',
+      recordings: [
+        {
+          id: 'recording_fresh_1526',
+          createdAt: '2026-06-15T13:26:08.000Z',
+          duration: 4,
+          pipelineStatus: 'done',
+          transcriptionStatus: 'done',
+          speakerCount: 1,
+          transcript: [{ text: 'Swieze nagranie widoczne od razu.' }],
+        },
+      ],
+    };
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={mockMeetings}
+          selectedMeeting={selectedMeeting}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getByText('Ad hoc 15 cze, 15:26')).toBeInTheDocument();
+    expect(screen.getByText(/Wyświetlanie 1-3 z\s+3/i)).toBeInTheDocument();
+    expect(screen.getByText('1 mówca')).toBeInTheDocument();
+  });
+
   test('renders screenshot-first recordings table controls', () => {
     render(
       <ToastProvider>
@@ -198,6 +234,75 @@ describe('RecordingsTab', () => {
     expect(screen.getByText(/Chunki z tekstem: 0\/2/i)).toBeInTheDocument();
   });
 
+  test('Regression: retry action shows loading state for empty transcript', async () => {
+    const selectedMeeting = {
+      ...mockMeetings[0],
+      latestRecordingId: 'rec_retry_loading',
+      recordings: [
+        {
+          id: 'rec_retry_loading',
+          createdAt: '2026-03-18T10:00:00Z',
+          duration: 2700,
+          speakerCount: 2,
+          transcript: [],
+          transcriptOutcome: 'empty',
+        },
+      ],
+    };
+    const retryStoredRecording = vi.fn(() => new Promise(() => {}));
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          selectedMeeting={selectedMeeting}
+          retryStoredRecording={retryStoredRecording}
+        />
+      </ToastProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Ponow transkrypcje/i }));
+
+    const retryButton = await screen.findByRole('button', {
+      name: /Ponawiam transkrypcje/i,
+    });
+    expect(retryButton).toBeDisabled();
+    expect(retryButton).toHaveAttribute('aria-busy', 'true');
+  });
+
+  test('Regression: retry action shows error state for empty transcript', async () => {
+    const selectedMeeting = {
+      ...mockMeetings[0],
+      latestRecordingId: 'rec_retry_error',
+      recordings: [
+        {
+          id: 'rec_retry_error',
+          createdAt: '2026-03-18T10:00:00Z',
+          duration: 2700,
+          speakerCount: 2,
+          transcript: [],
+          transcriptOutcome: 'empty',
+        },
+      ],
+    };
+    const retryStoredRecording = vi.fn().mockRejectedValue(new Error('Retry offline'));
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          selectedMeeting={selectedMeeting}
+          retryStoredRecording={retryStoredRecording}
+        />
+      </ToastProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Ponow transkrypcje/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Retry offline');
+    expect(screen.getByRole('button', { name: /Ponow transkrypcje/i })).not.toBeDisabled();
+  });
+
   test('Regression: pending import is visible in the main list before meetings store catches up', () => {
     render(
       <ToastProvider>
@@ -239,8 +344,268 @@ describe('RecordingsTab', () => {
     expect(titleCell).toBeInTheDocument();
     const importRow = titleCell.closest('tr');
     expect(importRow).not.toBeNull();
-    expect(within(importRow as HTMLElement).getByText('Do analizy')).toBeInTheDocument();
+    expect(within(importRow as HTMLElement).getByText('Wgrywanie')).toBeInTheDocument();
     expect(within(importRow as HTMLElement).getByText('Oczekuje')).toBeInTheDocument();
+  });
+
+  test('Regression: backend recording replaces matching optimistic queue row without duplication', async () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[
+            {
+              id: 'meeting_import_synced',
+              workspaceId: 'ws1',
+              title: 'Import: Sync complete',
+              startsAt: '2026-06-15T13:26:00.000Z',
+              durationMinutes: 1,
+              latestRecordingId: 'rec_import_synced',
+              recordings: [
+                {
+                  id: 'rec_import_synced',
+                  createdAt: '2026-06-15T13:26:04.000Z',
+                  duration: 4,
+                  uploaded: true,
+                  pipelineStatus: 'done',
+                  transcriptionStatus: 'completed',
+                  transcriptOutcome: 'normal',
+                  transcript: [{ text: 'Gotowy transcript.' }],
+                },
+              ],
+            },
+          ]}
+          recordingQueue={[
+            {
+              id: 'rec_import_synced',
+              recordingId: 'rec_import_synced',
+              meetingId: 'meeting_import_synced',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import: Sync complete',
+              meetingSnapshot: {
+                id: 'meeting_import_synced',
+                workspaceId: 'ws1',
+                title: 'Import: Sync complete',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 4,
+              status: 'queued',
+              uploaded: true,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: '',
+              createdAt: '2026-06-15T13:26:00.000Z',
+              updatedAt: '2026-06-15T13:26:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByText('Import: Sync complete')).toHaveLength(1);
+    const syncedRow = within(table).getByText('Import: Sync complete').closest('tr');
+    expect(syncedRow).not.toBeNull();
+    expect(within(syncedRow as HTMLElement).getByText('Gotowe')).toBeInTheDocument();
+    expect(within(syncedRow as HTMLElement).queryByText('Wgrane')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/Szukaj nagrania/i), {
+      target: { value: 'Sync complete' },
+    });
+
+    await waitFor(() => {
+      expect(within(screen.getByRole('table')).getAllByText('Import: Sync complete')).toHaveLength(
+        1
+      );
+    });
+    expect(within(screen.getByRole('table')).getByText('Gotowe')).toBeInTheDocument();
+  });
+
+  test('Regression: local queue recordings stay visible with actionable processing statuses', () => {
+    const queueBase = {
+      workspaceId: 'ws1',
+      mimeType: 'audio/webm',
+      rawSegments: [],
+      duration: 4,
+      attempts: 0,
+      retryCount: 0,
+      backoffUntil: 0,
+      lastErrorMessage: '',
+      errorMessage: '',
+      createdAt: '2026-06-15T13:26:00.000Z',
+      updatedAt: '2026-06-15T13:26:00.000Z',
+    };
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[]}
+          recordingQueue={[
+            {
+              ...queueBase,
+              id: 'rec_uploading',
+              recordingId: 'rec_uploading',
+              meetingId: 'meeting_uploading',
+              meetingTitle: 'Ad hoc uploading',
+              meetingSnapshot: {
+                id: 'meeting_uploading',
+                workspaceId: 'ws1',
+                title: 'Ad hoc uploading',
+              },
+              status: 'queued',
+              uploaded: false,
+            },
+            {
+              ...queueBase,
+              id: 'rec_uploaded',
+              recordingId: 'rec_uploaded',
+              meetingId: 'meeting_uploaded',
+              meetingTitle: 'Ad hoc uploaded',
+              meetingSnapshot: {
+                id: 'meeting_uploaded',
+                workspaceId: 'ws1',
+                title: 'Ad hoc uploaded',
+              },
+              status: 'queued',
+              uploaded: true,
+            },
+            {
+              ...queueBase,
+              id: 'rec_processing',
+              recordingId: 'rec_processing',
+              meetingId: 'meeting_processing',
+              meetingTitle: 'Ad hoc processing',
+              meetingSnapshot: {
+                id: 'meeting_processing',
+                workspaceId: 'ws1',
+                title: 'Ad hoc processing',
+              },
+              status: 'processing',
+              uploaded: true,
+            },
+            {
+              ...queueBase,
+              id: 'rec_failed',
+              recordingId: 'rec_failed',
+              meetingId: 'meeting_failed',
+              meetingTitle: 'Ad hoc failed',
+              meetingSnapshot: { id: 'meeting_failed', workspaceId: 'ws1', title: 'Ad hoc failed' },
+              status: 'failed_permanent',
+              uploaded: true,
+              errorMessage: 'Transkrypcja nie powiodla sie.',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    const table = screen.getByRole('table');
+    const uploadingRow = within(table).getByText('Ad hoc uploading').closest('tr');
+    const uploadedRow = within(table).getByText('Ad hoc uploaded').closest('tr');
+    const processingRow = within(table).getByText('Ad hoc processing').closest('tr');
+    const failedRow = within(table).getByText('Ad hoc failed').closest('tr');
+
+    expect(uploadingRow).not.toBeNull();
+    expect(uploadedRow).not.toBeNull();
+    expect(processingRow).not.toBeNull();
+    expect(failedRow).not.toBeNull();
+    expect(within(uploadingRow as HTMLElement).getByText('Wgrywanie')).toBeInTheDocument();
+    expect(within(uploadedRow as HTMLElement).getByText('Wgrane')).toBeInTheDocument();
+    expect(within(processingRow as HTMLElement).getByText('Transkrypcja')).toBeInTheDocument();
+    expect(within(failedRow as HTMLElement).getAllByText('Błąd').length).toBeGreaterThan(0);
+  });
+
+  test('Regression: stale queued import exposes refresh action and retries the queue item', () => {
+    const retryRecordingQueueItem = vi.fn();
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[]}
+          retryRecordingQueueItem={retryRecordingQueueItem}
+          recordingQueue={[
+            {
+              id: 'rec_stale_queued',
+              recordingId: 'rec_stale_queued',
+              meetingId: 'meeting_stale_queued',
+              workspaceId: 'ws1',
+              meetingTitle: 'Ad hoc stale queued',
+              meetingSnapshot: {
+                id: 'meeting_stale_queued',
+                workspaceId: 'ws1',
+                title: 'Ad hoc stale queued',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 4,
+              status: 'queued',
+              uploaded: false,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: '',
+              createdAt: '2026-06-15T13:26:00.000Z',
+              updatedAt: '2026-06-15T13:26:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getAllByText('Ad hoc stale queued').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Status nie zmienil sie od kilku minut/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Od.wie. status/i }));
+    expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec_stale_queued');
+  });
+
+  test('Regression: failed import exposes retry action and retries the queue item', () => {
+    const retryRecordingQueueItem = vi.fn();
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[]}
+          retryRecordingQueueItem={retryRecordingQueueItem}
+          recordingQueue={[
+            {
+              id: 'rec_failed_retry',
+              recordingId: 'rec_failed_retry',
+              meetingId: 'meeting_failed_retry',
+              workspaceId: 'ws1',
+              meetingTitle: 'Ad hoc failed retry',
+              meetingSnapshot: {
+                id: 'meeting_failed_retry',
+                workspaceId: 'ws1',
+                title: 'Ad hoc failed retry',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 4,
+              status: 'failed',
+              uploaded: false,
+              attempts: 1,
+              retryCount: 1,
+              backoffUntil: 0,
+              lastErrorMessage: 'Network timeout',
+              errorMessage: 'Network timeout',
+              createdAt: '2026-06-15T13:26:00.000Z',
+              updatedAt: '2026-06-15T13:27:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getAllByText('Ad hoc failed retry').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Spr/i }));
+    expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec_failed_retry');
   });
 
   test('Regression: stale remote import is permanent and does not expose retry', () => {

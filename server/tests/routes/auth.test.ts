@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import crypto from 'node:crypto';
 import { createApp } from '../../app.ts';
+import { resetGoogleCertCacheForTests } from '../../lib/googleIdToken.ts';
 
 describe('Auth Routes', () => {
   let app: ReturnType<typeof createApp>;
@@ -22,9 +24,40 @@ describe('Auth Routes', () => {
       authService: mockAuthService,
       workspaceService: mockWorkspaceService,
       transcriptionService: {},
-      config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      config: {
+        allowedOrigins: 'http://localhost:3000',
+        trustProxy: false,
+        uploadDir: '/tmp',
+        googleClientId: 'google-client-id.test',
+      },
     });
+    resetGoogleCertCacheForTests();
   });
+
+  function base64Url(input: Buffer | string) {
+    return Buffer.from(input).toString('base64url');
+  }
+
+  function createGoogleIdToken(payloadOverrides: Record<string, unknown> = {}) {
+    const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const header = { alg: 'RS256', typ: 'JWT', kid: 'test-kid' };
+    const payload = {
+      iss: 'https://accounts.google.com',
+      aud: 'google-client-id.test',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      email_verified: true,
+      email: 'google@example.com',
+      sub: 'google-sub-123',
+      name: 'Google User',
+      ...payloadOverrides,
+    };
+    const signingInput = `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}`;
+    const signature = crypto.sign('RSA-SHA256', Buffer.from(signingInput), privateKey);
+    return {
+      idToken: `${signingInput}.${signature.toString('base64url')}`,
+      publicKeyPem: publicKey.export({ type: 'spki', format: 'pem' }).toString(),
+    };
+  }
 
   const createRefreshAwareAuthApp = () => {
     const refreshMiddlewares = {
@@ -313,28 +346,72 @@ describe('Auth Routes', () => {
     expect(mockAuthService.loginUser).toHaveBeenCalledTimes(2);
   });
 
-  it('POST /auth/google - returns 401 on token mismatch', async () => {
-    mockAuthService.upsertGoogleUser.mockRejectedValue(
-      Object.assign(new Error('Token mismatch.'), { statusCode: 401 })
-    );
+  it('POST /auth/google - rejects missing idToken', async () => {
+    const res = await app.request('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
 
+    expect(res.status).toBe(400);
+    expect(mockAuthService.upsertGoogleUser).not.toHaveBeenCalled();
+  });
+
+  it('POST /auth/google - rejects fake idToken', async () => {
+    const res = await app.request('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: 'not.a.jwt' }),
+    });
+
+    expect(res.status).toBe(401);
+    expect(mockAuthService.upsertGoogleUser).not.toHaveBeenCalled();
+  });
+
+  it('POST /auth/google - rejects email/sub payload without idToken', async () => {
     const res = await app.request('/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'google@example.com',
-        sub: 'google-mismatch-sub',
-        name: 'Google User',
+        email: 'attacker@example.com',
+        sub: 'client-controlled-sub',
+        name: 'Client Controlled',
       }),
     });
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
+    expect(mockAuthService.upsertGoogleUser).not.toHaveBeenCalled();
+  });
+
+  it('POST /auth/google - verifies mocked Google idToken before creating session', async () => {
+    const { idToken, publicKeyPem } = createGoogleIdToken();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ 'test-kid': publicKeyPem }),
+      })
+    );
+    mockAuthService.upsertGoogleUser.mockResolvedValue({
+      token: 'google-session-token',
+      user: { id: 'u-google', email: 'google@example.com' },
+      workspaceId: 'ws-google',
+    });
+
+    const res = await app.request('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+
+    expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data).toEqual({ message: 'Token mismatch.' });
+    expect(data.token).toBe('google-session-token');
     expect(mockAuthService.upsertGoogleUser).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'google@example.com',
-        sub: 'google-mismatch-sub',
+        sub: 'google-sub-123',
+        name: 'Google User',
       })
     );
   });

@@ -235,4 +235,33 @@ describe('periodic temp cleanup', () => {
     expect(setIntervalFn).toHaveBeenCalledWith(expect.any(Function), CLEANUP_INTERVAL_MS);
     expect(timer.unref).toHaveBeenCalledTimes(1);
   });
+
+  test('runs recording retention cleanup from the periodic job', async () => {
+    const logger = createLogger();
+    const timer = { unref: vi.fn() };
+    let callback: (() => void) | null = null;
+    const setIntervalFn = vi.fn((receivedCallback: () => void) => {
+      callback = receivedCallback;
+      return timer;
+    }) as unknown as typeof setInterval;
+    const db = {
+      cleanupExpiredRecordingsByRetention: vi.fn().mockResolvedValue({ checked: 3, deleted: 2 }),
+    };
+    setupFiles({ '/tmp/uploads': { files: [] } }, Date.now());
+
+    startPeriodicTempCleanup({
+      uploadDir: '/tmp/uploads',
+      logger,
+      db,
+      setIntervalFn,
+    });
+    callback?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(db.cleanupExpiredRecordingsByRetention).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(
+      '[Cleanup] Retention: deleted 2/3 expired recordings.'
+    );
+  });
 });

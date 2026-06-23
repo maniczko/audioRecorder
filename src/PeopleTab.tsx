@@ -218,7 +218,10 @@ function meetingWord(count: number) {
 function normalizeProfile(profile: PeopleProfile): DirectoryPerson {
   const meetings = profile.meetings || [];
   const lastMeeting = meetings[0] || profile.nextMeeting || null;
-  const analyzedMeetings = profile.psychProfile?.meetingsAnalyzed || 0;
+  const analyzedMeetings =
+    typeof profile.psychProfile?.meetingsAnalyzed === 'number'
+      ? profile.psychProfile.meetingsAnalyzed
+      : 0;
   const meetingCount = Math.max(meetings.length, analyzedMeetings);
   const tags = (profile.tags || []).map((tag) => tag.replace(/^#/, ''));
   const unassigned =
@@ -465,6 +468,7 @@ function PersonDetailView({
   const [editedName, setEditedName] = useState(person.name);
   const [displayName, setDisplayName] = useState(person.name);
   const [actionStatus, setActionStatus] = useState('');
+  const [isDeletingPerson, setIsDeletingPerson] = useState(false);
   const meetings = profileMeetings(person);
   const tasks = profileTasks(person);
   const needs = profileNeeds(person);
@@ -480,6 +484,7 @@ function PersonDetailView({
     setDisplayName(person.name);
     setIsEditingName(false);
     setActionStatus('');
+    setIsDeletingPerson(false);
   }, [person.id, person.name]);
 
   function savePersonName() {
@@ -506,12 +511,21 @@ function PersonDetailView({
     }
   }
 
-  function deletePerson() {
+  async function deletePerson() {
     const confirmed = window.confirm(`Usunąć osobę "${displayName}"? Tej akcji nie można cofnąć.`);
     if (!confirmed) return;
 
-    onDeletePerson?.(person.id);
-    onBack();
+    setIsDeletingPerson(true);
+    setActionStatus('');
+
+    try {
+      await Promise.resolve(onDeletePerson?.(person.id));
+      onBack();
+    } catch {
+      setActionStatus('Nie udało się usunąć osoby. Spróbuj ponownie.');
+    } finally {
+      setIsDeletingPerson(false);
+    }
   }
 
   return (
@@ -642,12 +656,22 @@ function PersonDetailView({
                   <Sparkles size={16} aria-hidden="true" />
                   Zarządzaj AI
                 </button>
-                <button type="button" className="people-danger-button" onClick={deletePerson}>
+                <button
+                  type="button"
+                  className="people-danger-button"
+                  onClick={deletePerson}
+                  disabled={isDeletingPerson}
+                  aria-busy={isDeletingPerson ? 'true' : 'false'}
+                >
                   <Trash2 size={16} aria-hidden="true" />
                   Usuń osobę
                 </button>
               </div>
-              {actionStatus ? <p className="people-action-status">{actionStatus}</p> : null}
+              {actionStatus ? (
+                <p className="people-action-status" role="status">
+                  {actionStatus}
+                </p>
+              ) : null}
             </section>
 
             <section className="panel people-side-card">

@@ -1,5 +1,35 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 
+function createFakeQuotaDb() {
+  const rows = new Map<
+    string,
+    { key: string; count: number; reset_at: number; updated_at: string }
+  >();
+  return {
+    async _execute(sql: string, params: unknown[] = []) {
+      if (/CREATE TABLE/i.test(sql)) return;
+      if (/INSERT INTO ai_quota_counters/i.test(sql)) {
+        const [key, count, resetAt, updatedAt] = params;
+        rows.set(String(key), {
+          key: String(key),
+          count: Number(count),
+          reset_at: Number(resetAt),
+          updated_at: String(updatedAt),
+        });
+        return;
+      }
+      if (/DELETE FROM ai_quota_counters/i.test(sql)) {
+        rows.clear();
+        return;
+      }
+      throw new Error(`Unexpected quota SQL: ${sql}`);
+    },
+    async _get(_sql: string, params: unknown[] = []) {
+      return rows.get(String(params[0])) || null;
+    },
+  };
+}
+
 describe('AI Routes', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
   let mockAuthService: any;
@@ -10,7 +40,7 @@ describe('AI Routes', () => {
     vi.resetModules();
 
     mockAuthService = {
-      getSession: vi.fn().mockResolvedValue({ userId: 'u1', workspaceId: 'ws1' }),
+      getSession: vi.fn().mockResolvedValue({ user_id: 'u1', workspace_id: 'ws1' }),
     };
     mockWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
@@ -27,16 +57,33 @@ describe('AI Routes', () => {
   }, 15000);
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   describe('POST /ai/person-profile', () => {
+    test('anonymous request is rejected', async () => {
+      mockAuthService.getSession.mockResolvedValueOnce(null);
+
+      const res = await app.request('/ai/person-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personName: 'Anna',
+          meetings: [{ id: 'm1' }],
+          allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
     test('returns no-key mode when ANTHROPIC_API_KEY is not configured', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', '');
 
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1' }],
@@ -52,7 +99,7 @@ describe('AI Routes', () => {
     test('returns no-key mode when personName is missing', async () => {
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           meetings: [{ id: 'm1' }],
           allSegments: Array(10).fill({ text: 'test', meetingTitle: 'Meeting' }),
@@ -67,7 +114,7 @@ describe('AI Routes', () => {
     test('returns no-key mode when allSegments has less than 5 items', async () => {
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1' }],
@@ -121,7 +168,7 @@ describe('AI Routes', () => {
 
       const res = await appWithKey.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1', title: 'Meeting' }],
@@ -144,7 +191,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1' }],
@@ -169,7 +216,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1' }],
@@ -194,7 +241,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           personName: 'Anna',
           meetings: [{ id: 'm1' }],
@@ -209,12 +256,149 @@ describe('AI Routes', () => {
   });
 
   describe('POST /ai/suggest-tasks', () => {
+    test('anonymous request is rejected', async () => {
+      mockAuthService.getSession.mockResolvedValueOnce(null);
+
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    test('returns 429 when AI quota is exceeded', async () => {
+      const originalUserQuota = process.env.VOICELOG_AI_USER_QUOTA_PER_HOUR;
+      process.env.VOICELOG_AI_USER_QUOTA_PER_HOUR = '1';
+      vi.resetModules();
+      const { createApp: createQuotaApp } = await import('../../app.ts');
+      const quotaApp = createQuotaApp({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const body = JSON.stringify({
+        transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+        people: [{ name: 'Anna' }],
+      });
+      const first = await quotaApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+      const second = await quotaApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(429);
+      process.env.VOICELOG_AI_USER_QUOTA_PER_HOUR = originalUserQuota;
+    });
+
+    test('returns 403 when request targets a workspace without membership', async () => {
+      mockWorkspaceService.getMembership.mockResolvedValueOnce(null);
+
+      const res = await app.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body: JSON.stringify({
+          workspaceId: 'ws-denied',
+          transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+          people: [{ name: 'Anna' }],
+        }),
+      });
+
+      expect(res.status).toBe(403);
+      expect(mockWorkspaceService.getMembership).toHaveBeenCalledWith('ws-denied', 'u1');
+    });
+
+    test('returns 429 when endpoint-specific quota is exceeded', async () => {
+      vi.stubEnv('VOICELOG_AI_SUGGEST_TASKS_USER_QUOTA_PER_HOUR', '1');
+      vi.resetModules();
+      const { createApp: createQuotaApp } = await import('../../app.ts');
+      const quotaApp = createQuotaApp({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const body = JSON.stringify({
+        transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+        people: [{ name: 'Anna' }],
+      });
+
+      const first = await quotaApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+      const second = await quotaApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(429);
+    });
+
+    test('shares quota across app instances when DB quota store is enabled', async () => {
+      vi.stubEnv('VOICELOG_AI_QUOTA_STORE', 'db');
+      vi.stubEnv('VOICELOG_AI_USER_QUOTA_PER_HOUR', '1');
+      vi.resetModules();
+      const { createApp: createQuotaApp } = await import('../../app.ts');
+      const sharedDb = createFakeQuotaDb();
+      const firstApp = createQuotaApp({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        db: sharedDb,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      });
+      const secondApp = createQuotaApp({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        db: sharedDb,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const body = JSON.stringify({
+        transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
+        people: [{ name: 'Anna' }],
+      });
+
+      const first = await firstApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+      const second = await secondApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body,
+      });
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(429);
+      expect(second.headers.get('Retry-After')).toMatch(/^\d+$/);
+    });
+
     test('returns empty tasks when ANTHROPIC_API_KEY is not configured', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', '');
 
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
           people: [{ name: 'Anna' }],
@@ -229,7 +413,7 @@ describe('AI Routes', () => {
     test('returns empty tasks when transcript is empty', async () => {
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [],
           people: [{ name: 'Anna' }],
@@ -278,7 +462,7 @@ describe('AI Routes', () => {
 
       const res = await appWithKey.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report by Friday' }],
           people: [{ name: 'Anna' }],
@@ -300,7 +484,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
           people: [{ name: 'Anna' }],
@@ -324,7 +508,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
           people: [{ name: 'Anna' }],
@@ -348,7 +532,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
           people: [{ name: 'Anna' }],
@@ -372,7 +556,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/suggest-tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           transcript: [{ speakerName: 'Anna', text: 'We need to finish the report' }],
           people: [{ name: 'Anna' }],
@@ -386,6 +570,37 @@ describe('AI Routes', () => {
   });
 
   describe('POST /ai/search', () => {
+    test('anonymous request is rejected', async () => {
+      mockAuthService.getSession.mockResolvedValueOnce(null);
+
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'spotkanie o budzecie',
+          items: [{ id: 'meeting-1', title: 'Budzet kwartalny' }],
+        }),
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    test('checks membership when search request includes meeting workspace context', async () => {
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body: JSON.stringify({
+          meetingId: 'meeting-1',
+          meeting: { id: 'meeting-1', workspaceId: 'ws-search' },
+          query: 'spotkanie o budzecie',
+          items: [{ id: 'meeting-1', title: 'Budzet kwartalny' }],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockWorkspaceService.getMembership).toHaveBeenCalledWith('ws-search', 'u1');
+    });
+
     test('returns no-key mode when ANTHROPIC_API_KEY is not configured', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', '');
       vi.resetModules();
@@ -399,7 +614,7 @@ describe('AI Routes', () => {
 
       const res = await appWithoutKey.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'spotkanie o budzecie',
           items: [
@@ -425,7 +640,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'a',
           items: [{ id: 'meeting-1', title: 'Budzet' }],
@@ -443,7 +658,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'wazny dokument',
           items: [],
@@ -462,7 +677,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'spotkanie o budzecie',
           items: [{ id: '1', title: 'T' }],
@@ -486,7 +701,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'spotkanie o budzecie',
           items: [{ id: '1', title: 'T' }],
@@ -510,7 +725,7 @@ describe('AI Routes', () => {
 
       const res = await app.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'spotkanie o budzecie',
           items: [{ id: '1', title: 'T' }],
@@ -553,7 +768,7 @@ describe('AI Routes', () => {
 
       const res = await appWithKey.request('/ai/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
         body: JSON.stringify({
           query: 'przypomnienie o follow-upie po spotkaniu',
           items: [

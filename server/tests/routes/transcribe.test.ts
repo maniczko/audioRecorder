@@ -17,7 +17,7 @@ describe('Transcribe Routes', () => {
 
     app = createApp({
       authService: testAuthService as any,
-      workspaceService: { getMembership: vi.fn() } as any,
+      workspaceService: { getMembership: vi.fn().mockResolvedValue({ role: 'owner' }) } as any,
       transcriptionService: mockTranscriptionService,
       config: { allowedOrigins: '*', trustProxy: false, uploadDir: process.cwd() },
     });

@@ -167,6 +167,7 @@
     "release:rehearsal": "node scripts/release-rehearsal.mjs",
     "release:preprod-gate": "node scripts/release-rehearsal.mjs",
     "release:prod-smoke": "node scripts/production-smoke.mjs",
+    "release:audio-prod-smoke": "tsx server/scripts/audio-prod-smoke.ts",
     "release:prod-smoke:strict": "node scripts/production-smoke-strict.mjs",
     "release:prod-gate:strict": "node scripts/release-prod-gate-strict.mjs",
     "verify:supabase:workspace": "node scripts/verify-supabase-workspace-consistency.mjs --strict --write-report",

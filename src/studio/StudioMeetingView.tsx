@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback, Suspense, lazy } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import TagInput from '../shared/TagInput';
 import {
   addCustomTaskPerson,
@@ -37,9 +37,6 @@ import { remoteApiEnabled } from '../services/config';
 import { RecordingPipelineStatus } from '../components/RecordingPipelineStatus';
 import '../styles/studio.css';
 import './StudioMeetingViewStyles.css';
-
-// Lazy load AI Task Suggestions Panel for code splitting
-const AiTaskSuggestionsPanel = lazy(() => import('./AiTaskSuggestionsPanel'));
 
 type StudioDateValue = string | number | Date | null | undefined;
 
@@ -864,6 +861,8 @@ export default function StudioMeetingView({
   const [addConcernOpen, setAddConcernOpen] = useState(false);
   const [concernDraft, setConcernDraft] = useState('');
   const [, setLocalStoreTick] = useState(0);
+  const [retryingStoredRecordingId, setRetryingStoredRecordingId] = useState('');
+  const [retryStoredRecordingError, setRetryStoredRecordingError] = useState('');
 
   const [localGuests, setLocalGuests] = useState<string[]>([]);
   const [localTags, setLocalTags] = useState<string[]>([]);
@@ -1207,8 +1206,6 @@ export default function StudioMeetingView({
   const playbackAudioUnavailable =
     Boolean(playbackRecording?.audioUnavailable) || playbackRecording?.audioAvailable === false;
 
-  const autoTaskSyncKeyRef = useRef('');
-
   const audioRef = useRef<HTMLAudioElement>(null);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const autoLearnSpeakerProfiles = Boolean(currentUser?.autoLearnSpeakerProfiles);
@@ -1241,6 +1238,34 @@ export default function StudioMeetingView({
   const selectedRecordingAudioQualitySummary = useMemo(
     () => formatAudioQualityPanel(selectedRecording?.audioQuality),
     [selectedRecording?.audioQuality]
+  );
+  const selectedRecordingRetryId = String(
+    selectedRecording?.id || selectedRecording?.recordingId || ''
+  );
+  const isRetryingSelectedRecording =
+    Boolean(selectedRecordingRetryId) && retryingStoredRecordingId === selectedRecordingRetryId;
+  const handleRetryStoredRecording = useCallback(
+    async (meeting, recording) => {
+      if (!retryStoredRecording || !meeting || !recording) return;
+      const recordingId = String(recording?.id || recording?.recordingId || '');
+      if (recordingId && retryingStoredRecordingId === recordingId) return;
+
+      setRetryingStoredRecordingId(recordingId);
+      setRetryStoredRecordingError('');
+
+      try {
+        await Promise.resolve(retryStoredRecording(meeting, recording));
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Nie udalo sie ponowic transkrypcji. Sprobuj jeszcze raz.';
+        setRetryStoredRecordingError(message);
+      } finally {
+        setRetryingStoredRecordingId('');
+      }
+    },
+    [retryStoredRecording, retryingStoredRecordingId]
   );
   const autoTaskDrafts = useMemo(() => {
     const analysisTasks = safeArray(studioAnalysis?.tasks)
@@ -1403,83 +1428,6 @@ export default function StudioMeetingView({
   ]);
   const sketchnoteHasSourceData = Boolean(sketchnoteSummaryText) || summaryBullets.length > 0;
 
-  useEffect(() => {
-    if (!selectedRecording?.id || typeof onCreateTask !== 'function' || !autoTaskDrafts.length) {
-      return;
-    }
-
-    const batchKey = [
-      selectedRecording.id,
-      autoTaskDrafts
-        .map((task) =>
-          [
-            task.title,
-            task.owner,
-            task.dueDate,
-            task.priority,
-            task.tags.join(','),
-            task.sourceQuote,
-          ].join('|')
-        )
-        .join('||'),
-    ].join('::');
-
-    if (autoTaskSyncKeyRef.current === batchKey) {
-      return;
-    }
-
-    const existing = new Set(
-      safeArray(meetingTasks)
-        .filter(
-          (task) =>
-            task.sourceRecordingId === selectedRecording.id ||
-            task.sourceMeetingId === selectedMeeting?.id
-        )
-        .map(
-          (task) =>
-            `${String(task.title || '')
-              .trim()
-              .toLowerCase()}|${String(task.sourceQuote || '')
-              .trim()
-              .toLowerCase()}`
-        )
-    );
-
-    autoTaskDrafts.forEach((task) => {
-      const key = `${task.title.trim().toLowerCase()}|${task.sourceQuote.trim().toLowerCase()}`;
-      if (!task.title || existing.has(key)) {
-        return;
-      }
-
-      onCreateTask({
-        title: task.title,
-        description: task.description,
-        owner: task.owner,
-        assignedTo: task.owner ? [task.owner] : [],
-        dueDate: task.dueDate,
-        priority: task.priority,
-        tags: task.tags,
-        notes: task.sourceQuote,
-        sourceType: 'meeting',
-        sourceMeetingId: selectedMeeting?.id || '',
-        sourceMeetingTitle: selectedMeeting?.title || '',
-        sourceMeetingDate: selectedMeeting?.startsAt || selectedMeeting?.createdAt || '',
-        sourceRecordingId: selectedRecording?.id || '',
-      });
-      existing.add(key);
-    });
-
-    autoTaskSyncKeyRef.current = batchKey;
-  }, [
-    autoTaskDrafts,
-    meetingTasks,
-    onCreateTask,
-    selectedMeeting?.createdAt,
-    selectedMeeting?.id,
-    selectedMeeting?.startsAt,
-    selectedMeeting?.title,
-    selectedRecording?.id,
-  ]);
   const queueLabel =
     analysisStatus === 'uploading'
       ? 'Wysyłanie audio…'
@@ -2684,14 +2632,21 @@ export default function StudioMeetingView({
                     {selectedRecordingAudioQualitySummary}
                   </span>
                 ) : null}
+                {retryStoredRecordingError ? (
+                  <span className="ff-status-detail-text error" role="alert">
+                    {retryStoredRecordingError}
+                  </span>
+                ) : null}
               </div>
               {retryStoredRecording && selectedMeeting && selectedRecording ? (
                 <button
                   type="button"
                   className="ghost-button"
-                  onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+                  onClick={() => handleRetryStoredRecording(selectedMeeting, selectedRecording)}
+                  disabled={isRetryingSelectedRecording}
+                  aria-busy={isRetryingSelectedRecording ? 'true' : 'false'}
                 >
-                  Ponow transkrypcje
+                  {isRetryingSelectedRecording ? 'Ponawiam transkrypcje...' : 'Ponow transkrypcje'}
                 </button>
               ) : null}
             </div>
@@ -3251,9 +3206,15 @@ export default function StudioMeetingView({
                         <button
                           type="button"
                           className="ghost-button"
-                          onClick={() => retryStoredRecording(selectedMeeting, selectedRecording)}
+                          onClick={() =>
+                            handleRetryStoredRecording(selectedMeeting, selectedRecording)
+                          }
+                          disabled={isRetryingSelectedRecording}
+                          aria-busy={isRetryingSelectedRecording ? 'true' : 'false'}
                         >
-                          Ponow transkrypcje
+                          {isRetryingSelectedRecording
+                            ? 'Ponawiam transkrypcje...'
+                            : 'Ponow transkrypcje'}
                         </button>
                       ) : null}
                       <p className="sketchnote-empty-hint">
@@ -3866,18 +3827,6 @@ export default function StudioMeetingView({
                       });
                     }}
                   />
-
-                  <Suspense
-                    fallback={<div className="soft-copy">Ładowanie AI Task Suggestions...</div>}
-                  >
-                    <AiTaskSuggestionsPanel
-                      selectedRecording={selectedRecording}
-                      displaySpeakerNames={displaySpeakerNames}
-                      peopleProfiles={peopleProfiles}
-                      onCreateTask={onCreateTask}
-                      canEdit={currentWorkspacePermissions?.canEditWorkspace}
-                    />
-                  </Suspense>
                 </div>
               </section>
             )}

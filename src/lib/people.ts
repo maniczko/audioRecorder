@@ -1,4 +1,12 @@
-function safeArray(value) {
+type ManualPersonSeed = Partial<{
+  id: string;
+  email: string;
+  role: string;
+  company: string;
+  createdAt: string;
+}>;
+
+function safeArray<T = any>(value: T[] | unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
@@ -32,7 +40,7 @@ export function normalizePersonName(value) {
   return normalizeWhitespace(value);
 }
 
-export function createManualPerson(name, seed = {}) {
+export function createManualPerson(name, seed: ManualPersonSeed = {}) {
   const normalizedName = normalizePersonName(name);
   const now = new Date().toISOString();
   return {
@@ -96,11 +104,11 @@ function personSummary(name, meetings, tasks, needs, outputs) {
 }
 
 export function buildPeopleProfiles(
-  meetings,
-  tasks,
-  currentUser,
-  workspaceMembers = [],
-  manualPeople = []
+  meetings: any[],
+  tasks: any[],
+  currentUser: any,
+  workspaceMembers: any[] = [],
+  manualPeople: any[] = []
 ) {
   const manualByName = new Map(
     safeArray(manualPeople)

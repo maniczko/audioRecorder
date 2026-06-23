@@ -4,6 +4,18 @@ import { STORAGE_KEYS } from '../lib/storage';
 import { buildPeopleProfiles, createManualPerson, normalizePersonName } from '../lib/people';
 import { analyzePersonProfile } from '../lib/analysis';
 
+interface UsePeopleProfilesParams {
+  userMeetings: any[];
+  meetingTasks: any[];
+  currentUser: any;
+  currentWorkspaceMembers: any[];
+  manualPeople?: any[];
+  setManualPeople?: (updater: any) => void;
+  setMeetings?: (updater: any) => void;
+  setManualTasks?: (updater: any) => void;
+  setTaskState?: (updater: any) => void;
+}
+
 export default function usePeopleProfiles({
   userMeetings,
   meetingTasks,
@@ -14,7 +26,7 @@ export default function usePeopleProfiles({
   setMeetings,
   setManualTasks,
   setTaskState,
-}) {
+}: UsePeopleProfilesParams) {
   const [personNotes, setPersonNotes] = useStoredState(STORAGE_KEYS.personNotes, {});
 
   const peopleProfiles = useMemo(() => {
@@ -142,7 +154,7 @@ export default function usePeopleProfiles({
     }
 
     if (typeof setTaskState === 'function') {
-      setTaskState((previous) =>
+      setTaskState((previous: Record<string, any> = {}) =>
         Object.fromEntries(
           Object.entries(previous || {}).map(([taskId, state]) => [
             taskId,

@@ -662,3 +662,12 @@
   padding: 1px 5px;
   line-height: 1.3;
 }
+.transcript-empty-state {
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+}
+
+.transcript-empty-status {
+  margin-top: 4px;
+}

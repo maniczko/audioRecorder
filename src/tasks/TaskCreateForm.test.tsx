@@ -16,6 +16,16 @@ vi.mock('../shared/TagInput', () => ({
     return (
       <div data-testid="mock-tag-input">
         <span data-testid="mock-tags-list">{(tags || []).join(',')}</span>
+        {(tags || []).map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            aria-label={`Usun ${tag}`}
+            onClick={() => onChange((tags || []).filter((item) => item !== tag))}
+          >
+            {tag}
+          </button>
+        ))}
         <input
           placeholder={placeholder}
           data-testid="mock-tag-input-field"
@@ -385,6 +395,26 @@ describe('Regression: Issue #0 - task assignee selection', () => {
     expect(onDraftChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ owner: 'iwo', assignedTo: ['iwo', 'Anna'] }),
       { owner: 'iwo', assignedTo: ['iwo', 'Anna'] }
+    );
+  });
+
+  it('removes one selected person without clearing the remaining assignees', () => {
+    const onDraftChange = vi.fn();
+    render(
+      <TaskCreateForm
+        {...defaultProps}
+        showQuickAdd={false}
+        initialDraft={{ title: 'Test', owner: 'iwo', assignedTo: ['iwo', 'Anna'] }}
+        peopleOptions={['iwo', 'Anna']}
+        onDraftChange={onDraftChange}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Usun Anna/i }));
+
+    expect(onDraftChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ owner: 'iwo', assignedTo: ['iwo'] }),
+      { owner: 'iwo', assignedTo: ['iwo'] }
     );
   });
 });

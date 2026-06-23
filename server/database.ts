@@ -33,6 +33,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.';
+const DEFAULT_RETENTION_DAYS = 365;
 
 function _resolveWritableUploadDir(preferredDir: string): string {
   const normalizedPreferred = path.resolve(preferredDir);
@@ -116,6 +117,14 @@ function _deleteFileIfPresent(
       { sentry: false }
     );
   }
+}
+
+function _normalizeRetentionDays(value: unknown, fallback = DEFAULT_RETENTION_DAYS): number {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    return Math.floor(numeric);
+  }
+  return fallback;
 }
 
 function _writeLocalAudioFile(uploadDir: string, filename: string, buffer: Buffer): string {
@@ -1107,6 +1116,17 @@ export class Database {
         throw error;
       }
     }
+    try {
+      await this._execute(
+        `ALTER TABLE workspace_state ADD COLUMN retention_days INTEGER NOT NULL DEFAULT ${DEFAULT_RETENTION_DAYS}`
+      );
+    } catch (error) {
+      if (
+        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
+      ) {
+        throw error;
+      }
+    }
 
     const existing = await this._get(
       'SELECT workspace_id FROM workspace_state WHERE workspace_id = ?',
@@ -1126,11 +1146,12 @@ export class Database {
           task_boards_json,
           calendar_meta_json,
           vocabulary_json,
+          retention_days,
           updated_at
         )
-        VALUES (?, '[]', '[]', '[]', '{}', '{}', '{}', '[]', ?)
+        VALUES (?, '[]', '[]', '[]', '{}', '{}', '{}', '[]', ?, ?)
       `,
-      [workspaceId, timestamp]
+      [workspaceId, DEFAULT_RETENTION_DAYS, timestamp]
     );
   }
 
@@ -1303,6 +1324,7 @@ export class Database {
       taskBoards: this._safeJsonParse(row.task_boards_json, {}),
       calendarMeta,
       vocabulary: this._safeJsonParse(row.vocabulary_json, []),
+      retentionDays: _normalizeRetentionDays(row.retention_days),
       updatedAt: row.updated_at,
     };
   }
@@ -1317,6 +1339,7 @@ export class Database {
       taskBoards: {},
       calendarMeta: {},
       vocabulary: [],
+      retentionDays: DEFAULT_RETENTION_DAYS,
     }
   ): Promise<WorkspaceState> {
     await this.ensureWorkspaceState(workspaceId);
@@ -1360,6 +1383,7 @@ export class Database {
             task_boards_json = ?,
             calendar_meta_json = ?,
             vocabulary_json = ?,
+            retention_days = ?,
             updated_at = ?
         WHERE workspace_id = ?
       `,
@@ -1377,6 +1401,7 @@ export class Database {
         ),
         JSON.stringify(calendarMeta),
         JSON.stringify(Array.isArray(payload.vocabulary) ? payload.vocabulary : []),
+        _normalizeRetentionDays((payload as any).retentionDays, currentRow?.retention_days),
         timestamp,
         workspaceId,
       ]
@@ -2233,11 +2258,58 @@ export class Database {
     ]) as Promise<MediaAsset | null>;
   }
 
-  async deleteMediaAsset(recordingId: string, workspaceId: string): Promise<void> {
+  async writeAuditLog({
+    workspaceId,
+    actorUserId = '',
+    action,
+    entityType,
+    entityId,
+    metadata = {},
+  }: {
+    workspaceId: string;
+    actorUserId?: string;
+    action: string;
+    entityType: string;
+    entityId: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    await this._execute(
+      `INSERT INTO audit_logs (
+        id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        crypto.randomUUID(),
+        workspaceId,
+        actorUserId,
+        action,
+        entityType,
+        entityId,
+        JSON.stringify(metadata || {}),
+        this.nowIso(),
+      ]
+    );
+  }
+
+  async deleteMediaAsset(
+    recordingId: string,
+    workspaceId: string,
+    options: { actorUserId?: string } = {}
+  ): Promise<void> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
 
     const manifest = parseMediaManifest(asset.media_manifest_json);
+    const transcript = this._safeJsonParse(asset.transcript_json, []);
+    const ragCountRow = await this._get(
+      'SELECT COUNT(*) AS count FROM rag_chunks WHERE workspace_id = ? AND recording_id = ?',
+      [workspaceId, recordingId]
+    );
+    const ragChunksDeleted = Number(ragCountRow?.count || 0);
+    const transcriptPayloadCount = Array.isArray(manifest?.parts)
+      ? manifest.parts.filter((part) => String(part?.transcription?.payloadPath || '').trim())
+          .length
+      : 0;
+
     if (manifest?.parts?.length) {
       const manifestPaths = manifest.parts
         .flatMap((part) => [part.path, part.transcription?.payloadPath])
@@ -2280,11 +2352,64 @@ export class Database {
       }
     }
 
+    await this._execute('DELETE FROM rag_chunks WHERE workspace_id = ? AND recording_id = ?', [
+      workspaceId,
+      recordingId,
+    ]);
     await this._execute('DELETE FROM media_assets WHERE id = ? AND workspace_id = ?', [
       recordingId,
       workspaceId,
     ]);
+    await this.writeAuditLog({
+      workspaceId,
+      actorUserId: String(options.actorUserId || asset.created_by_user_id || ''),
+      action: 'recording.deleted',
+      entityType: 'recording',
+      entityId: recordingId,
+      metadata: {
+        meetingId: String(asset.meeting_id || ''),
+        storageMode: String(asset.storage_mode || 'single'),
+        sizeBytes: Number(asset.size_bytes || 0),
+        ragChunksDeleted,
+        transcriptPayloadCount,
+        hadTranscript: Array.isArray(transcript) ? transcript.length > 0 : Boolean(transcript),
+      },
+    });
     await this.tombstoneWorkspaceRecording(workspaceId, recordingId);
+  }
+
+  async cleanupExpiredRecordingsByRetention({
+    nowIso = this.nowIso(),
+  }: { nowIso?: string } = {}): Promise<{ checked: number; deleted: number }> {
+    const rows = await this._query(
+      `SELECT
+         media_assets.id,
+         media_assets.workspace_id,
+         media_assets.created_at,
+         workspace_state.retention_days
+       FROM media_assets
+       JOIN workspace_state ON workspace_state.workspace_id = media_assets.workspace_id
+       WHERE workspace_state.retention_days > 0`
+    );
+    const nowMs = new Date(nowIso).getTime();
+    if (!Number.isFinite(nowMs)) {
+      return { checked: rows.length, deleted: 0 };
+    }
+
+    let deleted = 0;
+    for (const row of rows) {
+      const retentionDays = _normalizeRetentionDays(row.retention_days, 0);
+      if (retentionDays <= 0) continue;
+      const createdAtMs = new Date(row.created_at).getTime();
+      if (!Number.isFinite(createdAtMs)) continue;
+      const maxAgeMs = retentionDays * 24 * 60 * 60 * 1000;
+      if (nowMs - createdAtMs <= maxAgeMs) continue;
+
+      await this.deleteMediaAsset(row.id, row.workspace_id);
+      deleted++;
+    }
+
+    return { checked: rows.length, deleted };
   }
 
   async saveAudioQualityDiagnostics(

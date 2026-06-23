@@ -17,6 +17,7 @@ export interface WorkspaceStatePayload {
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];
+  retentionDays?: number;
 }
 
 export interface WorkspaceCollectionDelta {
@@ -32,6 +33,7 @@ export interface WorkspaceStateDeltaPayload {
   taskBoards?: Record<string, unknown>;
   calendarMeta?: Record<string, unknown>;
   vocabulary?: string[];
+  retentionDays?: number;
 }
 
 export interface SessionPayload<TState = WorkspaceState> {
@@ -333,6 +335,14 @@ function resolveRetryAfterMs(primary: unknown, fallback: unknown = null): number
   return Number.isFinite(fallbackValue) && fallbackValue > 0 ? fallbackValue : null;
 }
 
+function normalizeRetentionDays(value: unknown, fallback = 365): number {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    return Math.floor(numeric);
+  }
+  return fallback;
+}
+
 export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
   const source = asRecord(input);
   const calendarMeta = isRecord(source.calendarMeta) ? source.calendarMeta : {};
@@ -347,6 +357,7 @@ export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
     taskBoards: isRecord(source.taskBoards) ? source.taskBoards : {},
     calendarMeta,
     vocabulary: Array.isArray(source.vocabulary) ? source.vocabulary : [],
+    retentionDays: normalizeRetentionDays(source.retentionDays),
     updatedAt: String(source.updatedAt || ''),
   };
 
@@ -441,8 +452,8 @@ export function buildWorkspaceStateDelta(
   }
 
   const manualPeopleDelta = buildCollectionDelta(
-    (prevState as any).manualPeople,
-    (nextState as any).manualPeople
+    prevState.manualPeople ?? [],
+    nextState.manualPeople ?? []
   );
   if (manualPeopleDelta) {
     delta.manualPeople = manualPeopleDelta;
@@ -474,6 +485,10 @@ export function buildWorkspaceStateDelta(
 
   if (stableJson(prevState.vocabulary) !== stableJson(nextState.vocabulary)) {
     delta.vocabulary = Array.isArray(nextState.vocabulary) ? nextState.vocabulary : [];
+  }
+
+  if (prevState.retentionDays !== nextState.retentionDays) {
+    delta.retentionDays = nextState.retentionDays;
   }
 
   return delta;
@@ -638,11 +653,13 @@ export function applyWorkspaceStateDelta(
   return normalizeWorkspaceState({
     meetings: applyCollectionDelta(current.meetings, delta.meetings),
     manualTasks: applyCollectionDelta(current.manualTasks, delta.manualTasks),
-    manualPeople: applyCollectionDelta((current as any).manualPeople, delta.manualPeople),
+    manualPeople: applyCollectionDelta(current.manualPeople ?? [], delta.manualPeople),
     taskState: applyObjectDelta(current.taskState as Record<string, unknown>, delta.taskState),
     taskBoards: applyObjectDelta(current.taskBoards as Record<string, unknown>, delta.taskBoards),
     calendarMeta,
     vocabulary: Array.isArray(delta.vocabulary) ? delta.vocabulary : current.vocabulary,
+    retentionDays:
+      typeof delta.retentionDays === 'number' ? delta.retentionDays : current.retentionDays,
     updatedAt: current.updatedAt,
   });
 }

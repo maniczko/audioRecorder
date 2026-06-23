@@ -26,6 +26,12 @@
   border-color: rgba(248, 113, 113, 0.3);
 }
 
+.status-chip.empty {
+  background: rgba(148, 163, 184, 0.14);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
 .status-spinner {
   width: 10px;
   height: 10px;
@@ -162,6 +168,12 @@
   background: rgba(185, 77, 63, 0.1);
   color: #a23f34;
   border-color: rgba(185, 77, 63, 0.22);
+}
+
+:root[data-theme='premium-light'] .status-chip.empty {
+  background: rgba(93, 114, 107, 0.1);
+  color: #526760;
+  border-color: rgba(93, 114, 107, 0.22);
 }
 
 :root[data-theme='premium-light'] .pipeline-progress-text,

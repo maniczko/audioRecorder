@@ -1,6 +1,10 @@
-import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, it, expect, vi } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { createApp } from '../../app.ts';
 import { MAX_RAW_UPLOAD_BYTES, buildSegmentedMediaManifest } from '../../lib/mediaStoragePolicy.ts';
+import { createProgressToken, resetProgressTokensForTests } from '../../lib/progressTokens.ts';
 
 // Helper to control fs mock state between tests
 function setFsState(overrides?: { existsSync?: boolean; statSyncSize?: number }) {
@@ -14,6 +18,17 @@ describe('Media Routes', () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: any;
   let mockWorkspaceService: any;
+  let testUploadDir: string;
+
+  beforeAll(async () => {
+    testUploadDir = await fs.mkdtemp(path.join(os.tmpdir(), 'voicelog-media-routes-'));
+  });
+
+  afterAll(async () => {
+    if (testUploadDir) {
+      await fs.rm(testUploadDir, { recursive: true, force: true });
+    }
+  });
 
   beforeEach(() => {
     // Reset fs state to default
@@ -58,7 +73,11 @@ describe('Media Routes', () => {
       authService: mockAuthService,
       workspaceService: mockWorkspaceService,
       transcriptionService: mockTranscriptionService,
-      config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      config: {
+        allowedOrigins: 'http://localhost:3000',
+        trustProxy: false,
+        uploadDir: testUploadDir,
+      },
     });
   });
 
@@ -70,7 +89,7 @@ describe('Media Routes', () => {
   });
 
   it('PUT /media/recordings/:recordingId/audio - upload success', async () => {
-    mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
+    mockTranscriptionService.upsertMediaAssetFromPath.mockResolvedValue({
       id: 'rec_new',
       workspace_id: 'ws_1',
       size_bytes: 512,
@@ -94,7 +113,7 @@ describe('Media Routes', () => {
     const data = await res.json();
     expect(data.id).toBe('rec_new');
     expect(data.audioQuality).toBeNull();
-    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledWith(
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledWith(
       expect.objectContaining({
         recordingId: 'rec_new',
         workspaceId: 'ws_1',
@@ -109,7 +128,7 @@ describe('Media Routes', () => {
   });
 
   it('PUT /media/recordings/:recordingId/audio - returns 507 when disk is full', async () => {
-    mockTranscriptionService.upsertMediaAsset.mockRejectedValue(
+    mockTranscriptionService.upsertMediaAssetFromPath.mockRejectedValue(
       Object.assign(new Error('Brak miejsca na dysku'), { code: 'ENOSPC' })
     );
 
@@ -126,29 +145,20 @@ describe('Media Routes', () => {
     expect(res.status).toBe(507);
     const data = await res.json();
     expect(data.message).toBe('Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.');
-    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledTimes(1);
   });
 
-  it('PUT /media/recordings/:recordingId/audio - retries after transient memory pressure fallback', async () => {
+  it('PUT /media/recordings/:recordingId/audio - streams upload through tempfile without heap preflight rejection', async () => {
     const serverUtils = await import('../../lib/serverUtils.ts');
-    const memPressureSpy = vi
-      .spyOn(serverUtils, 'getMemoryPressure')
-      .mockReturnValueOnce({
-        ok: false,
-        heapUsedMB: 1500,
-        heapTotalMB: 1700,
-        rssMB: 3000,
-        ratio: 0.95,
-      })
-      .mockReturnValue({
-        ok: true,
-        heapUsedMB: 1000,
-        heapTotalMB: 1700,
-        rssMB: 2800,
-        ratio: 0.58,
-      });
+    const memPressureSpy = vi.spyOn(serverUtils, 'getMemoryPressure').mockReturnValue({
+      ok: false,
+      heapUsedMB: 1500,
+      heapTotalMB: 1700,
+      rssMB: 3000,
+      ratio: 0.95,
+    });
 
-    mockTranscriptionService.upsertMediaAsset.mockResolvedValue({
+    mockTranscriptionService.upsertMediaAssetFromPath.mockResolvedValue({
       id: 'rec_transient',
       workspace_id: 'ws_1',
       size_bytes: 120,
@@ -158,7 +168,7 @@ describe('Media Routes', () => {
       enhancementRecommended: true,
     });
 
-    const transient = await app.request('/media/recordings/rec_transient/audio', {
+    const streamed = await app.request('/media/recordings/rec_transient/audio', {
       method: 'PUT',
       headers: {
         Authorization: 'Bearer fake_token',
@@ -167,23 +177,14 @@ describe('Media Routes', () => {
       },
       body: Buffer.from('small-audio-data'),
     });
-    expect(transient.status).toBe(503);
-
-    const recovered = await app.request('/media/recordings/rec_transient/audio', {
-      method: 'PUT',
-      headers: {
-        Authorization: 'Bearer fake_token',
-        'Content-Type': 'audio/webm',
-        'X-Workspace-Id': 'ws_1',
-      },
-      body: Buffer.from('small-audio-data'),
-    });
-
-    expect(recovered.status).toBe(200);
-    const payload = await recovered.json();
+    expect(streamed.status).toBe(200);
+    const payload = await streamed.json();
     expect(payload.id).toBe('rec_transient');
-    expect(memPressureSpy).toHaveBeenCalledTimes(2);
-    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(1);
+    expect(memPressureSpy).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledWith(
+      expect.objectContaining({ filePath: expect.stringContaining('rec_transient') })
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledTimes(1);
   });
@@ -192,7 +193,7 @@ describe('Media Routes', () => {
     const upstreamError = Object.assign(new Error('Upstream provider throttled request'), {
       statusCode: 503,
     });
-    mockTranscriptionService.upsertMediaAsset
+    mockTranscriptionService.upsertMediaAssetFromPath
       .mockRejectedValueOnce(upstreamError)
       .mockResolvedValue({
         id: 'rec_retryable',
@@ -235,7 +236,7 @@ describe('Media Routes', () => {
       sizeBytes: 123,
       audioQuality: null,
     });
-    expect(mockTranscriptionService.upsertMediaAsset).toHaveBeenCalledTimes(2);
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledTimes(2);
   });
 
   it('OPTIONS /media/recordings/:recordingId/audio - returns preview CORS headers for vercel origins', async () => {
@@ -258,6 +259,26 @@ describe('Media Routes', () => {
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('PUT');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('OPTIONS');
     expect(res.headers.get('Vary')).toContain('Origin');
+  });
+
+  it('GET /media/recordings/:recordingId/progress - rejects expired progress token before SSE starts', async () => {
+    resetProgressTokensForTests();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-20T10:00:00.000Z'));
+    const progressToken = createProgressToken('rec_progress_expired', 'user_1', 1000);
+    vi.setSystemTime(new Date('2026-06-20T10:00:02.000Z'));
+
+    const res = await app.request(
+      `/media/recordings/rec_progress_expired/progress?progressToken=${progressToken}`,
+      {
+        method: 'GET',
+      }
+    );
+
+    expect(res.status).toBe(401);
+    expect(mockTranscriptionService.on).not.toHaveBeenCalled();
+    vi.useRealTimers();
+    resetProgressTokensForTests();
   });
 
   it('POST /media/recordings/:recordingId/transcribe - queues job', async () => {
@@ -746,7 +767,7 @@ describe('Media Routes', () => {
       id: 'rec_sketchnote',
       workspace_id: 'ws_1',
       diarization_json: JSON.stringify({
-        summary: 'Spotkanie o wdroĹĽeniu nowego procesu.',
+        summary: 'Spotkanie o wdrożeniu nowego procesu.',
       }),
     });
     mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
@@ -811,7 +832,7 @@ describe('Media Routes', () => {
         id: 'rec_sketchnote',
         workspace_id: 'ws_1',
         diarization_json: JSON.stringify({
-          summary: 'Spotkanie o wdroĹĽeniu nowego procesu.',
+          summary: 'Spotkanie o wdrożeniu nowego procesu.',
         }),
       });
       mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
@@ -1542,14 +1563,14 @@ describe('Media Routes', () => {
   });
 
   // Regression coverage note.
-  // Issue #0 --- DELETE /recordings/:id zwraca 204 dla nieistniej--cego nagrania
+  // Issue #0 --- DELETE /recordings/:id zwraca 204 dla nieistniejącego nagrania
   // Date: 2026-03-31
   // Regression coverage note.
   // Regression coverage note.
   // Regression coverage note.
   // Regression coverage note.
   // Regression coverage note.
-  describe('DELETE /recordings/:recordingId --- Regression: nieistniej--ce nagranie', () => {
+  describe('DELETE /recordings/:recordingId --- Regression: nieistniejące nagranie', () => {
     it('zwraca 204, gdy nagranie nie istnieje w bazie', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue(null);
 
@@ -1562,7 +1583,7 @@ describe('Media Routes', () => {
       expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
     });
 
-    it('zwraca 204, gdy nagranie istnieje i zostanie usuni--te', async () => {
+    it('zwraca 204, gdy nagranie istnieje i zostanie usunięte', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_existing',
         workspace_id: 'ws_1',
@@ -1577,11 +1598,40 @@ describe('Media Routes', () => {
       expect(res.status).toBe(204);
       expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
         'rec_existing',
-        'ws_1'
+        'ws_1',
+        expect.objectContaining({ actorUserId: 'user_1' })
       );
     });
 
-    it('zwraca 403, gdy u--ytkownik nie ma dost--pu do workspace', async () => {
+    // ---------------------------------------------------------------------
+    // Issue #0 - DELETE recording audit actor was lost before cleanup
+    // Date: 2026-06-23
+    // Bug: the media route deleted recordings without passing the authenticated
+    //      user to the cleanup layer, so audit logs could attribute deletion to
+    //      the recording creator instead of the actual deleter.
+    // Fix: DELETE passes session.user_id as actorUserId to deleteMediaAsset.
+    // ---------------------------------------------------------------------
+    it('passes the authenticated user as the recording deletion audit actor', async () => {
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_audit_actor',
+        workspace_id: 'ws_1',
+      });
+      mockTranscriptionService.deleteMediaAsset.mockResolvedValue(undefined);
+
+      const res = await app.request('/media/recordings/rec_audit_actor', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
+        'rec_audit_actor',
+        'ws_1',
+        expect.objectContaining({ actorUserId: 'user_1' })
+      );
+    });
+
+    it('zwraca 403, gdy użytkownik nie ma dostępu do workspace', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockWorkspaceService.getMembership.mockResolvedValue(null);
       mockTranscriptionService.getMediaAsset.mockResolvedValue({

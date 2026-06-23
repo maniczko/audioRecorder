@@ -125,6 +125,228 @@ describe('Database (Async Worker SQLite)', () => {
     }
   });
 
+  test('Regression: #0 - deleteMediaAsset removes storage, RAG rows and writes a sanitized audit log', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      const now = new Date().toISOString();
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'rec_delete_full',
+          'ws_delete_full',
+          'meeting_delete_full',
+          'user_delete_full',
+          'workspaces/ws_delete_full/recordings/rec_delete_full/audio.webm',
+          'audio/webm',
+          123,
+          'single',
+          '{}',
+          123,
+          123,
+          'completed',
+          JSON.stringify([{ text: 'secret transcript that must not be audited' }]),
+          '{}',
+          now,
+          now,
+        ]
+      );
+      await db._execute(
+        `INSERT INTO rag_chunks (
+          id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'rag_delete_full',
+          'ws_delete_full',
+          'rec_delete_full',
+          'Iwo',
+          'secret transcript that must not remain indexed',
+          '[0.1,0.2]',
+          now,
+        ]
+      );
+
+      await db.deleteMediaAsset('rec_delete_full', 'ws_delete_full');
+
+      await expect(db.getMediaAsset('rec_delete_full')).resolves.toBeNull();
+      await expect(
+        db._get('SELECT COUNT(*) AS count FROM rag_chunks WHERE recording_id = ?', [
+          'rec_delete_full',
+        ])
+      ).resolves.toMatchObject({ count: 0 });
+      expect(deleteAudioFromStorageSpy).toHaveBeenCalledWith(
+        'workspaces/ws_delete_full/recordings/rec_delete_full/audio.webm'
+      );
+
+      const auditRow = await db._get(
+        'SELECT * FROM audit_logs WHERE entity_type = ? AND entity_id = ?',
+        ['recording', 'rec_delete_full']
+      );
+      expect(auditRow).toMatchObject({
+        workspace_id: 'ws_delete_full',
+        action: 'recording.deleted',
+        entity_type: 'recording',
+        entity_id: 'rec_delete_full',
+      });
+      expect(String(auditRow.metadata_json || '')).toContain('"ragChunksDeleted":1');
+      expect(String(auditRow.metadata_json || '')).not.toContain('secret transcript');
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
+  test('Regression: #0 - deleteMediaAsset records the actual deleter in the audit log', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      const now = new Date().toISOString();
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'rec_delete_actor',
+          'ws_delete_actor',
+          'meeting_delete_actor',
+          'recording_creator',
+          'workspaces/ws_delete_actor/recordings/rec_delete_actor/audio.webm',
+          'audio/webm',
+          123,
+          'single',
+          '{}',
+          123,
+          123,
+          'completed',
+          '[]',
+          '{}',
+          now,
+          now,
+        ]
+      );
+
+      await db.deleteMediaAsset('rec_delete_actor', 'ws_delete_actor', {
+        actorUserId: 'actual_deleter',
+      });
+
+      const auditRow = await db._get(
+        'SELECT * FROM audit_logs WHERE entity_type = ? AND entity_id = ?',
+        ['recording', 'rec_delete_actor']
+      );
+      expect(auditRow).toMatchObject({
+        workspace_id: 'ws_delete_actor',
+        actor_user_id: 'actual_deleter',
+        action: 'recording.deleted',
+      });
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
+  test('Regression: #0 - cleanupExpiredRecordingsByRetention deletes only expired workspace recordings', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      await db.ensureWorkspaceState('ws_retention');
+      await db.saveWorkspaceState('ws_retention', {
+        meetings: [],
+        manualTasks: [],
+        manualPeople: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+        retentionDays: 1,
+      });
+
+      const oldCreatedAt = '2026-06-18T09:00:00.000Z';
+      const freshCreatedAt = '2026-06-20T09:00:00.000Z';
+      for (const [recordingId, createdAt] of [
+        ['rec_retention_old', oldCreatedAt],
+        ['rec_retention_fresh', freshCreatedAt],
+      ] as const) {
+        await db._execute(
+          `INSERT INTO media_assets (
+            id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+            size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+            normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            recordingId,
+            'ws_retention',
+            '',
+            'user_retention',
+            `workspaces/ws_retention/recordings/${recordingId}/audio.webm`,
+            'audio/webm',
+            10,
+            'single',
+            '{}',
+            10,
+            10,
+            'completed',
+            '[]',
+            '{}',
+            createdAt,
+            createdAt,
+          ]
+        );
+      }
+
+      const result = await db.cleanupExpiredRecordingsByRetention({
+        nowIso: '2026-06-20T12:00:00.000Z',
+      });
+
+      expect(result).toMatchObject({ checked: 2, deleted: 1 });
+      await expect(db.getMediaAsset('rec_retention_old')).resolves.toBeNull();
+      await expect(db.getMediaAsset('rec_retention_fresh')).resolves.toMatchObject({
+        id: 'rec_retention_fresh',
+      });
+      expect(deleteAudioFromStorageSpy).toHaveBeenCalledWith(
+        'workspaces/ws_retention/recordings/rec_retention_old/audio.webm'
+      );
+      expect(deleteAudioFromStorageSpy).not.toHaveBeenCalledWith(
+        'workspaces/ws_retention/recordings/rec_retention_fresh/audio.webm'
+      );
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
   test('should persist pipeline metadata on failures and clear old errors when re-queueing', async () => {
     const previousSha = process.env.GITHUB_SHA;
     const previousVersion = process.env.APP_VERSION;

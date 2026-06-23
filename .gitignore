@@ -73,6 +73,7 @@ tsc-err.txt
 server/debug_env.ts
 server_error_captured.txt
 test-results/
+.playwright-mcp/
 # Temp output files created during debugging
 *_test_output*.txt
 *_test_fail*.txt
@@ -143,3 +144,10 @@ scripts/test-results.json
 scripts/test-dashboard-pro.html
 scripts/test-dashboard-standalone.html
 .vercel
+
+# Local visual audit screenshots generated in the repository root.
+# Keep durable evidence under docs/audits/screenshots/ or tests/e2e snapshots.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp

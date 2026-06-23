@@ -10,7 +10,8 @@ describe('Audio Pipeline Full Integration Flow', () => {
     eventEmitterLogs = [];
 
     mockTranscriptionService = {
-      upsertMediaAsset: vi.fn().mockResolvedValue({
+      upsertMediaAsset: vi.fn(),
+      upsertMediaAssetFromPath: vi.fn().mockResolvedValue({
         id: 'rec_flow_1',
         workspace_id: 'ws_flow',
         size_bytes: 512,

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { corsHeaders } from '../lib/serverUtils.ts';
+import { verifyGoogleIdToken } from '../lib/googleIdToken.ts';
 
 export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
@@ -98,15 +99,16 @@ export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewa
   );
 
   const googleSchema = z.object({
-    email: z.string().email(),
-    sub: z.string(),
-    name: z.string().optional(),
-    given_name: z.string().optional(),
-    picture: z.string().optional(),
+    idToken: z.string().min(1),
   });
   router.post('/google', applyRateLimit('auth'), zValidator('json', googleSchema), async (c) => {
     const data = c.req.valid('json');
-    const result = await authService.upsertGoogleUser(data);
+    const googleClientId =
+      services.config?.googleClientId ||
+      services.config?.GOOGLE_CLIENT_ID ||
+      process.env.GOOGLE_CLIENT_ID;
+    const profile = await verifyGoogleIdToken(data.idToken, googleClientId);
+    const result = await authService.upsertGoogleUser(profile);
     return c.json(result, 200);
   });
 

@@ -378,6 +378,75 @@ function getSegmentEnd(segment, transcript, index, totalDuration) {
   return Math.max(Number(segment?.timestamp || 0) + 2, totalDuration || 0);
 }
 
+function getTranscriptEmptyState(selectedRecording) {
+  const pipelineStatus = String(selectedRecording?.pipelineStatus || '').trim();
+  const transcriptOutcome = String(selectedRecording?.transcriptOutcome || '').trim();
+  const hasNoAudio =
+    selectedRecording?.audioUnavailable === true ||
+    (selectedRecording?.audioAvailable === false && !selectedRecording?.transcript?.length);
+
+  if (['uploading', 'queued', 'processing', 'diarization'].includes(pipelineStatus)) {
+    return {
+      title: 'Transkrypcja w toku',
+      message:
+        selectedRecording?.userMessage ||
+        'Nagranie jest jeszcze przetwarzane. Segmenty pojawia sie tutaj automatycznie po zakonczeniu analizy.',
+      status: pipelineStatus,
+      kind: 'processing',
+    };
+  }
+
+  if (pipelineStatus === 'failed' || pipelineStatus === 'failed_permanent') {
+    return {
+      title: 'Transkrypcja nieudana',
+      message:
+        selectedRecording?.userMessage ||
+        selectedRecording?.errorMessage ||
+        'Transkrypcja nie powiodla sie dla tego nagrania.',
+      status: pipelineStatus,
+      kind: 'failed',
+    };
+  }
+
+  if (transcriptOutcome === 'empty') {
+    return {
+      title: 'Brak wykrytej mowy',
+      message:
+        selectedRecording?.userMessage ||
+        'Nie wykryto wypowiedzi w tym nagraniu. Sprawdz audio albo ponow transkrypcje.',
+      status: 'empty',
+      kind: 'empty',
+    };
+  }
+
+  if (hasNoAudio) {
+    return {
+      title: 'Brak audio',
+      message: 'Audio nie jest dostepne dla tego nagrania.',
+      status: 'no_audio',
+      kind: 'no_audio',
+    };
+  }
+
+  if (pipelineStatus === 'done') {
+    return {
+      title: 'Brak transkrypcji',
+      message:
+        selectedRecording?.userMessage ||
+        'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.',
+      status: 'empty',
+      kind: 'empty',
+    };
+  }
+
+  return {
+    title: 'Brak transkrypcji',
+    message: 'Uruchom nagrywanie, aby przypiac pierwsza rozmowe.',
+    status: selectedRecording ? 'queued' : 'no_audio',
+    kind: 'idle',
+  };
+}
+
 export default function TranscriptPanel({
   displayRecording,
   selectedRecording,
@@ -492,6 +561,7 @@ export default function TranscriptPanel({
     filteredSegments[0] ||
     reviewSegments[0] ||
     null;
+  const transcriptEmptyState = getTranscriptEmptyState(selectedRecording);
 
   const selectedCount = selectedSegmentIds.length;
   const canMergeSelection = areSelectionsContiguous(transcript, selectedSegmentIds);
@@ -1317,18 +1387,20 @@ export default function TranscriptPanel({
               }}
             />
           ) : (
-            <div className="empty-panel large">
-              <strong>Brak transkrypcji</strong>
-              <span>
-                {selectedRecording?.transcriptOutcome === 'empty'
-                  ? 'Nie wykryto wypowiedzi w tym nagraniu.'
-                  : selectedRecording?.pipelineStatus === 'done'
-                    ? selectedRecording?.userMessage ||
-                      'Pipeline zakonczyl przetwarzanie, ale nie zwrocil segmentow transkrypcji.'
-                    : selectedRecording?.pipelineStatus === 'failed'
-                      ? 'Transkrypcja nie powiodla sie dla tego nagrania.'
-                      : 'Uruchom nagrywanie, aby przypiac pierwsza rozmowe.'}
-              </span>
+            <div
+              className={`empty-panel large transcript-empty-state ${transcriptEmptyState.kind}`}
+            >
+              <strong>{transcriptEmptyState.title}</strong>
+              <span>{transcriptEmptyState.message}</span>
+              {transcriptEmptyState.status ? (
+                <RecordingPipelineStatus
+                  status={transcriptEmptyState.status}
+                  progressMessage={
+                    transcriptEmptyState.kind === 'processing' ? transcriptEmptyState.message : ''
+                  }
+                  className="transcript-empty-status"
+                />
+              ) : null}
             </div>
           )}
         </div>

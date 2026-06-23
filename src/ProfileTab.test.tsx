@@ -391,12 +391,12 @@ describe('ProfileTab', () => {
       expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     });
 
-    it('does not expose legacy appearance or changelog sections in integrations category', async () => {
+    it('exposes review settings alongside integrations', async () => {
       await openIntegrationsView();
 
-      expect(screen.queryByText('Tryb interfejsu')).not.toBeInTheDocument();
-      expect(screen.queryByText('Changelog')).not.toBeInTheDocument();
-      expect(screen.queryByText('Połączenie API')).not.toBeInTheDocument();
+      expect(screen.getByText('Tryb interfejsu')).toBeInTheDocument();
+      expect(screen.getByText('Changelog')).toBeInTheDocument();
+      expect(screen.getByText('Połączenie API')).toBeInTheDocument();
     });
   });
   describe('Accessibility', () => {

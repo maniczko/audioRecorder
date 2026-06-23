@@ -21,10 +21,12 @@ describe('shared contracts', () => {
     ).toEqual({
       meetings: [{ id: 'm1' }],
       manualTasks: [],
+      manualPeople: [],
       taskState: {},
       taskBoards: {},
       calendarMeta: {},
       vocabulary: ['crm'],
+      retentionDays: 365,
       updatedAt: '2026-03-23T10:00:00.000Z',
     });
   });
@@ -109,13 +111,22 @@ describe('shared contracts', () => {
       JSON.stringify({
         meetings: [{ id: 'm1' }],
         manualTasks: [],
+        manualPeople: [],
         taskState: {},
         taskBoards: {},
         calendarMeta: {},
         vocabulary: [],
+        retentionDays: 365,
         updatedAt: '',
       })
     );
+  });
+
+  test('normalizes workspace retention days as a non-negative integer', () => {
+    expect(normalizeWorkspaceState({ retentionDays: 30 }).retentionDays).toBe(30);
+    expect(normalizeWorkspaceState({ retentionDays: '14.9' }).retentionDays).toBe(14);
+    expect(normalizeWorkspaceState({ retentionDays: -1 }).retentionDays).toBe(365);
+    expect(normalizeWorkspaceState({ retentionDays: 'invalid' }).retentionDays).toBe(365);
   });
 
   test('normalizes transcription status payloads from storage rows', () => {

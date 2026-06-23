@@ -8,6 +8,10 @@ function buildCorsHeaders(origin: string | undefined, allowedOrigins: string) {
   return corsHeaders(origin || '', allowedOrigins);
 }
 
+function shouldAllowCredentials(requestOrigin: string, responseOrigin: string) {
+  return Boolean(requestOrigin && responseOrigin && requestOrigin === responseOrigin);
+}
+
 const SERVER_INFRASTRUCTURE_ERROR_PATTERNS = [
   'enotfound',
   'econnrefused',
@@ -48,6 +52,10 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use('*', async (c, next) => {
     const requestOrigin = c.req.header('origin') || '';
     const cors = buildCorsHeaders(requestOrigin, _allowedOrigins);
+    const allowCredentials = shouldAllowCredentials(
+      requestOrigin,
+      cors['Access-Control-Allow-Origin']
+    );
 
     if (c.req.method === 'OPTIONS') {
       return new Response(null, {
@@ -56,7 +64,7 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
           'Access-Control-Allow-Origin': cors['Access-Control-Allow-Origin'],
           'Access-Control-Allow-Headers': cors['Access-Control-Allow-Headers'],
           'Access-Control-Allow-Methods': cors['Access-Control-Allow-Methods'],
-          'Access-Control-Allow-Credentials': 'true',
+          ...(allowCredentials ? { 'Access-Control-Allow-Credentials': 'true' } : {}),
           'Access-Control-Max-Age': '86400',
           Vary: cors['Vary'],
         },
@@ -68,7 +76,9 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
     c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
     c.header('Access-Control-Allow-Headers', cors['Access-Control-Allow-Headers']);
     c.header('Access-Control-Allow-Methods', cors['Access-Control-Allow-Methods']);
-    c.header('Access-Control-Allow-Credentials', 'true');
+    if (allowCredentials) {
+      c.header('Access-Control-Allow-Credentials', 'true');
+    }
     c.header('Vary', cors['Vary']);
   });
 }
@@ -170,18 +180,22 @@ export function applySecurityHeaders(app: Hono<any>) {
   });
 }
 
-export function registerNotFoundHandler(app: Hono<any>) {
+export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.notFound((c) => {
     const requestOrigin = c.req.header('origin');
     if (requestOrigin) {
-      c.header('Access-Control-Allow-Origin', requestOrigin);
-      c.header('Access-Control-Allow-Credentials', 'true');
+      const cors = buildCorsHeaders(requestOrigin, allowedOrigins);
+      c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
+      if (shouldAllowCredentials(requestOrigin, cors['Access-Control-Allow-Origin'])) {
+        c.header('Access-Control-Allow-Credentials', 'true');
+      }
+      c.header('Vary', cors['Vary']);
     }
     return c.json({ message: 'Not found.' }, 404);
   });
 }
 
-export function registerAppErrorHandler(app: Hono<any>) {
+export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.onError((err: any, c) => {
     console.error('APP ERROR STACK', err.stack);
 
@@ -190,8 +204,12 @@ export function registerAppErrorHandler(app: Hono<any>) {
     // post-next() header injection, so we set them explicitly here.
     const requestOrigin = c.req.header('origin');
     if (requestOrigin) {
-      c.header('Access-Control-Allow-Origin', requestOrigin);
-      c.header('Access-Control-Allow-Credentials', 'true');
+      const cors = buildCorsHeaders(requestOrigin, allowedOrigins);
+      c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
+      if (shouldAllowCredentials(requestOrigin, cors['Access-Control-Allow-Origin'])) {
+        c.header('Access-Control-Allow-Credentials', 'true');
+      }
+      c.header('Vary', cors['Vary']);
     }
 
     if (err.name === 'ContextError' || err instanceof z.ZodError || err?.statusCode === 422) {

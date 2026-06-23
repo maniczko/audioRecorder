@@ -41,6 +41,8 @@ interface RecordingsTabRecording {
   id?: string;
   createdAt?: string;
   duration?: number;
+  uploaded?: boolean;
+  errorMessage?: string;
   pipelineStatus?: string;
   transcriptionStatus?: string;
   transcriptOutcome?: string;
@@ -72,7 +74,10 @@ interface RecordingsTabMeeting extends RecordingQueueMeetingLike {
 type PendingImportQueueItem = Partial<RecordingQueueItem> & {
   durationMinutes?: number;
   status?: string;
+  transcriptOutcome?: string;
 };
+
+type RecordingListStatus = 'uploading' | 'uploaded' | 'transcribing' | 'ready' | 'empty' | 'failed';
 
 type RecordingsSortKey =
   | 'startsAt'
@@ -212,6 +217,60 @@ function formatPipelineDiagnostics(item) {
   return details.join(' · ');
 }
 
+function getLatestMeetingRecording(meeting: Partial<RecordingsTabMeeting>) {
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  if (!recordings.length) return null;
+  const latestRecordingId = String(meeting?.latestRecordingId || '').trim();
+  return latestRecordingId
+    ? recordings.find(
+        (recording) =>
+          String(recording?.id || recording?.recordingId || '').trim() === latestRecordingId
+      ) || recordings[0]
+    : recordings[0];
+}
+
+function getRecordingListStatus(meeting: Partial<RecordingsTabMeeting>): RecordingListStatus {
+  const latest = getLatestMeetingRecording(meeting);
+  const hasAiSummary = Boolean(
+    meeting.analysis &&
+    (meeting.analysis.summary ||
+      (Array.isArray(meeting.analysis.decisions) && meeting.analysis.decisions.length > 0))
+  );
+
+  if (!latest) return hasAiSummary ? 'ready' : 'uploaded';
+
+  const pipelineStatus = String(latest.pipelineStatus || '').trim();
+  const transcriptionStatus = String(latest.transcriptionStatus || '').trim();
+  const transcriptOutcome = String(latest.transcriptOutcome || '').trim();
+  const hasError = Boolean(String(latest.errorMessage || '').trim());
+
+  if (hasError || pipelineStatus === 'failed' || pipelineStatus === 'failed_permanent') {
+    return 'failed';
+  }
+  if (transcriptOutcome === 'empty') {
+    return 'empty';
+  }
+  if (
+    hasAiSummary ||
+    pipelineStatus === 'done' ||
+    transcriptionStatus === 'done' ||
+    transcriptionStatus === 'completed' ||
+    transcriptOutcome === 'normal'
+  ) {
+    return 'ready';
+  }
+  if (['processing', 'diarization', 'review'].includes(pipelineStatus)) {
+    return 'transcribing';
+  }
+  if (pipelineStatus === 'queued' && latest.uploaded) {
+    return 'uploaded';
+  }
+  if (pipelineStatus === 'uploading' || pipelineStatus === 'queued' || latest.uploaded === false) {
+    return 'uploading';
+  }
+  return 'uploaded';
+}
+
 function getMeetingAiStatus(m) {
   if (
     m.analysis &&
@@ -220,11 +279,19 @@ function getMeetingAiStatus(m) {
     return 'ai';
   }
   if (m.latestRecordingId || (Array.isArray(m.recordings) && m.recordings.length > 0)) {
-    const latest = Array.isArray(m.recordings)
-      ? m.recordings.find((r) => r.id === m.latestRecordingId) || m.recordings[0]
-      : null;
+    const latest = getLatestMeetingRecording(m);
     if (latest?.transcriptOutcome === 'empty') return 'empty';
-    if (latest?.transcriptionStatus === 'done' || latest?.transcriptOutcome === 'normal')
+    if (
+      latest?.pipelineStatus === 'failed' ||
+      latest?.pipelineStatus === 'failed_permanent' ||
+      latest?.errorMessage
+    )
+      return 'failed';
+    if (
+      latest?.transcriptionStatus === 'done' ||
+      latest?.transcriptionStatus === 'completed' ||
+      latest?.transcriptOutcome === 'normal'
+    )
       return 'transcript';
     return 'processing';
   }
@@ -232,25 +299,52 @@ function getMeetingAiStatus(m) {
 }
 
 function getRecordingTableStatus(meeting: Partial<RecordingsTabMeeting>) {
-  const status = getMeetingAiStatus(meeting);
-  if (status === 'ai' || status === 'transcript') {
-    return 'ready';
-  }
-  return 'needs-analysis';
+  return getRecordingListStatus(meeting);
 }
 
 function RecordingStatusChip({ meeting }: { meeting: Partial<RecordingsTabMeeting> }) {
   const status = getRecordingTableStatus(meeting);
-  const isReady = status === 'ready';
+  const meta: Record<
+    RecordingListStatus,
+    { className: string; label: string; icon: React.ReactNode }
+  > = {
+    uploading: {
+      className: 'uploading',
+      label: 'Wgrywanie',
+      icon: <Upload size={15} strokeWidth={2.2} />,
+    },
+    uploaded: {
+      className: 'uploaded',
+      label: 'Wgrane',
+      icon: <Clock size={15} strokeWidth={2.2} />,
+    },
+    transcribing: {
+      className: 'processing',
+      label: 'Transkrypcja',
+      icon: <Hourglass size={15} strokeWidth={2.2} />,
+    },
+    ready: {
+      className: 'ready',
+      label: 'Gotowe',
+      icon: <CheckCircle2 size={15} strokeWidth={2.2} />,
+    },
+    empty: {
+      className: 'empty',
+      label: 'Brak mowy',
+      icon: <Clock size={15} strokeWidth={2.2} />,
+    },
+    failed: {
+      className: 'failed',
+      label: 'Błąd',
+      icon: <Clock size={15} strokeWidth={2.2} />,
+    },
+  };
+  const current = meta[status];
 
   return (
-    <span className={`recordings-status-chip ${isReady ? 'ready' : 'analysis'}`}>
-      {isReady ? (
-        <CheckCircle2 size={15} strokeWidth={2.2} />
-      ) : (
-        <Clock size={15} strokeWidth={2.2} />
-      )}
-      {isReady ? 'Gotowe' : 'Do analizy'}
+    <span className={`recordings-status-chip ${current.className}`}>
+      {current.icon}
+      {current.label}
     </span>
   );
 }
@@ -258,15 +352,23 @@ function RecordingStatusChip({ meeting }: { meeting: Partial<RecordingsTabMeetin
 function AiInsightChip({ meeting }: { meeting: Partial<RecordingsTabMeeting> }) {
   const status = getMeetingAiStatus(meeting);
   const isReady = status === 'ai' || status === 'transcript';
+  const isFailed = status === 'failed';
+  const isEmpty = status === 'empty';
 
   return (
-    <span className={`recordings-ai-chip ${isReady ? 'ready' : 'waiting'}`}>
+    <span
+      className={`recordings-ai-chip ${
+        isReady ? 'ready' : isFailed ? 'failed' : isEmpty ? 'empty' : 'waiting'
+      }`}
+    >
       {isReady ? (
         <Sparkles size={15} strokeWidth={2.2} />
+      ) : isFailed ? (
+        <Clock size={15} strokeWidth={2.2} />
       ) : (
         <Hourglass size={15} strokeWidth={2.2} />
       )}
-      {isReady ? 'Transkrypcja' : 'Oczekuje'}
+      {isReady ? 'Transkrypcja' : isFailed ? 'Błąd' : isEmpty ? 'Pusto' : 'Oczekuje'}
     </span>
   );
 }
@@ -352,6 +454,30 @@ function getLatestRecording(selectedMeeting) {
   );
 }
 
+const PENDING_IMPORT_STALE_MS = 5 * 60 * 1000;
+
+function getQueueItemLastActivityMs(item: PendingImportQueueItem) {
+  const candidates = [item.updatedAt, item.processingStartedAt, item.createdAt]
+    .map((value) => new Date(String(value || '')).valueOf())
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return candidates.length ? Math.max(...candidates) : 0;
+}
+
+function isStalePendingImport(item: PendingImportQueueItem, nowMs = Date.now()) {
+  const status = String(item?.status || '').toLowerCase();
+  if (!['queued', 'uploading', 'processing'].includes(status)) return false;
+  const lastActivityMs = getQueueItemLastActivityMs(item);
+  if (!lastActivityMs) return false;
+  return nowMs - lastActivityMs >= PENDING_IMPORT_STALE_MS;
+}
+
+function getPendingImportRetryLabel(item: PendingImportQueueItem) {
+  const status = String(item?.status || '').toLowerCase();
+  if (status === 'failed') return 'Spróbuj ponownie';
+  if (isStalePendingImport(item)) return 'Odśwież status';
+  return '';
+}
+
 function buildOptimisticMeetingFromQueueItem(item: PendingImportQueueItem): RecordingsTabMeeting {
   const snapshot =
     item?.meetingSnapshot && typeof item.meetingSnapshot === 'object'
@@ -374,9 +500,11 @@ function buildOptimisticMeetingFromQueueItem(item: PendingImportQueueItem): Reco
         id: item.recordingId,
         createdAt: item.createdAt || '',
         duration: Number(item.duration) || 0,
+        uploaded: Boolean(item.uploaded),
+        errorMessage: item.errorMessage || item.lastErrorMessage || '',
         pipelineStatus: item.status || 'queued',
         transcriptionStatus: item.status || 'queued',
-        transcriptOutcome: '',
+        transcriptOutcome: item.transcriptOutcome || '',
         processingStartedAt: item.processingStartedAt || undefined,
         processingEndedAt: item.status === 'done' ? new Date().toISOString() : undefined,
       },
@@ -414,9 +542,20 @@ function collectRecordingIdsForMeeting(
 
 function mergeMeetingsWithPendingImports(
   userMeetings: RecordingsTabMeeting[] = [],
-  recordingQueue: PendingImportQueueItem[] = []
+  recordingQueue: PendingImportQueueItem[] = [],
+  selectedMeeting: RecordingsTabMeeting | null = null
 ): RecordingsTabMeeting[] {
-  const meetings = Array.isArray(userMeetings) ? userMeetings : [];
+  const meetings = Array.isArray(userMeetings) ? [...userMeetings] : [];
+  const selectedId = String(selectedMeeting?.id || '').trim();
+  if (selectedId && hasMeetingRecordingEvidence(selectedMeeting)) {
+    const existingIndex = meetings.findIndex((meeting) => String(meeting?.id || '') === selectedId);
+    if (existingIndex === -1) {
+      meetings.unshift(selectedMeeting as RecordingsTabMeeting);
+    } else if (isRicherMeetingSnapshot(selectedMeeting, meetings[existingIndex])) {
+      meetings[existingIndex] = selectedMeeting as RecordingsTabMeeting;
+    }
+  }
+
   const queue = Array.isArray(recordingQueue) ? recordingQueue : [];
   const knownMeetingIds = new Set(meetings.map((meeting) => meeting?.id).filter(Boolean));
   const optimisticImports = queue
@@ -424,6 +563,55 @@ function mergeMeetingsWithPendingImports(
     .map((item) => buildOptimisticMeetingFromQueueItem(item));
 
   return [...optimisticImports, ...meetings];
+}
+
+function hasMeetingRecordingEvidence(meeting: Partial<RecordingsTabMeeting> | null | undefined) {
+  if (!meeting) return false;
+  if (String(meeting.latestRecordingId || '').trim()) return true;
+  return Array.isArray(meeting.recordings) && meeting.recordings.length > 0;
+}
+
+function meetingRecordingRichness(meeting: Partial<RecordingsTabMeeting> | null | undefined) {
+  const recordings = Array.isArray(meeting?.recordings) ? meeting.recordings : [];
+  const transcriptSegments = recordings.reduce((sum, recording) => {
+    return sum + (Array.isArray(recording?.transcript) ? recording.transcript.length : 0);
+  }, 0);
+  const durationSeconds = recordings.reduce(
+    (sum, recording) => sum + getRecordingDurationSeconds(recording),
+    0
+  );
+  const latestUpdatedAt = Math.max(
+    0,
+    ...recordings.map((recording) =>
+      new Date(String(recording?.updatedAt || recording?.createdAt || '')).valueOf()
+    ),
+    new Date(String(meeting?.updatedAt || meeting?.createdAt || '')).valueOf()
+  );
+
+  return {
+    recordingCount: recordings.length,
+    transcriptSegments,
+    durationSeconds,
+    latestUpdatedAt: Number.isFinite(latestUpdatedAt) ? latestUpdatedAt : 0,
+  };
+}
+
+function isRicherMeetingSnapshot(
+  candidate: Partial<RecordingsTabMeeting> | null | undefined,
+  current: Partial<RecordingsTabMeeting> | null | undefined
+) {
+  const next = meetingRecordingRichness(candidate);
+  const previous = meetingRecordingRichness(current);
+  if (next.recordingCount !== previous.recordingCount) {
+    return next.recordingCount > previous.recordingCount;
+  }
+  if (next.transcriptSegments !== previous.transcriptSegments) {
+    return next.transcriptSegments > previous.transcriptSegments;
+  }
+  if (next.durationSeconds !== previous.durationSeconds) {
+    return next.durationSeconds > previous.durationSeconds;
+  }
+  return next.latestUpdatedAt > previous.latestUpdatedAt;
 }
 
 function UnifiedLibrary({
@@ -461,7 +649,11 @@ function UnifiedLibrary({
 
   const allTags = React.useMemo(() => {
     const tags = new Set<string>();
-    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    const meetingsWithImports = mergeMeetingsWithPendingImports(
+      userMeetings,
+      recordingQueue,
+      selectedMeeting
+    );
     meetingsWithImports.forEach((m) => {
       if (Array.isArray(m.tags)) {
         m.tags.forEach((t) => {
@@ -470,11 +662,15 @@ function UnifiedLibrary({
       }
     });
     return Array.from(tags).sort();
-  }, [recordingQueue, userMeetings]);
+  }, [recordingQueue, selectedMeeting, userMeetings]);
 
   const allParticipants = React.useMemo(() => {
     const parts = new Set<string>();
-    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    const meetingsWithImports = mergeMeetingsWithPendingImports(
+      userMeetings,
+      recordingQueue,
+      selectedMeeting
+    );
     meetingsWithImports.forEach((m) => {
       if (m.owner) parts.add(m.owner.trim());
       if (Array.isArray(m.guests)) {
@@ -484,7 +680,7 @@ function UnifiedLibrary({
       }
     });
     return Array.from(parts).sort();
-  }, [recordingQueue, userMeetings]);
+  }, [recordingQueue, selectedMeeting, userMeetings]);
 
   const [sortConfig, setSortConfig] = React.useState<{
     key: RecordingsSortKey;
@@ -513,7 +709,11 @@ function UnifiedLibrary({
   };
 
   const sortedAndFiltered = React.useMemo(() => {
-    const meetingsWithImports = mergeMeetingsWithPendingImports(userMeetings, recordingQueue);
+    const meetingsWithImports = mergeMeetingsWithPendingImports(
+      userMeetings,
+      recordingQueue,
+      selectedMeeting
+    );
     return [...meetingsWithImports]
       .filter((m) => {
         if (dateFilter) {
@@ -585,6 +785,7 @@ function UnifiedLibrary({
     dateFilter,
     tagFilter,
     participantFilter,
+    selectedMeeting,
     sortConfig,
   ]);
 
@@ -932,7 +1133,7 @@ function UnifiedLibrary({
         </div>
       </div>
       <RecordingsStatsBar
-        meetings={mergeMeetingsWithPendingImports(userMeetings, recordingQueue)}
+        meetings={mergeMeetingsWithPendingImports(userMeetings, recordingQueue, selectedMeeting)}
       />
       {uploadErrorMessage ? (
         <div
@@ -1268,6 +1469,8 @@ export default function RecordingsTab(props) {
   const [uploadingFileName, setUploadingFileName] = React.useState('');
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = React.useState('');
+  const [retryingStoredRecordingId, setRetryingStoredRecordingId] = React.useState('');
+  const [retryStoredRecordingError, setRetryStoredRecordingError] = React.useState('');
   const [deletedMeetingIds, setDeletedMeetingIds] = React.useState<Set<string>>(() => new Set());
   const [deletedRecordingIds, setDeletedRecordingIds] = React.useState<Set<string>>(
     () => new Set()
@@ -1343,6 +1546,11 @@ export default function RecordingsTab(props) {
     () => getLatestRecording(selectedMeeting),
     [selectedMeeting]
   );
+  const latestSelectedRecordingId = String(
+    latestSelectedRecording?.id || latestSelectedRecording?.recordingId || ''
+  );
+  const isRetryingLatestSelectedRecording =
+    Boolean(latestSelectedRecordingId) && retryingStoredRecordingId === latestSelectedRecordingId;
   const selectedMeetingHasEmptyTranscript = latestSelectedRecording?.transcriptOutcome === 'empty';
   const selectedMeetingEmptyDiagnostics = React.useMemo(() => {
     if (!selectedMeetingHasEmptyTranscript) return '';
@@ -1375,6 +1583,31 @@ export default function RecordingsTab(props) {
     }
     return parts.join(' · ');
   }, [latestSelectedRecording, selectedMeetingHasEmptyTranscript]);
+
+  const handleRetryStoredRecording = React.useCallback(
+    async (meeting, recording) => {
+      if (!retryStoredRecording || !meeting || !recording) return;
+      const recordingId = String(recording?.id || recording?.recordingId || '');
+      if (recordingId && retryingStoredRecordingId === recordingId) return;
+
+      setRetryingStoredRecordingId(recordingId);
+      setRetryStoredRecordingError('');
+
+      try {
+        await Promise.resolve(retryStoredRecording(meeting, recording));
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Nie udalo sie ponowic transkrypcji. Sprobuj jeszcze raz.';
+        setRetryStoredRecordingError(message);
+        toast.error(message);
+      } finally {
+        setRetryingStoredRecordingId('');
+      }
+    },
+    [retryStoredRecording, retryingStoredRecordingId, toast]
+  );
 
   const handleMainFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -1508,10 +1741,22 @@ export default function RecordingsTab(props) {
               <button
                 type="button"
                 className="primary-button"
-                onClick={() => retryStoredRecording(selectedMeeting, latestSelectedRecording)}
+                onClick={() => handleRetryStoredRecording(selectedMeeting, latestSelectedRecording)}
+                disabled={isRetryingLatestSelectedRecording}
+                aria-busy={isRetryingLatestSelectedRecording ? 'true' : 'false'}
               >
-                Ponow transkrypcje
+                {isRetryingLatestSelectedRecording
+                  ? 'Ponawiam transkrypcje...'
+                  : 'Ponow transkrypcje'}
               </button>
+            ) : null}
+            {retryStoredRecordingError ? (
+              <div
+                className="recordings-diagnostics-copy recordings-diagnostics-md recordings-diagnostics-error"
+                role="alert"
+              >
+                {retryStoredRecordingError}
+              </div>
             ) : null}
             {selectedMeetingEmptyDiagnostics ? (
               <div className="recordings-diagnostics-copy recordings-diagnostics-md">
@@ -1546,9 +1791,16 @@ export default function RecordingsTab(props) {
                 ? recordingMessage
                 : item.status === 'failed'
                   ? item.errorMessage
-                  : 'Oczekiwanie na rozpoczecie przetwarzania...';
-              const stageLabel = isActive ? pipelineStageLabel : 'Plik dodany do kolejki';
+                  : isStalePendingImport(item)
+                    ? 'Status nie zmienil sie od kilku minut. Odswiez albo ponow przetwarzanie.'
+                    : 'Oczekiwanie na rozpoczecie przetwarzania...';
+              const stageLabel = isActive
+                ? pipelineStageLabel
+                : isStalePendingImport(item)
+                  ? 'Wymaga sprawdzenia statusu'
+                  : 'Plik dodany do kolejki';
               const diagnostics = formatPipelineDiagnostics(item);
+              const retryLabel = getPendingImportRetryLabel(item);
 
               return (
                 <div key={item.recordingId} className="pending-import-card recordings-pending-card">
@@ -1568,10 +1820,12 @@ export default function RecordingsTab(props) {
                     errorMessage={item.errorMessage}
                     processingStartedAt={item.processingStartedAt}
                     onRetry={
-                      item.status === 'failed' && retryRecordingQueueItem
+                      retryLabel && retryRecordingQueueItem
                         ? () => retryRecordingQueueItem(item.recordingId)
                         : undefined
                     }
+                    retryLabel={retryLabel || undefined}
+                    allowInProgressRetry={Boolean(retryLabel && item.status !== 'failed')}
                     className="recordings-tab-pending-status"
                   />
                   {diagnostics ? (

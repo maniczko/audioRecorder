@@ -140,7 +140,8 @@ describe('Media Routes - Additional Coverage', () => {
       expect(res.status).toBe(204);
       expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
         'rec_to_delete',
-        'ws_1'
+        'ws_1',
+        { actorUserId: 'user_1' }
       );
     });
 

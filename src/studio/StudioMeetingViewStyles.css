@@ -3631,6 +3631,12 @@
   opacity: 0.8;
 }
 
+.ff-status-detail-text.error {
+  color: #b42318;
+  font-weight: 650;
+  opacity: 1;
+}
+
 .sketchnote-section-shell {
   margin-top: 32px;
   padding: 24px;

@@ -150,6 +150,36 @@ describe('TranscriptPanel', () => {
     ).toBeInTheDocument();
   });
 
+  test('Regression: shows processing state instead of empty transcript while pipeline is active', () => {
+    renderTranscriptPanel({
+      displayRecording: { transcript: [] },
+      selectedRecording: {
+        pipelineStatus: 'processing',
+        userMessage: 'Transkrypcja nadal trwa w tle.',
+      },
+    });
+
+    expect(screen.getByText(/Transkrypcja w toku/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Transkrypcja nadal trwa w tle/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Przetwarzanie/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^Brak transkrypcji$/i)).not.toBeInTheDocument();
+  });
+
+  test('Regression: explains empty transcript as no detected speech after processing', () => {
+    renderTranscriptPanel({
+      displayRecording: { transcript: [] },
+      selectedRecording: {
+        pipelineStatus: 'done',
+        transcriptOutcome: 'empty',
+      },
+    });
+
+    expect(screen.getByText(/Brak wykrytej mowy/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nie wykryto wypowiedzi/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak mowy/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^Brak transkrypcji$/i)).not.toBeInTheDocument();
+  });
+
   test('Regression: keeps transcript visible when audio is unavailable', () => {
     renderTranscriptPanel({
       displayRecording: {

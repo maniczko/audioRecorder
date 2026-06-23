@@ -15,9 +15,19 @@ function readPackageJson() {
   };
 }
 
+function readServerPackageJson() {
+  return JSON.parse(readFileSync(path.join(rootDir, 'server', 'package.json'), 'utf8')) as {
+    engines?: { node?: string };
+  };
+}
+
 describe('Node runtime pinning', () => {
   it('keeps package.json pinned to the Node 22 major line', () => {
     expect(readPackageJson().engines?.node).toBe('22.x');
+  });
+
+  it('keeps the deployable server package pinned to the Node 22 major line', () => {
+    expect(readServerPackageJson().engines?.node).toBe('22.x');
   });
 
   it('provides an nvm-compatible Node version file', () => {

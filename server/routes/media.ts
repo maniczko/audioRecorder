@@ -17,6 +17,7 @@ import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
 import type { MediaAsset } from '../lib/types.ts';
 import { getMemoryPressure } from '../lib/serverUtils.ts';
+import { createProgressToken } from '../lib/progressTokens.ts';
 import { DISK_SPACE_BLOCK_UPLOAD_BYTES } from '../lib/diskSpace.ts';
 import {
   MAX_RAW_UPLOAD_BYTES,
@@ -51,6 +52,80 @@ function extractLeafPathSegment(filePath: string): string {
 
 function sanitizeRecordingId(recordingId: string): string {
   return String(recordingId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+async function streamRequestBodyToFile({
+  request,
+  filePath,
+  maxBytes,
+}: {
+  request: Request;
+  filePath: string;
+  maxBytes: number;
+}) {
+  if (!request.body) {
+    const error = new Error('Brak danych audio w zadaniu uploadu.') as any;
+    error.statusCode = 400;
+    throw error;
+  }
+
+  let received = 0;
+  const reader = request.body.getReader();
+  const output = createWriteStream(filePath);
+  let cleaned = false;
+
+  const cleanup = async () => {
+    if (cleaned) return;
+    cleaned = true;
+    output.destroy();
+    try {
+      await unlink(filePath);
+    } catch (_) {}
+  };
+
+  const abortPromise = new Promise<never>((_, reject) => {
+    request.signal.addEventListener(
+      'abort',
+      () => {
+        reject(Object.assign(new Error('Upload audio zostal przerwany.'), { statusCode: 499 }));
+      },
+      { once: true }
+    );
+  });
+
+  try {
+    while (true) {
+      const read = await Promise.race([reader.read(), abortPromise]);
+      if (read.done) break;
+
+      const chunk = Buffer.from(read.value);
+      received += chunk.byteLength;
+      if (received > maxBytes) {
+        throw Object.assign(new Error('Przeslany plik przekracza maksymalny rozmiar.'), {
+          statusCode: 413,
+          code: 'audio_too_large',
+        });
+      }
+
+      if (!output.write(chunk)) {
+        await new Promise<void>((resolve, reject) => {
+          output.once('drain', resolve);
+          output.once('error', reject);
+        });
+      }
+    }
+
+    output.end();
+    await finished(output);
+    return { bytesWritten: received };
+  } catch (error) {
+    await cleanup();
+    throw error;
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch (_) {}
+  }
 }
 
 function deriveAudioExtensions(filePath: string, contentType?: string): string[] {
@@ -595,26 +670,6 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       );
     }
 
-    // Reject when memory pressure is too high to safely buffer the upload
-    const memPressure = getMemoryPressure();
-    if (!memPressure.ok) {
-      console.warn(
-        `[memory] Rejecting upload: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%), RSS ${memPressure.rssMB} MB`
-      );
-      return c.json(
-        { message: 'Serwer jest chwilowo przeci??ony. Spr?buj ponownie za chwil?.' },
-        503
-      );
-    }
-
-    const arrayBuf = await c.req.arrayBuffer();
-    const sizeValidation = validateRawUploadSize(arrayBuf.byteLength);
-    if (sizeValidation.ok === false) {
-      return c.json(
-        { code: sizeValidation.code, message: sizeValidation.message },
-        sizeValidation.status
-      );
-    }
     const mimeValidation = validateAudioMimeType(c.req.header('content-type') || '');
     if (!mimeValidation.ok) {
       return c.json(
@@ -622,9 +677,6 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         mimeValidation.status
       );
     }
-
-    // Wrap without copying - Buffer.from(ArrayBuffer) shares memory when possible
-    const buffer = Buffer.from(arrayBuf);
 
     let asset: MediaAsset;
     let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
@@ -635,18 +687,34 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     );
     try {
       mkdirSync(preflightDir, { recursive: true });
-      await writeFile(preflightPath, buffer);
+      const streamed = await streamRequestBodyToFile({
+        request: c.req.raw,
+        filePath: preflightPath,
+        maxBytes: MAX_RAW_UPLOAD_BYTES,
+      });
+      const sizeValidation = validateRawUploadSize(streamed.bytesWritten);
+      if (sizeValidation.ok === false) {
+        return c.json(
+          { code: sizeValidation.code, message: sizeValidation.message },
+          sizeValidation.status
+        );
+      }
       audioValidation = await validateAudioForTranscription({
         filePath: preflightPath,
         contentType: mimeValidation.normalized.contentType,
         signal: c.req.raw.signal,
       });
-      asset = await transcriptionService.upsertMediaAsset({
+      if (typeof transcriptionService.upsertMediaAssetFromPath !== 'function') {
+        throw Object.assign(new Error('Streaming upload storage adapter is unavailable.'), {
+          statusCode: 500,
+        });
+      }
+      asset = await transcriptionService.upsertMediaAssetFromPath({
         recordingId,
         workspaceId,
         meetingId,
         contentType: mimeValidation.normalized.contentType,
-        buffer,
+        filePath: preflightPath,
         createdByUserId: session.user_id,
       });
     } catch (uploadErr: any) {
@@ -803,7 +871,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           });
           return c.json(
             {
-              message: 'B??d podczas pobierania nagrania z remote storage.',
+              message: 'Błąd podczas pobierania nagrania z remote storage.',
               error: err.message,
             },
             500
@@ -873,10 +941,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
     try {
       // Note: transcriptionService is Database instance here
-      await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id);
+      const session = c.get('session');
+      await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id, {
+        actorUserId: String(session?.user_id || ''),
+      });
       return c.body(null, 204);
     } catch (err: any) {
-      return c.json({ message: 'B??d podczas usuwania nagrania.', error: err.message }, 500);
+      return c.json({ message: 'Błąd podczas usuwania nagrania.', error: err.message }, 500);
     }
   });
 
@@ -894,7 +965,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         `[memory] Rejecting transcription ${recordingId}: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%)`
       );
       return c.json(
-        { message: 'Serwer jest chwilowo przeci??ony. Spr?buj ponownie za chwil?.' },
+        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
         503
       );
     }
@@ -911,7 +982,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
       return c.json(
-        { message: err?.message || 'B??d przetwarzania transkrypcji.', recordingId },
+        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
         status
       );
     }
@@ -1001,7 +1072,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
       return c.json(
-        { message: err?.message || 'B??d przetwarzania transkrypcji.', recordingId },
+        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
         status
       );
     }
@@ -1030,7 +1101,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           );
           await transcriptionService.markTranscriptionFailure(
             recordingId,
-            'Pipeline utkn?? w przetwarzaniu. Spr?buj ponownie.',
+            'Pipeline utknął w przetwarzaniu. Spróbuj ponownie.',
             null,
             null
           );
@@ -1054,7 +1125,23 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     } catch (err: any) {
       console.error(`[transcribe-status] Error:`, err?.message);
       const status = err?.statusCode || err?.status || 500;
-      return c.json({ message: err?.message || 'B??d pobierania statusu transkrypcji.' }, status);
+      return c.json({ message: err?.message || 'Błąd pobierania statusu transkrypcji.' }, status);
+    }
+  });
+
+  router.post('/recordings/:recordingId/progress-token', async (c) => {
+    try {
+      const recordingId = c.req.param('recordingId');
+      const session = c.get('session') as any;
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (asset?.workspace_id) {
+        await ensureWorkspaceAccess(c, asset.workspace_id);
+      }
+      const token = createProgressToken(recordingId, session.user_id || session.userId);
+      return c.json({ token, expiresInSeconds: 300 }, 200);
+    } catch (err: any) {
+      const status = err?.statusCode || err?.status || 500;
+      return c.json({ message: err?.message || 'Nie mozna utworzyc tokenu postepu.' }, status);
     }
   });
 
@@ -1104,7 +1191,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       });
     } catch (err: any) {
       console.error(`[progress] SSE error:`, err?.message);
-      return c.json({ message: err?.message || 'B??d strumienia post?pu.' }, 500);
+      return c.json({ message: err?.message || 'Błąd strumienia postępu.' }, 500);
     }
   });
 
@@ -1546,7 +1633,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
 
     if (!process.env.GEMINI_API_KEY) {
-      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji Ĺ›rodowiska.' }, 400);
+      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
     }
 
     try {
@@ -1662,7 +1749,7 @@ Important:
         } else {
           logger.error('Gemini image gen error:', errBody);
         }
-        return c.json({ message: `Blad Gemini (${res.status}): ${detail}` }, status as any);
+        return c.json({ message: `Błąd Gemini (${res.status}): ${detail}` }, status as any);
       }
 
       const data = await res.json();
@@ -1670,7 +1757,7 @@ Important:
         (part: any) => part?.inlineData?.data
       )?.inlineData;
       if (!inlineImage?.data) {
-        return c.json({ message: 'Model Gemini nie wygenerowa? obrazu.' }, 500);
+        return c.json({ message: 'Model Gemini nie wygenerował obrazu.' }, 500);
       }
 
       const mimeType = String(inlineImage.mimeType || 'image/png').trim() || 'image/png';
@@ -1689,7 +1776,7 @@ Important:
       return c.json({ sketchnoteUrl: imageUrl }, 200);
     } catch (e: any) {
       console.error('Sketchnote generation exception:', e);
-      return c.json({ message: `Blad Gemini: ${e?.message || 'nieznany blad'}` }, 500);
+      return c.json({ message: `Błąd Gemini: ${e?.message || 'nieznany błąd'}` }, 500);
     }
   });
 
@@ -1752,13 +1839,13 @@ Important:
     const index = parseInt(c.req.query('index') || '', 10);
     const total = parseInt(c.req.query('total') || '', 10);
     if (isNaN(index) || isNaN(total) || index < 0 || total <= 0 || index >= total) {
-      return c.json({ message: 'Nieprawid?owe parametry chunka (index/total).' }, 400);
+      return c.json({ message: 'Nieprawidłowe parametry chunka (index/total).' }, 400);
     }
-    if (total > 600) return c.json({ message: 'Za du?o chunk?w (max 600, ~1.2GB).' }, 400);
+    if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
 
     const buffer = await c.req.arrayBuffer();
     if (buffer.byteLength > 6 * 1024 * 1024)
-      return c.json({ message: 'Chunk jest zbyt du?y (max 6MB).' }, 413);
+      return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
 
     // Check disk space before writing
     const diskSpace = checkDiskSpace(uploadDir, DISK_SPACE_BLOCK_UPLOAD_BYTES);
@@ -1812,7 +1899,7 @@ Important:
     const total = parseInt(body.total || '0', 10);
 
     if (!workspaceId) return c.json({ message: 'Brakuje workspaceId.' }, 400);
-    if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele ??dania.' }, 400);
+    if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele żądania.' }, 400);
     await ensureWorkspaceAccess(c, workspaceId);
 
     const existingAsset =
@@ -1843,7 +1930,7 @@ Important:
     try {
       assembledPath = await assembleChunksToTempFile(chunksDir, safeId, total);
     } catch (error: any) {
-      return c.json({ message: error?.message || 'Nie udalo sie zlozyc chunkow.' }, 400);
+      return c.json({ message: error?.message || 'Nie udało się złożyć chunków.' }, 400);
     }
 
     const fullStats = await stat(assembledPath);
@@ -2020,7 +2107,7 @@ Important:
 export function createTranscribeRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
   const { transcriptionService, config } = services;
-  const { authMiddleware, applyRateLimit } = middlewares;
+  const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
   const liveTranscribeTimeoutMs = () => {
     if (config?.transcribeLiveTimeoutMs && config.transcribeLiveTimeoutMs > 0) {
       return Number(config.transcribeLiveTimeoutMs);
@@ -2035,6 +2122,15 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
   };
 
   router.post('/live', authMiddleware, applyRateLimit('live-transcribe', 60), async (c) => {
+    const session = c.get('session') as any;
+    const workspaceId = String(
+      session?.workspace_id || c.req.header('X-Workspace-Id') || ''
+    ).trim();
+    if (!workspaceId) {
+      return c.json({ message: 'Brakuje workspaceId.' }, 400);
+    }
+    await ensureWorkspaceAccess(c, workspaceId);
+
     const contentType = c.req.header('content-type') || 'audio/webm';
     const bufferArray = await c.req.arrayBuffer();
     if (bufferArray.byteLength > 5 * 1024 * 1024)

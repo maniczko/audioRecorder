@@ -41,6 +41,7 @@ export default function TaskCreateModal({
     if (!isOpen) return;
 
     previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     window.requestAnimationFrame(() => {
@@ -52,7 +53,7 @@ export default function TaskCreateModal({
     });
 
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
   }, [isOpen]);

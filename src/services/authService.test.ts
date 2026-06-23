@@ -194,10 +194,10 @@ describe('createAuthService', () => {
 
     it('signInWithGoogle calls POST /auth/google', async () => {
       const service = createAuthService();
-      await service.signInWithGoogle({ profile: { email: 'g@g.com' } });
+      await service.signInWithGoogle({ profile: { email: 'g@g.com', idToken: 'google-id-token' } });
       expect(mockApiRequest).toHaveBeenCalledWith('/auth/google', {
         method: 'POST',
-        body: { email: 'g@g.com' },
+        body: { idToken: 'google-id-token' },
       });
     });
   });

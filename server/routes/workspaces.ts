@@ -134,7 +134,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     return new Response(null, { status: 204 });
   });
 
-  router.post('/workspaces/:workspaceId/rag/ask', async (c) => {
+  router.post('/workspaces/:workspaceId/rag/ask', applyRateLimit('rag-ask', 10), async (c) => {
     const workspaceId = c.req.param('workspaceId');
     await ensureWorkspaceAccess(c, workspaceId);
 
@@ -205,6 +205,8 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.post('/voice-profiles', applyRateLimit('voice-profiles'), async (c) => {
     const session = c.get('session') as any;
+    await ensureWorkspaceAccess(c, session.workspace_id);
+
     const speakerName = String(c.req.header('X-Speaker-Name') || '').slice(0, 120);
     if (!speakerName.trim()) return c.json({ message: 'Brakuje naglowka X-Speaker-Name.' }, 400);
 

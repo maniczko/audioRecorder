@@ -95,6 +95,28 @@ describe('tasks extra coverage', () => {
     expect(task.comments).toHaveLength(1);
   });
 
+  test('Regression: createManualTask preserves multiple assignees without personId shadow field', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-15T10:00:00.000Z'));
+
+    const task = createManualTask(
+      'user_1',
+      {
+        title: '  plan wdrozenia ',
+        owner: 'Nieprzypisane',
+        assignedTo: ['Iwo', 'Anna', 'iwo', 'Nieprzypisane', 'Marta'],
+        status: 'todo',
+      },
+      DEFAULT_TASK_COLUMNS,
+      'ws_1'
+    );
+
+    expect(task.owner).toBe('Iwo');
+    expect(task.assignedTo).toEqual(['Iwo', 'Anna', 'Marta']);
+    expect(task).not.toHaveProperty('personId');
+    expect(task).not.toHaveProperty('assigneeIds');
+  });
+
   test('createManualTask throws without title and sanitizes status', () => {
     const columns = [
       { id: 'todo', label: 'Todo', isDone: false },
@@ -384,6 +406,41 @@ describe('tasks extra coverage', () => {
     expect(result).toHaveLength(1);
     expect(result[0].workspaceId).toBe('ws_1');
     expect(result[0].assignedToMe).toBe(true);
+  });
+
+  test('Regression: #0 - buildTasksFromMeetings does not auto-add meeting analysis tasks', () => {
+    const meeting = {
+      id: 'm-auto',
+      title: 'Decision review',
+      startsAt: '2026-06-18T10:00:00.000Z',
+      updatedAt: '2026-06-18T10:30:00.000Z',
+      createdAt: '2026-06-18T09:50:00.000Z',
+      analysis: {
+        tasks: [{ title: 'Anna: prepare automatic follow-up' }],
+        actionItems: ['Send automatic notes'],
+      },
+      attendees: ['Anna'],
+    };
+
+    const manualTask = createManualTask(
+      'user_1',
+      { title: 'Manual follow-up', owner: 'Anna', workspaceId: 'ws_1' },
+      DEFAULT_TASK_COLUMNS,
+      'ws_1'
+    );
+
+    const result = buildTasksFromMeetings(
+      [meeting],
+      [manualTask],
+      {},
+      { id: 'user_1', name: 'Anna' },
+      DEFAULT_TASK_COLUMNS,
+      'ws_1'
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe('Manual follow-up');
+    expect(result.some((task) => task.sourceMeetingId === 'm-auto')).toBe(false);
   });
 
   test('Regression: #0 - buildTasksFromMeetings ignores null manual tasks from persisted state', () => {

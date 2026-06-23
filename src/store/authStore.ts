@@ -159,7 +159,10 @@ export const useAuthStore = create<any>((set, get) => ({
         workspaceId: result.workspaceId,
         token: result.token || '',
       });
-      set({ googleAuthMessage: `Zalogowano przez Google jako ${profile.email}.`, authError: '' });
+      set({
+        googleAuthMessage: `Zalogowano przez Google jako ${result.user?.email || profile.email || 'konto Google'}.`,
+        authError: '',
+      });
     } catch (error: any) {
       set({ googleAuthMessage: normalizeAuthErrorMessage(error) });
     }

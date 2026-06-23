@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import TaskCreateModal from './TaskCreateModal';
 
 // -----------------------------------------------------------------
@@ -19,6 +19,10 @@ describe('Regression: Issue #0 - task create uses floating modal', () => {
     peopleOptions: ['User A'],
     tagOptions: ['urgent'],
   };
+
+  afterEach(() => {
+    document.body.style.overflow = '';
+  });
 
   it('renders the create dialog anatomy and create-only form', () => {
     render(<TaskCreateModal {...baseProps} />);
@@ -53,5 +57,24 @@ describe('Regression: Issue #0 - task create uses floating modal', () => {
     rerender(<TaskCreateModal {...baseProps} onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Anuluj' }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - task modal scroll lock must restore previous body state
+  // Date: 2026-06-23
+  // Bug: Closing the create modal cleared body overflow instead of restoring
+  //      the value that existed before opening the dialog.
+  // Fix: Keep the previous overflow value and restore it on cleanup.
+  // -----------------------------------------------------------------
+  it('restores the previous body overflow after the modal closes', () => {
+    document.body.style.overflow = 'clip';
+
+    const { unmount } = render(<TaskCreateModal {...baseProps} />);
+
+    expect(document.body.style.overflow).toBe('hidden');
+
+    unmount();
+
+    expect(document.body.style.overflow).toBe('clip');
   });
 });

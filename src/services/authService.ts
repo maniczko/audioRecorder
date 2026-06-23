@@ -77,9 +77,10 @@ function createRemoteAuthService() {
       });
     },
     signInWithGoogle({ profile }) {
+      const idToken = profile?.idToken || profile?.credential || '';
       return apiRequest('/auth/google', {
         method: 'POST',
-        body: profile,
+        body: { idToken },
       });
     },
   };

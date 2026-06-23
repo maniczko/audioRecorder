@@ -83,6 +83,6 @@ export function registerAppRoutes(
   app.route('/transcribe', createTranscribeRoutes(services, middlewares));
   app.route('/digest', createDigestRoutes(services, middlewares));
   app.route('/integrations/google', createGoogleIntegrationRoutes(services, middlewares));
-  app.route('/ai', createAiRoutes(middlewares));
+  app.route('/ai', createAiRoutes(services, middlewares));
   app.route('/api/client-errors', createClientErrorRoutes());
 }

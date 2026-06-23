@@ -18,8 +18,8 @@ export function createApp(services: AppServices, mockedMiddlewares?: AppMiddlewa
   applyRequestMetadata(app);
   applyRateLimiting(app);
   applySecurityHeaders(app);
-  registerAppErrorHandler(app);
-  registerNotFoundHandler(app);
+  registerAppErrorHandler(app, config.allowedOrigins || 'http://localhost:3000');
+  registerNotFoundHandler(app, config.allowedOrigins || 'http://localhost:3000');
 
   const middlewares = mockedMiddlewares || createMiddlewares(services);
   registerAppRoutes(app, services, middlewares);
