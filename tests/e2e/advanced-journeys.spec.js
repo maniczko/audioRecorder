@@ -10,6 +10,17 @@ function smallAudioFile(name = 'advanced-import.webm') {
   };
 }
 
+async function createTaskFromModal(page, title) {
+  await page
+    .getByRole('button', { name: /Dodaj zadanie/i })
+    .first()
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Nowe zadanie' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByPlaceholder('Wpisz tytuł zadania...').fill(title);
+  await dialog.getByRole('button', { name: 'Dodaj zadanie' }).click();
+}
+
 async function installFakeAudioCapture(page) {
   await page.addInitScript(() => {
     const createFakeStream = () => ({
@@ -137,7 +148,8 @@ test.describe('Advanced release journeys', () => {
     await expect(page.getByText('Advanced release meeting')).toBeVisible();
 
     await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
-    await expect(page.getByPlaceholder('Dodaj zadanie (N)')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Zadania' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Dodaj zadanie/i }).first()).toBeVisible();
   });
 
   test('keeps recording import blocked when workspace state is not hydrated', async ({ page }) => {
@@ -329,8 +341,7 @@ test.describe('Advanced release journeys', () => {
     await page.keyboard.press('Escape');
 
     await page.locator('.modern-nav-item').filter({ hasText: 'Zadania' }).click();
-    await page.getByPlaceholder('Dodaj zadanie (N)').fill(taskTitle);
-    await page.getByRole('button', { name: 'Dodaj' }).click();
+    await createTaskFromModal(page, taskTitle);
     await expect(page.getByText(taskTitle)).toBeVisible();
   });
 });

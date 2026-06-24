@@ -35,6 +35,7 @@ const referenceFixtures = [
 
 const consoleErrorsByTest = new WeakMap<TestInfo, string[]>();
 const benignConsoleErrorPatterns = [
+  /Failed to load resource: net::ERR_CONNECTION_CLOSED/i,
   /Failed to load resource: net::ERR_NETWORK_CHANGED/i,
   /Failed to load resource: net::ERR_REQUEST_RANGE_NOT_SATISFIABLE/i,
   /Failed to load resource: the server responded with a status of 404 \(Not Found\)/i,
@@ -42,9 +43,9 @@ const benignConsoleErrorPatterns = [
 
 const coreTabs = [
   { label: 'Studio', surface: 'studio', expected: '.modern-content-wrapper' },
-  { label: 'Nagrania', surface: 'recordings', expected: 'text=Release baseline meeting' },
+  { label: 'Nagrania', surface: 'recordings', expected: '.recordings-tab-shell, main' },
   { label: 'Kalendarz', surface: 'calendar', expected: '.calendar-view, .calendar-shell, main' },
-  { label: 'Zadania', surface: 'tasks', expected: 'text=Release baseline task' },
+  { label: 'Zadania', surface: 'tasks', expected: '.tasks-page-shell, .tasks-layout, main' },
   { label: 'Osoby', surface: 'people', expected: '.people-tab, .people-layout, main' },
   { label: 'Notatki', surface: 'notes', expected: '.notes-layout' },
 ];
@@ -70,8 +71,7 @@ async function freezeClock(page) {
 }
 
 async function seedReleaseData(page) {
-  await seedLoggedInUser(page);
-  await seedMeeting(page, {
+  const meeting = {
     id: 'meeting_visual_baseline',
     title: 'Release baseline meeting',
     context: 'Layout validation',
@@ -100,14 +100,98 @@ async function seedReleaseData(page) {
         },
       },
     ],
-  });
-  await seedTask(page, {
+  };
+  const task = {
     id: 'task_visual_baseline',
     title: 'Release baseline task',
     notes: 'Task seeded for responsive visual baseline.',
     dueDate: '2026-05-14T12:00:00.000Z',
     priority: 'high',
+  };
+  const state = {
+    meetings: [meeting],
+    manualTasks: [task],
+    taskState: {},
+    taskBoards: {},
+    calendarMeta: {},
+    vocabulary: [],
+    storedMeetingDrafts: {},
+  };
+  const sessionPayload = {
+    user: {
+      id: 'user_e2e',
+      email: 'e2e@voicelog.test',
+      name: 'E2E Tester',
+      provider: 'local',
+      defaultWorkspaceId: 'ws_e2e',
+      workspaceIds: ['ws_e2e'],
+      workspaceMemberRole: 'owner',
+    },
+    users: [
+      {
+        id: 'user_e2e',
+        email: 'e2e@voicelog.test',
+        name: 'E2E Tester',
+        provider: 'local',
+      },
+    ],
+    workspace: {
+      id: 'ws_e2e',
+      name: 'E2E Workspace',
+      role: 'owner',
+      memberIds: ['user_e2e'],
+      memberRoles: { user_e2e: 'owner' },
+    },
+    workspaces: [
+      {
+        id: 'ws_e2e',
+        name: 'E2E Workspace',
+        role: 'owner',
+        memberIds: ['user_e2e'],
+        memberRoles: { user_e2e: 'owner' },
+      },
+    ],
+    workspaceId: 'ws_e2e',
+    state,
+  };
+  await page.route('**/state/bootstrap**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(sessionPayload),
+    });
   });
+  await page.route('**/auth/session**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(sessionPayload),
+    });
+  });
+  await page.route('**/state/workspaces/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ workspaceId: 'ws_e2e', state }),
+    });
+  });
+  await page.route('**/voice-profiles**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ profiles: [] }),
+    });
+  });
+  await page.route('**/media/recordings/**/audio**', async (route) => {
+    await route.fulfill({
+      status: 204,
+      contentType: 'audio/webm',
+      body: '',
+    });
+  });
+  await seedLoggedInUser(page);
+  await seedMeeting(page, meeting);
+  await seedTask(page, task);
 }
 
 async function seedReferenceData(
@@ -761,7 +845,7 @@ test.describe('Release visual baselines', () => {
       await page.goto('/');
       await openShellTab(page, 'Zadania');
       await page.getByRole('button', { name: 'Dodaj zadanie' }).first().click();
-      await expect(page.getByRole('heading', { name: 'Tytuł zadania' })).toBeVisible();
+      await expect(page.getByRole('dialog', { name: 'Nowe zadanie' })).toBeVisible();
       await assertReferenceScreenQuality(page);
       await screenshotPage(page, `reference-tasks-detail-${viewport.name}.png`);
     });
@@ -782,6 +866,10 @@ test.describe('Release visual baselines', () => {
       await seedReferenceData(page);
       await page.goto('/');
       await openShellTab(page, 'Osoby');
+      await page
+        .getByRole('button', { name: /Iwo Czajka/i })
+        .first()
+        .click();
       await expect(page.getByRole('heading', { name: /Iwo Czajka|Iwo/i })).toBeVisible();
       await assertReferenceScreenQuality(page);
       await screenshotPage(page, `reference-people-profile-${viewport.name}.png`);

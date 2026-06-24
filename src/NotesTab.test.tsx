@@ -102,7 +102,7 @@ describe('NotesTab', () => {
     expect(screen.getByText('nowytag')).toBeInTheDocument();
 
     // Remove tag
-    await userEvent.click(screen.getByRole('button', { name: '×' }));
+    await userEvent.click(screen.getByRole('button', { name: /Usun nowytag/i }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Zapisz notatkę' }));
     expect(handleCreateNote).toHaveBeenCalled();
