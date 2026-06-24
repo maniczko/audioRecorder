@@ -128,6 +128,38 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
     expect(report.blocking).toBe(false);
   });
 
+  it('blocks production when allowed origins only point at localhost', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'http://localhost:3000',
+        VOICELOG_ALLOW_VERCEL_PREVIEWS: undefined,
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+      })
+    );
+
+    const corsCheck = report.errors.find((entry) => entry.name === 'VOICELOG_ALLOWED_ORIGINS');
+    expect(corsCheck?.status).toBe('invalid');
+    expect(corsCheck?.description).toContain('deployed frontend origin');
+    expect(report.blocking).toBe(true);
+  });
+
+  it('allows Vercel preview-only production CORS when explicitly enabled', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'http://localhost:3000',
+        VOICELOG_ALLOW_VERCEL_PREVIEWS: 'true',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+      })
+    );
+
+    expect(report.errors.map((entry) => entry.name)).not.toContain('VOICELOG_ALLOWED_ORIGINS');
+    expect(report.blocking).toBe(false);
+  });
+
   it('accepts Supabase new secret key format for production storage', () => {
     const report = validateEnvironmentSnapshot(
       createBaseEnv({

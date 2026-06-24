@@ -80,6 +80,16 @@ describe('serverUtils', () => {
     });
   });
 
+  it('allows an exact Vercel preview origin in production when it is explicitly allowlisted', () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+    const previewOrigin = 'https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app';
+
+    expect(corsHeaders(previewOrigin, `${previewOrigin},https://app.example.test`)).toMatchObject({
+      'Access-Control-Allow-Origin': previewOrigin,
+    });
+  });
+
   it('rejects wildcard Vercel origins in production unless previews are explicitly enabled', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;

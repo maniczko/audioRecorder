@@ -136,9 +136,61 @@ function isValidSupabaseProjectUrl(value?: string) {
 // ─────────────────────────────────────────────────────────────
 // [104] Runtime validation of required API keys
 // ─────────────────────────────────────────────────────────────
+function splitAllowedOrigins(value?: string) {
+  return String(value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function isLocalBrowserOrigin(value: string) {
+  try {
+    const parsed = new URL(value);
+    return ['localhost', '127.0.0.1'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function hasProductionBrowserOrigin(value?: string) {
+  return splitAllowedOrigins(value).some(
+    (origin) => origin !== '*' && !origin.includes('*') && !isLocalBrowserOrigin(origin)
+  );
+}
+
+function isProductionDeployment() {
+  return Boolean(
+    config.NODE_ENV === 'production' ||
+    process.env.RAILWAY_ENVIRONMENT_NAME ||
+    process.env.RAILWAY_PROJECT_ID
+  );
+}
+
 export function validateRequiredApiKeys() {
   const errors: string[] = [];
   const warnings: string[] = [];
+
+  const allowedOrigins = config.VOICELOG_ALLOWED_ORIGINS;
+  const allowVercelPreviews = config.VOICELOG_ALLOW_VERCEL_PREVIEWS === true;
+  if (isProductionDeployment()) {
+    if (splitAllowedOrigins(allowedOrigins).includes('*')) {
+      errors.push(
+        'Production CORS cannot use VOICELOG_ALLOWED_ORIGINS=*.\n' +
+          '  Configure exact frontend origins, for example:\n' +
+          '  VOICELOG_ALLOWED_ORIGINS=https://your-app.vercel.app'
+      );
+    }
+
+    if (!hasProductionBrowserOrigin(allowedOrigins) && !allowVercelPreviews) {
+      errors.push(
+        'Production CORS is configured only for local development origins.\n' +
+          '  Browser requests from Vercel will be blocked with Access-Control-Allow-Origin=http://localhost:3000.\n' +
+          '  Set VOICELOG_ALLOWED_ORIGINS to the deployed frontend origin, for example:\n' +
+          '  VOICELOG_ALLOWED_ORIGINS=https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app\n' +
+          '  Or intentionally allow Vercel previews with VOICELOG_ALLOW_VERCEL_PREVIEWS=true.'
+      );
+    }
+  }
 
   // Check if at least one STT provider is configured
   const hasOpenAI = Boolean(config.OPENAI_API_KEY);

@@ -9,6 +9,24 @@ VOICELOG_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
 VOICELOG_ALLOW_VERCEL_PREVIEWS=false
 ```
 
+## Current VoiceLog Vercel/Railway setup
+
+If the frontend is served from the Vercel preview deployment used by the main
+branch, Railway must include that exact origin:
+
+```bash
+VOICELOG_ALLOWED_ORIGINS=https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app
+```
+
+For temporary preview testing across Vercel preview URLs, set:
+
+```bash
+VOICELOG_ALLOW_VERCEL_PREVIEWS=true
+```
+
+Do not leave production with only `http://localhost:3000`; browsers will reject
+preflight requests from Vercel because the API will answer with the local origin.
+
 ## Rules
 
 - `VOICELOG_ALLOWED_ORIGINS` is the only production allowlist for browser origins.

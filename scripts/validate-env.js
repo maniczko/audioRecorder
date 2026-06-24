@@ -72,6 +72,67 @@ function evaluateVariable(name, description, value, pattern, severity = 'error')
   return { name, description, severity, status: STATUS_OK };
 }
 
+function splitOrigins(value) {
+  return String(value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function isLocalBrowserOrigin(value) {
+  try {
+    const parsed = new URL(value);
+    return ['localhost', '127.0.0.1'].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function hasProductionBrowserOrigin(value) {
+  return splitOrigins(value).some(
+    (origin) => origin !== '*' && !origin.includes('*') && !isLocalBrowserOrigin(origin)
+  );
+}
+
+function evaluateAllowedOrigins(env, productionDeployment) {
+  const check = evaluateVariable(
+    'VOICELOG_ALLOWED_ORIGINS',
+    'Allowed frontend origins',
+    env.VOICELOG_ALLOWED_ORIGINS,
+    /^https?:\/\/[^,\s]+(,https?:\/\/[^,\s]+)*$/,
+    productionDeployment ? 'error' : 'warning'
+  );
+
+  if (!productionDeployment || check.status !== STATUS_OK) {
+    return check;
+  }
+
+  const origins = splitOrigins(env.VOICELOG_ALLOWED_ORIGINS);
+  if (origins.includes('*')) {
+    return {
+      ...check,
+      status: STATUS_INVALID,
+      preview: env.VOICELOG_ALLOWED_ORIGINS,
+      description: 'Production CORS cannot use wildcard origins',
+    };
+  }
+
+  if (
+    !hasProductionBrowserOrigin(env.VOICELOG_ALLOWED_ORIGINS) &&
+    env.VOICELOG_ALLOW_VERCEL_PREVIEWS !== 'true'
+  ) {
+    return {
+      ...check,
+      status: STATUS_INVALID,
+      preview: env.VOICELOG_ALLOWED_ORIGINS,
+      description:
+        'Production CORS must include a deployed frontend origin or explicitly enable Vercel previews',
+    };
+  }
+
+  return check;
+}
+
 function sanitizeDatabaseUrlPreview(value) {
   try {
     const url = new URL(value);
@@ -155,15 +216,7 @@ export function validateEnvironmentSnapshot(env = process.env) {
     evaluateVariable('VITE_API_BASE_URL', 'Backend API URL', env.VITE_API_BASE_URL, /^https?:\/\//)
   );
   checks.push(evaluateVariable('VOICELOG_API_PORT', 'Port API', env.VOICELOG_API_PORT, /^\d+$/));
-  checks.push(
-    evaluateVariable(
-      'VOICELOG_ALLOWED_ORIGINS',
-      'Allowed frontend origins',
-      env.VOICELOG_ALLOWED_ORIGINS,
-      /^https?:\/\/[^,\s]+(,https?:\/\/[^,\s]+)*$/,
-      productionDeployment ? 'error' : 'warning'
-    )
-  );
+  checks.push(evaluateAllowedOrigins(env, productionDeployment));
   checks.push(
     evaluateVariable(
       'VOICELOG_ADMIN_TOKEN',

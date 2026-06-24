@@ -53,12 +53,38 @@ describe('config.ts — validateRequiredApiKeys', () => {
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'key123';
     process.env.NODE_ENV = 'production';
+    process.env.VOICELOG_ALLOWED_ORIGINS = 'https://voicelog.example.com';
     process.env.DEBUG = 'true';
 
     const { validateRequiredApiKeys } = await import('../config.js');
     validateRequiredApiKeys();
 
     expect(logSpy).toHaveBeenCalledWith('\n✅ Configuration loaded successfully:');
+  });
+
+  test('blocks production when CORS is left on the localhost default', async () => {
+    const previousEnv = { ...process.env };
+
+    try {
+      process.env.OPENAI_API_KEY = 'sk-test123';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test_key';
+      process.env.NODE_ENV = 'production';
+      process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+      delete process.env.VOICELOG_ALLOWED_ORIGINS;
+      delete process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
+
+      const { validateRequiredApiKeys } = await import('../config.js');
+      validateRequiredApiKeys();
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Configuration errors'));
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Production CORS is configured only for local development origins')
+      );
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    } finally {
+      process.env = previousEnv;
+    }
   });
 
   test('blocks Railway production when SUPABASE_URL is a Postgres URL instead of project API URL', async () => {
@@ -68,6 +94,7 @@ describe('config.ts — validateRequiredApiKeys', () => {
       process.env.OPENAI_API_KEY = 'sk-test123';
       process.env.NODE_ENV = 'production';
       process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+      process.env.VOICELOG_ALLOWED_ORIGINS = 'https://voicelog.example.com';
       process.env.SUPABASE_URL =
         'postgresql://postgres:secret@db.tdikvnyrdpudlefjtqty.supabase.co:5432/postgres';
       process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test_key';
