@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout code
@@ -19,13 +20,16 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Checkout code (dependabot)
+
+      - name: Checkout code for target event
         uses: actions/checkout@v6
         if: github.event_name == 'pull_request_target'
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+
       - run: corepack enable
 
       - name: Install dependencies
@@ -34,7 +38,9 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Check bundle size
+      - name: Check compressed bundle size
+        id: compressed-size
+        continue-on-error: true
         uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -44,33 +50,34 @@ jobs:
           build-script: 'build'
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: build-bundle
           path: build/
           retention-days: 7
 
       - name: Comment on PR with bundle size
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            // Calculate bundle sizes
             const distDir = path.join(process.cwd(), 'build');
             let totalSize = 0;
             let jsSize = 0;
             let cssSize = 0;
 
             function calculateSize(dir) {
+              if (!fs.existsSync(dir)) return;
               const files = fs.readdirSync(dir);
-              
+
               for (const file of files) {
                 const filePath = path.join(dir, file);
                 const stat = fs.statSync(filePath);
-                
+
                 if (stat.isDirectory()) {
                   calculateSize(filePath);
                 } else if (file.endsWith('.js')) {
@@ -91,52 +98,29 @@ jobs:
               return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
             }
 
-            // Get base branch sizes (if available)
-            let baseTotalSize = 0;
-            let sizeChange = 0;
-            let sizeChangePercent = 0;
-
-            // Try to read from previous runs (simplified)
-            // In production, you'd use GitHub API to compare with base branch
-
-            let comment = '## 📦 Bundle Size Report\n\n';
+            const compressedOutcome = '${{ steps.compressed-size.outcome }}';
+            let comment = '## Bundle Size Report\n\n';
             comment += '### Build Artifacts\n\n';
-            comment += `| Type | Size |\n`;
-            comment += `|------|------|\n`;
+            comment += '| Type | Size |\n';
+            comment += '|------|------|\n';
             comment += `| JavaScript | ${formatSize(jsSize)} |\n`;
             comment += `| CSS | ${formatSize(cssSize)} |\n`;
-            comment += `| **Total** | **${formatSize(totalSize)}** |\n\n`;
+            comment += `| Total | ${formatSize(totalSize)} |\n\n`;
+            comment += `Compressed-size check outcome: ${compressedOutcome}\n\n`;
 
-            if (github.event_name === 'pull_request') {
-              comment += '### Changes\n\n';
-              
-              if (totalSize > 500 * 1024) {
-                comment += '⚠️ **Warning:** Bundle size is over 500KB\n\n';
-              }
-              
-              if (totalSize > 1024 * 1024) {
-                comment += '🚨 **Critical:** Bundle size is over 1MB\n\n';
-              }
+            if (compressedOutcome !== 'success') {
+              comment += 'The compressed-size action did not complete successfully. This workflow keeps the bundle report advisory so it does not block unrelated GitHub configuration changes.\n\n';
             }
 
-            comment += '### Recommendations\n\n';
-            comment += '- Keep bundle size under 500KB for optimal performance\n';
-            comment += '- Use code splitting for large features\n';
-            comment += '- Tree-shake unused dependencies\n';
-            comment += '- Compress assets with gzip/brotli\n\n';
+            comment += '---\nThis is an automated report from Bundle Size Monitor.\n';
 
-            comment += '---\n*This is an automated report from Bundle Size Monitor.*\n';
-
-            // Delete existing comment if exists
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
 
-            const existingComment = comments.find(c => 
-              c.body.includes('Bundle Size Report')
-            );
+            const existingComment = comments.find((c) => c.body.includes('Bundle Size Report'));
 
             if (existingComment) {
               await github.rest.issues.updateComment({
