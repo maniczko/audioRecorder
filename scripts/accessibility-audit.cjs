@@ -11,7 +11,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const SRC_DIR = path.join(__dirname, '..', 'src');
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
@@ -37,6 +36,46 @@ function ensureReportsDir() {
   }
 }
 
+function lineNumberAt(content, offset) {
+  return content.slice(0, offset).split('\n').length;
+}
+
+function collectOpeningTags(content, tagName) {
+  const tags = [];
+  const pattern = new RegExp(`<${tagName}\\b[\\s\\S]*?>`, 'gi');
+  for (const match of content.matchAll(pattern)) {
+    tags.push({
+      tag: match[0],
+      line: lineNumberAt(content, match.index || 0),
+    });
+  }
+  return tags;
+}
+
+function collectElements(content, tagName) {
+  const elements = [];
+  const pattern = new RegExp(`<${tagName}\\b[\\s\\S]*?<\\/${tagName}>`, 'gi');
+  for (const match of content.matchAll(pattern)) {
+    elements.push({
+      element: match[0],
+      line: lineNumberAt(content, match.index || 0),
+    });
+  }
+  return elements;
+}
+
+function hasAttribute(markup, attributeName) {
+  return new RegExp(`\\b${attributeName}\\s*=`, 'i').test(markup);
+}
+
+function isAriaHidden(markup) {
+  return /\baria-hidden\s*=\s*["']true["']/i.test(markup);
+}
+
+function hasEmptyAlt(markup) {
+  return /\balt\s*=\s*["']\s*["']/i.test(markup);
+}
+
 /**
  * Check 1: Alt text for images
  */
@@ -46,27 +85,23 @@ function checkAltText() {
 
   for (const file of files) {
     const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
+    const tags = collectOpeningTags(content, 'img');
 
-    lines.forEach((line, index) => {
-      // Check for img tags without alt
-      if (/<img[^>]*>/i.test(line)) {
-        if (!/alt\s*=/i.test(line) && !/aria-hidden\s*=\s*["']true["']/i.test(line)) {
-          issues.push({
-            file: path.relative(SRC_DIR, file),
-            line: index + 1,
-            rule: 'img-alt',
-            message: 'Img tag without alt attribute',
-            severity: 'error',
-          });
-        }
-      }
-
-      // Check for empty alt
-      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line)) {
+    tags.forEach(({ tag, line }) => {
+      if (!hasAttribute(tag, 'alt') && !isAriaHidden(tag)) {
         issues.push({
           file: path.relative(SRC_DIR, file),
-          line: index + 1,
+          line,
+          rule: 'img-alt',
+          message: 'Img tag without alt attribute',
+          severity: 'error',
+        });
+      }
+
+      if (hasEmptyAlt(tag) && !isAriaHidden(tag)) {
+        issues.push({
+          file: path.relative(SRC_DIR, file),
+          line,
           rule: 'img-alt-empty',
           message: 'Img tag with empty alt attribute',
           severity: 'warning',
@@ -87,32 +122,33 @@ function checkAriaLabels() {
 
   for (const file of files) {
     const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
+    const buttons = collectElements(content, 'button');
+    const inputs = collectOpeningTags(content, 'input');
 
-    lines.forEach((line, index) => {
-      // Check for buttons with only icons
-      if (/<button[^>]*>[^<]*<svg/i.test(line) || /<button[^>]*>[^<]*<i\s/i.test(line)) {
-        if (!/aria-label\s*=/i.test(line) && !/aria-labelledby\s*=/i.test(line)) {
+    buttons.forEach(({ element, line }) => {
+      if (/<svg\b/i.test(element) || /<i\s/i.test(element)) {
+        if (!hasAttribute(element, 'aria-label') && !hasAttribute(element, 'aria-labelledby')) {
           issues.push({
             file: path.relative(SRC_DIR, file),
-            line: index + 1,
+            line,
             rule: 'button-aria-label',
             message: 'Icon button without aria-label',
             severity: 'error',
           });
         }
       }
+    });
 
-      // Check for inputs without labels
-      if (/<input[^>]*type\s*=\s*["'](text|email|password|search|tel|url)["'][^>]*>/i.test(line)) {
+    inputs.forEach(({ tag, line }) => {
+      if (/\btype\s*=\s*["'](text|email|password|search|tel|url)["']/i.test(tag)) {
         if (
-          !/aria-label\s*=/i.test(line) &&
-          !/aria-labelledby\s*=/i.test(line) &&
-          !/id\s*=/i.test(line)
+          !hasAttribute(tag, 'aria-label') &&
+          !hasAttribute(tag, 'aria-labelledby') &&
+          !hasAttribute(tag, 'id')
         ) {
           issues.push({
             file: path.relative(SRC_DIR, file),
-            line: index + 1,
+            line,
             rule: 'input-label',
             message: 'Input without label or aria-label',
             severity: 'warning',
@@ -232,24 +268,21 @@ function checkFormAccessibility() {
 
   for (const file of files) {
     const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
+    const selects = collectOpeningTags(content, 'select');
 
-    lines.forEach((line, index) => {
-      // Check for select without label
-      if (/<select[^>]*>/i.test(line)) {
-        if (
-          !/aria-label\s*=/i.test(line) &&
-          !/aria-labelledby\s*=/i.test(line) &&
-          !/id\s*=/i.test(line)
-        ) {
-          issues.push({
-            file: path.relative(SRC_DIR, file),
-            line: index + 1,
-            rule: 'select-label',
-            message: 'Select without label or aria-label',
-            severity: 'warning',
-          });
-        }
+    selects.forEach(({ tag, line }) => {
+      if (
+        !hasAttribute(tag, 'aria-label') &&
+        !hasAttribute(tag, 'aria-labelledby') &&
+        !hasAttribute(tag, 'id')
+      ) {
+        issues.push({
+          file: path.relative(SRC_DIR, file),
+          line,
+          rule: 'select-label',
+          message: 'Select without label or aria-label',
+          severity: 'warning',
+        });
       }
     });
   }
