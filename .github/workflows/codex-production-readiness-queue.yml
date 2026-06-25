@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - bootstrap-labels
+          - reconcile
           - dispatch-next
           - status
       dry_run:
@@ -20,6 +21,8 @@ on:
         options:
           - 'false'
           - 'true'
+  schedule:
+    - cron: '17 * * * *'
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review, closed]
 
@@ -31,6 +34,8 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  checks: read
+  actions: read
 
 jobs:
   queue:
@@ -43,7 +48,7 @@ jobs:
       REPO: ${{ github.repository }}
       INDEX_ISSUE: '1263'
       DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-      MODE: ${{ github.event.inputs.mode || 'sync-pr' }}
+      MODE: ${{ github.event_name == 'schedule' && 'reconcile' || github.event.inputs.mode || 'sync-pr' }}
 
     steps:
       - name: Checkout
@@ -73,6 +78,7 @@ jobs:
           create_label "codex:ready" "0E8A16" "Ready for Codex execution"
           create_label "codex:in-progress" "FBCA04" "Codex is currently working"
           create_label "codex:pr-open" "1D76DB" "Codex opened a PR"
+          create_label "codex:checks-failed" "B60205" "Linked PR has failing required checks"
           create_label "codex:blocked" "D93F0B" "Codex is blocked"
           create_label "codex:review" "5319E7" "Needs human review"
           create_label "codex:done" "6F42C1" "Completed by merged PR"
@@ -236,16 +242,52 @@ jobs:
             printf '%s\n' "$body" | grep -Eio '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | head -1 | grep -Eo '[0-9]+' || true
           }
 
+          sync_pr_checks() {
+            local issue="$1"
+            local pr_number="$2"
+            local failing_checks
+            failing_checks=$(gh pr view "$pr_number" --repo "$REPO" --json statusCheckRollup --jq '
+              [
+                .statusCheckRollup[]?
+                | select(
+                    (.status != "COMPLETED") or
+                    ((.conclusion // "") != "SUCCESS" and (.conclusion // "") != "NEUTRAL" and (.conclusion // "") != "SKIPPED")
+                  )
+              ] | length
+            ' 2>/dev/null || echo "0")
+
+            if [ "$failing_checks" != "0" ]; then
+              add_label "$issue" "codex:checks-failed"
+              add_label "$pr_number" "codex:checks-failed"
+              log "PR #$pr_number linked to #$issue has failing or pending checks: $failing_checks"
+            else
+              remove_label "$issue" "codex:checks-failed"
+              remove_label "$pr_number" "codex:checks-failed"
+              log "PR #$pr_number linked to #$issue has no failing/pending checks."
+            fi
+          }
+
           sync_pr_open() {
             local issue="$1"
             local pr_number="$2"
+            local labels already_pr_open
             [ -n "$issue" ] || return 0
             issue_in_index "$issue" || { log "PR links #$issue, but it is not in #$INDEX_ISSUE. Skipping."; return 0; }
+            labels=$(issue_labels "$issue")
+            already_pr_open=false
+            if echo "$labels" | grep -qx "codex:pr-open"; then
+              already_pr_open=true
+            fi
             add_label "$issue" "production-readiness"
             add_label "$issue" "codex:pr-open"
+            add_label "$issue" "codex:review"
             remove_label "$issue" "codex:in-progress"
             remove_label "$issue" "codex:ready"
-            comment_issue "$issue" "PR #${pr_number} is open for this production-readiness task. Queue status moved to \`codex:pr-open\`."
+            remove_label "$issue" "codex:blocked"
+            sync_pr_checks "$issue" "$pr_number"
+            if [ "$already_pr_open" = "false" ]; then
+              comment_issue "$issue" "PR #${pr_number} is open for this production-readiness task. Queue status moved to \`codex:pr-open\`."
+            fi
           }
 
           sync_pr_merged() {
@@ -256,6 +298,7 @@ jobs:
             add_label "$issue" "production-readiness"
             add_label "$issue" "codex:done"
             remove_label "$issue" "codex:pr-open"
+            remove_label "$issue" "codex:checks-failed"
             remove_label "$issue" "codex:in-progress"
             remove_label "$issue" "codex:ready"
             remove_label "$issue" "codex:blocked"
@@ -263,7 +306,22 @@ jobs:
             comment_issue "$issue" "Merged via PR #${pr_number}. Queue status moved to \`codex:done\`, and #${INDEX_ISSUE} was checked off."
           }
 
+          reconcile_open_prs() {
+            local rows row pr_number body issue
+            log "Reconciling open PRs against #$INDEX_ISSUE..."
+            rows=$(gh pr list --repo "$REPO" --state open --limit 100 --json number,body --jq '.[] | @base64')
+            for row in $rows; do
+              body=$(printf '%s' "$row" | base64 -d | jq -r '.body // ""')
+              issue=$(linked_issue_from_pr_body "$body")
+              [ -n "$issue" ] || continue
+              issue_in_index "$issue" || continue
+              pr_number=$(printf '%s' "$row" | base64 -d | jq -r '.number')
+              sync_pr_open "$issue" "$pr_number"
+            done
+          }
+
           dispatch_next() {
+            reconcile_open_prs
             if has_active_work; then
               log "No dispatch: active work already exists."
               return 0
@@ -312,11 +370,19 @@ EOF
             exit 0
           fi
 
+          if [ "$MODE" = "reconcile" ]; then
+            reconcile_open_prs
+            exit 0
+          fi
+
           if [ "$MODE" = "status" ]; then
+            reconcile_open_prs
             log "Open in-progress issues:"
             gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:in-progress" || true
             log "Open PR-linked issues:"
             gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:pr-open" || true
+            log "Open PRs with failing checks:"
+            gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:checks-failed" || true
             exit 0
           fi
 
