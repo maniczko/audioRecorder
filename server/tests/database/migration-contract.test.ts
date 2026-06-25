@@ -14,6 +14,21 @@ const segmentedStorageColumns = [
   'normalized_size_bytes',
 ] as const;
 
+const transcriptionJobColumns = [
+  'recording_id',
+  'workspace_id',
+  'meeting_id',
+  'status',
+  'attempt_count',
+  'max_attempts',
+  'locked_by',
+  'locked_until',
+  'next_run_at',
+  'last_error_code',
+  'last_error_message',
+  'completed_at',
+] as const;
+
 function readMigration(fileName: string) {
   return fs.readFileSync(path.join(migrationsDir, fileName), 'utf8');
 }
@@ -36,6 +51,31 @@ describe('Database migration contracts', () => {
     const initialSchema = readMigration('001_initial_schema.sql').toLowerCase();
 
     for (const column of segmentedStorageColumns) {
+      expect(initialSchema).toContain(column);
+    }
+  });
+
+  test('transcription job migration contains durable queue and lease contract', () => {
+    const migration = readMigration('20260625_transcription_jobs.sql');
+    const normalized = migration.replace(/\s+/g, ' ').toLowerCase();
+
+    expect(normalized).toContain('create table if not exists transcription_jobs');
+    for (const column of transcriptionJobColumns) {
+      expect(normalized).toContain(column);
+    }
+    expect(normalized).toContain("status text not null default 'queued'");
+    expect(normalized).toContain(
+      'create unique index if not exists idx_transcription_jobs_active_recording'
+    );
+    expect(normalized).toContain("where status in ('queued', 'running', 'retryable_failed')");
+    expect(normalized).toContain('idx_transcription_jobs_queue');
+  });
+
+  test('initial schema contains transcription job table for fresh databases', () => {
+    const initialSchema = readMigration('001_initial_schema.sql').toLowerCase();
+
+    expect(initialSchema).toContain('create table if not exists transcription_jobs');
+    for (const column of transcriptionJobColumns) {
       expect(initialSchema).toContain(column);
     }
   });

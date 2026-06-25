@@ -206,6 +206,7 @@ export default class TranscriptionService extends EventEmitter {
   private _jobStartTimes: Map<string, number>;
   private _staleJobTimer: ReturnType<typeof setInterval> | null;
   private _pendingQueue: Array<{ recordingId: string; asset: any; options: any }> = [];
+  private workerId: string;
 
   constructor(db: any, workspaceService: any, audioPipeline: any, speakerEmbedder: any) {
     super();
@@ -216,6 +217,7 @@ export default class TranscriptionService extends EventEmitter {
     this.transcriptionJobs = new Map();
     this._jobStartTimes = new Map();
     this._staleJobTimer = null;
+    this.workerId = `worker_${process.pid}_${Math.random().toString(36).slice(2, 10)}`;
     this._startStaleJobSweep();
   }
 
@@ -293,6 +295,13 @@ export default class TranscriptionService extends EventEmitter {
     return await this.db.getMediaAsset(recordingId);
   }
 
+  async getDurableTranscriptionJob(recordingId: string) {
+    if (typeof this.db.getTranscriptionJob !== 'function') {
+      return null;
+    }
+    return await this.db.getTranscriptionJob(recordingId);
+  }
+
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,
@@ -313,11 +322,19 @@ export default class TranscriptionService extends EventEmitter {
   }
 
   async queueTranscription(recordingId: string, updates: any) {
-    return await this.db.queueTranscription(recordingId, updates);
+    if (typeof this.db.enqueueTranscriptionJob === 'function') {
+      return await this.db.enqueueTranscriptionJob(recordingId, updates);
+    }
+    if (typeof this.db.queueTranscription === 'function') {
+      return await this.db.queueTranscription(recordingId, updates);
+    }
+    return null;
   }
 
   async startTranscriptionPipeline(recordingId: string, asset: any, options: any) {
-    await this.queueTranscription(recordingId, options);
+    if (typeof this.db.enqueueTranscriptionJob !== 'function') {
+      await this.queueTranscription(recordingId, options);
+    }
     await this.ensureTranscriptionJob(recordingId, asset, options);
     return await this.getMediaAsset(recordingId);
   }
@@ -529,6 +546,11 @@ export default class TranscriptionService extends EventEmitter {
       return;
     }
 
+    let durableJob: any = null;
+    if (typeof this.db.enqueueTranscriptionJob === 'function') {
+      durableJob = await this.db.enqueueTranscriptionJob(recordingId, options);
+    }
+
     // Queue jobs when at capacity or under memory pressure instead of rejecting
     const rss = process.memoryUsage().rss;
     const atCapacity = this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS;
@@ -546,9 +568,16 @@ export default class TranscriptionService extends EventEmitter {
         );
       }
       // Mark as queued in DB (not failed) so frontend shows "W toku" instead of error
-      await this.queueTranscription(recordingId, options);
+      if (!durableJob) await this.queueTranscription(recordingId, options);
       if (memoryPressure && typeof global.gc === 'function') global.gc();
       return;
+    }
+
+    if (typeof this.db.acquireTranscriptionJobLease === 'function') {
+      durableJob = await this.db.acquireTranscriptionJobLease(this.workerId, { recordingId });
+      if (!durableJob) {
+        return;
+      }
     }
 
     const jobPromise = Promise.resolve()
@@ -636,6 +665,9 @@ export default class TranscriptionService extends EventEmitter {
           ...result,
           pipelineStatus: 'completed',
         });
+        if (durableJob && typeof this.db.completeTranscriptionJob === 'function') {
+          await this.db.completeTranscriptionJob(durableJob.id, this.workerId);
+        }
 
         if (shouldRunPostprocess && !isEmptyTranscript && !segmentedManifest) {
           this.runEnhancementPostProcess(
@@ -681,6 +713,14 @@ export default class TranscriptionService extends EventEmitter {
               ? error.audioQuality
               : null
           );
+          if (durableJob && typeof this.db.failTranscriptionJob === 'function') {
+            await this.db.failTranscriptionJob(durableJob.id, this.workerId, {
+              code: failureDiagnostics?.errorCode || failureDiagnostics?.code || error?.code || '',
+              message: error?.message || String(error || 'Unknown pipeline error'),
+              retryable: Boolean(failureDiagnostics?.retryable || error?.retryable),
+              retryAfterMs: Number(failureDiagnostics?.retryAfterMs || error?.retryAfterMs || 0),
+            });
+          }
         } catch (markError: any) {
           console.error(
             '[Pipeline] Failed to mark transcription failure:',
