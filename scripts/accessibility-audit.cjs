@@ -312,7 +312,7 @@ function findFiles(dir, extensions) {
 }
 
 function runAudit() {
-  log('\n🔍 Starting Accessibility Audit...\n', 'cyan');
+  log('\nStarting Accessibility Audit...\n', 'cyan');
 
   const checks = [
     { name: 'Alt Text', fn: checkAltText },
@@ -331,9 +331,9 @@ function runAudit() {
     allIssues.push(...issues);
 
     if (issues.length === 0) {
-      log(`    ✅ ${check.name}: No issues`, 'green');
+      log(`    PASS ${check.name}: No issues`, 'green');
     } else {
-      log(`    ⚠️  ${check.name}: ${issues.length} issue(s)`, 'yellow');
+      log(`    WARN ${check.name}: ${issues.length} issue(s)`, 'yellow');
     }
   }
 
@@ -344,7 +344,7 @@ function runAudit() {
   fs.writeFileSync(reportPath, JSON.stringify(allIssues, null, 2));
 
   // Summary
-  log('\n📊 Summary:', 'cyan');
+  log('\nSummary:', 'cyan');
   const bySeverity = {
     error: allIssues.filter((i) => i.severity === 'error').length,
     warning: allIssues.filter((i) => i.severity === 'warning').length,
@@ -354,18 +354,13 @@ function runAudit() {
   log(`  Errors: ${bySeverity.error}`, bySeverity.error > 0 ? 'red' : 'green');
   log(`  Warnings: ${bySeverity.warning}`, bySeverity.warning > 0 ? 'yellow' : 'green');
   log(`  Info: ${bySeverity.info}`, 'blue');
-  log(`\n📄 Report saved to: ${reportPath}`, 'cyan');
+  log(`\nReport saved to: ${reportPath}`, 'cyan');
 
   const isCi = process.argv.includes('--ci');
   const isStrict = process.argv.includes('--strict');
-  if (isCi && isStrict && allIssues.length > 0) {
-    log('\nAccessibility audit failed in strict mode', 'red');
-    process.exit(1);
-  }
-
-  // CI mode - exit with error if there are errors
-  if (process.argv.includes('--ci') && bySeverity.error > 0) {
-    log('\n❌ Accessibility audit failed with errors', 'red');
+  const blockingIssueCount = bySeverity.error + (isStrict ? bySeverity.warning : 0);
+  if (isCi && blockingIssueCount > 0) {
+    log('\nAccessibility audit failed with blocking issues', 'red');
     process.exit(1);
   }
 
