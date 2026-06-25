@@ -76,6 +76,18 @@ function hasEmptyAlt(markup) {
   return /\balt\s*=\s*["']\s*["']/i.test(markup);
 }
 
+function hasVisibleText(markup) {
+  const withoutIcons = markup
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<i\b[\s\S]*?<\/i>/gi, ' ');
+  const text = withoutIcons
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[{}"'`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /[0-9A-Za-zÀ-ž]/.test(text);
+}
+
 /**
  * Check 1: Alt text for images
  */
@@ -127,7 +139,11 @@ function checkAriaLabels() {
 
     buttons.forEach(({ element, line }) => {
       if (/<svg\b/i.test(element) || /<i\s/i.test(element)) {
-        if (!hasAttribute(element, 'aria-label') && !hasAttribute(element, 'aria-labelledby')) {
+        if (
+          !hasAttribute(element, 'aria-label') &&
+          !hasAttribute(element, 'aria-labelledby') &&
+          !hasVisibleText(element)
+        ) {
           issues.push({
             file: path.relative(SRC_DIR, file),
             line,
