@@ -18,26 +18,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
+
       - name: Validate workflow YAML parses
         run: |
-          python3 - <<'PY'
-          import pathlib
-          import sys
-          try:
-              import yaml
-          except Exception as exc:
-              print(f'PyYAML unavailable: {exc}')
-              sys.exit(1)
-
-          paths = [
-              pathlib.Path('.github/workflows/codex-production-readiness-queue.yml'),
-              pathlib.Path('.github/workflows/codex-production-readiness-queue-reconcile-smoke.yml'),
-          ]
-          for path in paths:
-              with path.open('r', encoding='utf-8') as f:
-                  yaml.safe_load(f)
-              print(f'OK: {path}')
-          PY
+          ruby -ryaml -e 'ARGV.each { |path| YAML.load_file(path); puts "OK: #{path}" }' \
+            .github/workflows/codex-production-readiness-queue.yml \
+            .github/workflows/codex-production-readiness-queue-reconcile-smoke.yml
 
       - name: Validate reconcile keywords
         run: |
