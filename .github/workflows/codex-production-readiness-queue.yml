@@ -146,21 +146,26 @@ jobs:
           }
 
           bootstrap_labels() {
-            local numbers
+            local numbers labels
             numbers=$(issue_body "$INDEX_ISSUE" | grep -Eo '#[0-9]+' | tr -d '#' | sort -n | uniq)
             for issue in $numbers; do
               if [ "$issue" = "$INDEX_ISSUE" ]; then
                 add_label "$issue" "production-readiness"
                 continue
               fi
+
               local state prio
               state=$(issue_state "$issue")
               add_label "$issue" "production-readiness"
               prio=$(priority_from_title "$issue")
               if [ -n "$prio" ]; then add_label "$issue" "$prio"; fi
+
               if [ "$state" = "OPEN" ]; then
                 labels=$(issue_labels "$issue")
-                if ! echo "$labels" | grep -qx "codex:done" && ! echo "$labels" | grep -qx "codex:blocked" && ! echo "$labels" | grep -qx "codex:pr-open" && ! echo "$labels" | grep -qx "codex:in-progress"; then
+                if ! echo "$labels" | grep -qx "codex:done" && \
+                   ! echo "$labels" | grep -qx "codex:blocked" && \
+                   ! echo "$labels" | grep -qx "codex:pr-open" && \
+                   ! echo "$labels" | grep -qx "codex:in-progress"; then
                   add_label "$issue" "codex:ready"
                 fi
               fi
@@ -201,25 +206,29 @@ jobs:
 
           check_index_item() {
             local issue="$1"
-            local body tmp
-            body=$(issue_body "$INDEX_ISSUE")
+            local body_file tmp
+            body_file=$(mktemp)
             tmp=$(mktemp)
-            python3 - "$issue" > "$tmp" <<'PY'
+            issue_body "$INDEX_ISSUE" > "$body_file"
+            python3 - "$issue" "$body_file" > "$tmp" <<'PY'
+          import pathlib
           import re
           import sys
+
           issue = sys.argv[1]
-          body = sys.stdin.read()
+          body_file = pathlib.Path(sys.argv[2])
+          body = body_file.read_text(encoding='utf-8')
           pattern = re.compile(rf'(^- \[ \] #{re.escape(issue)}(\b|\D))', re.M)
           body = pattern.sub(lambda m: m.group(0).replace('- [ ]', '- [x]', 1), body, count=1)
           print(body, end='')
           PY
             if [ "$DRY_RUN" = "true" ]; then
               log "[dry-run] would check #$issue in #$INDEX_ISSUE"
-              rm -f "$tmp"
+              rm -f "$tmp" "$body_file"
               return 0
             fi
             gh issue edit "$INDEX_ISSUE" --repo "$REPO" --body-file "$tmp" >/dev/null
-            rm -f "$tmp"
+            rm -f "$tmp" "$body_file"
           }
 
           linked_issue_from_pr_body() {
@@ -338,4 +347,4 @@ EOF
             exit 0
           fi
 
-          log "No operation performed for mode=$MODE event=${{ github.event_name }} action=${{ github.event.action || '' }}"
+          log "No operation performed for mode=$MODE event=${{ github.event_name }}"
