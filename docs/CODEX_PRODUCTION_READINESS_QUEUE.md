@@ -20,6 +20,7 @@ Codex should execute one production-readiness issue at a time, in queue order, a
 4. Codex must implement exactly one issue per run.
 5. Codex must not merge PRs.
 6. Human review and CI remain the release gate.
+7. A linked PR with failing or pending checks must not allow the next queue item to start.
 
 ## Labels
 
@@ -33,22 +34,46 @@ The queue workflows use these labels:
 - `codex:ready`
 - `codex:in-progress`
 - `codex:pr-open`
+- `codex:checks-failed`
 - `codex:blocked`
 - `codex:review`
 - `codex:done`
 
-The workflow `.github/workflows/codex-production-readiness-queue.yml` can create these labels when run with `mode=bootstrap-labels`.
+The workflow `.github/workflows/codex-production-readiness-queue.yml` can create or update these labels when run with `mode=bootstrap-labels`.
 
 ## Recommended start sequence
 
 Run the workflow manually first:
 
 1. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=bootstrap-labels`.
-2. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=dispatch-next`.
-3. Confirm that the first issue gets a `@codex` dispatch comment and `codex:in-progress`.
-4. Wait for Codex to open a PR.
-5. Review CI and merge manually.
-6. The workflow will mark the linked issue as done and dispatch the next queue item.
+2. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=reconcile`.
+3. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=dispatch-next`.
+4. Confirm that the selected issue gets a `@codex` dispatch comment and `codex:in-progress`.
+5. Wait for Codex to open a PR.
+6. Review CI and merge manually.
+7. The workflow will mark the linked issue as done and dispatch the next queue item.
+
+## Reconciliation mode
+
+`mode=reconcile` is the safety net for cases where Codex opens a PR but the issue status does not update through the normal `pull_request` event.
+
+Reconciliation does this:
+
+1. Scans open PRs in the repository.
+2. Reads each PR body.
+3. Finds `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>`.
+4. Confirms the linked issue exists in `#1263`.
+5. Moves the linked issue to:
+   - `production-readiness`
+   - `codex:pr-open`
+   - `codex:review`
+6. Removes stale queue states from the linked issue:
+   - `codex:in-progress`
+   - `codex:ready`
+   - `codex:blocked`
+7. Checks the PR status checks and adds `codex:checks-failed` when checks are failing or pending.
+
+The workflow also runs reconciliation automatically on an hourly schedule.
 
 ## GitHub Codex integration assumption
 
@@ -76,14 +101,17 @@ When Codex starts an issue:
 
 ## PR status sync
 
-When a PR is opened and its body contains `Closes #<issue-number>`, the workflow marks that issue as `codex:pr-open` and removes `codex:in-progress`.
+When a PR is opened and its body contains `Closes #<issue-number>`, the workflow marks that issue as `codex:pr-open`, adds `codex:review`, and removes `codex:in-progress`.
+
+When that PR has failing or pending checks, the workflow adds `codex:checks-failed` to both the linked issue and the PR.
 
 When that PR is merged, the workflow:
 
 1. Adds `codex:done`.
 2. Removes active queue labels.
-3. Checks the issue line in `#1263`.
-4. Dispatches the next unchecked issue.
+3. Removes `codex:checks-failed`.
+4. Checks the issue line in `#1263`.
+5. Dispatches the next unchecked issue.
 
 ## Blocked work
 
@@ -103,6 +131,7 @@ The queue runner skips blocked issues until a human removes `codex:blocked` and 
 
 - Never auto-merge P0/P1 PRs.
 - Never run two production-readiness issues in parallel.
+- Never dispatch the next issue while any production-readiness PR has `codex:pr-open`.
 - Never remove privacy, security, or auth checks to make tests pass.
 - Never print secrets in issue comments, PR bodies, logs, screenshots, or artifacts.
 - Prefer small PRs over broad refactors.
