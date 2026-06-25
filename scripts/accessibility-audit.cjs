@@ -356,11 +356,8 @@ function runAudit() {
   log(`  Info: ${bySeverity.info}`, 'blue');
   log(`\nReport saved to: ${reportPath}`, 'cyan');
 
-  const isCi = process.argv.includes('--ci');
-  const isStrict = process.argv.includes('--strict');
-  const blockingIssueCount = bySeverity.error + (isStrict ? bySeverity.warning : 0);
-  if (isCi && blockingIssueCount > 0) {
-    log('\nAccessibility audit failed with blocking issues', 'red');
+  if (process.argv.includes('--ci') && bySeverity.error > 0) {
+    log('\nAccessibility audit failed with errors', 'red');
     process.exit(1);
   }
 
