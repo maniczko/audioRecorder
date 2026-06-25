@@ -1,6 +1,5 @@
 version: 2
 updates:
-  # NPM dependencies
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
@@ -8,12 +7,9 @@ updates:
       day: 'monday'
       time: '09:00'
       timezone: 'Europe/Warsaw'
-    open-pull-requests-limit: 10
-    reviewers:
-      - 'owner'
+    open-pull-requests-limit: 3
     labels:
       - 'dependencies'
-      - 'automerge'
     commit-message:
       prefix: 'chore(deps)'
     groups:
@@ -25,17 +21,15 @@ updates:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
 
-  # GitHub Actions
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
-      time: '09:00'
+      time: '09:30'
       timezone: 'Europe/Warsaw'
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2
     labels:
       - 'ci/cd'
-      - 'automerge'
     commit-message:
       prefix: 'ci'
