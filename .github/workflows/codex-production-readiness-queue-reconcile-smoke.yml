@@ -1,0 +1,47 @@
+name: Codex Queue Reconcile Smoke
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/codex-production-readiness-queue.yml'
+      - 'docs/CODEX_PRODUCTION_READINESS_QUEUE.md'
+      - 'docs/github/CODEX_QUEUE_OPERATIONS.md'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-yaml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate workflow YAML parses
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import sys
+          try:
+              import yaml
+          except Exception as exc:
+              print(f'PyYAML unavailable: {exc}')
+              sys.exit(1)
+
+          paths = [
+              pathlib.Path('.github/workflows/codex-production-readiness-queue.yml'),
+              pathlib.Path('.github/workflows/codex-production-readiness-queue-reconcile-smoke.yml'),
+          ]
+          for path in paths:
+              with path.open('r', encoding='utf-8') as f:
+                  yaml.safe_load(f)
+              print(f'OK: {path}')
+          PY
+
+      - name: Validate reconcile keywords
+        run: |
+          grep -q 'mode=reconcile' docs/CODEX_PRODUCTION_READINESS_QUEUE.md
+          grep -q 'reconcile_open_prs' .github/workflows/codex-production-readiness-queue.yml
+          grep -q 'codex:checks-failed' .github/workflows/codex-production-readiness-queue.yml
+          grep -q 'Production Readiness Queue Checklist' .github/PULL_REQUEST_TEMPLATE.md
