@@ -28,6 +28,19 @@ export interface UserDraft extends Partial<UserProfile> {
   workspaceId?: string;
 }
 
+export interface RecordingConsentAuditMetadata {
+  acceptedAt?: string;
+  workspaceId?: string;
+  policyVersion?: string;
+  disclosureTitle?: string;
+  providerNotice?: string;
+  providers?: Array<{
+    id?: string;
+    label?: string;
+    enabled?: boolean;
+  }>;
+}
+
 export interface MeetingUpdates {
   title?: string;
   context?: string;
@@ -42,6 +55,7 @@ export interface MeetingUpdates {
   workspaceId?: string;
   meetingId?: string;
   contentType?: string;
+  recordingConsent?: RecordingConsentAuditMetadata;
 }
 
 export interface MediaAsset {

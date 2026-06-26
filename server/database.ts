@@ -8,6 +8,7 @@ import { Worker } from 'node:worker_threads';
 import { logger } from './logger.ts';
 import { config } from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
+import { isCreatedAtExpiredByRetention } from './lib/retentionPolicy.ts';
 import type { SessionPayload, WorkspaceStatePayload } from '../src/shared/contracts.ts';
 import {
   STORAGE_CONTENT_TYPE,
@@ -2293,7 +2294,7 @@ export class Database {
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,
-    options: { actorUserId?: string } = {}
+    options: { actorUserId?: string; source?: string } = {}
   ): Promise<void> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
@@ -2373,6 +2374,7 @@ export class Database {
         ragChunksDeleted,
         transcriptPayloadCount,
         hadTranscript: Array.isArray(transcript) ? transcript.length > 0 : Boolean(transcript),
+        source: String(options.source || 'manual'),
       },
     });
     await this.tombstoneWorkspaceRecording(workspaceId, recordingId);
@@ -2380,7 +2382,20 @@ export class Database {
 
   async cleanupExpiredRecordingsByRetention({
     nowIso = this.nowIso(),
-  }: { nowIso?: string } = {}): Promise<{ checked: number; deleted: number }> {
+    actorUserId = 'system',
+    source = 'retention-maintenance',
+    workspaceId = '',
+  }: {
+    nowIso?: string;
+    actorUserId?: string;
+    source?: string;
+    workspaceId?: string;
+  } = {}): Promise<{
+    checked: number;
+    deleted: number;
+    deletedRecordingIds: string[];
+  }> {
+    const workspaceFilter = String(workspaceId || '').trim();
     const rows = await this._query(
       `SELECT
          media_assets.id,
@@ -2389,27 +2404,178 @@ export class Database {
          workspace_state.retention_days
        FROM media_assets
        JOIN workspace_state ON workspace_state.workspace_id = media_assets.workspace_id
-       WHERE workspace_state.retention_days > 0`
+       WHERE workspace_state.retention_days > 0
+         ${workspaceFilter ? 'AND media_assets.workspace_id = ?' : ''}`,
+      workspaceFilter ? [workspaceFilter] : []
     );
     const nowMs = new Date(nowIso).getTime();
     if (!Number.isFinite(nowMs)) {
-      return { checked: rows.length, deleted: 0 };
+      return { checked: rows.length, deleted: 0, deletedRecordingIds: [] };
     }
 
     let deleted = 0;
+    const deletedRecordingIds: string[] = [];
     for (const row of rows) {
       const retentionDays = _normalizeRetentionDays(row.retention_days, 0);
       if (retentionDays <= 0) continue;
-      const createdAtMs = new Date(row.created_at).getTime();
-      if (!Number.isFinite(createdAtMs)) continue;
-      const maxAgeMs = retentionDays * 24 * 60 * 60 * 1000;
-      if (nowMs - createdAtMs <= maxAgeMs) continue;
+      if (
+        !isCreatedAtExpiredByRetention({
+          createdAt: row.created_at,
+          nowIso,
+          retentionDays,
+        })
+      ) {
+        continue;
+      }
 
-      await this.deleteMediaAsset(row.id, row.workspace_id);
+      await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source });
       deleted++;
+      deletedRecordingIds.push(row.id);
     }
 
-    return { checked: rows.length, deleted };
+    if (workspaceFilter || deleted > 0) {
+      await this.writeAuditLog({
+        workspaceId: workspaceFilter || 'all',
+        actorUserId,
+        action: 'retention.cleanup.completed',
+        entityType: 'workspace',
+        entityId: workspaceFilter || 'all',
+        metadata: {
+          source,
+          nowIso,
+          checked: rows.length,
+          deleted,
+          deletedRecordingIds,
+        },
+      });
+    }
+
+    return { checked: rows.length, deleted, deletedRecordingIds };
+  }
+
+  async exportWorkspaceData(
+    workspaceId: string,
+    options: { actorUserId?: string; source?: string } = {}
+  ): Promise<any> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+
+    const exportedAt = this.nowIso();
+    const [workspace, members, state, mediaAssets, ragChunks, auditLogs, transcriptionJobs] =
+      await Promise.all([
+        this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
+        this._query(
+          `SELECT workspace_members.workspace_id, workspace_members.user_id,
+                  workspace_members.member_role, workspace_members.joined_at,
+                  users.email, users.name
+           FROM workspace_members
+           LEFT JOIN users ON users.id = workspace_members.user_id
+           WHERE workspace_members.workspace_id = ?
+           ORDER BY workspace_members.joined_at ASC`,
+          [safeWorkspaceId]
+        ),
+        this.getWorkspaceState(safeWorkspaceId),
+        this._query(`SELECT * FROM media_assets WHERE workspace_id = ? ORDER BY created_at ASC`, [
+          safeWorkspaceId,
+        ]),
+        this._query(
+          `SELECT id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
+           FROM rag_chunks WHERE workspace_id = ? ORDER BY created_at ASC`,
+          [safeWorkspaceId]
+        ),
+        this._query(`SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC`, [
+          safeWorkspaceId,
+        ]),
+        this._query(
+          `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
+          [safeWorkspaceId]
+        ),
+      ]);
+
+    const payload = {
+      schemaVersion: 'workspace-export-v1',
+      exportedAt,
+      workspace: {
+        id: safeWorkspaceId,
+        name: String(workspace?.name || ''),
+        ownerUserId: String(workspace?.owner_user_id || ''),
+        createdAt: String(workspace?.created_at || ''),
+        updatedAt: String(workspace?.updated_at || ''),
+        retentionDays: state.retentionDays,
+      },
+      members: members.map((member: any) => ({
+        userId: String(member.user_id || ''),
+        role: String(member.member_role || ''),
+        joinedAt: String(member.joined_at || ''),
+        email: String(member.email || ''),
+        name: String(member.name || ''),
+      })),
+      state,
+      mediaAssets: mediaAssets.map((asset: any) => ({
+        id: String(asset.id || ''),
+        meetingId: String(asset.meeting_id || ''),
+        createdByUserId: String(asset.created_by_user_id || ''),
+        filePath: String(asset.file_path || ''),
+        contentType: String(asset.content_type || ''),
+        sizeBytes: Number(asset.size_bytes || 0),
+        storageMode: String(asset.storage_mode || 'single'),
+        mediaManifest: this._safeJsonParse(asset.media_manifest_json, {}),
+        transcriptionStatus: String(asset.transcription_status || ''),
+        transcript: this._safeJsonParse(asset.transcript_json, []),
+        diarization: this._safeJsonParse(asset.diarization_json, {}),
+        createdAt: String(asset.created_at || ''),
+        updatedAt: String(asset.updated_at || ''),
+      })),
+      ragChunks: ragChunks.map((chunk: any) => ({
+        id: String(chunk.id || ''),
+        recordingId: String(chunk.recording_id || ''),
+        speakerName: String(chunk.speaker_name || ''),
+        text: String(chunk.text || ''),
+        embedding: this._safeJsonParse(chunk.embedding_json, []),
+        createdAt: String(chunk.created_at || ''),
+      })),
+      operational: {
+        auditLogs: auditLogs.map((entry: any) => ({
+          id: String(entry.id || ''),
+          actorUserId: String(entry.actor_user_id || ''),
+          action: String(entry.action || ''),
+          entityType: String(entry.entity_type || ''),
+          entityId: String(entry.entity_id || ''),
+          metadata: this._safeJsonParse(entry.metadata_json, {}),
+          createdAt: String(entry.created_at || ''),
+        })),
+        transcriptionJobs: transcriptionJobs.map((job: any) => ({
+          id: String(job.id || ''),
+          recordingId: String(job.recording_id || ''),
+          meetingId: String(job.meeting_id || ''),
+          status: String(job.status || ''),
+          attemptCount: Number(job.attempt_count || 0),
+          maxAttempts: Number(job.max_attempts || 0),
+          nextRunAt: String(job.next_run_at || ''),
+          lastErrorCode: String(job.last_error_code || ''),
+          lastErrorMessage: String(job.last_error_message || ''),
+          createdAt: String(job.created_at || ''),
+          updatedAt: String(job.updated_at || ''),
+          completedAt: String(job.completed_at || ''),
+        })),
+      },
+    };
+
+    await this.writeAuditLog({
+      workspaceId: safeWorkspaceId,
+      actorUserId: String(options.actorUserId || ''),
+      action: 'workspace.export.generated',
+      entityType: 'workspace',
+      entityId: safeWorkspaceId,
+      metadata: {
+        source: String(options.source || 'api'),
+        exportedAt,
+        mediaAssetCount: payload.mediaAssets.length,
+        ragChunkCount: payload.ragChunks.length,
+      },
+    });
+
+    return payload;
   }
 
   async saveAudioQualityDiagnostics(
@@ -2697,10 +2863,138 @@ export class Database {
     return orphans.length;
   }
 
+  async recoverStartupTranscriptionJobs(options: { now?: string } = {}): Promise<{
+    recovered: number;
+    skipped: number;
+    failed: number;
+    alreadyActive: number;
+  }> {
+    const now = options.now || this.nowIso();
+    const summary = { recovered: 0, skipped: 0, failed: 0, alreadyActive: 0 };
+    const rows = await this._query(
+      `SELECT * FROM media_assets
+       WHERE transcription_status IN ('queued', 'processing', 'diarization')
+       ORDER BY updated_at ASC`
+    );
+
+    for (const asset of rows) {
+      const recordingId = String(asset?.id || '').trim();
+      if (!recordingId) {
+        summary.skipped++;
+        continue;
+      }
+
+      const activeJob = await this._get(
+        `SELECT * FROM transcription_jobs
+         WHERE recording_id = ? AND status IN ('queued', 'running', 'retryable_failed')
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [recordingId]
+      );
+
+      if (
+        activeJob?.status === 'queued' ||
+        (activeJob?.status === 'retryable_failed' && String(activeJob.next_run_at || '') > now)
+      ) {
+        summary.alreadyActive++;
+        continue;
+      }
+
+      if (
+        activeJob?.status === 'running' &&
+        activeJob.locked_until &&
+        String(activeJob.locked_until) > now
+      ) {
+        summary.alreadyActive++;
+        continue;
+      }
+
+      const audioAvailable = await this._isMediaAssetAudioAvailable(recordingId, asset);
+      if (audioAvailable === null) {
+        summary.skipped++;
+        continue;
+      }
+
+      if (audioAvailable === false) {
+        const diarization = this._safeJsonParse(asset.diarization_json, {});
+        await this._execute(
+          `UPDATE media_assets
+           SET transcription_status = 'failed', diarization_json = ?, updated_at = ?
+           WHERE id = ?`,
+          [
+            JSON.stringify({
+              ...diarization,
+              errorCode: 'audio_source_unavailable',
+              errorMessage:
+                'Audio source is unavailable after restart. Upload or retry the recording.',
+              retryable: false,
+              recoveryStage: 'startup',
+              ...this._buildPipelineMetadata(),
+            }),
+            now,
+            recordingId,
+          ]
+        );
+        if (activeJob) {
+          await this._execute(
+            `UPDATE transcription_jobs
+             SET status = 'failed', locked_by = NULL, locked_until = NULL,
+                 last_error_code = 'audio_source_unavailable',
+                 last_error_message = ?, updated_at = ?, completed_at = ?
+             WHERE id = ?`,
+            ['Audio source is unavailable after restart.', now, now, activeJob.id]
+          );
+        }
+        summary.failed++;
+        continue;
+      }
+
+      if (activeJob) {
+        await this._execute(
+          `UPDATE transcription_jobs
+           SET status = 'queued', locked_by = NULL, locked_until = NULL,
+               next_run_at = ?, updated_at = ?
+           WHERE id = ?`,
+          [now, now, activeJob.id]
+        );
+        await this._syncMediaAssetTranscriptionStatus(recordingId, 'queued');
+      } else {
+        await this.enqueueTranscriptionJob({
+          recordingId,
+          workspaceId: asset.workspace_id,
+          meetingId: asset.meeting_id || '',
+          nextRunAt: now,
+        });
+      }
+      summary.recovered++;
+    }
+
+    return summary;
+  }
+
   async queueTranscription(recordingId: string, updates: MeetingUpdates = {}): Promise<any> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset) throw new Error('Nie znaleziono nagrania.');
     const existingDiarization = this._safeJsonParse(asset.diarization_json, {});
+    const recordingConsent =
+      updates.recordingConsent && typeof updates.recordingConsent === 'object'
+        ? {
+            acceptedAt: this._clean(updates.recordingConsent.acceptedAt),
+            workspaceId: this._clean(updates.recordingConsent.workspaceId),
+            policyVersion: this._clean(updates.recordingConsent.policyVersion),
+            disclosureTitle: this._clean(updates.recordingConsent.disclosureTitle),
+            providerNotice: this._clean(updates.recordingConsent.providerNotice),
+            providers: Array.isArray(updates.recordingConsent.providers)
+              ? updates.recordingConsent.providers
+                  .filter((provider: any) => provider && typeof provider === 'object')
+                  .map((provider: any) => ({
+                    id: this._clean(provider.id),
+                    label: this._clean(provider.label),
+                    enabled: Boolean(provider.enabled),
+                  }))
+              : [],
+          }
+        : null;
     const preservedDiarization = {
       ...(existingDiarization?.audioQuality && typeof existingDiarization.audioQuality === 'object'
         ? { audioQuality: existingDiarization.audioQuality }
@@ -2709,6 +3003,7 @@ export class Database {
       typeof existingDiarization.qualityMetrics === 'object'
         ? { qualityMetrics: this._normalizeQualityMetrics(existingDiarization.qualityMetrics) }
         : {}),
+      ...(recordingConsent ? { recordingConsent } : {}),
     };
     await this._execute(
       "UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = ?, updated_at = ? WHERE id = ?",
@@ -2721,6 +3016,13 @@ export class Database {
         recordingId,
       ]
     );
+    if (typeof this.enqueueTranscriptionJob === 'function') {
+      await this.enqueueTranscriptionJob({
+        recordingId,
+        workspaceId: this._clean(updates.workspaceId) || asset.workspace_id,
+        meetingId: this._clean(updates.meetingId) || asset.meeting_id || '',
+      });
+    }
     return {
       diarization: { segments: [], speakerNames: {}, speakerCount: 0, confidence: 0 },
       segments: [],
@@ -2729,6 +3031,212 @@ export class Database {
       confidence: 0,
       pipelineStatus: 'queued',
     };
+  }
+
+  _mapTranscriptionJobStatusToMediaStatus(status: string): string {
+    if (status === 'running') return 'processing';
+    if (status === 'completed') return 'completed';
+    if (status === 'failed' || status === 'cancelled') return 'failed';
+    return 'queued';
+  }
+
+  _addMillisecondsToIso(isoTimestamp: string, milliseconds: number): string {
+    const base = Date.parse(isoTimestamp);
+    const safeBase = Number.isFinite(base) ? base : Date.now();
+    return new Date(safeBase + milliseconds).toISOString();
+  }
+
+  async _syncMediaAssetTranscriptionStatus(recordingId: string, jobStatus: string): Promise<void> {
+    await this._execute(
+      'UPDATE media_assets SET transcription_status = ?, updated_at = ? WHERE id = ?',
+      [this._mapTranscriptionJobStatusToMediaStatus(jobStatus), this.nowIso(), recordingId]
+    );
+  }
+
+  async getTranscriptionJobByRecordingId(recordingId: string): Promise<any | null> {
+    return this._get(
+      `SELECT * FROM transcription_jobs
+       WHERE recording_id = ?
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [recordingId]
+    );
+  }
+
+  async enqueueTranscriptionJob({
+    recordingId,
+    workspaceId,
+    meetingId = '',
+    maxAttempts = 3,
+    nextRunAt,
+  }: {
+    recordingId: string;
+    workspaceId: string;
+    meetingId?: string;
+    maxAttempts?: number;
+    nextRunAt?: string;
+  }): Promise<any> {
+    const timestamp = this.nowIso();
+    const existingActive = await this._get(
+      `SELECT * FROM transcription_jobs
+       WHERE recording_id = ? AND status IN ('queued', 'running', 'retryable_failed')
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [recordingId]
+    );
+    if (existingActive) {
+      await this._syncMediaAssetTranscriptionStatus(recordingId, existingActive.status);
+      return existingActive;
+    }
+
+    const id = `tj_${crypto.randomUUID()}`;
+    const runAt = nextRunAt || timestamp;
+    await this._execute(
+      `INSERT INTO transcription_jobs (
+        id, recording_id, workspace_id, meeting_id, status, attempt_count, max_attempts,
+        locked_by, locked_until, next_run_at, last_error_code, last_error_message,
+        created_at, updated_at, completed_at
+      ) VALUES (?, ?, ?, ?, 'queued', 0, ?, NULL, NULL, ?, NULL, NULL, ?, ?, NULL)`,
+      [
+        id,
+        recordingId,
+        workspaceId,
+        meetingId,
+        Math.max(1, Number(maxAttempts) || 3),
+        runAt,
+        timestamp,
+        timestamp,
+      ]
+    );
+    await this._syncMediaAssetTranscriptionStatus(recordingId, 'queued');
+    return this._get('SELECT * FROM transcription_jobs WHERE id = ?', [id]);
+  }
+
+  async acquireTranscriptionJobLease({
+    workerId,
+    leaseMs = 5 * 60 * 1000,
+    now = this.nowIso(),
+    recordingId = '',
+  }: {
+    workerId: string;
+    leaseMs?: number;
+    now?: string;
+    recordingId?: string;
+  }): Promise<any | null> {
+    const recordingFilter = recordingId ? 'AND recording_id = ?' : '';
+    const candidate = await this._get(
+      `SELECT * FROM transcription_jobs
+       WHERE status IN ('queued', 'retryable_failed', 'running')
+         AND next_run_at <= ?
+         AND (locked_until IS NULL OR locked_until <= ?)
+         AND attempt_count < max_attempts
+         ${recordingFilter}
+       ORDER BY next_run_at ASC, created_at ASC
+       LIMIT 1`,
+      recordingId ? [now, now, recordingId] : [now, now]
+    );
+    if (!candidate) return null;
+
+    const lockedUntil = this._addMillisecondsToIso(now, leaseMs);
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = 'running', locked_by = ?, locked_until = ?, attempt_count = attempt_count + 1,
+           updated_at = ?, last_error_code = NULL, last_error_message = NULL
+       WHERE id = ?
+         AND next_run_at <= ?
+         AND attempt_count < max_attempts
+         AND (locked_until IS NULL OR locked_until <= ?)
+         AND status IN ('queued', 'retryable_failed', 'running')`,
+      [workerId, lockedUntil, now, candidate.id, now, now]
+    );
+    const leased = await this._get(
+      'SELECT * FROM transcription_jobs WHERE id = ? AND locked_by = ? AND locked_until = ?',
+      [candidate.id, workerId, lockedUntil]
+    );
+    if (leased) await this._syncMediaAssetTranscriptionStatus(leased.recording_id, 'running');
+    return leased;
+  }
+
+  async heartbeatTranscriptionJob(
+    jobId: string,
+    workerId: string,
+    leaseMs = 5 * 60 * 1000,
+    now = this.nowIso()
+  ): Promise<any | null> {
+    const lockedUntil = this._addMillisecondsToIso(now, leaseMs);
+    await this._execute(
+      `UPDATE transcription_jobs SET locked_until = ?, updated_at = ?
+       WHERE id = ? AND locked_by = ? AND status = 'running'`,
+      [lockedUntil, now, jobId, workerId]
+    );
+    return this._get('SELECT * FROM transcription_jobs WHERE id = ? AND locked_by = ?', [
+      jobId,
+      workerId,
+    ]);
+  }
+
+  async completeTranscriptionJob(jobId: string, workerId: string): Promise<any | null> {
+    const now = this.nowIso();
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = 'completed', locked_by = NULL, locked_until = NULL, updated_at = ?, completed_at = ?
+       WHERE id = ? AND locked_by = ?`,
+      [now, now, jobId, workerId]
+    );
+    const job = await this._get(
+      "SELECT * FROM transcription_jobs WHERE id = ? AND status = 'completed'",
+      [jobId]
+    );
+    if (job) await this._syncMediaAssetTranscriptionStatus(job.recording_id, job.status);
+    return job;
+  }
+
+  async failTranscriptionJob(
+    jobId: string,
+    workerId: string,
+    error: any = {},
+    options: { now?: string; retryDelayMs?: number } = {}
+  ): Promise<any | null> {
+    const job = await this._get('SELECT * FROM transcription_jobs WHERE id = ? AND locked_by = ?', [
+      jobId,
+      workerId,
+    ]);
+    if (!job) return null;
+    const now = options.now || this.nowIso();
+    const retryable = Number(job.attempt_count) < Number(job.max_attempts);
+    const status = retryable ? 'retryable_failed' : 'failed';
+    const nextRunAt = retryable
+      ? this._addMillisecondsToIso(now, options.retryDelayMs ?? 60_000)
+      : now;
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = ?, locked_by = NULL, locked_until = NULL, next_run_at = ?,
+           last_error_code = ?, last_error_message = ?, updated_at = ?, completed_at = ?
+       WHERE id = ? AND locked_by = ?`,
+      [
+        status,
+        nextRunAt,
+        this._clean(error?.code || error?.errorCode || 'TRANSCRIPTION_FAILED'),
+        this._clean(error?.message || String(error || 'Unknown transcription error')),
+        now,
+        status === 'failed' ? now : null,
+        jobId,
+        workerId,
+      ]
+    );
+    const updated = await this._get('SELECT * FROM transcription_jobs WHERE id = ?', [jobId]);
+    if (updated)
+      await this._syncMediaAssetTranscriptionStatus(updated.recording_id, updated.status);
+    return updated;
+  }
+
+  async releaseTranscriptionJobLock(jobId: string, workerId: string): Promise<any | null> {
+    await this._execute(
+      `UPDATE transcription_jobs SET locked_by = NULL, locked_until = NULL, updated_at = ?
+       WHERE id = ? AND locked_by = ?`,
+      [this.nowIso(), jobId, workerId]
+    );
+    return this._get('SELECT * FROM transcription_jobs WHERE id = ?', [jobId]);
   }
 
   async updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {

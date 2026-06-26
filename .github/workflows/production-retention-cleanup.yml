@@ -1,0 +1,28 @@
+name: Production Retention Cleanup
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  retention-cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run workspace retention cleanup
+        env:
+          VOICELOG_PRODUCTION_URL: ${{ secrets.VOICELOG_PRODUCTION_URL }}
+          VOICELOG_MAINTENANCE_TOKEN: ${{ secrets.VOICELOG_MAINTENANCE_TOKEN }}
+          VOICELOG_RETENTION_WORKSPACE_ID: ${{ secrets.VOICELOG_RETENTION_WORKSPACE_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VOICELOG_PRODUCTION_URL}" ] || [ -z "${VOICELOG_RETENTION_WORKSPACE_ID}" ] || [ -z "${VOICELOG_MAINTENANCE_TOKEN}" ]; then
+            echo "VOICELOG_PRODUCTION_URL, VOICELOG_RETENTION_WORKSPACE_ID or VOICELOG_MAINTENANCE_TOKEN is not configured; skipping retention cleanup."
+            exit 0
+          fi
+          curl --fail-with-body \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${VOICELOG_MAINTENANCE_TOKEN}" \
+            --data '{}' \
+            "${VOICELOG_PRODUCTION_URL%/}/workspaces/${VOICELOG_RETENTION_WORKSPACE_ID}/retention/cleanup"

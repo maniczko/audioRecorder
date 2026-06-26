@@ -392,7 +392,7 @@ function createRemoteMediaService() {
       });
       return response.blob();
     },
-    async startTranscriptionJob({ recordingId, blob, meeting }) {
+    async startTranscriptionJob({ recordingId, blob, meeting, recordingConsent }) {
       const participants = (meeting?.attendees || [])
         .map((a) => (typeof a === 'string' ? a : a.name || a.email || ''))
         .filter(Boolean);
@@ -405,6 +405,7 @@ function createRemoteMediaService() {
           meetingTitle: meeting?.title || '',
           participants,
           tags: Array.isArray(meeting?.tags) ? meeting.tags : [],
+          recordingConsent: recordingConsent || null,
         },
       });
 

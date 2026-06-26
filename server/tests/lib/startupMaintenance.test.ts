@@ -104,12 +104,42 @@ describe('startup maintenance', () => {
         events.push('reset');
         return 2;
       }),
+      recoverStartupTranscriptionJobs: vi.fn(async () => {
+        events.push('recover');
+        return { recovered: 1, skipped: 2, failed: 0, alreadyActive: 3 };
+      }),
+    };
+
+    await runDatabaseStartupChecks(db, logger);
+
+    expect(events).toEqual(['init', 'health', 'recover']);
+    expect(logger.info).toHaveBeenCalledWith('[Bootstrap] Database health check OK (sqlite)');
+    expect(logger.info).toHaveBeenCalledWith(
+      '[Bootstrap] Startup transcription recovery: recovered=1, skipped=2, failed=0, alreadyActive=3.'
+    );
+    expect(db.resetOrphanedJobs).not.toHaveBeenCalled();
+  });
+
+  test('falls back to orphan reset when startup recovery is unavailable', async () => {
+    const events: string[] = [];
+    const logger = createLogger();
+    const db = {
+      init: vi.fn(async () => {
+        events.push('init');
+      }),
+      checkHealth: vi.fn(async () => {
+        events.push('health');
+        return { ok: true, status: 'ok', type: 'sqlite' };
+      }),
+      resetOrphanedJobs: vi.fn(async () => {
+        events.push('reset');
+        return 2;
+      }),
     };
 
     await runDatabaseStartupChecks(db, logger);
 
     expect(events).toEqual(['init', 'health', 'reset']);
-    expect(logger.info).toHaveBeenCalledWith('[Bootstrap] Database health check OK (sqlite)');
     expect(logger.warn).toHaveBeenCalledWith(
       '[Bootstrap] Reset 2 orphaned transcription job(s) from previous instance.'
     );
@@ -120,7 +150,8 @@ describe('startup maintenance', () => {
     const db = {
       init: vi.fn(async () => {}),
       checkHealth: vi.fn(async () => ({ ok: false, status: 'down' })),
-      resetOrphanedJobs: vi.fn(async () => {
+      resetOrphanedJobs: vi.fn(async () => {}),
+      recoverStartupTranscriptionJobs: vi.fn(async () => {
         throw new Error('reset failed');
       }),
     };
@@ -129,7 +160,7 @@ describe('startup maintenance', () => {
 
     expect(logger.error).toHaveBeenCalledWith('[Bootstrap] Database health check FAILED: down');
     expect(logger.error).toHaveBeenCalledWith(
-      '[Bootstrap] Failed to reset orphaned jobs:',
+      '[Bootstrap] Failed to recover startup transcription jobs:',
       'reset failed'
     );
   });

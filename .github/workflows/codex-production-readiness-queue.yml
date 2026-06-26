@@ -1,0 +1,128 @@
+name: Codex Production Readiness Queue
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Queue action to run.'
+        required: true
+        default: dispatch-next
+        type: choice
+        options:
+          - bootstrap-labels
+          - dispatch-next
+      dry_run:
+        description: 'Preview the selected issue without posting the @codex dispatch comment.'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: codex-production-readiness-queue
+  cancel-in-progress: false
+
+env:
+  QUEUE_LABEL: production-readiness
+  DISPATCHED_LABEL: codex-dispatched
+  BLOCKED_LABEL: codex-blocked
+  DISPATCH_COMMENT_MARKER: '<!-- codex-production-readiness-queue -->'
+  CODEX_PROMPT_PATH: .github/codex/prompts/execute-next-production-issue.md
+
+jobs:
+  queue:
+    name: Run queue action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout prompt and docs
+        uses: actions/checkout@v4
+
+      - name: Bootstrap queue labels
+        if: ${{ inputs.mode == 'bootstrap-labels' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          ensure_label() {
+            local name="$1"
+            local color="$2"
+            local description="$3"
+
+            if gh label list --repo "$GH_REPO" --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
+              gh label edit "$name" --repo "$GH_REPO" --color "$color" --description "$description"
+            else
+              gh label create "$name" --repo "$GH_REPO" --color "$color" --description "$description"
+            fi
+          }
+
+          ensure_label "$QUEUE_LABEL" 'B60205' 'Production-readiness backlog issue eligible for Codex queue dispatch.'
+          ensure_label "$DISPATCHED_LABEL" '5319E7' 'Codex production-readiness queue has dispatched this issue.'
+          ensure_label "$BLOCKED_LABEL" 'D93F0B' 'Codex production-readiness queue should skip this issue until unblocked.'
+
+      - name: Dispatch next issue
+        if: ${{ inputs.mode == 'dispatch-next' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f "$CODEX_PROMPT_PATH" ]]; then
+            echo "Prompt file not found: $CODEX_PROMPT_PATH" >&2
+            exit 1
+          fi
+
+          issue_json=$(gh issue list --repo "$GH_REPO" --state open --limit 100 --json number,title,url,labels,createdAt --jq '
+            sort_by(.createdAt)
+            | map(
+                select(([.labels[].name] | index(env.DISPATCHED_LABEL) | not))
+                | select(([.labels[].name] | index(env.BLOCKED_LABEL) | not))
+                | select((.title | contains("[Production Readiness]")) or ([.labels[].name] | index(env.QUEUE_LABEL)))
+              )
+            | .[0]
+          ')
+
+          if [[ -z "$issue_json" || "$issue_json" == "null" ]]; then
+            echo "No eligible production-readiness issue found. Add $QUEUE_LABEL to backlog issues or use [Production Readiness] in titles."
+            exit 0
+          fi
+
+          issue_number=$(jq -r '.number' <<<"$issue_json")
+          issue_title=$(jq -r '.title' <<<"$issue_json")
+          issue_url=$(jq -r '.url' <<<"$issue_json")
+
+          {
+            echo "Selected issue: #$issue_number $issue_title"
+            echo "Issue URL: $issue_url"
+            echo "Dry run: $DRY_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "Dry run enabled; not posting @codex dispatch comment."
+            exit 0
+          fi
+
+          prompt_body=$(cat "$CODEX_PROMPT_PATH")
+          comment_body=$(printf '%s\n%s\n\n%s\n\n%s\n%s\n\n```markdown\n%s\n```\n%s\n' \
+            "$DISPATCH_COMMENT_MARKER" \
+            '@codex please execute this production-readiness backlog item.' \
+            "Use the repository prompt at \`$CODEX_PROMPT_PATH\` as the operating instructions for this issue." \
+            '<details>' \
+            '<summary>Dispatch prompt snapshot</summary>' \
+            "$prompt_body" \
+            '</details>')
+
+          existing_comment_count=$(gh issue view "$issue_number" --repo "$GH_REPO" --json comments --jq '[.comments[] | select(.body | contains(env.DISPATCH_COMMENT_MARKER))] | length')
+          if [[ "$existing_comment_count" != "0" ]]; then
+            echo "Issue #$issue_number already has a queue dispatch comment; adding label only."
+          else
+            gh issue comment "$issue_number" --repo "$GH_REPO" --body "$comment_body"
+          fi
+
+          gh issue edit "$issue_number" --repo "$GH_REPO" --add-label "$DISPATCHED_LABEL"

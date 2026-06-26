@@ -1,4 +1,5 @@
 import type { TranscriptSegment } from '../shared/types';
+import type { RecordingConsentMetadata } from './recordingConsent';
 
 export type RecordingPipelineStatus =
   | 'uploading'
@@ -246,6 +247,7 @@ export interface RecordingQueueItem {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  recordingConsent?: RecordingConsentMetadata | null;
   /** Timestamp (ISO string) when processing started — used to compute elapsed processing time */
   lastReconciledAt?: number;
   processingStartedAt?: string;
@@ -272,6 +274,7 @@ interface CreateRecordingQueueItemInput {
   rawSegments?: TranscriptSegment[];
   duration?: number;
   createdAt?: string;
+  recordingConsent?: RecordingConsentMetadata | null;
 }
 
 export function normalizeRecordingPipelineStatus(value) {
@@ -304,6 +307,7 @@ export function createRecordingQueueItem({
   rawSegments = [],
   duration = 0,
   createdAt = new Date().toISOString(),
+  recordingConsent = null,
 }: CreateRecordingQueueItemInput): RecordingQueueItem {
   const resolvedWorkspaceId = String(meeting?.workspaceId || workspaceId || '').trim();
 
@@ -329,6 +333,7 @@ export function createRecordingQueueItem({
     errorMessage: '',
     createdAt,
     updatedAt: createdAt,
+    recordingConsent,
   };
 }
 
@@ -370,6 +375,7 @@ export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueIt
         pipelineBuildTime: current.pipelineBuildTime || '',
         audioQuality: current.audioQuality || null,
         transcriptionDiagnostics: current.transcriptionDiagnostics || null,
+        recordingConsent: current.recordingConsent || null,
         lastReconciledAt: Math.max(0, Number(current.lastReconciledAt) || 0),
       };
     })

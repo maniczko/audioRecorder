@@ -39,4 +39,21 @@ describe('Database migration contracts', () => {
       expect(initialSchema).toContain(column);
     }
   });
+
+  test('transcription_jobs migration is portable across SQLite and Postgres-compatible SQL', () => {
+    const migration = readMigration('20260625_transcription_jobs.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    expect(migration).toContain('create table if not exists transcription_jobs');
+    expect(migration).toContain(
+      "status in ('queued', 'running', 'retryable_failed', 'failed', 'completed', 'cancelled')"
+    );
+    expect(migration).toContain(
+      'create unique index if not exists idx_transcription_jobs_one_active_per_recording'
+    );
+    expect(migration).toContain("where status in ('queued', 'running', 'retryable_failed')");
+    expect(migration).not.toContain('autoincrement');
+    expect(migration).not.toContain('serial');
+  });
 });

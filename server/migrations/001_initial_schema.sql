@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS workspace_state (
   task_boards_json TEXT NOT NULL DEFAULT '{}',
   calendar_meta_json TEXT NOT NULL DEFAULT '{}',
   vocabulary_json TEXT NOT NULL DEFAULT '[]',
+  retention_days INTEGER NOT NULL DEFAULT 365,
   updated_at TEXT NOT NULL
 );
 
@@ -67,6 +68,53 @@ CREATE TABLE IF NOT EXISTS media_assets (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+
+CREATE TABLE IF NOT EXISTS transcription_jobs (
+  id TEXT PRIMARY KEY,
+  recording_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  meeting_id TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'queued',
+  attempt_count INTEGER NOT NULL DEFAULT 0,
+  max_attempts INTEGER NOT NULL DEFAULT 3,
+  locked_by TEXT,
+  locked_until TEXT,
+  next_run_at TEXT NOT NULL,
+  last_error_code TEXT,
+  last_error_message TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  completed_at TEXT,
+  CHECK (status IN ('queued', 'running', 'retryable_failed', 'failed', 'completed', 'cancelled'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_transcription_jobs_one_active_per_recording
+  ON transcription_jobs(recording_id)
+  WHERE status IN ('queued', 'running', 'retryable_failed');
+
+CREATE INDEX IF NOT EXISTS idx_transcription_jobs_lease_queue
+  ON transcription_jobs(status, next_run_at, locked_until, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_transcription_jobs_recording_id
+  ON transcription_jobs(recording_id);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  actor_user_id TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_workspace_created_at
+  ON audit_logs(workspace_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity
+  ON audit_logs(entity_type, entity_id);
 
 CREATE TABLE IF NOT EXISTS voice_profiles (
   id TEXT PRIMARY KEY,

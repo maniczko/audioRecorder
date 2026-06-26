@@ -6,6 +6,7 @@ import TabRouter from './TabRouter';
 import AppHeader from './components/app-shell/AppHeader';
 import AppShellSkeleton from './components/app-shell/AppShellSkeleton';
 import AppSidebar from './components/app-shell/AppSidebar';
+import RecordingConsentDialog from './components/app-shell/RecordingConsentDialog';
 import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
 import { useRecorderCtx } from './context/RecorderContext';
@@ -136,6 +137,13 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
         items={ui.commandPaletteItems}
         onClose={() => ui.setCommandPaletteOpen(false)}
         onSelect={ui.handleCommandPaletteSelect}
+      />
+
+      <RecordingConsentDialog
+        open={Boolean(recorder.recordingConsent?.isPromptOpen)}
+        disclosure={recorder.recordingConsent.disclosure}
+        onAccept={recorder.recordingConsent.accept}
+        onDecline={recorder.recordingConsent.decline}
       />
     </div>
   );

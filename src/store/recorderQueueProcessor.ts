@@ -757,6 +757,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         blob: localBlob,
         meeting: targetWithWorkspace,
         rawSegments: nextItem.rawSegments,
+        recordingConsent: nextItem.recordingConsent,
       });
     }
 

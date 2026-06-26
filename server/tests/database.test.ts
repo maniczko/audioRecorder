@@ -347,6 +347,193 @@ describe('Database (Async Worker SQLite)', () => {
     }
   });
 
+  test('Regression: #1229 - retention cleanup is repeatable and logs source metadata', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      await db.ensureWorkspaceState('ws_retention_repeat');
+      await db.saveWorkspaceState('ws_retention_repeat', {
+        meetings: [],
+        manualTasks: [],
+        manualPeople: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+        retentionDays: 1,
+      });
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'rec_retention_repeat_old',
+          'ws_retention_repeat',
+          'meeting_repeat',
+          'user_repeat',
+          'workspaces/ws_retention_repeat/recordings/rec_retention_repeat_old/audio.webm',
+          'audio/webm',
+          10,
+          'single',
+          '{}',
+          10,
+          10,
+          'completed',
+          '[]',
+          '{}',
+          '2026-06-18T09:00:00.000Z',
+          '2026-06-18T09:00:00.000Z',
+        ]
+      );
+
+      const first = await db.cleanupExpiredRecordingsByRetention({
+        workspaceId: 'ws_retention_repeat',
+        nowIso: '2026-06-20T12:00:00.000Z',
+        actorUserId: 'maintainer_1',
+        source: 'test-maintenance',
+      });
+      const second = await db.cleanupExpiredRecordingsByRetention({
+        workspaceId: 'ws_retention_repeat',
+        nowIso: '2026-06-20T12:00:00.000Z',
+        actorUserId: 'maintainer_1',
+        source: 'test-maintenance',
+      });
+
+      expect(first).toMatchObject({
+        checked: 1,
+        deleted: 1,
+        deletedRecordingIds: ['rec_retention_repeat_old'],
+      });
+      expect(second).toMatchObject({ checked: 0, deleted: 0, deletedRecordingIds: [] });
+      const auditRows = await db._query(
+        'SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC',
+        ['ws_retention_repeat']
+      );
+      expect(auditRows.map((row: any) => row.action)).toEqual(
+        expect.arrayContaining(['recording.deleted', 'retention.cleanup.completed'])
+      );
+      const deleteAudit = auditRows.find((row: any) => row.action === 'recording.deleted');
+      expect(JSON.parse(deleteAudit.metadata_json)).toMatchObject({
+        source: 'test-maintenance',
+      });
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
+  test('Regression: #1229 - workspace export includes state, transcripts, AI metadata and audit logs', async () => {
+    await db._execute(
+      `INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        'ws_export',
+        'Export Workspace',
+        'user_export',
+        'EXPORT42',
+        '2026-06-20T08:00:00.000Z',
+        '2026-06-20T08:00:00.000Z',
+      ]
+    );
+    await db.ensureWorkspaceState('ws_export');
+    await db.saveWorkspaceState('ws_export', {
+      meetings: [{ id: 'meeting_export', title: 'Exported meeting', recordings: [] }],
+      manualTasks: [{ id: 'task_export', title: 'Follow up' }],
+      manualPeople: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: ['retencja'],
+      retentionDays: 30,
+    });
+    await db._execute(
+      `INSERT INTO media_assets (
+        id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+        size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+        normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        'rec_export',
+        'ws_export',
+        'meeting_export',
+        'user_export',
+        'workspaces/ws_export/recordings/rec_export/audio.webm',
+        'audio/webm',
+        10,
+        'single',
+        '{}',
+        10,
+        10,
+        'completed',
+        JSON.stringify([{ text: 'Transcript line', speakerId: 's1', timestamp: 0 }]),
+        JSON.stringify({
+          speakerNames: { s1: 'Anna' },
+          analysis: { summary: 'AI summary' },
+          recordingConsent: { policyVersion: 'recording-consent-v1' },
+        }),
+        '2026-06-20T09:00:00.000Z',
+        '2026-06-20T09:00:00.000Z',
+      ]
+    );
+    await db.writeAuditLog({
+      workspaceId: 'ws_export',
+      actorUserId: 'user_export',
+      action: 'recording.created',
+      entityType: 'recording',
+      entityId: 'rec_export',
+      metadata: { source: 'test' },
+    });
+
+    const payload = await db.exportWorkspaceData('ws_export', {
+      actorUserId: 'user_export',
+      source: 'test-export',
+    });
+
+    expect(payload).toMatchObject({
+      schemaVersion: 'workspace-export-v1',
+      workspace: {
+        id: 'ws_export',
+        name: 'Export Workspace',
+        retentionDays: 30,
+      },
+    });
+    expect(payload.state.meetings[0]).toMatchObject({ id: 'meeting_export' });
+    expect(payload.mediaAssets[0]).toMatchObject({
+      id: 'rec_export',
+      meetingId: 'meeting_export',
+      transcript: [{ text: 'Transcript line', speakerId: 's1', timestamp: 0 }],
+      diarization: expect.objectContaining({
+        speakerNames: { s1: 'Anna' },
+        recordingConsent: { policyVersion: 'recording-consent-v1' },
+      }),
+    });
+    expect(payload.operational.auditLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ action: 'recording.created', entityId: 'rec_export' }),
+      ])
+    );
+    const exportAudit = await db._get(
+      'SELECT * FROM audit_logs WHERE workspace_id = ? AND action = ?',
+      ['ws_export', 'workspace.export.generated']
+    );
+    expect(JSON.parse(exportAudit.metadata_json)).toMatchObject({
+      source: 'test-export',
+      mediaAssetCount: 1,
+    });
+  });
+
   test('should persist pipeline metadata on failures and clear old errors when re-queueing', async () => {
     const previousSha = process.env.GITHUB_SHA;
     const previousVersion = process.env.APP_VERSION;

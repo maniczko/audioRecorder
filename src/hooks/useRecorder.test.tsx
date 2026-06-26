@@ -2,6 +2,11 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import useRecorder from './useRecorder';
 import { RECORDING_WORKSPACE_REQUIRED_MESSAGE } from '../lib/recordingQueue';
+import {
+  RECORDING_CONSENT_POLICY_VERSION,
+  createRecordingConsentDisclosure,
+  createRecordingConsentMetadata,
+} from '../lib/recordingConsent';
 
 const {
   mediaServiceMode,
@@ -120,6 +125,7 @@ describe('useRecorder', () => {
     hardwareState.cleanupRecorder.mockReset();
     hardwareState.isRecording = false;
     hardwareOptions.current = null;
+    window.localStorage.clear();
     getAudioStorageEstimateMock.mockResolvedValue({
       usageBytes: 50 * 1024 * 1024,
       quotaBytes: 100 * 1024 * 1024,
@@ -130,7 +136,7 @@ describe('useRecorder', () => {
     listStoredSizesMock.mockResolvedValue([]);
   });
 
-  test('creates ad hoc meeting when no meeting is selected and starts recording', () => {
+  test('blocks ad hoc recording until consent disclosure is accepted', () => {
     const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
     const selectMeeting = vi.fn();
 
@@ -142,6 +148,7 @@ describe('useRecorder', () => {
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
         selectMeeting,
+        currentWorkspaceId: 'ws1',
       })
     );
 
@@ -150,6 +157,50 @@ describe('useRecorder', () => {
     });
 
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
+    expect(result.current.recordingConsent.isPromptOpen).toBe(true);
+    expect(hardwareState.startRecording).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.recordingConsent.accept();
+    });
+
+    expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc', workspaceId: 'ws1' });
+    expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
+    expect(window.localStorage.length).toBe(1);
+  });
+
+  test('uses persisted workspace consent to start recording without prompting again', () => {
+    const disclosure = createRecordingConsentDisclosure({ remoteMode: true });
+    const consent = createRecordingConsentMetadata({
+      workspaceId: 'ws1',
+      acceptedAt: '2026-06-25T10:00:00.000Z',
+      disclosure,
+    });
+    window.localStorage.setItem(
+      `voicelog.recordingConsent.${RECORDING_CONSENT_POLICY_VERSION}.ws1`,
+      JSON.stringify(consent)
+    );
+
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
+    const selectMeeting = vi.fn();
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+        selectMeeting,
+        currentWorkspaceId: 'ws1',
+      })
+    );
+
+    act(() => {
+      result.current.startRecording();
+    });
+
+    expect(result.current.recordingConsent.isPromptOpen).toBe(false);
     expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc', workspaceId: 'ws1' });
     expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
   });
@@ -459,11 +510,15 @@ describe('useRecorder', () => {
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
         selectMeeting,
+        currentWorkspaceId: 'ws1',
       })
     );
 
     await act(async () => {
       await result.current.startRecording();
+    });
+    await act(async () => {
+      await result.current.recordingConsent.accept();
     });
 
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
@@ -658,6 +713,57 @@ describe('useRecorder', () => {
     expect(pipelineState.setAnalysisStatus).toHaveBeenCalledWith('error');
     expect(pipelineState.setRecordingMessage).toHaveBeenCalledWith(
       RECORDING_WORKSPACE_REQUIRED_MESSAGE
+    );
+  });
+
+  test('stores accepted consent metadata on the queued recording after stop', async () => {
+    saveAudioBlobMock.mockResolvedValue(undefined);
+    const createAdHocMeeting = vi.fn(() => ({
+      id: 'm-consent',
+      title: 'Consent meeting',
+      workspaceId: 'ws-consent',
+    }));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [{ id: 'm-consent', title: 'Consent meeting', workspaceId: 'ws-consent' }],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+        currentWorkspaceId: 'ws-consent',
+      })
+    );
+
+    act(() => {
+      result.current.startRecording({ adHoc: true });
+    });
+    act(() => {
+      result.current.recordingConsent.accept();
+    });
+
+    expect(hardwareState.startRecording).toHaveBeenCalledWith('m-consent');
+
+    await act(async () => {
+      await hardwareOptions.current.onRecordingStop({
+        meetingId: 'm-consent',
+        chunks: [new Blob(['audio'], { type: 'audio/webm' })],
+        mimeType: 'audio/webm',
+        rawSegments: [],
+        duration: 5,
+      });
+    });
+
+    const updater = pipelineState.setRecordingQueue.mock.calls[0][0];
+    const [queued] = updater([]);
+
+    expect(queued.recordingConsent).toMatchObject({
+      workspaceId: 'ws-consent',
+      policyVersion: RECORDING_CONSENT_POLICY_VERSION,
+      disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
+    });
+    expect(queued.recordingConsent.providers.map((provider) => provider.id)).toEqual(
+      expect.arrayContaining(['stt', 'diarization', 'llm-analysis', 'embeddings'])
     );
   });
 

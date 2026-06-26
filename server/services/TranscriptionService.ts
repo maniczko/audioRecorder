@@ -205,7 +205,12 @@ export default class TranscriptionService extends EventEmitter {
   transcriptionJobs: Map<string, Promise<void>>;
   private _jobStartTimes: Map<string, number>;
   private _staleJobTimer: ReturnType<typeof setInterval> | null;
+  private _durableWorkerTimer: ReturnType<typeof setInterval> | null = null;
+  private _durableJobHeartbeats: Map<string, ReturnType<typeof setInterval>>;
+  private _durableJobContext: Map<string, { asset: any; options: any }>;
+  private _durableWorkerRunning = false;
   private _pendingQueue: Array<{ recordingId: string; asset: any; options: any }> = [];
+  private readonly workerId: string;
 
   constructor(db: any, workspaceService: any, audioPipeline: any, speakerEmbedder: any) {
     super();
@@ -215,8 +220,12 @@ export default class TranscriptionService extends EventEmitter {
     this.speakerEmbedder = speakerEmbedder;
     this.transcriptionJobs = new Map();
     this._jobStartTimes = new Map();
+    this._durableJobHeartbeats = new Map();
+    this._durableJobContext = new Map();
     this._staleJobTimer = null;
+    this.workerId = `transcription-worker-${process.pid}-${Math.random().toString(36).slice(2)}`;
     this._startStaleJobSweep();
+    this._startDurableWorkerLoop();
   }
 
   private _startStaleJobSweep() {
@@ -234,6 +243,20 @@ export default class TranscriptionService extends EventEmitter {
       10 * 60 * 1000
     ); // every 10 minutes
     if (this._staleJobTimer.unref) this._staleJobTimer.unref();
+  }
+
+  private _supportsDurableQueue() {
+    return typeof this.db.acquireTranscriptionJobLease === 'function';
+  }
+
+  private _startDurableWorkerLoop() {
+    if (!this._supportsDurableQueue()) return;
+    this._durableWorkerTimer = setInterval(() => {
+      this._processDurableQueueOnce().catch((error: any) => {
+        console.error('[Pipeline] Durable worker tick failed:', error?.message || error);
+      });
+    }, 5000);
+    if (this._durableWorkerTimer.unref) this._durableWorkerTimer.unref();
   }
 
   get pipeline() {
@@ -529,7 +552,18 @@ export default class TranscriptionService extends EventEmitter {
       return;
     }
 
-    // Queue jobs when at capacity or under memory pressure instead of rejecting
+    const durableJob =
+      typeof this.db.enqueueTranscriptionJob === 'function'
+        ? await this.db.enqueueTranscriptionJob({
+            recordingId,
+            workspaceId: asset.workspace_id,
+            meetingId: asset.meeting_id || '',
+          })
+        : null;
+    if (durableJob) {
+      this._durableJobContext.set(recordingId, { asset, options });
+    }
+
     const rss = process.memoryUsage().rss;
     const atCapacity = this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS;
     const memoryPressure = rss > TranscriptionService.RSS_LIMIT_BYTES;
@@ -538,18 +572,116 @@ export default class TranscriptionService extends EventEmitter {
       const reason = memoryPressure
         ? `RSS ${(rss / 1024 / 1024).toFixed(0)}MB exceeds limit`
         : `${this.transcriptionJobs.size} concurrent jobs (max ${TranscriptionService.MAX_CONCURRENT_JOBS})`;
-      // Avoid duplicate queue entries
+      if (durableJob) {
+        console.log(`[Pipeline] Durable job ${recordingId} remains queued (${reason}).`);
+        if (memoryPressure && typeof global.gc === 'function') global.gc();
+        return;
+      }
+      // Avoid duplicate queue entries for legacy/non-durable test doubles.
       if (!this._pendingQueue.some((item) => item.recordingId === recordingId)) {
         this._pendingQueue.push({ recordingId, asset, options });
         console.log(
           `[Pipeline] Queued job ${recordingId} (${reason}). Queue size: ${this._pendingQueue.length}`
         );
       }
-      // Mark as queued in DB (not failed) so frontend shows "W toku" instead of error
       await this.queueTranscription(recordingId, options);
       if (memoryPressure && typeof global.gc === 'function') global.gc();
       return;
     }
+
+    if (durableJob) {
+      await this._processDurableQueueOnce({ recordingId });
+      return;
+    }
+
+    this._startTranscriptionJob(recordingId, asset, options, null);
+  }
+
+  private _buildOptionsForDurableJob(job: any, asset: any, cachedOptions: any = {}) {
+    return {
+      workspaceId: job?.workspace_id || asset?.workspace_id || cachedOptions?.workspaceId,
+      meetingId: job?.meeting_id || asset?.meeting_id || cachedOptions?.meetingId || '',
+      contentType: asset?.content_type || cachedOptions?.contentType,
+      ...cachedOptions,
+    };
+  }
+
+  async _processDurableQueueOnce(filter: { recordingId?: string } = {}) {
+    if (!this._supportsDurableQueue()) return false;
+    if (this._durableWorkerRunning) return false;
+    if (this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS) return false;
+
+    const rss = process.memoryUsage().rss;
+    if (rss > TranscriptionService.RSS_LIMIT_BYTES) {
+      if (typeof global.gc === 'function') global.gc();
+      return false;
+    }
+
+    this._durableWorkerRunning = true;
+    try {
+      const leasedJob = await this.db.acquireTranscriptionJobLease({
+        workerId: this.workerId,
+        recordingId: filter.recordingId || '',
+      });
+      if (!leasedJob) return false;
+
+      const recordingId = leasedJob.recording_id || filter.recordingId;
+      if (!recordingId || this.transcriptionJobs.has(recordingId)) {
+        if (typeof this.db.releaseTranscriptionJobLock === 'function') {
+          await this.db.releaseTranscriptionJobLock(leasedJob.id, this.workerId);
+        }
+        return false;
+      }
+
+      const cached = this._durableJobContext.get(recordingId);
+      const asset =
+        cached?.asset ||
+        (typeof this.db.getMediaAsset === 'function'
+          ? await this.db.getMediaAsset(recordingId)
+          : null);
+      if (!asset) {
+        if (typeof this.db.failTranscriptionJob === 'function') {
+          await this.db.failTranscriptionJob(
+            leasedJob.id,
+            this.workerId,
+            Object.assign(new Error('Media asset missing for durable transcription job.'), {
+              code: 'MEDIA_ASSET_MISSING',
+            })
+          );
+        }
+        return false;
+      }
+
+      const options = this._buildOptionsForDurableJob(leasedJob, asset, cached?.options || {});
+      this._startTranscriptionJob(recordingId, asset, options, leasedJob);
+      return true;
+    } finally {
+      this._durableWorkerRunning = false;
+    }
+  }
+
+  private _startDurableJobHeartbeat(job: any) {
+    if (!job?.id || typeof this.db.heartbeatTranscriptionJob !== 'function') return;
+    if (this._durableJobHeartbeats.has(job.id)) return;
+    const timer = setInterval(() => {
+      this.db.heartbeatTranscriptionJob(job.id, this.workerId).catch((error: any) => {
+        console.warn('[Pipeline] Durable job heartbeat failed:', error?.message || error);
+      });
+    }, 60_000);
+    if (timer.unref) timer.unref();
+    this._durableJobHeartbeats.set(job.id, timer);
+  }
+
+  private _stopDurableJobHeartbeat(job: any) {
+    if (!job?.id) return;
+    const timer = this._durableJobHeartbeats.get(job.id);
+    if (timer) clearInterval(timer);
+    this._durableJobHeartbeats.delete(job.id);
+  }
+
+  private _startTranscriptionJob(recordingId: string, asset: any, options: any, activeJob: any) {
+    if (!recordingId || this.transcriptionJobs.has(recordingId)) return;
+    if (activeJob) this._startDurableJobHeartbeat(activeJob);
 
     const jobPromise = Promise.resolve()
       .then(async () => {
@@ -636,6 +768,9 @@ export default class TranscriptionService extends EventEmitter {
           ...result,
           pipelineStatus: 'completed',
         });
+        if (activeJob && typeof this.db.completeTranscriptionJob === 'function') {
+          await this.db.completeTranscriptionJob(activeJob.id, this.workerId);
+        }
 
         if (shouldRunPostprocess && !isEmptyTranscript && !segmentedManifest) {
           this.runEnhancementPostProcess(
@@ -673,6 +808,14 @@ export default class TranscriptionService extends EventEmitter {
       .catch(async (error: any) => {
         try {
           const failureDiagnostics = buildFailureDiagnostics(error);
+          const currentJob =
+            activeJob ||
+            (typeof this.db.getTranscriptionJobByRecordingId === 'function'
+              ? await this.db.getTranscriptionJobByRecordingId(recordingId)
+              : null);
+          if (currentJob && typeof this.db.failTranscriptionJob === 'function') {
+            await this.db.failTranscriptionJob(currentJob.id, this.workerId, error);
+          }
           await this.markTranscriptionFailure(
             recordingId,
             error?.message || String(error || 'Unknown pipeline error'),
@@ -689,12 +832,17 @@ export default class TranscriptionService extends EventEmitter {
         }
       })
       .finally(() => {
+        this._stopDurableJobHeartbeat(activeJob);
         this.transcriptionJobs.delete(recordingId);
         this._jobStartTimes.delete(recordingId);
+        this._durableJobContext.delete(recordingId);
         // Trigger GC to release native memory held by ffmpeg/audio buffers
         if (typeof global.gc === 'function') global.gc();
         // Drain next queued job
         this._drainQueue();
+        this._processDurableQueueOnce().catch((err: any) => {
+          console.error('[Pipeline] Failed to drain durable queue:', err?.message || err);
+        });
       });
 
     this.transcriptionJobs.set(recordingId, jobPromise);

@@ -56,6 +56,29 @@ describe('recordingQueue helpers', () => {
     });
   });
 
+  test('preserves recording consent metadata through queue normalization', () => {
+    const item = createRecordingQueueItem({
+      recordingId: 'recording_consent',
+      meeting: { id: 'meeting_1', workspaceId: 'workspace_1', title: 'Consent call' },
+      recordingConsent: {
+        acceptedAt: '2026-06-25T10:00:00.000Z',
+        workspaceId: 'workspace_1',
+        policyVersion: 'recording-consent-v1',
+        disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
+        providerNotice: 'Dane moga byc przekazywane do dostawcow AI/audio.',
+        providers: [{ id: 'stt', label: 'transkrypcja mowy na tekst', enabled: true }],
+      },
+    });
+
+    const [normalized] = normalizeRecordingQueue([item]);
+
+    expect(normalized.recordingConsent).toMatchObject({
+      acceptedAt: '2026-06-25T10:00:00.000Z',
+      workspaceId: 'workspace_1',
+      policyVersion: 'recording-consent-v1',
+    });
+  });
+
   // -----------------------------------------------------------------
   // Issue #0 - deleted recordings came back from the persisted queue
   // Date: 2026-05-21

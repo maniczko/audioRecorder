@@ -47,6 +47,9 @@ describe('Workspace Routes', () => {
     };
     mockWorkspaceService = {
       saveWorkspaceState: vi.fn(),
+      updateRetentionPolicy: vi.fn(),
+      cleanupExpiredRecordingsByRetention: vi.fn(),
+      exportWorkspaceData: vi.fn(),
       updateWorkspaceMemberRole: vi.fn(),
       getMembership: vi.fn(),
     };
@@ -189,6 +192,124 @@ describe('Workspace Routes', () => {
     const data = await forbiddenRes.json();
     expect(data).toEqual({ message: 'Tylko owner lub admin moze zmieniac role.' });
     expect(mockWorkspaceService.updateWorkspaceMemberRole).not.toHaveBeenCalled();
+  });
+
+  it('PUT /workspaces/:workspaceId/retention updates retention policy for admins', async () => {
+    mockWorkspaceService.updateRetentionPolicy.mockResolvedValue({
+      retentionDays: 45,
+      state: { retentionDays: 45 },
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('admin')
+    );
+
+    const res = await app.request('/workspaces/ws1/retention', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ retentionDays: 45.9 }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ retentionDays: 45 });
+    expect(mockWorkspaceService.updateRetentionPolicy).toHaveBeenCalledWith('ws1', 45, 'u1');
+  });
+
+  it('POST /workspaces/:workspaceId/retention/cleanup runs cleanup with audit source', async () => {
+    mockWorkspaceService.cleanupExpiredRecordingsByRetention.mockResolvedValue({
+      checked: 2,
+      deleted: 1,
+      deletedRecordingIds: ['rec_old'],
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('owner')
+    );
+
+    const res = await app.request('/workspaces/ws1/retention/cleanup', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nowIso: '2026-06-25T12:00:00.000Z' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ checked: 2, deleted: 1 });
+    expect(mockWorkspaceService.cleanupExpiredRecordingsByRetention).toHaveBeenCalledWith('ws1', {
+      nowIso: '2026-06-25T12:00:00.000Z',
+      actorUserId: 'u1',
+      source: 'api',
+    });
+  });
+
+  it('GET /workspaces/:workspaceId/export returns workspace export payload for admins', async () => {
+    mockWorkspaceService.exportWorkspaceData.mockResolvedValue({
+      schemaVersion: 'workspace-export-v1',
+      workspace: { id: 'ws1', retentionDays: 30 },
+      state: { meetings: [] },
+      mediaAssets: [],
+      operational: { auditLogs: [] },
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('owner')
+    );
+
+    const res = await app.request('/workspaces/ws1/export', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      schemaVersion: 'workspace-export-v1',
+      workspace: { id: 'ws1' },
+    });
+    expect(mockWorkspaceService.exportWorkspaceData).toHaveBeenCalledWith('ws1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
+  });
+
+  it('blocks retention and export controls for non-admin workspace members', async () => {
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('member')
+    );
+
+    const retentionRes = await app.request('/workspaces/ws1/retention', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ retentionDays: 45 }),
+    });
+    const exportRes = await app.request('/workspaces/ws1/export', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(retentionRes.status).toBe(403);
+    expect(exportRes.status).toBe(403);
+    expect(mockWorkspaceService.updateRetentionPolicy).not.toHaveBeenCalled();
+    expect(mockWorkspaceService.exportWorkspaceData).not.toHaveBeenCalled();
   });
 
   it('handles RAG ask validation, no-results and LLM failure paths', async () => {
