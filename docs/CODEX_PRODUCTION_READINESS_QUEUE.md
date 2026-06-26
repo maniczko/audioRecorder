@@ -1,44 +1,122 @@
 # Codex Production Readiness Queue
 
-This queue dispatches the next open production-readiness backlog issue to Codex by posting an `@codex` issue comment. It is intended for the backlog indexed by the Production Readiness audit issue.
+This document defines the queue workflow for the production-readiness backlog created from the production audit.
 
-## Files
+Source of truth: GitHub issue `#1263`.
 
-- `.github/workflows/codex-production-readiness-queue.yml` — manual workflow for label bootstrap and queue dispatch.
-- `.github/codex/prompts/execute-next-production-issue.md` — operating prompt attached to each queue dispatch.
+Audit prompt source: the production readiness audit prompt requires a detailed repo audit, production scoring, blocker list, and Codex-ready implementation backlog. The resulting issue queue is implemented as GitHub issues `#1225` through `#1263`.
+
+## Goal
+
+Codex should execute one production-readiness issue at a time, in queue order, and leave a reviewable PR for humans and CI before the next issue starts.
+
+## Queue rules
+
+1. `#1263` is the backlog index and queue order.
+2. Work starts from the first unchecked `- [ ] #issue` line in `#1263`.
+3. Do not start a new issue when any open production-readiness issue has:
+   - `codex:in-progress`
+   - `codex:pr-open`
+4. Codex must implement exactly one issue per run.
+5. Codex must not merge PRs.
+6. Human review and CI remain the release gate.
 
 ## Labels
 
-The workflow manages these labels in `bootstrap-labels` mode:
+The queue workflows use these labels:
 
-| Label                  | Purpose                                                     |
-| ---------------------- | ----------------------------------------------------------- |
-| `production-readiness` | Issue is eligible for queue selection.                      |
-| `codex-dispatched`     | Issue has already been selected and commented by the queue. |
-| `codex-blocked`        | Issue should be skipped until the blocker is removed.       |
+- `production-readiness`
+- `priority:P0`
+- `priority:P1`
+- `priority:P2`
+- `priority:P3`
+- `codex:ready`
+- `codex:in-progress`
+- `codex:pr-open`
+- `codex:blocked`
+- `codex:review`
+- `codex:done`
 
-## First run after merge
+The workflow `.github/workflows/codex-production-readiness-queue.yml` can create these labels when run with `mode=bootstrap-labels`.
 
-Run the workflow manually from GitHub Actions in this order:
+## Recommended start sequence
 
-1. `mode=bootstrap-labels`.
-2. `mode=dispatch-next` with `dry_run=true`.
-3. Review the selected issue in the workflow summary.
-4. If the dry run selected the correct backlog item, run `mode=dispatch-next` with `dry_run=false`.
+Run the workflow manually first:
 
-## Dispatch behavior
+1. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=bootstrap-labels`.
+2. `Codex Production Readiness Queue` → `workflow_dispatch` → `mode=dispatch-next`.
+3. Confirm that the first issue gets a `@codex` dispatch comment and `codex:in-progress`.
+4. Wait for Codex to open a PR.
+5. Review CI and merge manually.
+6. The workflow will mark the linked issue as done and dispatch the next queue item.
 
-`dispatch-next` selects the oldest open issue matching all of these filters:
+## GitHub Codex integration assumption
 
-- has the `production-readiness` label or `[Production Readiness]` in the issue title;
-- does not have `codex-dispatched`;
-- does not have `codex-blocked`.
+The dispatch workflow posts a `@codex` comment on the selected issue.
 
-When `dry_run=false`, the workflow posts a single queue marker comment containing `@codex`, includes a snapshot of the prompt file, and then adds `codex-dispatched`. If a marker comment already exists, the workflow avoids posting a duplicate comment and only ensures the dispatched label is present.
+This assumes the repository has a GitHub Codex integration or agent that reacts to `@codex` issue comments. If that integration is not active, run Codex manually using:
 
-## Operational notes
+```text
+Use .github/codex/prompts/execute-next-production-issue.md and execute the next production-readiness issue from #1263.
+```
 
-- If the GitHub Codex integration is not enabled, copy `.github/codex/prompts/execute-next-production-issue.md` into Codex App and run the selected issue manually.
-- Remove `codex-dispatched` only when you intentionally want the queue to re-dispatch an issue.
-- Add `codex-blocked` to skip an issue while prerequisites are missing.
-- Keep this workflow manual until the backlog process has been verified with several dry-run and live dispatches.
+## Codex issue execution contract
+
+When Codex starts an issue:
+
+1. Comment that work has started.
+2. Add `codex:in-progress`.
+3. Remove `codex:ready`.
+4. Create a dedicated branch, preferably `production-readiness/<issue-number>-<short-slug>` or `codex/<issue-number>-<short-slug>` when allowed.
+5. Implement only the selected issue.
+6. Run relevant tests.
+7. Open a PR with `Closes #<issue-number>`.
+8. Add summary, tests, risks, and rollback notes to the PR body.
+9. Do not merge.
+
+## PR status sync
+
+When a PR is opened and its body contains `Closes #<issue-number>`, the workflow marks that issue as `codex:pr-open` and removes `codex:in-progress`.
+
+When that PR is merged, the workflow:
+
+1. Adds `codex:done`.
+2. Removes active queue labels.
+3. Checks the issue line in `#1263`.
+4. Dispatches the next unchecked issue.
+
+## Blocked work
+
+If Codex cannot complete an issue:
+
+1. Remove `codex:in-progress`.
+2. Add `codex:blocked`.
+3. Comment with:
+   - blocker
+   - attempted approach
+   - decision needed
+   - next recommended action
+
+The queue runner skips blocked issues until a human removes `codex:blocked` and adds `codex:ready` again.
+
+## Safety rules
+
+- Never auto-merge P0/P1 PRs.
+- Never run two production-readiness issues in parallel.
+- Never remove privacy, security, or auth checks to make tests pass.
+- Never print secrets in issue comments, PR bodies, logs, screenshots, or artifacts.
+- Prefer small PRs over broad refactors.
+- Migration, storage, privacy, and job-queue changes require explicit rollback notes.
+
+## Minimal production gate before starting P1
+
+P1 should not begin until these P0 issues are merged or explicitly deferred with a dated exception:
+
+- `#1225`
+- `#1226`
+- `#1227`
+- `#1228`
+- `#1229`
+- `#1230`
+- `#1231`
+- `#1232`

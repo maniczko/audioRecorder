@@ -4,125 +4,347 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Queue action to run.'
+        description: 'Operation to run'
         required: true
-        default: dispatch-next
+        default: 'dispatch-next'
         type: choice
         options:
           - bootstrap-labels
           - dispatch-next
+          - status
       dry_run:
-        description: 'Preview the selected issue without posting the @codex dispatch comment.'
+        description: 'Do not mutate issues; print intended actions only'
         required: true
-        default: true
-        type: boolean
-
-permissions:
-  contents: read
-  issues: write
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
 
 concurrency:
   group: codex-production-readiness-queue
   cancel-in-progress: false
 
-env:
-  QUEUE_LABEL: production-readiness
-  DISPATCHED_LABEL: codex-dispatched
-  BLOCKED_LABEL: codex-blocked
-  DISPATCH_COMMENT_MARKER: '<!-- codex-production-readiness-queue -->'
-  CODEX_PROMPT_PATH: .github/codex/prompts/execute-next-production-issue.md
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
 
 jobs:
   queue:
-    name: Run queue action
+    name: Sync and dispatch production-readiness queue
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout prompt and docs
-        uses: actions/checkout@v4
+    timeout-minutes: 10
 
-      - name: Bootstrap queue labels
-        if: ${{ inputs.mode == 'bootstrap-labels' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      INDEX_ISSUE: '1263'
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      MODE: ${{ github.event.inputs.mode || 'sync-pr' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Ensure labels exist
+        shell: bash
         run: |
           set -euo pipefail
 
-          ensure_label() {
+          create_label() {
             local name="$1"
             local color="$2"
-            local description="$3"
-
-            if gh label list --repo "$GH_REPO" --search "$name" --json name --jq '.[].name' | grep -Fxq "$name"; then
-              gh label edit "$name" --repo "$GH_REPO" --color "$color" --description "$description"
-            else
-              gh label create "$name" --repo "$GH_REPO" --color "$color" --description "$description"
+            local desc="$3"
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "[dry-run] ensure label: $name"
+              return 0
             fi
+            gh label create "$name" --repo "$REPO" --color "$color" --description "$desc" --force >/dev/null
           }
 
-          ensure_label "$QUEUE_LABEL" 'B60205' 'Production-readiness backlog issue eligible for Codex queue dispatch.'
-          ensure_label "$DISPATCHED_LABEL" '5319E7' 'Codex production-readiness queue has dispatched this issue.'
-          ensure_label "$BLOCKED_LABEL" 'D93F0B' 'Codex production-readiness queue should skip this issue until unblocked.'
+          create_label "production-readiness" "0052CC" "Production readiness audit backlog"
+          create_label "priority:P0" "B60205" "Production blocker"
+          create_label "priority:P1" "D93F0B" "MVP hardening"
+          create_label "priority:P2" "FBCA04" "Production stabilization"
+          create_label "priority:P3" "C5DEF5" "Enterprise readiness"
+          create_label "codex:ready" "0E8A16" "Ready for Codex execution"
+          create_label "codex:in-progress" "FBCA04" "Codex is currently working"
+          create_label "codex:pr-open" "1D76DB" "Codex opened a PR"
+          create_label "codex:blocked" "D93F0B" "Codex is blocked"
+          create_label "codex:review" "5319E7" "Needs human review"
+          create_label "codex:done" "6F42C1" "Completed by merged PR"
 
-      - name: Dispatch next issue
-        if: ${{ inputs.mode == 'dispatch-next' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          DRY_RUN: ${{ inputs.dry_run }}
+      - name: Run queue operation
+        shell: bash
         run: |
           set -euo pipefail
 
-          if [[ ! -f "$CODEX_PROMPT_PATH" ]]; then
-            echo "Prompt file not found: $CODEX_PROMPT_PATH" >&2
-            exit 1
-          fi
+          log() {
+            echo "[codex-queue] $*"
+          }
 
-          issue_json=$(gh issue list --repo "$GH_REPO" --state open --limit 100 --json number,title,url,labels,createdAt --jq '
-            sort_by(.createdAt)
-            | map(
-                select(([.labels[].name] | index(env.DISPATCHED_LABEL) | not))
-                | select(([.labels[].name] | index(env.BLOCKED_LABEL) | not))
-                | select((.title | contains("[Production Readiness]")) or ([.labels[].name] | index(env.QUEUE_LABEL)))
-              )
-            | .[0]
-          ')
+          issue_body() {
+            gh issue view "$1" --repo "$REPO" --json body --jq '.body // ""'
+          }
 
-          if [[ -z "$issue_json" || "$issue_json" == "null" ]]; then
-            echo "No eligible production-readiness issue found. Add $QUEUE_LABEL to backlog issues or use [Production Readiness] in titles."
+          issue_state() {
+            gh issue view "$1" --repo "$REPO" --json state --jq '.state'
+          }
+
+          issue_labels() {
+            gh issue view "$1" --repo "$REPO" --json labels --jq '.labels[].name' || true
+          }
+
+          issue_in_index() {
+            local issue="$1"
+            issue_body "$INDEX_ISSUE" | grep -Eq "#${issue}([^0-9]|$)"
+          }
+
+          add_label() {
+            local issue="$1"
+            local label="$2"
+            if [ "$DRY_RUN" = "true" ]; then
+              log "[dry-run] add label '$label' to #$issue"
+              return 0
+            fi
+            gh issue edit "$issue" --repo "$REPO" --add-label "$label" >/dev/null
+          }
+
+          remove_label() {
+            local issue="$1"
+            local label="$2"
+            if [ "$DRY_RUN" = "true" ]; then
+              log "[dry-run] remove label '$label' from #$issue"
+              return 0
+            fi
+            gh issue edit "$issue" --repo "$REPO" --remove-label "$label" >/dev/null 2>&1 || true
+          }
+
+          comment_issue() {
+            local issue="$1"
+            local body="$2"
+            if [ "$DRY_RUN" = "true" ]; then
+              log "[dry-run] comment on #$issue:"
+              echo "$body"
+              return 0
+            fi
+            gh issue comment "$issue" --repo "$REPO" --body "$body" >/dev/null
+          }
+
+          priority_from_title() {
+            local issue="$1"
+            local title
+            title=$(gh issue view "$issue" --repo "$REPO" --json title --jq '.title')
+            if [[ "$title" == *"[P0]"* ]]; then echo "priority:P0"; return; fi
+            if [[ "$title" == *"[P1]"* ]]; then echo "priority:P1"; return; fi
+            if [[ "$title" == *"[P2]"* ]]; then echo "priority:P2"; return; fi
+            if [[ "$title" == *"[P3]"* ]]; then echo "priority:P3"; return; fi
+            echo ""
+          }
+
+          bootstrap_labels() {
+            local numbers labels
+            numbers=$(issue_body "$INDEX_ISSUE" | grep -Eo '#[0-9]+' | tr -d '#' | sort -n | uniq)
+            for issue in $numbers; do
+              if [ "$issue" = "$INDEX_ISSUE" ]; then
+                add_label "$issue" "production-readiness"
+                continue
+              fi
+
+              local state prio
+              state=$(issue_state "$issue")
+              add_label "$issue" "production-readiness"
+              prio=$(priority_from_title "$issue")
+              if [ -n "$prio" ]; then add_label "$issue" "$prio"; fi
+
+              if [ "$state" = "OPEN" ]; then
+                labels=$(issue_labels "$issue")
+                if ! echo "$labels" | grep -qx "codex:done" && \
+                   ! echo "$labels" | grep -qx "codex:blocked" && \
+                   ! echo "$labels" | grep -qx "codex:pr-open" && \
+                   ! echo "$labels" | grep -qx "codex:in-progress"; then
+                  add_label "$issue" "codex:ready"
+                fi
+              fi
+            done
+          }
+
+          has_active_work() {
+            local in_progress pr_open
+            in_progress=$(gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:in-progress" --json number --jq 'length')
+            pr_open=$(gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:pr-open" --json number --jq 'length')
+            if [ "$in_progress" != "0" ] || [ "$pr_open" != "0" ]; then
+              log "Active queue work exists: codex:in-progress=$in_progress codex:pr-open=$pr_open"
+              return 0
+            fi
+            return 1
+          }
+
+          next_issue_from_index() {
+            local body lines issue state labels
+            body=$(issue_body "$INDEX_ISSUE")
+            lines=$(printf '%s\n' "$body" | grep -E '^- \[ \] #[0-9]+' || true)
+            while IFS= read -r line; do
+              [ -n "$line" ] || continue
+              issue=$(echo "$line" | grep -Eo '#[0-9]+' | head -1 | tr -d '#')
+              [ -n "$issue" ] || continue
+              state=$(issue_state "$issue")
+              [ "$state" = "OPEN" ] || continue
+              labels=$(issue_labels "$issue")
+              if echo "$labels" | grep -qx "codex:blocked"; then
+                log "Skipping blocked issue #$issue"
+                continue
+              fi
+              echo "$issue"
+              return 0
+            done <<< "$lines"
+            return 1
+          }
+
+          check_index_item() {
+            local issue="$1"
+            local body_file tmp
+            body_file=$(mktemp)
+            tmp=$(mktemp)
+            issue_body "$INDEX_ISSUE" > "$body_file"
+            python3 - "$issue" "$body_file" > "$tmp" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          issue = sys.argv[1]
+          body_file = pathlib.Path(sys.argv[2])
+          body = body_file.read_text(encoding='utf-8')
+          pattern = re.compile(rf'(^- \[ \] #{re.escape(issue)}(\b|\D))', re.M)
+          body = pattern.sub(lambda m: m.group(0).replace('- [ ]', '- [x]', 1), body, count=1)
+          print(body, end='')
+          PY
+            if [ "$DRY_RUN" = "true" ]; then
+              log "[dry-run] would check #$issue in #$INDEX_ISSUE"
+              rm -f "$tmp" "$body_file"
+              return 0
+            fi
+            gh issue edit "$INDEX_ISSUE" --repo "$REPO" --body-file "$tmp" >/dev/null
+            rm -f "$tmp" "$body_file"
+          }
+
+          linked_issue_from_pr_body() {
+            local body="$1"
+            printf '%s\n' "$body" | grep -Eio '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | head -1 | grep -Eo '[0-9]+' || true
+          }
+
+          sync_pr_open() {
+            local issue="$1"
+            local pr_number="$2"
+            [ -n "$issue" ] || return 0
+            issue_in_index "$issue" || { log "PR links #$issue, but it is not in #$INDEX_ISSUE. Skipping."; return 0; }
+            add_label "$issue" "production-readiness"
+            add_label "$issue" "codex:pr-open"
+            remove_label "$issue" "codex:in-progress"
+            remove_label "$issue" "codex:ready"
+            comment_issue "$issue" "PR #${pr_number} is open for this production-readiness task. Queue status moved to \`codex:pr-open\`."
+          }
+
+          sync_pr_merged() {
+            local issue="$1"
+            local pr_number="$2"
+            [ -n "$issue" ] || return 0
+            issue_in_index "$issue" || { log "Merged PR links #$issue, but it is not in #$INDEX_ISSUE. Skipping."; return 0; }
+            add_label "$issue" "production-readiness"
+            add_label "$issue" "codex:done"
+            remove_label "$issue" "codex:pr-open"
+            remove_label "$issue" "codex:in-progress"
+            remove_label "$issue" "codex:ready"
+            remove_label "$issue" "codex:blocked"
+            check_index_item "$issue"
+            comment_issue "$issue" "Merged via PR #${pr_number}. Queue status moved to \`codex:done\`, and #${INDEX_ISSUE} was checked off."
+          }
+
+          dispatch_next() {
+            if has_active_work; then
+              log "No dispatch: active work already exists."
+              return 0
+            fi
+
+            local issue title prio prompt
+            if ! issue=$(next_issue_from_index); then
+              log "No open unchecked production-readiness issue found in #$INDEX_ISSUE."
+              return 0
+            fi
+
+            title=$(gh issue view "$issue" --repo "$REPO" --json title --jq '.title')
+            prio=$(priority_from_title "$issue")
+            add_label "$issue" "production-readiness"
+            if [ -n "$prio" ]; then add_label "$issue" "$prio"; fi
+            add_label "$issue" "codex:in-progress"
+            remove_label "$issue" "codex:ready"
+            remove_label "$issue" "codex:blocked"
+
+            prompt=$(cat <<EOF
+          @codex Please execute this production-readiness issue exactly as scoped.
+
+          Queue source: #${INDEX_ISSUE}
+          Selected issue: #${issue}
+
+          Rules:
+          - Work on exactly this one issue.
+          - Do not start any other issue.
+          - Create a dedicated branch: \`production-readiness/${issue}-<short-slug>\`.
+          - Keep the change limited to this issue body and explicit dependencies.
+          - Run the relevant verification from \`.github/codex/prompts/execute-next-production-issue.md\`.
+          - Open a PR titled \`[#${issue}] ${title}\`.
+          - Include \`Closes #${issue}\` in the PR body.
+          - Include summary, changed files, tests run, risks, and rollback notes.
+          - Do not merge the PR.
+          - If blocked, remove \`codex:in-progress\`, add \`codex:blocked\`, and comment with blocker, attempted approach, decision needed, and next action.
+          EOF
+            )
+
+            comment_issue "$issue" "$prompt"
+            log "Dispatched #$issue: $title"
+          }
+
+          if [ "$MODE" = "bootstrap-labels" ]; then
+            bootstrap_labels
             exit 0
           fi
 
-          issue_number=$(jq -r '.number' <<<"$issue_json")
-          issue_title=$(jq -r '.title' <<<"$issue_json")
-          issue_url=$(jq -r '.url' <<<"$issue_json")
-
-          {
-            echo "Selected issue: #$issue_number $issue_title"
-            echo "Issue URL: $issue_url"
-            echo "Dry run: $DRY_RUN"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [[ "$DRY_RUN" == "true" ]]; then
-            echo "Dry run enabled; not posting @codex dispatch comment."
+          if [ "$MODE" = "status" ]; then
+            log "Open in-progress issues:"
+            gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:in-progress" || true
+            log "Open PR-linked issues:"
+            gh issue list --repo "$REPO" --state open --label "production-readiness" --label "codex:pr-open" || true
             exit 0
           fi
 
-          prompt_body=$(cat "$CODEX_PROMPT_PATH")
-          comment_body=$(printf '%s\n%s\n\n%s\n\n%s\n%s\n\n```markdown\n%s\n```\n%s\n' \
-            "$DISPATCH_COMMENT_MARKER" \
-            '@codex please execute this production-readiness backlog item.' \
-            "Use the repository prompt at \`$CODEX_PROMPT_PATH\` as the operating instructions for this issue." \
-            '<details>' \
-            '<summary>Dispatch prompt snapshot</summary>' \
-            "$prompt_body" \
-            '</details>')
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pr_number="${{ github.event.pull_request.number }}"
+            pr_body=$(gh pr view "$pr_number" --repo "$REPO" --json body --jq '.body // ""')
+            issue=$(linked_issue_from_pr_body "$pr_body")
 
-          existing_comment_count=$(gh issue view "$issue_number" --repo "$GH_REPO" --json comments --jq '[.comments[] | select(.body | contains(env.DISPATCH_COMMENT_MARKER))] | length')
-          if [[ "$existing_comment_count" != "0" ]]; then
-            echo "Issue #$issue_number already has a queue dispatch comment; adding label only."
-          else
-            gh issue comment "$issue_number" --repo "$GH_REPO" --body "$comment_body"
+            if [ -z "$issue" ]; then
+              log "No Closes/Fixes/Resolves issue reference found in PR body."
+              exit 0
+            fi
+
+            if [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+              sync_pr_merged "$issue" "$pr_number"
+              dispatch_next
+              exit 0
+            fi
+
+            if [ "${{ github.event.action }}" != "closed" ]; then
+              sync_pr_open "$issue" "$pr_number"
+              exit 0
+            fi
           fi
 
-          gh issue edit "$issue_number" --repo "$GH_REPO" --add-label "$DISPATCHED_LABEL"
+          if [ "$MODE" = "dispatch-next" ]; then
+            dispatch_next
+            exit 0
+          fi
+
+          log "No operation performed for mode=$MODE event=${{ github.event_name }}"

@@ -1,48 +1,147 @@
-# Execute the next production-readiness backlog issue
+# Execute next production-readiness issue
 
-You are Codex working in the VoiceLog `audioRecorder` repository.
+You are Codex working in repository `maniczko/audioRecorder`.
 
 ## Goal
 
-Implement the GitHub issue that invoked this run from the production-readiness backlog. Treat the issue body as the source of truth for scope, acceptance criteria, and validation.
+Implement the next production-readiness GitHub issue in strict queue order.
 
-## Required context
+## Queue source
 
-Before changing files:
+Use GitHub issue `#1263` as the source of truth.
 
-1. Read `AGENTS.md`.
-2. Read `docs/CODEX_ORCHESTRATION.md` if it exists.
-3. Read the triggering issue and any linked PR comments.
-4. Identify whether the issue is P0, P1, P2, or P3 and preserve that priority in the final report.
+## Selection rules
 
-## Execution rules
+1. Find the first unchecked issue in `#1263`.
+2. Only consider issues that are open.
+3. Skip an issue if it has `codex:blocked`.
+4. Stop without coding when any open production-readiness issue has `codex:in-progress` or `codex:pr-open`, unless that issue is the one you were explicitly assigned.
+5. Prefer priority order already encoded in `#1263`: P0, then P1, then P2, then P3.
+6. Do not start an issue if it depends on another open issue.
 
-- Keep the change focused on the selected issue only.
-- Follow the repository TDD workflow: run `pnpm run tdd <short-feature-name>`, add tests first when implementation changes code, then implement the minimum passing change.
-- For bug fixes, add a regression test before the fix.
-- Do not introduce secrets, tokens, service-role keys, or production credentials.
-- Do not broaden refactors across audio pipeline files without a focused test plan.
-- If the issue cannot be safely completed, leave a clear blocking comment and do not make speculative changes.
+## Status rules
 
-## Validation
+Before coding:
 
-Run the narrowest relevant tests first, then the issue-required checks. For production-readiness changes, prefer these checks when applicable:
+1. Comment on the selected issue:
+   `Codex started work on this issue.`
+2. Remove `codex:ready` when present.
+3. Add `codex:in-progress` when available.
+4. Create a dedicated branch:
+   `production-readiness/<issue-number>-<short-slug>`.
+   If repository policy allows `codex/*`, use `codex/<issue-number>-<short-slug>`.
+
+When implementation succeeds:
+
+1. Open a PR titled:
+   `[#<issue-number>] <issue title>`
+2. Include `Closes #<issue-number>` in the PR body.
+3. Include:
+   - Summary
+   - Changed files
+   - Tests run
+   - Risks
+   - Rollback notes
+4. Remove `codex:in-progress` when present.
+5. Add `codex:pr-open` when available.
+6. Comment on the issue with the PR link and test results.
+
+When blocked:
+
+1. Stop.
+2. Remove `codex:in-progress` when present.
+3. Add `codex:blocked` when available.
+4. Comment with:
+   - blocker
+   - attempted approach
+   - decision needed
+   - next recommended action
+
+## Hard rules
+
+- Work on exactly one issue.
+- Do not implement more than one issue.
+- Do not merge PRs.
+- Do not skip tests unless impossible; if impossible, explain why.
+- Do not change unrelated files.
+- Do not silently change production behavior outside issue scope.
+- Do not remove privacy, security, auth, workspace, or audit checks to make tests pass.
+- Do not print secrets, tokens, service-role keys, database passwords, raw transcripts, or audio content.
+
+## Verification
+
+Run the smallest relevant verification set.
+
+For backend changes:
 
 ```bash
+pnpm run typecheck:server
 pnpm run test:server:retry
-pnpm run test:frontend:ci
-pnpm run audit:mojibake
-pnpm run typecheck:all
 ```
 
-Document any skipped command with the concrete environment limitation.
+For frontend changes:
 
-## Final report
+```bash
+pnpm run typecheck
+pnpm run lint:all
+```
 
-Include:
+For workflow/config/agent changes:
 
-1. Linear or GitHub issue IDs covered.
-2. Files changed.
-3. Tests/checks run and result.
-4. Known weaknesses or deferred risks.
-5. Whether local frontend/backend runtime was verified when code changed.
+```bash
+pnpm run test:workflows
+pnpm run audit:mojibake
+```
+
+For cross-cutting production changes:
+
+```bash
+pnpm run typecheck:all
+pnpm run lint:all
+pnpm run test:server:retry
+```
+
+For recorder/queue changes, run at minimum:
+
+```bash
+pnpm exec vitest run src/hooks/useAudioHardware.test.ts src/hooks/useRecorder.test.tsx src/lib/recordingQueue.test.ts src/store/recorderStore.test.ts src/store/recorderQueueProcessor.test.ts --coverage.enabled=false
+```
+
+## PR body template
+
+```markdown
+Closes #<issue-number>
+
+## Summary
+
+-
+
+## Changed files
+
+-
+
+## Tests run
+
+- [ ] `pnpm run typecheck:server`
+- [ ] `pnpm run test:server:retry`
+- [ ] other:
+
+## Risks
+
+-
+
+## Rollback notes
+
+-
+```
+
+## Final response
+
+Report:
+
+- selected issue number
+- branch name
+- PR link
+- tests run
+- known risks
+- whether the issue was completed or blocked
