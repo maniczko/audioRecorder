@@ -47,8 +47,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
       INDEX_ISSUE: '1263'
-      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
-      MODE: ${{ github.event_name == 'schedule' && 'reconcile' || github.event.inputs.mode || 'sync-pr' }}
+      DRY_RUN: "${{ github.event.inputs.dry_run || 'false' }}"
+      MODE: "${{ github.event_name == 'schedule' && 'reconcile' || github.event.inputs.mode || 'sync-pr' }}"
 
     steps:
       - name: Ensure labels exist
