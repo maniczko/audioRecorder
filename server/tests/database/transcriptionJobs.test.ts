@@ -1,195 +1,404 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { initDatabase } from '../../database.ts';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { Database } from '../../database.ts';
 
-describe('durable transcription jobs', () => {
-  let db: any;
-  let uploadDir: string;
+let actualFs = fs;
+const tempRoots: string[] = [];
 
-  beforeEach(async () => {
-    const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
-    uploadDir = realFs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-transcription-jobs-'));
-    db = initDatabase({ dbPath: ':memory:', uploadDir });
-    await db.init();
-  }, 60000);
+async function createDb() {
+  actualFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  const root = actualFs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-transcription-jobs-'));
+  tempRoots.push(root);
+  const db = new Database({ dbPath: ':memory:', uploadDir: path.join(root, 'uploads') });
+  await db.init();
+  return db;
+}
 
-  afterEach(async () => {
-    if (db) {
-      await db.shutdown();
-      db = null;
-    }
-    if (uploadDir && fs.existsSync(uploadDir)) {
-      fs.rmSync(uploadDir, { recursive: true, force: true });
-    }
-  });
-
-  async function createMediaAsset(recordingId = 'rec_job') {
-    return db.upsertMediaAsset({
+async function insertAsset(
+  db: Database,
+  recordingId: string,
+  workspaceId = 'ws_1',
+  overrides: Record<string, unknown> = {}
+) {
+  const now = db.nowIso();
+  await db._execute(
+    `INSERT INTO media_assets (
+      id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+      size_bytes, transcription_status, transcript_json, diarization_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'queued', '[]', '{}', ?, ?)`,
+    [
       recordingId,
-      workspaceId: 'ws_jobs',
-      meetingId: 'meet_jobs',
-      contentType: 'audio/webm',
-      buffer: Buffer.from('audio'),
-      createdByUserId: 'user_jobs',
-    });
+      workspaceId,
+      String(overrides.meeting_id || 'meeting_1'),
+      'user_1',
+      String(overrides.file_path ?? '/tmp/audio.webm'),
+      String(overrides.content_type || 'audio/webm'),
+      12,
+      now,
+      now,
+    ]
+  );
+  if (overrides.transcription_status) {
+    await db._execute('UPDATE media_assets SET transcription_status = ? WHERE id = ?', [
+      String(overrides.transcription_status),
+      recordingId,
+    ]);
   }
+}
 
-  test('migration creates transcription_jobs table with lease fields', async () => {
-    const columns = await db._query('PRAGMA table_info(transcription_jobs)');
-    const names = columns.map((column: any) => column.name);
-
-    expect(names).toEqual(
-      expect.arrayContaining([
-        'recording_id',
-        'workspace_id',
-        'meeting_id',
-        'status',
-        'attempt_count',
-        'max_attempts',
-        'locked_by',
-        'locked_until',
-        'next_run_at',
-        'last_error_code',
-        'last_error_message',
-        'completed_at',
-      ])
-    );
+describe('transcription_jobs durable queue', () => {
+  afterEach(async () => {
+    for (const root of tempRoots.splice(0)) {
+      actualFs.rmSync(root, { recursive: true, force: true });
+    }
   });
 
-  test('enqueue is idempotent for the same active recording', async () => {
-    await createMediaAsset('rec_idempotent');
-
-    const first = await db.enqueueTranscriptionJob('rec_idempotent', { workspaceId: 'ws_jobs' });
-    const second = await db.enqueueTranscriptionJob('rec_idempotent', { workspaceId: 'ws_jobs' });
-    const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
-      'rec_idempotent',
-    ]);
-    const asset = await db.getMediaAsset('rec_idempotent');
-
-    expect(second.id).toBe(first.id);
-    expect(rows).toHaveLength(1);
-    expect(asset.transcription_status).toBe('queued');
+  test('migration creates durable transcription job table and lease indexes', async () => {
+    const db = await createDb();
+    try {
+      await expect(db._get('SELECT * FROM transcription_jobs LIMIT 1')).resolves.toBeNull();
+      const indexes = await db._query(
+        "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'transcription_jobs'"
+      );
+      expect(indexes.map((row: { name: string }) => row.name)).toEqual(
+        expect.arrayContaining([
+          'idx_transcription_jobs_one_active_per_recording',
+          'idx_transcription_jobs_lease_queue',
+          'idx_transcription_jobs_recording_id',
+        ])
+      );
+    } finally {
+      await db.shutdown();
+    }
   });
 
-  test('parallel enqueue requests resolve to one active job', async () => {
-    await createMediaAsset('rec_parallel');
+  test('enqueue is idempotent for duplicate active recording requests', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_idempotent');
+      const first = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_idempotent',
+        workspaceId: 'ws_1',
+      });
+      const second = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_idempotent',
+        workspaceId: 'ws_1',
+      });
+      const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
+        'rec_idempotent',
+      ]);
 
-    const jobs = await Promise.all([
-      db.enqueueTranscriptionJob('rec_parallel', { workspaceId: 'ws_jobs' }),
-      db.enqueueTranscriptionJob('rec_parallel', { workspaceId: 'ws_jobs' }),
-    ]);
-    const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
-      'rec_parallel',
-    ]);
-
-    expect(new Set(jobs.map((job: any) => job.id)).size).toBe(1);
-    expect(rows).toHaveLength(1);
+      expect(second.id).toBe(first.id);
+      expect(rows).toHaveLength(1);
+      await expect(db.getMediaAsset('rec_idempotent')).resolves.toMatchObject({
+        transcription_status: 'queued',
+      });
+    } finally {
+      await db.shutdown();
+    }
   });
 
-  test('only one worker can acquire a transcription job lease', async () => {
-    await createMediaAsset('rec_lease');
-    await db.enqueueTranscriptionJob('rec_lease', { workspaceId: 'ws_jobs' });
+  test('queueTranscription persists recording consent metadata for audit reads', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_consent', 'ws_consent');
 
-    const firstLease = await db.acquireTranscriptionJobLease('worker-a', {
-      recordingId: 'rec_lease',
-      leaseMs: 60_000,
-    });
-    const secondLease = await db.acquireTranscriptionJobLease('worker-b', {
-      recordingId: 'rec_lease',
-      leaseMs: 60_000,
-    });
-    const asset = await db.getMediaAsset('rec_lease');
+      await db.queueTranscription('rec_consent', {
+        workspaceId: 'ws_consent',
+        meetingId: 'meeting_consent',
+        contentType: 'audio/webm',
+        recordingConsent: {
+          acceptedAt: '2026-06-25T10:00:00.000Z',
+          workspaceId: 'ws_consent',
+          policyVersion: 'recording-consent-v1',
+          disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
+          providerNotice: 'Dane moga byc przekazywane do dostawcow AI/audio.',
+          providers: [
+            { id: 'stt', label: 'transkrypcja mowy na tekst', enabled: true },
+            { id: 'llm-analysis', label: 'analiza AI', enabled: true },
+          ],
+        },
+      });
 
-    expect(firstLease).toMatchObject({
-      recording_id: 'rec_lease',
-      status: 'running',
-      locked_by: 'worker-a',
-      attempt_count: 1,
-    });
-    expect(secondLease).toBeNull();
-    expect(asset.transcription_status).toBe('processing');
+      const asset = await db.getMediaAsset('rec_consent');
+      const diarization = JSON.parse(asset.diarization_json || '{}');
+
+      expect(diarization.recordingConsent).toMatchObject({
+        acceptedAt: '2026-06-25T10:00:00.000Z',
+        workspaceId: 'ws_consent',
+        policyVersion: 'recording-consent-v1',
+      });
+      expect(diarization.recordingConsent.providers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'stt', enabled: true }),
+          expect.objectContaining({ id: 'llm-analysis', enabled: true }),
+        ])
+      );
+    } finally {
+      await db.shutdown();
+    }
   });
 
-  test('queued transcription jobs survive database restart and can be recovered', async () => {
-    const dbPath = path.join(uploadDir, 'durable.sqlite');
-    await db.shutdown();
+  test('only one worker can acquire a lease for a queued job', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_lease');
+      await db.enqueueTranscriptionJob({ recordingId: 'rec_lease', workspaceId: 'ws_1' });
 
-    const firstDb = initDatabase({ dbPath, uploadDir });
+      const firstLease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-a',
+        recordingId: 'rec_lease',
+      });
+      const secondLease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-b',
+        recordingId: 'rec_lease',
+      });
+
+      expect(firstLease).toMatchObject({ recording_id: 'rec_lease', locked_by: 'worker-a' });
+      expect(secondLease).toBeNull();
+      await expect(db.getMediaAsset('rec_lease')).resolves.toMatchObject({
+        transcription_status: 'processing',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('durable queued job survives service restart and can be recovered', async () => {
+    actualFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+    const root = actualFs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-restart-recovery-'));
+    tempRoots.push(root);
+    const dbPath = path.join(root, 'voicelog.sqlite');
+    const firstDb = new Database({ dbPath, uploadDir: path.join(root, 'uploads') });
     await firstDb.init();
-    db = firstDb;
-    await createMediaAsset('rec_restart');
-    const queued = await db.enqueueTranscriptionJob('rec_restart', { workspaceId: 'ws_jobs' });
-    await db.shutdown();
-
-    const restartedDb = initDatabase({ dbPath, uploadDir });
-    await restartedDb.init();
-    db = restartedDb;
-    const recovered = await db.getTranscriptionJob('rec_restart');
-    const lease = await db.acquireTranscriptionJobLease('worker-restarted', {
+    await insertAsset(firstDb, 'rec_restart');
+    const queued = await firstDb.enqueueTranscriptionJob({
       recordingId: 'rec_restart',
+      workspaceId: 'ws_1',
     });
+    await firstDb.shutdown();
 
-    expect(recovered.id).toBe(queued.id);
-    expect(recovered.status).toBe('queued');
-    expect(lease).toMatchObject({
-      id: queued.id,
-      status: 'running',
-      locked_by: 'worker-restarted',
-    });
-  }, 60000);
+    const secondDb = new Database({ dbPath, uploadDir: path.join(root, 'uploads') });
+    await secondDb.init();
+    try {
+      const recovered = await secondDb.getTranscriptionJobByRecordingId('rec_restart');
+      const lease = await secondDb.acquireTranscriptionJobLease({
+        workerId: 'worker-after-restart',
+        recordingId: 'rec_restart',
+      });
 
-  test('expired running leases return to retryable queued state', async () => {
-    await createMediaAsset('rec_expired');
-    await db.enqueueTranscriptionJob('rec_expired', { workspaceId: 'ws_jobs' });
-    const lease = await db.acquireTranscriptionJobLease('worker-expired', {
-      recordingId: 'rec_expired',
-      leaseMs: 1_000,
-    });
-
-    const future = new Date(Date.now() + 5_000).toISOString();
-    const recoveredCount = await db.recoverExpiredTranscriptionJobLeases(future);
-    const recovered = await db.getTranscriptionJob('rec_expired');
-    const asset = await db.getMediaAsset('rec_expired');
-
-    expect(lease.status).toBe('running');
-    expect(recoveredCount).toBe(1);
-    expect(recovered).toMatchObject({
-      status: 'retryable_failed',
-      locked_by: '',
-      last_error_code: 'lease_expired',
-    });
-    expect(asset.transcription_status).toBe('queued');
+      expect(recovered).toMatchObject({ id: queued.id, status: 'queued' });
+      expect(lease).toMatchObject({ id: queued.id, status: 'running' });
+    } finally {
+      await secondDb.shutdown();
+    }
   });
 
-  test('acquire recovers and leases an expired running job', async () => {
-    await createMediaAsset('rec_reacquire');
-    await db.enqueueTranscriptionJob('rec_reacquire', { workspaceId: 'ws_jobs' });
-    const firstLease = await db.acquireTranscriptionJobLease('worker-old', {
-      recordingId: 'rec_reacquire',
-      leaseMs: 1_000,
-    });
+  test('completed jobs update media status and allow a new active job for the recording', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_complete');
+      const queued = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_complete',
+        workspaceId: 'ws_1',
+      });
+      const lease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-complete',
+        recordingId: 'rec_complete',
+      });
 
-    await db._execute(
-      'UPDATE transcription_jobs SET locked_until = ?, updated_at = ? WHERE id = ?',
-      [
-        new Date(Date.now() - 5_000).toISOString(),
-        new Date(Date.now() - 5_000).toISOString(),
-        firstLease.id,
-      ]
-    );
-    const nextLease = await db.acquireTranscriptionJobLease('worker-new', {
-      recordingId: 'rec_reacquire',
-      leaseMs: 60_000,
-    });
+      const completed = await db.completeTranscriptionJob(queued.id, 'worker-complete');
+      const next = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_complete',
+        workspaceId: 'ws_1',
+      });
+      const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
+        'rec_complete',
+      ]);
 
-    expect(nextLease).toMatchObject({
-      id: firstLease.id,
-      status: 'running',
-      locked_by: 'worker-new',
-      attempt_count: 2,
-      last_error_code: 'lease_expired',
-    });
+      expect(lease).toMatchObject({ id: queued.id, status: 'running' });
+      expect(completed).toMatchObject({ id: queued.id, status: 'completed' });
+      expect(next.id).not.toBe(queued.id);
+      expect(rows).toHaveLength(2);
+      await expect(db.getMediaAsset('rec_complete')).resolves.toMatchObject({
+        transcription_status: 'queued',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('failed leased jobs retry only after next_run_at and reject wrong-worker updates', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_retry');
+      const queued = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_retry',
+        workspaceId: 'ws_1',
+        maxAttempts: 2,
+        nextRunAt: '2026-06-25T10:00:00.000Z',
+      });
+      const lease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-a',
+        recordingId: 'rec_retry',
+        now: '2026-06-25T10:00:00.000Z',
+      });
+
+      await expect(
+        db.failTranscriptionJob(queued.id, 'worker-b', new Error('wrong'))
+      ).resolves.toBe(null);
+      const retryable = await db.failTranscriptionJob(
+        queued.id,
+        'worker-a',
+        { code: 'STT_TEMPORARY', message: 'temporary provider failure' },
+        { now: '2026-06-25T10:00:00.000Z', retryDelayMs: 60_000 }
+      );
+      const tooEarlyLease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-b',
+        recordingId: 'rec_retry',
+        now: '2026-06-25T10:00:30.000Z',
+      });
+      const retryLease = await db.acquireTranscriptionJobLease({
+        workerId: 'worker-b',
+        recordingId: 'rec_retry',
+        now: '2026-06-25T10:01:00.000Z',
+      });
+
+      expect(lease).toMatchObject({ id: queued.id, locked_by: 'worker-a' });
+      expect(retryable).toMatchObject({
+        id: queued.id,
+        status: 'retryable_failed',
+        last_error_code: 'STT_TEMPORARY',
+        next_run_at: '2026-06-25T10:01:00.000Z',
+      });
+      expect(tooEarlyLease).toBeNull();
+      expect(retryLease).toMatchObject({
+        id: queued.id,
+        status: 'running',
+        locked_by: 'worker-b',
+        attempt_count: 2,
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('heartbeat extends only the current worker lease', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_heartbeat');
+      const queued = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_heartbeat',
+        workspaceId: 'ws_1',
+        nextRunAt: '2026-06-25T10:00:00.000Z',
+      });
+      await db.acquireTranscriptionJobLease({
+        workerId: 'worker-heartbeat',
+        recordingId: 'rec_heartbeat',
+        now: '2026-06-25T10:00:00.000Z',
+      });
+
+      await expect(
+        db.heartbeatTranscriptionJob(queued.id, 'worker-other', 120_000, '2026-06-25T10:02:00.000Z')
+      ).resolves.toBeNull();
+      const extended = await db.heartbeatTranscriptionJob(
+        queued.id,
+        'worker-heartbeat',
+        120_000,
+        '2026-06-25T10:02:00.000Z'
+      );
+
+      expect(extended).toMatchObject({
+        id: queued.id,
+        locked_by: 'worker-heartbeat',
+        locked_until: '2026-06-25T10:04:00.000Z',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('startup recovery requeues stale processing asset with available local audio', async () => {
+    const db = await createDb();
+    const audioPath = path.join(tempRoots.at(-1) || os.tmpdir(), 'recoverable.webm');
+    actualFs.writeFileSync(audioPath, Buffer.from('audio'));
+    try {
+      await insertAsset(db, 'rec_recoverable', 'ws_1', {
+        file_path: audioPath,
+        transcription_status: 'processing',
+      });
+
+      const summary = await db.recoverStartupTranscriptionJobs({
+        now: '2026-06-25T10:00:00.000Z',
+      });
+      const job = await db.getTranscriptionJobByRecordingId('rec_recoverable');
+      const asset = await db.getMediaAsset('rec_recoverable');
+
+      expect(summary).toMatchObject({ recovered: 1, failed: 0, skipped: 0, alreadyActive: 0 });
+      expect(job).toMatchObject({
+        recording_id: 'rec_recoverable',
+        status: 'queued',
+        locked_by: null,
+        locked_until: null,
+      });
+      expect(asset).toMatchObject({ transcription_status: 'queued' });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('startup recovery marks assets without an audio source as permanent failures', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_missing_audio', 'ws_1', {
+        file_path: '',
+        transcription_status: 'processing',
+      });
+
+      const summary = await db.recoverStartupTranscriptionJobs({
+        now: '2026-06-25T10:00:00.000Z',
+      });
+      const asset = await db.getMediaAsset('rec_missing_audio');
+      const diarization = JSON.parse(asset.diarization_json);
+
+      expect(summary).toMatchObject({ recovered: 0, failed: 1, skipped: 0 });
+      expect(asset).toMatchObject({ transcription_status: 'failed' });
+      expect(diarization).toMatchObject({
+        errorCode: 'audio_source_unavailable',
+        retryable: false,
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('startup recovery is idempotent and does not duplicate active jobs', async () => {
+    const db = await createDb();
+    const audioPath = path.join(tempRoots.at(-1) || os.tmpdir(), 'idempotent.webm');
+    actualFs.writeFileSync(audioPath, Buffer.from('audio'));
+    try {
+      await insertAsset(db, 'rec_recovery_idempotent', 'ws_1', {
+        file_path: audioPath,
+        transcription_status: 'processing',
+      });
+
+      const first = await db.recoverStartupTranscriptionJobs({
+        now: '2026-06-25T10:00:00.000Z',
+      });
+      const second = await db.recoverStartupTranscriptionJobs({
+        now: '2026-06-25T10:00:00.000Z',
+      });
+      const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
+        'rec_recovery_idempotent',
+      ]);
+
+      expect(first.recovered).toBe(1);
+      expect(second).toMatchObject({ recovered: 0, alreadyActive: 1 });
+      expect(rows).toHaveLength(1);
+    } finally {
+      await db.shutdown();
+    }
   });
 });

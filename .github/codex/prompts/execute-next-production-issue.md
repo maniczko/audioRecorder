@@ -113,21 +113,26 @@ pnpm exec vitest run src/hooks/useAudioHardware.test.ts src/hooks/useRecorder.te
 Closes #<issue-number>
 
 ## Summary
-- 
+
+-
 
 ## Changed files
-- 
+
+-
 
 ## Tests run
+
 - [ ] `pnpm run typecheck:server`
 - [ ] `pnpm run test:server:retry`
-- [ ] other: 
+- [ ] other:
 
 ## Risks
-- 
+
+-
 
 ## Rollback notes
-- 
+
+-
 ```
 
 ## Final response

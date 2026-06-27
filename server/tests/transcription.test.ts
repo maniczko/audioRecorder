@@ -469,4 +469,102 @@ describe('TranscriptionService', () => {
 
     resolveJob1();
   });
+
+  it('Regression: #1226 - processes due durable jobs without a process-local queue entry', async () => {
+    const durableJob = {
+      id: 'tj_due',
+      recording_id: 'rec_due',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      status: 'running',
+      locked_by: 'worker-a',
+    };
+    const asset = {
+      id: 'rec_due',
+      file_path: 'test.wav',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      content_type: 'audio/webm',
+    };
+    mockDb.acquireTranscriptionJobLease = vi.fn().mockResolvedValueOnce(durableJob);
+    mockDb.getMediaAsset = vi.fn().mockResolvedValue(asset);
+    mockDb.completeTranscriptionJob = vi.fn().mockResolvedValue(undefined);
+    mockDb.failTranscriptionJob = vi.fn().mockResolvedValue(undefined);
+    mockDb.heartbeatTranscriptionJob = vi.fn().mockResolvedValue(durableJob);
+    mockAudioPipeline.transcribeRecording.mockResolvedValue({
+      segments: [{ text: 'Durable worker segment', speakerId: 0 }],
+      diarization: { confidence: 0.8 },
+    });
+    const service = new TranscriptionService(
+      mockDb,
+      mockWorkspaceService,
+      mockAudioPipeline,
+      mockSpeakerEmbedder
+    );
+
+    await (service as any)._processDurableQueueOnce();
+    await service.transcriptionJobs.get('rec_due');
+
+    expect(mockDb.acquireTranscriptionJobLease).toHaveBeenCalled();
+    expect(mockDb.getMediaAsset).toHaveBeenCalledWith('rec_due');
+    expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledWith(
+      asset,
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        meetingId: 'meeting_1',
+      })
+    );
+    expect(mockDb.completeTranscriptionJob).toHaveBeenCalledWith(
+      'tj_due',
+      expect.stringMatching(/^transcription-worker-/)
+    );
+    expect((service as any)._pendingQueue).toHaveLength(0);
+  }, 30000);
+
+  it('Regression: #1226 - leaves durable queued jobs in DB under memory pressure', async () => {
+    const originalMemoryUsage = process.memoryUsage;
+    process.memoryUsage = Object.assign(
+      () => ({
+        rss: 1_500_000_000,
+        heapTotal: 100_000_000,
+        heapUsed: 50_000_000,
+        external: 10_000_000,
+        arrayBuffers: 5_000_000,
+      }),
+      { bigint: process.memoryUsage.bigint }
+    );
+    try {
+      mockDb.enqueueTranscriptionJob = vi.fn().mockResolvedValue({
+        id: 'tj_pressure',
+        recording_id: 'rec_pressure',
+        status: 'queued',
+      });
+      mockDb.acquireTranscriptionJobLease = vi.fn();
+      mockAudioPipeline.transcribeRecording.mockResolvedValue({
+        segments: [],
+        transcriptOutcome: 'empty',
+      });
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = { id: 'rec_pressure', file_path: 'test.wav', workspace_id: 'ws_1' };
+
+      await service.ensureTranscriptionJob('rec_pressure', asset, {});
+
+      expect(mockDb.enqueueTranscriptionJob).toHaveBeenCalledWith({
+        recordingId: 'rec_pressure',
+        workspaceId: 'ws_1',
+        meetingId: '',
+      });
+      expect(mockDb.queueTranscription).not.toHaveBeenCalled();
+      expect(mockDb.acquireTranscriptionJobLease).not.toHaveBeenCalled();
+      expect((service as any)._pendingQueue).toHaveLength(0);
+      expect(service.transcriptionJobs.has('rec_pressure')).toBe(false);
+    } finally {
+      process.memoryUsage = originalMemoryUsage;
+    }
+  });
 });

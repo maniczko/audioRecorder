@@ -284,23 +284,23 @@ jobs:
             remove_label "$issue" "codex:blocked"
 
             prompt=$(cat <<EOF
-@codex Please execute this production-readiness issue exactly as scoped.
+          @codex Please execute this production-readiness issue exactly as scoped.
 
-Queue source: #${INDEX_ISSUE}
-Selected issue: #${issue}
+          Queue source: #${INDEX_ISSUE}
+          Selected issue: #${issue}
 
-Rules:
-- Work on exactly this one issue.
-- Do not start any other issue.
-- Create a dedicated branch: \`production-readiness/${issue}-<short-slug>\`.
-- Keep the change limited to this issue body and explicit dependencies.
-- Run the relevant verification from \`.github/codex/prompts/execute-next-production-issue.md\`.
-- Open a PR titled \`[#${issue}] ${title}\`.
-- Include \`Closes #${issue}\` in the PR body.
-- Include summary, changed files, tests run, risks, and rollback notes.
-- Do not merge the PR.
-- If blocked, remove \`codex:in-progress\`, add \`codex:blocked\`, and comment with blocker, attempted approach, decision needed, and next action.
-EOF
+          Rules:
+          - Work on exactly this one issue.
+          - Do not start any other issue.
+          - Create a dedicated branch: \`production-readiness/${issue}-<short-slug>\`.
+          - Keep the change limited to this issue body and explicit dependencies.
+          - Run the relevant verification from \`.github/codex/prompts/execute-next-production-issue.md\`.
+          - Open a PR titled \`[#${issue}] ${title}\`.
+          - Include \`Closes #${issue}\` in the PR body.
+          - Include summary, changed files, tests run, risks, and rollback notes.
+          - Do not merge the PR.
+          - If blocked, remove \`codex:in-progress\`, add \`codex:blocked\`, and comment with blocker, attempted approach, decision needed, and next action.
+          EOF
             )
 
             comment_issue "$issue" "$prompt"

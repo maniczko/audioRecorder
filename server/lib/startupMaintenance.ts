@@ -15,6 +15,12 @@ interface StartupDatabaseLike {
   init: () => Promise<void>;
   checkHealth: () => Promise<{ ok: boolean; status: string; type?: string }>;
   resetOrphanedJobs: () => Promise<number>;
+  recoverStartupTranscriptionJobs?: () => Promise<{
+    recovered: number;
+    skipped: number;
+    failed: number;
+    alreadyActive: number;
+  }>;
 }
 
 export function warnIfUsingDefaultLocalDatabase(config: DatabaseConfigLike, logger: LoggerLike) {
@@ -134,14 +140,21 @@ export async function runDatabaseStartupChecks(db: StartupDatabaseLike, logger: 
   }
 
   try {
-    const orphanCount = await db.resetOrphanedJobs();
-    if (orphanCount > 0) {
-      logger.warn(
-        `[Bootstrap] Reset ${orphanCount} orphaned transcription job(s) from previous instance.`
+    if (typeof db.recoverStartupTranscriptionJobs === 'function') {
+      const recovery = await db.recoverStartupTranscriptionJobs();
+      logger.info(
+        `[Bootstrap] Startup transcription recovery: recovered=${recovery.recovered}, skipped=${recovery.skipped}, failed=${recovery.failed}, alreadyActive=${recovery.alreadyActive}.`
       );
+    } else {
+      const orphanCount = await db.resetOrphanedJobs();
+      if (orphanCount > 0) {
+        logger.warn(
+          `[Bootstrap] Reset ${orphanCount} orphaned transcription job(s) from previous instance.`
+        );
+      }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : error;
-    logger.error('[Bootstrap] Failed to reset orphaned jobs:', message);
+    logger.error('[Bootstrap] Failed to recover startup transcription jobs:', message);
   }
 }

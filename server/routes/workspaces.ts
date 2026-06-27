@@ -105,6 +105,71 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   // --- Workspaces ---
   router.use('/workspaces/*', authMiddleware);
+
+  function requireWorkspaceAdmin(membership: any) {
+    return ['owner', 'admin'].includes(String(membership?.member_role || ''));
+  }
+
+  router.put('/workspaces/:workspaceId/retention', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zmieniac retencje.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const retentionDays = Number(body.retentionDays);
+    if (!Number.isFinite(retentionDays) || retentionDays < 0) {
+      return c.json({ message: 'retentionDays musi byc liczba nieujemna.' }, 400);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.updateRetentionPolicy(
+        workspaceId,
+        Math.floor(retentionDays),
+        String(session?.user_id || '')
+      ),
+      200
+    );
+  });
+
+  router.post('/workspaces/:workspaceId/retention/cleanup', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze uruchomic cleanup retencji.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.cleanupExpiredRecordingsByRetention(workspaceId, {
+        nowIso: body.nowIso,
+        actorUserId: String(session?.user_id || ''),
+        source: 'api',
+      }),
+      200
+    );
+  });
+
+  router.get('/workspaces/:workspaceId/export', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze eksportowac dane workspace.' }, 403);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.exportWorkspaceData(workspaceId, {
+        actorUserId: String(session?.user_id || ''),
+        source: 'api',
+      }),
+      200
+    );
+  });
+
   router.put('/workspaces/:workspaceId/members/:targetUserId/role', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     const targetUserId = c.req.param('targetUserId');

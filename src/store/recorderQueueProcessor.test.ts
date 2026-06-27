@@ -623,6 +623,29 @@ describe('processRecordingQueueItem', () => {
     );
   });
 
+  it('passes recording consent metadata when starting transcription', async () => {
+    const recordingConsent = {
+      acceptedAt: '2026-06-25T10:00:00.000Z',
+      workspaceId: 'workspace-1',
+      policyVersion: 'recording-consent-v1',
+      disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
+      providerNotice: 'Dane moga byc przekazywane do dostawcow AI/audio.',
+      providers: [{ id: 'stt', label: 'transkrypcja mowy na tekst', enabled: true }],
+    };
+    const context = buildContext({
+      nextItem: makeQueueItem({ recordingConsent }),
+    });
+
+    await processRecordingQueueItem(context);
+
+    expect(context.mediaService.startTranscriptionJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordingId: 'recording-1',
+        recordingConsent,
+      })
+    );
+  });
+
   it('uses backend duration when imported queue item duration is zero', async () => {
     const context = buildContext({
       nextItem: makeQueueItem({ duration: 0 }),

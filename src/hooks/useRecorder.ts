@@ -14,6 +14,14 @@ import {
   upsertRecordingQueueItem,
   getNextPendingRecordingQueueItem,
 } from '../lib/recordingQueue';
+import {
+  createRecordingConsentDisclosure,
+  createRecordingConsentMetadata,
+  loadRecordingConsent,
+  saveRecordingConsent,
+  type RecordingConsentDisclosure,
+  type RecordingConsentMetadata,
+} from '../lib/recordingConsent';
 
 import useAudioHardware from './useAudioHardware';
 import useAudioHydration from './useAudioHydration';
@@ -44,6 +52,10 @@ interface StartRecordingOptions {
   adHoc?: boolean;
 }
 
+interface PendingRecordingRequest {
+  active: any;
+}
+
 export default function useRecorder({
   selectedMeeting,
   userMeetings,
@@ -57,6 +69,10 @@ export default function useRecorder({
   const [liveText, setLiveText] = useState('');
   const [currentSegments, setCurrentSegments] = useState<any[]>([]);
   const [recordingMeetingId, setRecordingMeetingId] = useState<string | null>(null);
+  const [recordingConsentPromptOpen, setRecordingConsentPromptOpen] = useState(false);
+  const [recordingConsentDisclosure] = useState<RecordingConsentDisclosure>(() =>
+    createRecordingConsentDisclosure({ remoteMode: mediaService.mode === 'remote' })
+  );
   const [audioStorageState, setAudioStorageState] = useState<AudioStorageState>({
     usageBytes: 0,
     quotaBytes: 0,
@@ -67,6 +83,8 @@ export default function useRecorder({
     items: [],
   });
   const userMeetingsRef = useRef<any[]>(userMeetings);
+  const pendingRecordingRequestRef = useRef<PendingRecordingRequest | null>(null);
+  const activeRecordingConsentRef = useRef<RecordingConsentMetadata | null>(null);
 
   useEffect(() => {
     userMeetingsRef.current = userMeetings;
@@ -87,6 +105,27 @@ export default function useRecorder({
     pipeline.setAnalysisStatus('error');
     pipeline.setPipelineProgress(0, 'Brak kontekstu workspace');
     pipeline.setRecordingMessage(RECORDING_WORKSPACE_REQUIRED_MESSAGE);
+  }
+
+  function getWorkspaceConsentId(meeting: any) {
+    return String(meeting?.workspaceId || currentWorkspaceId || 'local');
+  }
+
+  function resolveRecordingConsent(meeting: any) {
+    return loadRecordingConsent(getWorkspaceConsentId(meeting));
+  }
+
+  function startHardwareRecording(active: any, consent: RecordingConsentMetadata) {
+    activeRecordingConsentRef.current = consent;
+    setRecordingMeetingId(active.id);
+    selectMeeting?.(active);
+    return hardware.startRecording(active.id);
+  }
+
+  function requestRecordingConsent(active: any) {
+    pendingRecordingRequestRef.current = { active };
+    setRecordingConsentPromptOpen(true);
+    pipeline.setRecordingMessage('Przed nagrywaniem zaakceptuj zgode i ujawnienie dostawcow AI.');
   }
 
   function normalizeErrorMessage(error: unknown) {
@@ -191,6 +230,9 @@ export default function useRecorder({
           return;
         }
 
+        const recordingConsent =
+          activeRecordingConsentRef.current || resolveRecordingConsent(meeting);
+
         pipeline.setRecordingQueue((prev) =>
           upsertRecordingQueueItem(
             prev,
@@ -202,6 +244,7 @@ export default function useRecorder({
               mimeType,
               rawSegments,
               duration,
+              recordingConsent,
             })
           )
         );
@@ -211,6 +254,7 @@ export default function useRecorder({
         pipeline.setRecordingMessage('Błąd finalizacji nagrania.');
       } finally {
         setRecordingMeetingId(null);
+        activeRecordingConsentRef.current = null;
       }
     },
     onSegmentsChange: setCurrentSegments,
@@ -255,9 +299,35 @@ export default function useRecorder({
       blockMissingWorkspace();
       return;
     }
-    setRecordingMeetingId(active.id);
-    selectMeeting?.(active);
-    return hardware.startRecording(active.id);
+    const consent = resolveRecordingConsent(active);
+    if (!consent) {
+      requestRecordingConsent(active);
+      return;
+    }
+    return startHardwareRecording(active, consent);
+  };
+
+  const acceptRecordingConsent = () => {
+    const pending = pendingRecordingRequestRef.current;
+    const active = pending?.active || withWorkspaceFallback(selectedMeeting);
+    const consent = createRecordingConsentMetadata({
+      workspaceId: getWorkspaceConsentId(active),
+      disclosure: recordingConsentDisclosure,
+    });
+    saveRecordingConsent(consent);
+    pendingRecordingRequestRef.current = null;
+    setRecordingConsentPromptOpen(false);
+    pipeline.setRecordingMessage('Zgoda zapisana. Rozpoczynamy nagrywanie.');
+    if (active) {
+      return startHardwareRecording(active, consent);
+    }
+    return undefined;
+  };
+
+  const declineRecordingConsent = () => {
+    pendingRecordingRequestRef.current = null;
+    setRecordingConsentPromptOpen(false);
+    pipeline.setRecordingMessage('Nagrywanie nie zostalo uruchomione bez zgody.');
   };
 
   const selectedMeetingQueue = useMemo(
@@ -381,6 +451,13 @@ export default function useRecorder({
     speechRecognitionSupported: mediaService.supportsLiveTranscription(),
     liveTranscriptEnabled,
     setLiveTranscriptEnabled: mediaService.mode === 'remote' ? setLiveTranscriptEnabled : null,
+    recordingConsent: {
+      isPromptOpen: recordingConsentPromptOpen,
+      disclosure: recordingConsentDisclosure,
+      accept: acceptRecordingConsent,
+      decline: declineRecordingConsent,
+      current: selectedMeeting ? resolveRecordingConsent(selectedMeeting) : null,
+    },
     startRecording: startRecordingWrapper,
     pauseRecording: hardware.pauseRecording,
     resumeRecording: hardware.resumeRecording,

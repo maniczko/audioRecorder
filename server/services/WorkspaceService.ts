@@ -14,6 +14,35 @@ export default class WorkspaceService {
     return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 
+  async updateRetentionPolicy(workspaceId: string, retentionDays: number, actorUserId = '') {
+    const current = await this.db.getWorkspaceState(workspaceId);
+    const next = await this.db.saveWorkspaceState(workspaceId, {
+      ...current,
+      retentionDays,
+    });
+    await this.db.writeAuditLog?.({
+      workspaceId,
+      actorUserId,
+      action: 'workspace.retention.updated',
+      entityType: 'workspace',
+      entityId: workspaceId,
+      metadata: {
+        previousRetentionDays: current.retentionDays,
+        retentionDays: next.retentionDays,
+        source: 'api',
+      },
+    });
+    return { retentionDays: next.retentionDays, state: next };
+  }
+
+  async cleanupExpiredRecordingsByRetention(workspaceId: string, options: any = {}) {
+    return await this.db.cleanupExpiredRecordingsByRetention({ ...options, workspaceId });
+  }
+
+  async exportWorkspaceData(workspaceId: string, options: any = {}) {
+    return await this.db.exportWorkspaceData(workspaceId, options);
+  }
+
   async updateWorkspaceMemberRole(workspaceId: string, targetUserId: string, memberRole: string) {
     return await this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
   }
