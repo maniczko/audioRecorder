@@ -39,6 +39,11 @@ const localWebServers = [
           RAILWAY_ENVIRONMENT_NAME: '',
           RAILWAY_PROJECT_ID: '',
           VOICELOG_ALLOW_VERCEL_PREVIEWS: 'true',
+          OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'sk-proj-playwright-ci-placeholder',
+          VOICELOG_OPENAI_API_KEY:
+            process.env.VOICELOG_OPENAI_API_KEY ||
+            process.env.OPENAI_API_KEY ||
+            'sk-proj-playwright-ci-placeholder',
           PORT: apiPort,
           VOICELOG_API_PORT: apiPort,
           VOICELOG_API_HOST: '0.0.0.0',
