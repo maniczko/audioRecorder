@@ -182,6 +182,34 @@ async function seedReleaseData(page) {
       body: JSON.stringify({ profiles: [] }),
     });
   });
+  await page.route('**/integrations/google/status**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        configured: true,
+        connected: false,
+        writable: false,
+        accountEmail: '',
+        scopes: '',
+        lastSyncedAt: null,
+      }),
+    });
+  });
+  await page.route('**/integrations/google/events**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ items: [] }),
+    });
+  });
+  await page.route('**/ai/search**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ matches: [] }),
+    });
+  });
   await page.route('**/media/recordings/**/audio**', async (route) => {
     await route.fulfill({
       status: 204,
