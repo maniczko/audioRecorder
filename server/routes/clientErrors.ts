@@ -19,7 +19,7 @@ const MAX_STORED_ERRORS = 500;
 const MAX_BODY_ERRORS = 50;
 const DEFAULT_CLIENT_ERROR_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
-// In-memory store with periodic file persistence
+// In-memory store with best-effort file persistence. Client telemetry must never break the UI.
 let errorStore: ClientErrorEntry[] = [];
 let storeLoaded = false;
 
@@ -70,8 +70,8 @@ function loadFromDisk(): void {
         errorStore = parsed;
       }
     }
-  } catch {
-    // Start fresh if file is corrupt
+  } catch (err) {
+    logger.warn('[ClientErrors] Failed to load persisted client errors. Starting with memory store.', err);
   }
 
   cleanupExpiredClientErrors();
@@ -79,7 +79,7 @@ function loadFromDisk(): void {
   storeLoaded = true;
 }
 
-function persistToDisk(): void {
+function persistToDisk(): boolean {
   try {
     const filePath = getErrorsFilePath();
     const dir = path.dirname(filePath);
@@ -87,8 +87,10 @@ function persistToDisk(): void {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(filePath, JSON.stringify(errorStore, null, 2), 'utf-8');
+    return true;
   } catch (err) {
     logger.error('[ClientErrors] Failed to persist errors to disk:', err);
+    return false;
   }
 }
 
@@ -101,14 +103,25 @@ export function _resetStoreForTest(): void {
 export function createClientErrorRoutes() {
   const router = new Hono();
 
-  // POST /api/client-errors — receive error reports from frontend
+  // POST /api/client-errors — receive error reports from frontend.
+  // This endpoint is telemetry-only and intentionally best-effort:
+  // a malformed or non-persistable report must not produce a frontend error loop.
   router.post('/', async (c) => {
+    let body: unknown;
     try {
-      const body = await c.req.json();
-      const errors: ClientErrorEntry[] = Array.isArray(body) ? body : [body];
+      body = await c.req.json();
+    } catch (err) {
+      logger.warn('[ClientErrors] Ignoring malformed client error payload:', err);
+      return c.json({ ok: true, received: 0, persisted: false, ignored: 'invalid-json' });
+    }
+
+    try {
+      const errors: ClientErrorEntry[] = Array.isArray(body)
+        ? (body as ClientErrorEntry[])
+        : [body as ClientErrorEntry];
 
       if (errors.length === 0) {
-        return c.json({ ok: true, received: 0 });
+        return c.json({ ok: true, received: 0, persisted: true });
       }
 
       if (errors.length > MAX_BODY_ERRORS) {
@@ -132,7 +145,7 @@ export function createClientErrorRoutes() {
         }));
 
       if (validErrors.length === 0) {
-        return c.json({ ok: true, received: 0 });
+        return c.json({ ok: true, received: 0, persisted: true });
       }
 
       loadFromDisk();
@@ -141,21 +154,22 @@ export function createClientErrorRoutes() {
       // Deduplicate by id
       const existingIds = new Set(errorStore.map((e) => e.id));
       const newErrors = validErrors.filter((e) => !existingIds.has(e.id));
+      let persisted = true;
 
       if (newErrors.length > 0) {
         errorStore = enforceMaxStoredErrors([...errorStore, ...newErrors]);
-        persistToDisk();
+        persisted = persistToDisk();
       } else if (wasCleaned) {
-        persistToDisk();
+        persisted = persistToDisk();
       }
       if (newErrors.length > 0) {
         logger.info(`[ClientErrors] Received ${newErrors.length} new error(s) from client.`);
       }
 
-      return c.json({ ok: true, received: newErrors.length });
+      return c.json({ ok: true, received: newErrors.length, persisted });
     } catch (err) {
-      logger.error('[ClientErrors] Failed to process error report:', err);
-      return c.json({ error: 'Failed to store errors' }, 500);
+      logger.error('[ClientErrors] Failed to process error report. Acknowledging best-effort telemetry:', err);
+      return c.json({ ok: true, received: 0, persisted: false, ignored: 'processing-error' });
     }
   });
 
