@@ -869,6 +869,7 @@ describe('release readiness gates', () => {
     expect(playwrightConfig).toContain('isLocalPlaywrightTarget');
     expect(playwrightConfig).toContain('webServer: localWebServers.length > 0');
     expect(playwrightConfig).toContain('sk-proj-playwright-ci-placeholder');
+    expect(playwrightConfig).toContain("DATABASE_URL: ''");
     expect(workflow).toContain("PLAYWRIGHT_SKIP_WEB_SERVER: 'true'");
   });
 

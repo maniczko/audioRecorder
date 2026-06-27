@@ -44,6 +44,8 @@ const localWebServers = [
             process.env.VOICELOG_OPENAI_API_KEY ||
             process.env.OPENAI_API_KEY ||
             'sk-proj-playwright-ci-placeholder',
+          DATABASE_URL: '',
+          VOICELOG_DATABASE_URL: '',
           PORT: apiPort,
           VOICELOG_API_PORT: apiPort,
           VOICELOG_API_HOST: '0.0.0.0',
