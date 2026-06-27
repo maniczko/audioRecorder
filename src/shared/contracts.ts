@@ -52,6 +52,7 @@ export interface MediaTranscriptionResponse {
   recordingId?: string;
   diarization?: unknown;
   segments?: TranscriptSegment[];
+  verifiedSegments?: TranscriptSegment[];
   providerId?: string;
   providerLabel?: string;
   pipelineStatus?: TranscriptionStatusPayload['pipelineStatus'] | 'completed';
