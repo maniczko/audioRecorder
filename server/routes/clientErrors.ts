@@ -71,7 +71,7 @@ function loadFromDisk(): void {
       }
     }
   } catch (err) {
-    logger.warn('[ClientErrors] Failed to load persisted client errors. Starting with memory store.', err);
+    logger.error('[ClientErrors] Failed to load persisted client errors. Starting with memory store.', err);
   }
 
   cleanupExpiredClientErrors();
@@ -107,18 +107,16 @@ export function createClientErrorRoutes() {
   // This endpoint is telemetry-only and intentionally best-effort:
   // a malformed or non-persistable report must not produce a frontend error loop.
   router.post('/', async (c) => {
-    let body: unknown;
     try {
-      body = await c.req.json();
-    } catch (err) {
-      logger.warn('[ClientErrors] Ignoring malformed client error payload:', err);
-      return c.json({ ok: true, received: 0, persisted: false, ignored: 'invalid-json' });
-    }
+      let body: any;
+      try {
+        body = await c.req.json();
+      } catch (err) {
+        logger.error('[ClientErrors] Ignoring malformed client error payload:', err);
+        return c.json({ ok: true, received: 0, persisted: false, ignored: 'invalid-json' });
+      }
 
-    try {
-      const errors: ClientErrorEntry[] = Array.isArray(body)
-        ? (body as ClientErrorEntry[])
-        : [body as ClientErrorEntry];
+      const errors: ClientErrorEntry[] = Array.isArray(body) ? body : [body];
 
       if (errors.length === 0) {
         return c.json({ ok: true, received: 0, persisted: true });
