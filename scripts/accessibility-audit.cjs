@@ -37,6 +37,15 @@ function ensureReportsDir() {
   }
 }
 
+function isDecorativeImageLine(line) {
+  return (
+    /<img[^>]*alt\s*=\s*["']{2}/i.test(line) &&
+    (/\saria-hidden\s*=\s*["']true["']/i.test(line) ||
+      /\srole\s*=\s*["']presentation["']/i.test(line) ||
+      /\srole\s*=\s*["']none["']/i.test(line))
+  );
+}
+
 /**
  * Check 1: Alt text for images
  */
@@ -63,7 +72,7 @@ function checkAltText() {
       }
 
       // Check for empty alt
-      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line)) {
+      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line) && !isDecorativeImageLine(line)) {
         issues.push({
           file: path.relative(SRC_DIR, file),
           line: index + 1,
@@ -344,4 +353,4 @@ if (require.main === module) {
   runAudit();
 }
 
-module.exports = { runAudit, checkAltText, checkAriaLabels };
+module.exports = { runAudit, checkAltText, checkAriaLabels, isDecorativeImageLine };
