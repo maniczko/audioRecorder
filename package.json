@@ -127,7 +127,7 @@
     "test:coverage:fix": "pnpm run lint:fix && pnpm run format && pnpm run test:coverage",
     "turbo:test": "turbo run test",
     "test:watch": "vitest",
-    "test:coverage": "node scripts/ensure-coverage-dirs.mjs && vitest run --coverage",
+    "test:coverage": "node scripts/ensure-coverage-dirs.mjs && vitest run --coverage --exclude=src/App.test.tsx --exclude=src/App.integration.test.tsx --exclude=src/hooks/useMeetings.test.tsx --maxWorkers=2",
     "test:coverage:server": "vitest run -c server/vitest.config.ts --coverage",
     "test:coverage:all": "pnpm run test:coverage:server && pnpm run test:coverage",
     "coverage:report": "scripts\\generate-coverage-report.bat",

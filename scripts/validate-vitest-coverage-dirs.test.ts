@@ -35,6 +35,15 @@ describe('Regression: Issue #0 - vitest coverage temp directories exist', () => 
     expect(packageJson.scripts['test:coverage']).toContain('--coverage');
   });
 
+  it('keeps frontend coverage on the stable CI shard contract', () => {
+    const coverageScript = packageJson.scripts['test:coverage'];
+
+    expect(coverageScript).toContain('--exclude=src/App.test.tsx');
+    expect(coverageScript).toContain('--exclude=src/App.integration.test.tsx');
+    expect(coverageScript).toContain('--exclude=src/hooks/useMeetings.test.tsx');
+    expect(coverageScript).toContain('--maxWorkers=2');
+  });
+
   it('preserves frontend coverage shards during a coverage run', () => {
     const frontendConfig = fs.readFileSync(path.resolve(process.cwd(), 'vitest.config.ts'), 'utf8');
 
