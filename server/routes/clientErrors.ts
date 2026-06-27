@@ -154,8 +154,8 @@ export function createClientErrorRoutes() {
 
       return c.json({ ok: true, received: newErrors.length });
     } catch (err) {
-      logger.error('[ClientErrors] Failed to process error report:', err);
-      return c.json({ error: 'Failed to store errors' }, 500);
+      logger.error('[ClientErrors] Failed to process error report. Acknowledging best-effort telemetry:', err);
+      return c.json({ ok: true, received: 0, ignored: 'processing-error' });
     }
   });
 
