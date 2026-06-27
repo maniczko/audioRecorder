@@ -2,6 +2,10 @@
 
 <!-- What changed and why? -->
 
+## Linked issue
+
+<!-- For production-readiness PRs, use `Closes #<issue-number>` so the queue workflow can sync status. -->
+
 ## Linear
 
 <!-- Link Linear issues, e.g. VAT-123 -->
@@ -15,6 +19,19 @@
 - [ ] Docs
 - [ ] CI/build
 - [ ] Chore
+- [ ] Production readiness
+
+## Production Readiness Queue Checklist
+
+Required when the PR implements an issue from `#1263`:
+
+- [ ] PR body includes `Closes #<issue-number>`.
+- [ ] Linked issue is listed in `#1263`.
+- [ ] Linked issue has `production-readiness`.
+- [ ] Linked issue has `codex:pr-open` after PR creation.
+- [ ] This PR is not auto-merged by Codex.
+- [ ] The next queue issue is not started until this PR is merged.
+- [ ] Migration, storage, privacy, and job-queue changes include rollback notes.
 
 ## Audio Recorder Checklist
 
@@ -56,6 +73,10 @@
 ## Risk Notes
 
 <!-- Known risks, intentionally deferred work, or rollout notes. -->
+
+## Rollback notes
+
+<!-- Required for production readiness, migrations, storage, privacy, and job queue changes. -->
 
 ## Screenshots / Recordings
 
