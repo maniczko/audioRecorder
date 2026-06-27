@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Hono } from 'hono';
+import fs from 'node:fs';
 import { createClientErrorRoutes, _resetStoreForTest } from '../../routes/clientErrors.ts';
 
 describe('clientErrors route', () => {
@@ -12,6 +13,7 @@ describe('clientErrors route', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
 
@@ -113,6 +115,38 @@ describe('clientErrors route', () => {
     const getBody: any = await getRes.json();
     expect(getBody.errors[0].message.length).toBeLessThanOrEqual(2000);
     expect(getBody.errors[0].stack.length).toBeLessThanOrEqual(5000);
+  });
+
+  it('POST treats malformed JSON as best-effort telemetry and does not return 500', async () => {
+    const res = await app.request('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{malformed-json',
+    });
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.received).toBe(0);
+    expect(body.persisted).toBe(false);
+    expect(body.ignored).toBe('invalid-json');
+  });
+
+  it('POST acknowledges valid errors even when file persistence fails', async () => {
+    vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {
+      throw new Error('disk unavailable');
+    });
+
+    const res = await app.request('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'disk-fail', type: 'runtime', message: 'Disk failure test' }),
+    });
+
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.received).toBe(1);
+    expect(body.persisted).toBe(false);
   });
 
   it('GET returns empty array when no errors', async () => {
