@@ -2,8 +2,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || baseURL;
+const apiBaseURL =
+  process.env.PLAYWRIGHT_API_BASE_URL || process.env.VITE_API_BASE_URL || 'http://127.0.0.1:4000';
 const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
+const apiCommand = process.env.PLAYWRIGHT_API_COMMAND || 'pnpm run start:server';
 const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
 const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
 const includeRemoteApiProject = process.env.PLAYWRIGHT_INCLUDE_REMOTE_API === 'true';
@@ -19,6 +21,49 @@ function isLocalPlaywrightTarget(url) {
 }
 
 const shouldStartWebServer = !skipWebServer && isLocalPlaywrightTarget(baseURL);
+const shouldStartApiServer = !skipWebServer && isLocalPlaywrightTarget(apiBaseURL);
+const apiUrl = new URL(apiBaseURL);
+const apiPort = apiUrl.port || (apiUrl.protocol === 'https:' ? '443' : '80');
+const localWebServers = [
+  shouldStartApiServer
+    ? {
+        command: apiCommand,
+        url: `${apiBaseURL.replace(/\/$/, '')}/health`,
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000,
+        stdout: 'ignore',
+        stderr: 'pipe',
+        env: {
+          ...process.env,
+          NODE_ENV: 'development',
+          RAILWAY_ENVIRONMENT_NAME: '',
+          RAILWAY_PROJECT_ID: '',
+          VOICELOG_ALLOW_VERCEL_PREVIEWS: 'true',
+          PORT: apiPort,
+          VOICELOG_API_PORT: apiPort,
+          VOICELOG_API_HOST: '0.0.0.0',
+          VOICELOG_DB_PATH: process.env.VOICELOG_DB_PATH || 'server/data/playwright-e2e.sqlite',
+          VOICELOG_UPLOAD_DIR: process.env.VOICELOG_UPLOAD_DIR || 'server/uploads-playwright-e2e',
+        },
+      }
+    : null,
+  shouldStartWebServer
+    ? {
+        command: webCommand,
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000, // 3 minutes for server startup
+        stdout: 'ignore',
+        stderr: 'pipe',
+        env: {
+          VITE_DATA_PROVIDER: dataProvider,
+          VITE_MEDIA_PROVIDER: mediaProvider,
+          VITE_API_BASE_URL: apiBaseURL,
+          VITE_E2E_TEST: 'true',
+        },
+      }
+    : null,
+].filter(Boolean);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -68,20 +113,5 @@ export default defineConfig({
     },
   ],
 
-  webServer: shouldStartWebServer
-    ? {
-        command: webCommand,
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        timeout: 180_000, // 3 minutes for server startup
-        stdout: 'ignore',
-        stderr: 'pipe',
-        env: {
-          VITE_DATA_PROVIDER: dataProvider,
-          VITE_MEDIA_PROVIDER: mediaProvider,
-          VITE_API_BASE_URL: apiBaseURL,
-          VITE_E2E_TEST: 'true',
-        },
-      }
-    : undefined,
+  webServer: localWebServers.length > 0 ? localWebServers : undefined,
 });

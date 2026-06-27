@@ -21,6 +21,15 @@ async function createTaskFromModal(page, title) {
   await dialog.getByRole('button', { name: 'Dodaj zadanie' }).click();
 }
 
+async function acceptRecordingConsent(page) {
+  const dialog = page.getByRole('dialog', { name: /Zgoda na nagrywanie/i });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('checkbox', { name: /Rozumiem i potwierdzam/i }).check();
+  const confirmButton = dialog.getByRole('button', { name: /Akceptuje i zaczynam nagrywanie/i });
+  await expect(confirmButton).toBeEnabled();
+  await confirmButton.click();
+}
+
 async function installFakeAudioCapture(page) {
   await page.addInitScript(() => {
     const createFakeStream = () => ({
@@ -290,6 +299,7 @@ test.describe('Advanced release journeys', () => {
 
     await page.goto('/');
     await page.getByRole('button', { name: 'Nagraj ad hoc' }).click();
+    await acceptRecordingConsent(page);
 
     await expect(page.getByText(/Dostep do mikrofonu zablokowany/i)).toBeVisible();
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
@@ -306,6 +316,7 @@ test.describe('Advanced release journeys', () => {
     const startButton = page.getByRole('button', { name: /Rozpocznij nagrywanie|Nagraj ad hoc/i });
     await expect(startButton.first()).toBeVisible();
     await startButton.first().click();
+    await acceptRecordingConsent(page);
 
     const stopButton = page.getByRole('button', { name: /Zatrzymaj nagrywanie/i }).first();
     await expect(stopButton).toBeVisible({ timeout: 10_000 });

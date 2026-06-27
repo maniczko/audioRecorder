@@ -867,7 +867,7 @@ describe('release readiness gates', () => {
 
     expect(playwrightConfig).toContain('PLAYWRIGHT_SKIP_WEB_SERVER');
     expect(playwrightConfig).toContain('isLocalPlaywrightTarget');
-    expect(playwrightConfig).toContain('webServer: shouldStartWebServer');
+    expect(playwrightConfig).toContain('webServer: localWebServers.length > 0');
     expect(workflow).toContain("PLAYWRIGHT_SKIP_WEB_SERVER: 'true'");
   });
 
