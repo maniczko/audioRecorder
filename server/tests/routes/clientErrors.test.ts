@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Hono } from 'hono';
-import fs from 'node:fs';
 import { createClientErrorRoutes, _resetStoreForTest } from '../../routes/clientErrors.ts';
 
 describe('clientErrors route', () => {
@@ -132,9 +131,7 @@ describe('clientErrors route', () => {
   });
 
   it('POST acknowledges valid errors even when file persistence fails', async () => {
-    vi.spyOn(fs, 'writeFileSync').mockImplementation(() => {
-      throw new Error('disk unavailable');
-    });
+    vi.stubEnv('VOICELOG_UPLOAD_DIR', '/proc/voicelog-client-errors');
 
     const res = await app.request('/api/client-errors', {
       method: 'POST',
