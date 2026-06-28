@@ -26,6 +26,7 @@ Auto-generated API documentation.
 - `POST /recordings/:recordingId/transcribe`
 - `POST /recordings/:recordingId/retry-transcribe`
 - `GET /recordings/:recordingId/transcribe`
+- `POST /recordings/:recordingId/progress-token`
 - `GET /recordings/:recordingId/progress`
 - `POST /recordings/:recordingId/normalize`
 - `POST /recordings/:recordingId/voice-profiles/from-speaker`
@@ -39,6 +40,14 @@ Auto-generated API documentation.
 - `GET /disk-space/status`
 - `POST /disk-space/cleanup`
 - `POST /live`
+
+### Progress stream auth
+
+`GET /media/recordings/:recordingId/progress` accepts the normal session
+`Authorization: Bearer <session-token>` header. Short-lived progress tokens must
+use `X-Progress-Token: <token>` or the same-site `progressToken` cookie. Do not
+send progress tokens in the URL query string; query transport is reserved only
+for temporary migrations with `VOICELOG_ALLOW_PROGRESS_QUERY_TOKEN=true`.
 
 ## /workspaces
 

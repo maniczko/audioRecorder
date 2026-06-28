@@ -90,6 +90,14 @@ describe('mediaService', () => {
     expect(request.headers).toEqual({ Authorization: 'Bearer session-token' });
   });
 
+  it('builds transcription progress request with progress token header when requested', () => {
+    const request = buildTranscriptionProgressRequest('rec 1', 'progress-token', 'progress');
+
+    expect(request.url).toBe('http://media-api.local/media/recordings/rec%201/progress');
+    expect(request.url).not.toContain('progress-token');
+    expect(request.headers).toEqual({ 'X-Progress-Token': 'progress-token' });
+  });
+
   describe('local mode', () => {
     it('returns mode local', () => {
       expect(createMediaService().mode).toBe('local');
