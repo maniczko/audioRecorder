@@ -41,7 +41,7 @@ jobs:
           pattern: './build/**/*.{js,css}'
           exclude: '**/*.map,**/*.svg,**/*.png,**/*.jpg'
           minimum-change-threshold: '1KB'
-          build-script: 'build'
+          build-script: 'pnpm run build'
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7

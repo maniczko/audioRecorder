@@ -58,6 +58,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: './build/**/*.{js,css}'
           exclude: '**/*.map'
+          build-script: 'pnpm run build'
 
   security-scan:
     runs-on: ubuntu-latest

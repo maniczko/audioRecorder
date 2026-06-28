@@ -29,6 +29,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Configure pnpm global bin
+        shell: bash
+        run: |
+          echo "PNPM_HOME=$HOME/.local/share/pnpm" >> "$GITHUB_ENV"
+          echo "$HOME/.local/share/pnpm" >> "$GITHUB_PATH"
+          mkdir -p "$HOME/.local/share/pnpm"
+
       - name: Install Vercel CLI
         run: pnpm install -g vercel@latest
 
