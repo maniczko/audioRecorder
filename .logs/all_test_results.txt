@@ -1,8 +1,0 @@
-
-> audio-recorder@0.1.0 test
-> npm run lint && react-scripts test --watchAll=false --no-colors
-
-
-> audio-recorder@0.1.0 lint
-> eslint src --max-warnings=0
-
