@@ -1124,6 +1124,11 @@ describe('Media Routes', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toBe('audio/webm');
     expect(res.headers.get('Content-Length')).toBe(String('audio-data'.length));
+    expect(res.headers.get('Cache-Control')).toBe('no-store, max-age=0');
+    expect(res.headers.get('Pragma')).toBe('no-cache');
+    expect(res.headers.get('Expires')).toBe('0');
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toBe('cross-origin');
+    expect(res.headers.get('Content-Disposition')).toBe('attachment');
     expect(downloadSpy).toHaveBeenNthCalledWith(1, 'legacy-name.webm');
     expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_stream.webm');
   });

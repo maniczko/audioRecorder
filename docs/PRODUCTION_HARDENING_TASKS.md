@@ -16,6 +16,8 @@ Ten dokument jest aktualnym skrótem hardeningu produkcyjnego. Szczególowy back
 - `/ai/*` wymaga autoryzacji, workspace membership, rate limitow i quota per user/workspace/IP/endpoint.
 - Kosztowe endpointy poza `/ai/*` maja testy anonymous `401` i membership `403` tam, gdzie dotyczy STT/LLM/RAG/analyze/image generation.
 - Query token w produkcji jest odrzucony. SSE/progress uzywa krótkotrwalego progress tokenu przypisanego do `recordingId`.
+- Backend API wymusza no-store oraz naglowki HSTS, Referrer-Policy, Permissions-Policy i CORP.
+  Frontend CSP pozostaje osobnym kontraktem hostingu Vercel, bo API uzywa `default-src 'none'`.
 - Production CORS nie pozwala na wildcard z credentials; allowlista pochodzi z `VOICELOG_ALLOWED_ORIGINS`.
 
 ### Audio and data retention
