@@ -444,3 +444,33 @@ Required workflow for visible UI changes:
 5. Fix visual differences above the accepted threshold or document them as intentional.
 
 Do not creatively redesign approved screens. Keep Polish UI copy user-facing, hide technical/internal states, keep one UI font family, use shared spacing/radius/shadow tokens, and prefer reusable shell/card/button/input/tabs/table/modal primitives over per-screen one-off styling.
+
+---
+
+## 13. GitHub Issue Orchestration
+
+GitHub Issues are task truth for agent-executable work. Markdown files are policy, templates, and runbooks only.
+
+Use the global `github-issue-orchestrator` skill when work involves GitHub Issues, autopilot, issue-to-PR execution, backlog governance, or reusable task contracts.
+
+Autopilot may execute only when an issue has:
+
+- `agent:ready`
+- `autopilot:allowed`
+- one `area:*` label
+- complete Goal/Context/Scope/Acceptance Criteria/Validation/Final Report sections
+
+Autopilot must stop on:
+
+- `agent:blocked`
+- `autopilot:requires-human`
+- `needs-product-decision`
+
+Default workflow:
+
+1. Validate the issue contract.
+2. Create branch `codex/issue-<number>-<slug>`.
+3. Implement one coherent issue per PR unless tightly coupled governance issues intentionally share the same files.
+4. Run commands mapped from `gate:*` labels.
+5. Open PR with evidence and residual risks.
+6. Close the issue only after CI and evidence pass.
