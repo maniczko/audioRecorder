@@ -127,6 +127,56 @@ describe('Media Routes', () => {
     });
   });
 
+  // ---------------------------------------------------------------
+  // Issue #1234 - duplicate raw upload should be idempotent
+  // Date: 2026-06-28
+  // Bug: retrying a raw upload for an existing recording wrote through
+  //      storage again instead of returning the existing media asset.
+  // Fix: recordingId is the natural idempotency key and repeat uploads
+  //      return the current asset response without mutating storage.
+  // ---------------------------------------------------------------
+  it('PUT /media/recordings/:recordingId/audio - duplicate upload returns existing asset without reupload', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_existing_upload',
+      workspace_id: 'ws_1',
+      size_bytes: 777,
+      storage_mode: 'single',
+      source_size_bytes: 777,
+      normalized_size_bytes: 777,
+    });
+    mockTranscriptionService.upsertMediaAssetFromPath.mockResolvedValue({
+      id: 'rec_existing_upload',
+      workspace_id: 'ws_1',
+      size_bytes: 999,
+    });
+
+    const res = await app.request('/media/recordings/rec_existing_upload/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+        'Idempotency-Key': 'raw-upload-retry-1',
+      },
+      body: Buffer.from('duplicate-audio-data'),
+    });
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      id: 'rec_existing_upload',
+      workspaceId: 'ws_1',
+      sizeBytes: 777,
+      storageMode: 'single',
+      sourceSizeBytes: 777,
+      normalizedSizeBytes: 777,
+      idempotent: true,
+      idempotencyKey: 'raw-upload-retry-1',
+      idempotencyScope: 'recordingId',
+    });
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.analyzeAudioQuality).not.toHaveBeenCalled();
+  });
+
   it('PUT /media/recordings/:recordingId/audio - returns 507 when disk is full', async () => {
     mockTranscriptionService.upsertMediaAssetFromPath.mockRejectedValue(
       Object.assign(new Error('Brak miejsca na dysku'), { code: 'ENOSPC' })
@@ -305,6 +355,48 @@ describe('Media Routes', () => {
       'rec_1',
       expect.objectContaining({ processingMode: 'fast' })
     );
+  });
+
+  // ---------------------------------------------------------------
+  // Issue #1234 - active transcription requests should be idempotent
+  // Date: 2026-06-28
+  // Bug: POST /transcribe could enqueue duplicate work for a recording
+  //      that was already queued or processing.
+  // Fix: active pipeline statuses return the current status contract
+  //      without starting another transcription pipeline.
+  // ---------------------------------------------------------------
+  it('POST /media/recordings/:recordingId/transcribe - returns active status without starting duplicate pipeline', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_active_idem',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'processing',
+      diarization_json: '{}',
+      transcript_json: '[]',
+    });
+
+    const res = await app.request('/media/recordings/rec_active_idem/transcribe', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'transcribe-active-1',
+      },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(res.status).toBe(202);
+    await expect(res.json()).resolves.toMatchObject({
+      recordingId: 'rec_active_idem',
+      pipelineStatus: 'processing',
+      idempotent: true,
+      idempotencyKey: 'transcribe-active-1',
+      idempotencyScope: 'recordingId',
+    });
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.ensureTranscriptionJob).not.toHaveBeenCalled();
   });
 
   it('POST /media/recordings/:recordingId/transcribe - returns retry-friendly transient error then succeeds after retry', async () => {

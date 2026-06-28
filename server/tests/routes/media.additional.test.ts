@@ -872,6 +872,58 @@ describe('Media Routes - Additional Coverage', () => {
         });
       });
 
+      // ---------------------------------------------------------------
+      // Issue #1234 - duplicate chunk retry with idempotency key
+      // Date: 2026-06-28
+      // Bug: retrying the same chunk index could overwrite the stored
+      //      chunk with a different retry payload.
+      // Fix: Idempotency-Key marks the duplicate chunk as retry-safe and
+      //      returns the existing chunk without mutating its bytes.
+      // ---------------------------------------------------------------
+      it('keeps existing chunk bytes when duplicate chunk is retried with Idempotency-Key', async () => {
+        const recordingId = 'rec1_chunk_idempotency_key';
+        const chunkPath = path.join(testUploadDir, 'chunks', `${recordingId}_0.chunk`);
+
+        const first = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('first-attempt'),
+          }
+        );
+        expect(first.status).toBe(200);
+        expect(readFileSync(chunkPath, 'utf8')).toBe('first-attempt');
+
+        const retry = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+              'Idempotency-Key': 'chunk-retry-1',
+            },
+            body: Buffer.from('retry-attempt'),
+          }
+        );
+
+        expect(retry.status).toBe(200);
+        await expect(retry.json()).resolves.toMatchObject({
+          index: 0,
+          total: 2,
+          idempotent: true,
+          idempotencyKey: 'chunk-retry-1',
+          idempotencyScope: 'recordingId:chunkIndex',
+        });
+        expect(readFileSync(chunkPath, 'utf8')).toBe('first-attempt');
+      });
+
       it('returns 507 and keeps retryability when disk is full during chunk upload', async () => {
         const recordingId = 'rec1_chunk_enospc';
         const mockFs = (globalThis as any).__mockFs;
@@ -1116,6 +1168,8 @@ describe('Media Routes - Additional Coverage', () => {
           sourceSizeBytes: 1300,
           normalizedSizeBytes: 1234,
           audioQuality: null,
+          idempotent: true,
+          idempotencyScope: 'recordingId',
         });
         expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
         expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).not.toHaveBeenCalled();
