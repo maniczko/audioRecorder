@@ -8,6 +8,7 @@ import { createWorkspacesRoutes } from '../routes/workspaces.ts';
 import { createMediaRoutes, createTranscribeRoutes } from '../routes/media.ts';
 import { createAiRoutes } from '../routes/ai.ts';
 import { createClientErrorRoutes } from '../routes/clientErrors.ts';
+import { registerCapabilitiesRoute } from './capabilities.ts';
 import { registerHealthRoute } from './health.ts';
 import { MetricsService } from '../services/MetricsService.ts';
 
@@ -44,6 +45,7 @@ export function registerAppRoutes(
   middlewares: AppMiddlewares
 ) {
   registerHealthRoute(app, (services as any).db);
+  registerCapabilitiesRoute(app);
 
   app.get('/metrics', async (c) => {
     const denied = requireOpsAccess(c, services);
