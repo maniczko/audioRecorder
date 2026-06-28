@@ -2291,10 +2291,103 @@ export class Database {
     );
   }
 
+  async writeAuditLogBestEffort({
+    workspaceId,
+    actorUserId = '',
+    action,
+    entityType,
+    entityId,
+    metadata = {},
+  }: {
+    workspaceId: string;
+    actorUserId?: string;
+    action: string;
+    entityType: string;
+    entityId: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    try {
+      await this.writeAuditLog({
+        workspaceId,
+        actorUserId,
+        action,
+        entityType,
+        entityId,
+        metadata,
+      });
+    } catch (error: any) {
+      logger.warn('[audit] Failed to persist audit log', {
+        workspaceId,
+        action,
+        entityType,
+        entityId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  async listAuditLogs(
+    workspaceId: string,
+    options: { recordingId?: string; cursor?: string; limit?: number } = {}
+  ): Promise<{ events: any[]; nextCursor: string | null }> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+
+    const limitInput = Number(options.limit ?? 100);
+    const limit = Math.max(
+      1,
+      Math.min(200, Math.floor(Number.isFinite(limitInput) ? limitInput : 100))
+    );
+    const recordingId = String(options.recordingId || '').trim();
+    const cursor = String(options.cursor || '').trim();
+    const params: any[] = [safeWorkspaceId];
+    const filters = ['workspace_id = ?'];
+
+    if (recordingId) {
+      filters.push('entity_type = ?', 'entity_id = ?');
+      params.push('recording', recordingId);
+    }
+    if (cursor) {
+      filters.push('created_at < ?');
+      params.push(cursor);
+    }
+
+    params.push(limit + 1);
+    const rows = await this._query(
+      `SELECT id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+       FROM audit_logs
+       WHERE ${filters.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT ?`,
+      params
+    );
+    const page = rows.slice(0, limit);
+
+    return {
+      events: page.map((entry: any) => {
+        const metadata = this._safeJsonParse(entry.metadata_json, {});
+        return {
+          id: String(entry.id || ''),
+          workspaceId: String(entry.workspace_id || ''),
+          actorUserId: String(entry.actor_user_id || ''),
+          action: String(entry.action || ''),
+          eventType: String(entry.action || ''),
+          entityType: String(entry.entity_type || ''),
+          entityId: String(entry.entity_id || ''),
+          recordingId:
+            String(entry.entity_type || '') === 'recording' ? String(entry.entity_id || '') : '',
+          metadata,
+          createdAt: String(entry.created_at || ''),
+        };
+      }),
+      nextCursor: rows.length > limit ? String(page[page.length - 1]?.created_at || '') : null,
+    };
+  }
+
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,
-    options: { actorUserId?: string; source?: string } = {}
+    options: { actorUserId?: string; source?: string; requestId?: string } = {}
   ): Promise<void> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
@@ -2361,7 +2454,7 @@ export class Database {
       recordingId,
       workspaceId,
     ]);
-    await this.writeAuditLog({
+    await this.writeAuditLogBestEffort({
       workspaceId,
       actorUserId: String(options.actorUserId || asset.created_by_user_id || ''),
       action: 'recording.deleted',
@@ -2375,6 +2468,7 @@ export class Database {
         transcriptPayloadCount,
         hadTranscript: Array.isArray(transcript) ? transcript.length > 0 : Boolean(transcript),
         source: String(options.source || 'manual'),
+        requestId: String(options.requestId || ''),
       },
     });
     await this.tombstoneWorkspaceRecording(workspaceId, recordingId);
@@ -2383,11 +2477,13 @@ export class Database {
   async cleanupExpiredRecordingsByRetention({
     nowIso = this.nowIso(),
     actorUserId = 'system',
+    requestId = '',
     source = 'retention-maintenance',
     workspaceId = '',
   }: {
     nowIso?: string;
     actorUserId?: string;
+    requestId?: string;
     source?: string;
     workspaceId?: string;
   } = {}): Promise<{
@@ -2428,13 +2524,13 @@ export class Database {
         continue;
       }
 
-      await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source });
+      await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source, requestId });
       deleted++;
       deletedRecordingIds.push(row.id);
     }
 
     if (workspaceFilter || deleted > 0) {
-      await this.writeAuditLog({
+      await this.writeAuditLogBestEffort({
         workspaceId: workspaceFilter || 'all',
         actorUserId,
         action: 'retention.cleanup.completed',
@@ -2443,6 +2539,7 @@ export class Database {
         metadata: {
           source,
           nowIso,
+          requestId,
           checked: rows.length,
           deleted,
           deletedRecordingIds,
@@ -2455,7 +2552,7 @@ export class Database {
 
   async exportWorkspaceData(
     workspaceId: string,
-    options: { actorUserId?: string; source?: string } = {}
+    options: { actorUserId?: string; source?: string; requestId?: string } = {}
   ): Promise<any> {
     const safeWorkspaceId = String(workspaceId || '').trim();
     if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
@@ -2561,7 +2658,7 @@ export class Database {
       },
     };
 
-    await this.writeAuditLog({
+    await this.writeAuditLogBestEffort({
       workspaceId: safeWorkspaceId,
       actorUserId: String(options.actorUserId || ''),
       action: 'workspace.export.generated',
@@ -2569,6 +2666,7 @@ export class Database {
       entityId: safeWorkspaceId,
       metadata: {
         source: String(options.source || 'api'),
+        requestId: String(options.requestId || ''),
         exportedAt,
         mediaAssetCount: payload.mediaAssets.length,
         ragChunkCount: payload.ragChunks.length,
