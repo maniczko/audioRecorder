@@ -22,6 +22,13 @@ const envSchema = z.object({
   VOICELOG_API_HOST: z.string().default('0.0.0.0'),
   VOICELOG_ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
   VOICELOG_TRUST_PROXY: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  VOICELOG_RATE_LIMIT_STORE: z.preprocess(
+    optionalEnumValue,
+    z.enum(['auto', 'memory', 'db', 'database', 'postgres', 'postgresql']).default('auto')
+  ),
+  VOICELOG_RATE_LIMIT_WINDOW_MS: z
+    .preprocess((val) => (val ? Number(val) : undefined), z.number().int().positive().optional())
+    .default(60000),
   VOICELOG_ADMIN_TOKEN: z.string().optional(),
   VOICELOG_ENABLE_HEAPDUMP: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   VOICELOG_ALLOW_VERCEL_PREVIEWS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
