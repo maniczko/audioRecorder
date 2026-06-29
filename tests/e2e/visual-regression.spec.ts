@@ -786,7 +786,7 @@ test.describe('Release visual baselines', () => {
     await freezeClock(page);
   });
 
-  test.afterEach(async (_, testInfo) => {
+  test.afterEach(async ({ page: _page }, testInfo) => {
     expect(consoleErrorsByTest.get(testInfo) || []).toEqual([]);
   });
 
