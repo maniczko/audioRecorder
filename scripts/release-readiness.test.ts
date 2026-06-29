@@ -501,6 +501,7 @@ describe('release readiness gates', () => {
       }),
     };
     let uploadAttempts = 0;
+    let profileListAttempts = 0;
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith('/media/recordings/production_smoke_voice_profile_1780000000001/audio')) {
         uploadAttempts += 1;
@@ -550,6 +551,16 @@ describe('release readiness gates', () => {
         };
       }
       if (url.endsWith('/voice-profiles') && init?.method === 'GET') {
+        profileListAttempts += 1;
+        if (profileListAttempts === 1) {
+          return {
+            ok: false,
+            status: 502,
+            text: async () => '{"message":"Application failed to respond"}',
+            json: async () => ({ message: 'Application failed to respond' }),
+            headers: new Headers({ 'content-type': 'application/json' }),
+          };
+        }
         return {
           ok: true,
           status: 200,
@@ -601,6 +612,7 @@ describe('release readiness gates', () => {
     ).resolves.toBe(true);
 
     expect(uploadAttempts).toBe(2);
+    expect(profileListAttempts).toBe(2);
     expect(mediaAssetsTable.update).toHaveBeenCalledWith(
       expect.objectContaining({
         transcription_status: 'completed',
