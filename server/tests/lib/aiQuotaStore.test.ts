@@ -16,15 +16,20 @@ function makeCheck(overrides: Partial<AiQuotaCheck> = {}): AiQuotaCheck {
   };
 }
 
-function createFakeDb() {
+function createFakeDb(options: { type?: string } = {}) {
   const rows = new Map<
     string,
     { key: string; count: number; reset_at: number; updated_at: string }
   >();
+  const statements: string[] = [];
   return {
     rows,
+    statements,
+    type: options.type,
     async _execute(sql: string, params: unknown[] = []) {
+      statements.push(sql);
       if (/CREATE TABLE/i.test(sql)) return;
+      if (/ALTER TABLE ai_quota_counters/i.test(sql)) return;
       if (/DELETE FROM ai_quota_counters/i.test(sql)) {
         if (params.length) {
           rows.delete(String(params[0]));
@@ -99,6 +104,33 @@ describe('AI quota stores', () => {
 
     expect(db.rows.get('ai:user:u1:hour')?.count).toBe(1);
     expect(db.rows.get('ai:user:u1:hour')?.reset_at).toBe(122_000);
+  });
+
+  test('DbAiQuotaStore creates reset windows as BIGINT for millisecond timestamps', async () => {
+    const db = createFakeDb();
+    const store = new DbAiQuotaStore(db);
+    const now = 1_767_827_414_000;
+
+    await expect(store.increment([makeCheck({ now, windowMs: 86_400_000 })])).resolves.toBeNull();
+
+    const createStatement = db.statements.find((sql) =>
+      /CREATE TABLE IF NOT EXISTS ai_quota_counters/i.test(sql)
+    );
+    expect(createStatement).toMatch(/reset_at\s+BIGINT\s+NOT NULL/i);
+    expect(db.rows.get('ai:user:u1:hour')?.reset_at).toBe(now + 86_400_000);
+  });
+
+  test('DbAiQuotaStore upgrades Postgres reset_at columns to BIGINT', async () => {
+    const db = createFakeDb({ type: 'postgres' });
+    const store = new DbAiQuotaStore(db);
+
+    await expect(store.increment([makeCheck()])).resolves.toBeNull();
+
+    expect(db.statements).toContainEqual(
+      expect.stringMatching(
+        /ALTER TABLE ai_quota_counters\s+ALTER COLUMN reset_at TYPE BIGINT USING reset_at::bigint/i
+      )
+    );
   });
 
   test('DbAiQuotaStore reset deletes persisted counters', async () => {
