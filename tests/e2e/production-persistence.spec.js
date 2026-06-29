@@ -35,7 +35,7 @@ test.describe('production persistence gate', () => {
     test.setTimeout(120_000);
     const guard = attachRuntimeGuard(page);
     const meetingId = `${AUDIT_PREFIX}delete_${Date.now()}`;
-    const title = `${AUDIT_PREFIX}delete recording smoke`;
+    const title = `${AUDIT_PREFIX}delete recording smoke ${meetingId}`;
 
     const meeting = createAuditMeeting(meetingId, title, {
       latestRecordingId: `${meetingId}_recording`,
@@ -59,7 +59,7 @@ test.describe('production persistence gate', () => {
 
     await page.goto('/');
     await openRecordingsTab(page);
-    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByText(title).first()).toBeVisible();
 
     const afterSeed = await fetchWorkspaceState(request);
     expect(hasMeeting(afterSeed.meetings, meetingId)).toBe(true);

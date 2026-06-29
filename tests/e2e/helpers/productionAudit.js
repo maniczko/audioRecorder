@@ -10,7 +10,7 @@ export const AUTH_TOKEN = process.env.PRODUCTION_SMOKE_AUTH_TOKEN || '';
 export const WORKSPACE_ID = process.env.PRODUCTION_SMOKE_WORKSPACE_ID || '';
 export const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 export const AUDIT_PREFIX = process.env.PRODUCTION_AUDIT_PREFIX || 'audit_20260529_';
-const API_REQUEST_TIMEOUT_MS = Number(process.env.PRODUCTION_AUDIT_REQUEST_TIMEOUT_MS || 45_000);
+const API_REQUEST_TIMEOUT_MS = Number(process.env.PRODUCTION_AUDIT_REQUEST_TIMEOUT_MS || 35_000);
 
 async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
