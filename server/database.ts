@@ -35,6 +35,42 @@ const __dirname = path.dirname(__filename);
 
 const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.';
 const DEFAULT_RETENTION_DAYS = 365;
+const DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS = 2500;
+
+function _resolvePositiveTimeoutMs(value: unknown, fallback: number): number {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return Math.floor(numeric);
+  }
+  return fallback;
+}
+
+function _remoteAudioAvailabilityTimeoutMs(): number {
+  return _resolvePositiveTimeoutMs(
+    process.env.VOICELOG_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS,
+    DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS
+  );
+}
+
+export async function checkRemoteAudioAvailabilityWithTimeout(
+  checkAudioExists: (storagePath: string) => Promise<boolean>,
+  storagePath: string,
+  timeoutMs = _remoteAudioAvailabilityTimeoutMs()
+): Promise<boolean | null> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      checkAudioExists(storagePath),
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
 
 function _resolveWritableUploadDir(preferredDir: string): string {
   const normalizedPreferred = path.resolve(preferredDir);
@@ -832,7 +868,14 @@ export class Database {
       try {
         const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
         for (const part of manifest.parts) {
-          if (!(await audioExistsInStorage(part.path))) {
+          const exists = await checkRemoteAudioAvailabilityWithTimeout(
+            audioExistsInStorage,
+            part.path
+          );
+          if (exists === null) {
+            return null;
+          }
+          if (!exists) {
             return false;
           }
         }
@@ -860,12 +903,20 @@ export class Database {
 
     try {
       const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
+      let unknownAvailability = false;
       for (const storagePath of this._remoteAudioStorageCandidates(recordingId, asset)) {
-        if (await audioExistsInStorage(storagePath)) {
+        const exists = await checkRemoteAudioAvailabilityWithTimeout(
+          audioExistsInStorage,
+          storagePath
+        );
+        if (exists === true) {
           return true;
         }
+        if (exists === null) {
+          unknownAvailability = true;
+        }
       }
-      return false;
+      return unknownAvailability ? null : false;
     } catch (error) {
       logger.warn(
         '[database] Unable to verify media asset audio availability.',

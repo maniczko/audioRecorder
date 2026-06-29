@@ -6,7 +6,11 @@
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
-import { initDatabase, getDatabase } from '../../database.ts';
+import {
+  checkRemoteAudioAvailabilityWithTimeout,
+  initDatabase,
+  getDatabase,
+} from '../../database.ts';
 import { fileURLToPath } from 'node:url';
 import { logger } from '../../logger.ts';
 
@@ -1431,6 +1435,27 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.avatarUrl).toBe('https://example.com/avatar.jpg');
       expect(result.googleEmail).toBe('test@example.com');
       expect(result.extraField).toBeUndefined();
+    });
+
+    // ----------------------------------------------------------------
+    // Issue #0 - Remote audio availability checks can hang workspace sync
+    // Date: 2026-06-29
+    // Bug: Supabase Storage availability checks had no timeout and could
+    //      block workspace state hydration or PATCH persistence indefinitely.
+    // Fix: Slow availability checks resolve as unknown so state sync continues.
+    // ----------------------------------------------------------------
+    describe('Regression: Issue #0 - remote audio availability timeout', () => {
+      test('checkRemoteAudioAvailabilityWithTimeout returns unknown for hung storage checks', async () => {
+        const startedAt = Date.now();
+        const result = await checkRemoteAudioAvailabilityWithTimeout(
+          () => new Promise<boolean>(() => {}),
+          'workspace/recording.webm',
+          15
+        );
+
+        expect(result).toBeNull();
+        expect(Date.now() - startedAt).toBeLessThan(250);
+      });
     });
   });
 });

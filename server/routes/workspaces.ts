@@ -8,6 +8,45 @@ import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/sh
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 
 const workspaceStatePatchLocks = new Map<string, Promise<void>>();
+const DEFAULT_WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS = 30_000;
+
+function resolveWorkspaceStatePatchLockTimeoutMs() {
+  const numeric = Number(process.env.WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return Math.floor(numeric);
+  }
+  return DEFAULT_WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS;
+}
+
+function createWorkspaceStatePatchTimeoutError(timeoutMs: number) {
+  const error = new Error(`Workspace state patch timed out after ${timeoutMs}ms.`) as Error & {
+    statusCode?: number;
+    retryAfter?: number;
+  };
+  error.statusCode = 503;
+  error.retryAfter = Math.max(1, Math.ceil(timeoutMs / 1000));
+  return error;
+}
+
+async function runWorkspaceStatePatchWithTimeout<T>(operation: () => Promise<T>): Promise<T> {
+  const timeoutMs = resolveWorkspaceStatePatchLockTimeoutMs();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation(),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(createWorkspaceStatePatchTimeoutError(timeoutMs)),
+          timeoutMs
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
 
 async function withWorkspaceStatePatchLock<T>(
   workspaceId: string,
@@ -25,7 +64,7 @@ async function withWorkspaceStatePatchLock<T>(
   await previous.catch(() => undefined);
 
   try {
-    return await operation();
+    return await runWorkspaceStatePatchWithTimeout(operation);
   } finally {
     releaseCurrent();
     if (workspaceStatePatchLocks.get(key) === queued) {
