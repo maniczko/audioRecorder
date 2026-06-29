@@ -127,6 +127,19 @@ describe('CalendarTab', () => {
     expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
+  test('exposes stable production action ids and accessible names for calendar controls', () => {
+    renderCalendarTab();
+
+    expect(
+      screen.getByRole('button', { name: /Filtruj kalendarz: Spotkanie, liczba 1/i })
+    ).toHaveAttribute('data-action-id', 'calendar-filter-meeting');
+    expect(
+      screen.getAllByRole('button', {
+        name: /Otworz wpis kalendarza: Spotkanie zespolu/i,
+      })[0]
+    ).toHaveAttribute('data-action-id', 'calendar-entry-meeting-meeting_1');
+  });
+
   test('renders polished Polish calendar labels', () => {
     renderCalendarTab({ userMeetings: [], calendarTasks: [], googleCalendarEvents: [] });
 

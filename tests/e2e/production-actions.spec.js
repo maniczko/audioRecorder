@@ -191,12 +191,24 @@ async function closeTransientUi(page) {
   await page.keyboard.press('Escape').catch(() => undefined);
 }
 
-async function clickByLabel(page, label) {
+function actionIdSelector(actionId) {
+  return `[data-action-id="${String(actionId).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
+}
+
+async function clickAction(page, action) {
+  if (action.actionId) {
+    const byActionId = page.locator(actionIdSelector(action.actionId)).first();
+    if (await byActionId.isVisible().catch(() => false)) {
+      await byActionId.click({ force: true });
+      return true;
+    }
+  }
+
   const candidates = [
-    page.getByRole('button', { name: label }).first(),
-    page.getByRole('link', { name: label }).first(),
-    page.getByRole('tab', { name: label }).first(),
-    page.getByRole('menuitem', { name: label }).first(),
+    page.getByRole('button', { name: action.label }).first(),
+    page.getByRole('link', { name: action.label }).first(),
+    page.getByRole('tab', { name: action.label }).first(),
+    page.getByRole('menuitem', { name: action.label }).first(),
   ];
 
   for (const candidate of candidates) {
@@ -274,7 +286,7 @@ test.describe('production action crawler', () => {
 
           const before = await collectUiState(page);
           const failuresBeforeClick = guard.failures.length;
-          const clicked = await clickByLabel(page, action.label);
+          const clicked = await clickAction(page, action);
           if (!clicked) {
             const screenshot = await captureFailureScreenshot(
               page,
