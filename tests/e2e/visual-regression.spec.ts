@@ -50,6 +50,18 @@ const coreTabs = [
   { label: 'Notatki', surface: 'notes', expected: '.notes-layout' },
 ];
 
+async function mockUnmatchedLocalBackendRequests(page) {
+  for (const pattern of ['http://127.0.0.1:4000/**', 'http://localhost:4000/**']) {
+    await page.route(pattern, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unmocked visual fixture backend request.' }),
+      });
+    });
+  }
+}
+
 async function freezeClock(page) {
   await page.addInitScript(`
     {
@@ -71,14 +83,22 @@ async function freezeClock(page) {
 }
 
 async function seedReleaseData(page) {
+  await mockUnmatchedLocalBackendRequests(page);
   const meeting = {
     id: 'meeting_visual_baseline',
+    workspaceId: 'ws_e2e',
+    createdByUserId: 'user_e2e',
     title: 'Release baseline meeting',
     context: 'Layout validation',
     startsAt: '2026-05-14T10:00:00.000Z',
+    createdAt: '2026-05-14T10:00:00.000Z',
+    updatedAt: '2026-05-14T10:08:00.000Z',
     durationMinutes: 45,
+    owner: 'Anna',
+    guests: ['Jan'],
     attendees: ['Anna', 'Jan'],
     tags: ['release'],
+    latestRecordingId: 'recording_visual_baseline',
     recordings: [
       {
         id: 'recording_visual_baseline',
@@ -107,6 +127,8 @@ async function seedReleaseData(page) {
     notes: 'Task seeded for responsive visual baseline.',
     dueDate: '2026-05-14T12:00:00.000Z',
     priority: 'high',
+    workspaceId: 'ws_e2e',
+    createdByUserId: 'user_e2e',
   };
   const state = {
     meetings: [meeting],
@@ -182,6 +204,27 @@ async function seedReleaseData(page) {
       body: JSON.stringify({ profiles: [] }),
     });
   });
+  await page.route('**/integrations/google/status**', async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Google Calendar is not connected in visual fixtures.' }),
+    });
+  });
+  await page.route('**/integrations/google/events**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ items: [] }),
+    });
+  });
+  await page.route('**/api/client-errors**', async (route) => {
+    await route.fulfill({
+      status: 204,
+      contentType: 'application/json',
+      body: '',
+    });
+  });
   await page.route('**/media/recordings/**/audio**', async (route) => {
     await route.fulfill({
       status: 204,
@@ -192,6 +235,25 @@ async function seedReleaseData(page) {
   await seedLoggedInUser(page);
   await seedMeeting(page, meeting);
   await seedTask(page, task);
+  await seedQueueItem(page, {
+    id: 'q_visual_ready',
+    recordingId: 'recording_visual_baseline',
+    meetingId: 'meeting_visual_baseline',
+    meetingTitle: 'Release baseline meeting',
+    meetingSnapshot: meeting,
+    status: 'done',
+    uploaded: true,
+    duration: 180,
+    transcriptOutcome: 'normal',
+    createdAt: '2026-05-14T10:05:00.000Z',
+    updatedAt: '2026-05-14T10:08:00.000Z',
+  });
+}
+
+async function waitForReleaseWorkspace(page) {
+  await expect(page.getByText('Release baseline summary').first()).toBeVisible({
+    timeout: 15_000,
+  });
 }
 
 async function seedReferenceData(
@@ -724,7 +786,7 @@ test.describe('Release visual baselines', () => {
     await freezeClock(page);
   });
 
-  test.afterEach(async ({}, testInfo) => {
+  test.afterEach(async (_, testInfo) => {
     expect(consoleErrorsByTest.get(testInfo) || []).toEqual([]);
   });
 
@@ -742,6 +804,7 @@ test.describe('Release visual baselines', () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await seedReleaseData(page);
       await page.goto('/');
+      await waitForReleaseWorkspace(page);
       await expect(page.locator('.modern-main')).toBeVisible();
       await assertNoGlobalOverflow(page);
       await screenshotPage(page, `shell-home-${viewport.name}.png`);
@@ -749,6 +812,9 @@ test.describe('Release visual baselines', () => {
       for (const tab of coreTabs) {
         await openShellTab(page, tab.label);
         await expect(page.locator(tab.expected).first()).toBeVisible();
+        if (tab.surface === 'people') {
+          await expect(page.getByRole('heading', { name: 'Osoby' })).toBeVisible();
+        }
         await assertNoGlobalOverflow(page);
         await screenshotPage(page, `${tab.surface}-${viewport.name}.png`);
       }
@@ -787,6 +853,7 @@ test.describe('Release visual baselines', () => {
         error: 'STT provider unavailable during visual baseline.',
       });
       await page.goto('/');
+      await waitForReleaseWorkspace(page);
 
       await page.locator('.modern-search-btn').click();
       await expect(page.locator('.command-palette')).toBeVisible();

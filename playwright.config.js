@@ -2,10 +2,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
-const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || baseURL;
+const apiBaseURL = process.env.PLAYWRIGHT_API_BASE_URL || process.env.VITE_API_BASE_URL || baseURL;
 const webCommand = process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm start';
-const dataProvider = process.env.PLAYWRIGHT_DATA_PROVIDER || 'local';
-const mediaProvider = process.env.PLAYWRIGHT_MEDIA_PROVIDER || 'local';
+const dataProvider =
+  process.env.PLAYWRIGHT_DATA_PROVIDER || process.env.VITE_DATA_PROVIDER || 'local';
+const mediaProvider =
+  process.env.PLAYWRIGHT_MEDIA_PROVIDER || process.env.VITE_MEDIA_PROVIDER || 'local';
 const includeRemoteApiProject = process.env.PLAYWRIGHT_INCLUDE_REMOTE_API === 'true';
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEB_SERVER === 'true';
 const webServerApiBaseURL = dataProvider === 'remote' ? apiBaseURL : '';

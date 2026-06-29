@@ -871,6 +871,24 @@ describe('release readiness gates', () => {
     expect(workflow).toContain("PLAYWRIGHT_SKIP_WEB_SERVER: 'true'");
   });
 
+  it('keeps visual and remote-media Playwright providers isolated', () => {
+    const playwrightConfig = read('playwright.config.js');
+    const remoteApiRunner = read('scripts/run-remote-api-playwright.mjs');
+
+    expect(playwrightConfig).toContain(
+      'process.env.PLAYWRIGHT_API_BASE_URL || process.env.VITE_API_BASE_URL || baseURL'
+    );
+    expect(playwrightConfig).toContain(
+      "process.env.PLAYWRIGHT_DATA_PROVIDER || process.env.VITE_DATA_PROVIDER || 'local'"
+    );
+    expect(playwrightConfig).toContain(
+      'process.env.PLAYWRIGHT_MEDIA_PROVIDER || process.env.VITE_MEDIA_PROVIDER ||'
+    );
+    expect(remoteApiRunner).toContain("PLAYWRIGHT_DATA_PROVIDER: 'local'");
+    expect(remoteApiRunner).toContain("VITE_DATA_PROVIDER: 'local'");
+    expect(remoteApiRunner).toContain("PLAYWRIGHT_MEDIA_PROVIDER: 'remote'");
+  });
+
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   }, 20_000);
