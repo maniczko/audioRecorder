@@ -74,10 +74,13 @@
       "screen": "Calendar",
       "file": "src/CalendarTab.tsx",
       "expectedActionCount": 28,
-      "fingerprint": "2deabf7e01d70b87",
+      "fingerprint": "0622033559f2fb5a",
       "contractStatus": "covered",
       "testFiles": ["src/CalendarTab.test.tsx"],
-      "testEvidence": ["opens StudioBriefModal when + button is clicked in month view"],
+      "testEvidence": [
+        "opens StudioBriefModal when + button is clicked in month view",
+        "exposes stable production action ids and accessible names for calendar controls"
+      ],
       "owner": "frontend-calendar"
     },
     {

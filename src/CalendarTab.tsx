@@ -532,6 +532,8 @@ export default function CalendarTab({
                   key={entry.key}
                   type="button"
                   className={`agenda-card calendar-upcoming-card ${entry.colorTone}`}
+                  aria-label={`Otworz nadchodzacy wpis kalendarza: ${entry.title}, ${formatDateTime(entry.startsAt)}`}
+                  data-action-id={productionActionId('calendar-upcoming', entry.key || entry.id)}
                   onClick={() => {
                     const date = new Date(entry.startsAt);
                     setSelectedEntryKey(entry.key);
@@ -913,6 +915,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Skroc wybrany wpis kalendarza ${selectedEntry.title} o 30 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-minus-30',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, -30)}
                     >
                       Skróć o 30 min
@@ -920,6 +927,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Wydluz wybrany wpis kalendarza ${selectedEntry.title} o 30 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-plus-30',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, 30)}
                     >
                       Wydłuż o 30 min
@@ -927,6 +939,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Wydluz wybrany wpis kalendarza ${selectedEntry.title} o 60 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-plus-60',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, 60)}
                     >
                       +1 godzina

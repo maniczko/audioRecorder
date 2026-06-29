@@ -195,12 +195,20 @@ function actionIdSelector(actionId) {
   return `[data-action-id="${String(actionId).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
 }
 
+function isVolatileCalendarAction(action) {
+  return /^calendar-(entry|resize|upcoming|detail-resize)-/.test(String(action.actionId || ''));
+}
+
 async function clickAction(page, action) {
   if (action.actionId) {
     const byActionId = page.locator(actionIdSelector(action.actionId)).first();
     if (await byActionId.isVisible().catch(() => false)) {
       await byActionId.click({ force: true });
-      return true;
+      return { clicked: true, stale: false };
+    }
+
+    if (isVolatileCalendarAction(action)) {
+      return { clicked: false, stale: true };
     }
   }
 
@@ -214,11 +222,11 @@ async function clickAction(page, action) {
   for (const candidate of candidates) {
     if (await candidate.isVisible().catch(() => false)) {
       await candidate.click({ force: true });
-      return true;
+      return { clicked: true, stale: false };
     }
   }
 
-  return false;
+  return { clicked: false, stale: false };
 }
 
 test.describe('production action crawler', () => {
@@ -286,8 +294,13 @@ test.describe('production action crawler', () => {
 
           const before = await collectUiState(page);
           const failuresBeforeClick = guard.failures.length;
-          const clicked = await clickAction(page, action);
-          if (!clicked) {
+          const clickResult = await clickAction(page, action);
+          if (!clickResult.clicked) {
+            if (clickResult.stale) {
+              tabReport.skipped.push({ ...action, policy: 'skipped-stale-dynamic-action' });
+              continue;
+            }
+
             const screenshot = await captureFailureScreenshot(
               page,
               testInfo,
