@@ -63,7 +63,10 @@ function checkAltText() {
       }
 
       // Check for empty alt
-      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line)) {
+      if (
+        /<img[^>]*alt\s*=\s*["']{2}/i.test(line) &&
+        !/aria-hidden\s*=\s*["']true["']/i.test(line)
+      ) {
         issues.push({
           file: path.relative(SRC_DIR, file),
           line: index + 1,
