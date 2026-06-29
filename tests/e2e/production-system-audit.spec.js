@@ -341,6 +341,7 @@ test.describe('Production system audit', () => {
     request,
   }) => {
     const aiResponse = await request.post(apiUrl('/ai/suggest-tasks'), {
+      headers: authHeaders(),
       data: { transcript: [], people: [] },
     });
     expect(aiResponse.status(), await aiResponse.text()).toBe(200);
