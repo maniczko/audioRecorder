@@ -51,6 +51,7 @@ jobs:
           [[ -n "${VERCEL_TOKEN}" ]] || missing+=("VERCEL_TOKEN")
           [[ -n "${VERCEL_ORG_ID}" ]] || missing+=("VERCEL_ORG_ID")
           [[ -n "${VERCEL_PROJECT_ID}" ]] || missing+=("VERCEL_PROJECT_ID")
+          [[ -n "${VITE_GOOGLE_CLIENT_ID}" ]] || missing+=("VITE_GOOGLE_CLIENT_ID")
 
           if [ ${#missing[@]} -gt 0 ]; then
             echo "## Missing Vercel secrets" >> "$GITHUB_STEP_SUMMARY"
@@ -67,6 +68,7 @@ jobs:
       - name: Build Project Artifacts
         env:
           VITE_BUILD_ID: ${{ github.event.workflow_run.head_sha || github.sha }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy Project Artifacts to Vercel Production
