@@ -269,6 +269,26 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).toContain('set_railway_variable_with_retry APP_BUILD_TIME');
   });
 
+  it('keeps Google OAuth Railway sync explicit and secret-safe', () => {
+    const workflowPath = path.join(workflowDir, 'railway-sync-google-oauth.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}');
+    expect(content).toContain('GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}');
+    expect(content).toContain('GOOGLE_CALENDAR_SCOPES: ${{ secrets.GOOGLE_CALENDAR_SCOPES }}');
+    expect(content).toContain(
+      'GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}'
+    );
+    expect(content).toContain(
+      'https://audiorecorder-production.up.railway.app/integrations/google/callback'
+    );
+    expect(content).toContain('--skip-deploys');
+    expect(content).toContain('--stdin');
+    expect(content).toContain('railway variable list');
+    expect(content).toContain('railway up');
+    expect(content).not.toContain('localhost');
+  });
+
   it('checks out the error monitor workflow with the built-in GitHub token', () => {
     const workflowPath = path.join(workflowDir, 'error-monitor-and-task-creator.yml');
     const content = readFileSync(workflowPath, 'utf8');
