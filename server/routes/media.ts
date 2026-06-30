@@ -355,6 +355,35 @@ function classifyVoiceProfileEnrollmentError(error: any) {
   };
 }
 
+function hasVoiceProfileEmbedding(profile: any) {
+  if (Array.isArray(profile?.embedding)) return profile.embedding.length > 0;
+  const raw = profile?.embedding_json ?? profile?.embeddingJson;
+  if (Array.isArray(raw)) return raw.length > 0;
+  if (typeof raw !== 'string') return false;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+function buildVoiceProfileResponse(profile: any) {
+  const sampleCount = Number.isFinite(Number(profile?.sample_count ?? profile?.sampleCount))
+    ? Number(profile?.sample_count ?? profile?.sampleCount)
+    : 1;
+
+  return {
+    id: profile?.id,
+    speakerName: profile?.speaker_name ?? profile?.speakerName,
+    hasEmbedding: hasVoiceProfileEmbedding(profile),
+    createdAt: profile?.created_at ?? profile?.createdAt,
+    sampleCount,
+    threshold: typeof profile?.threshold === 'number' ? profile.threshold : 0.82,
+    isUpdate: Boolean(profile?.isUpdate),
+  };
+}
+
 export function buildRemoteAudioStorageCandidates(
   recordingId: string,
   asset: Pick<MediaAsset, 'file_path' | 'content_type'>
@@ -1477,7 +1506,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         session.user_id,
         options
       );
-      return c.json(profile, 201);
+      const payload = buildVoiceProfileResponse(profile);
+      const status = payload.isUpdate || payload.sampleCount > 1 ? 200 : 201;
+      return c.json(payload, status);
     } catch (err: any) {
       const details = classifyVoiceProfileEnrollmentError(err);
       const body = buildVoiceProfileErrorBody({

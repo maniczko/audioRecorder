@@ -1063,7 +1063,7 @@ export default class TranscriptionService extends EventEmitter {
       fs.renameSync(clipPath, newPath);
       let profile;
       try {
-        profile = await this.workspaceService.saveVoiceProfile({
+        profile = await this.workspaceService.upsertVoiceProfile({
           id: profileId,
           userId,
           workspaceId: asset.workspace_id,

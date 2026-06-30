@@ -40,6 +40,7 @@ describe('TranscriptionService', () => {
     mockWorkspaceService = {
       getWorkspaceMemberNames: vi.fn().mockResolvedValue(['Anna', 'Jan']),
       saveVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
+      upsertVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
     };
     mockSpeakerEmbedder = {
       computeEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
@@ -416,7 +417,7 @@ describe('TranscriptionService', () => {
       [expect.objectContaining({ text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 })],
       {}
     );
-    expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalledWith(
+    expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
         workspaceId: 'ws_1',
@@ -424,6 +425,7 @@ describe('TranscriptionService', () => {
         audioPath: expect.stringMatching(/vp_.*\.wav$/),
       })
     );
+    expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
     expect(renameSync).toHaveBeenCalledTimes(1);
     expect(unlinkSync).toHaveBeenCalledWith('/tmp/clip.wav');
     expect(profile).toEqual({ id: 'vp_new', speaker_name: 'Anna' });
