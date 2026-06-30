@@ -87,6 +87,25 @@ export interface TranscriptionDiagnostics {
     verificationStatus?: string;
     verificationReasons?: string[];
   }>;
+  voiceProfileLabeling?: VoiceProfileLabelingDiagnostics;
+}
+
+export interface VoiceProfileLabelingDiagnostics {
+  applied: boolean;
+  reason:
+    | 'matched'
+    | 'disabled_by_processing_mode'
+    | 'no_voice_profiles'
+    | 'no_speakers'
+    | 'no_eligible_speaker_audio'
+    | 'no_match'
+    | 'not_attempted';
+  mode: 'fast' | 'full' | 'segmented' | 'unknown';
+  profileCount: number;
+  attemptedSpeakerCount: number;
+  matchedSpeakerCount: number;
+  partCount?: number;
+  appliedPartCount?: number;
 }
 
 export interface SttProviderAttempt {
@@ -139,6 +158,7 @@ export interface TranscriptionStatusPayload {
   pipelineBuildTime?: string;
   audioQuality?: AudioQualityDiagnostics | null;
   transcriptionDiagnostics?: TranscriptionDiagnostics;
+  voiceProfileLabeling?: VoiceProfileLabelingDiagnostics;
   qualityMetrics?: TranscriptionQualityMetrics | null;
   activeJob?: boolean;
   queuedPosition?: number | null;
