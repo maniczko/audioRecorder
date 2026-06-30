@@ -1219,6 +1219,43 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.isUpdate).toBe(true);
     });
 
+    // ---------------------------------------------------------------
+    // Issue #1331 - transcript enrollment duplicated existing profiles
+    // Date: 2026-06-30
+    // Bug: repeated enrollment could create a second row for the same display name.
+    // Fix: upsert keeps one row and returns update metadata.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1331 - upsertVoiceProfile reuses existing row when new sample has a different id', async () => {
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1331_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1331',
+        speakerName: 'Repeated Speaker',
+        audioPath: '/tmp/repeated-original.wav',
+        embedding: [0.1, 0.2, 0.3],
+      });
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1331_duplicate',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1331',
+        speakerName: ' repeated speaker ',
+        audioPath: '/tmp/repeated-new.wav',
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result.id).toBe('vp_issue_1331_original');
+      expect(result.sample_count).toBe(2);
+      expect(result.audio_path).toBe('/tmp/repeated-new.wav');
+      expect(result.isUpdate).toBe(true);
+
+      const rows = await db._query(
+        'SELECT * FROM voice_profiles WHERE workspace_id = ? AND LOWER(speaker_name) = LOWER(?)',
+        ['ws_issue_1331', 'repeated speaker']
+      );
+      expect(rows).toHaveLength(1);
+    });
+
     test('upsertVoiceProfile rejects empty embedding without mutating an existing profile', async () => {
       await db.upsertVoiceProfile({
         id: 'vp_existing_empty_guard',

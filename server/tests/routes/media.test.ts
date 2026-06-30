@@ -1186,7 +1186,14 @@ describe('Media Routes', () => {
         workspace_id: 'ws_1',
         transcript_json: '[{"id":"s1","text":"hello","timestamp":0,"endTimestamp":1}]',
       });
-    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({ id: 'vp_1' });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+      id: 'vp_1',
+      speaker_name: 'Anna',
+      created_at: '2026-06-30T20:00:00.000Z',
+      sample_count: 1,
+      threshold: 0.82,
+      embedding_json: '[0.1,0.2,0.3]',
+    });
     mockTranscriptionService.diarizeFromTranscript.mockResolvedValue({
       speakerCount: 1,
       speakerNames: { '0': 'Speaker 1' },
@@ -1208,7 +1215,15 @@ describe('Media Routes', () => {
       body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
     });
     expect(voiceRes.status).toBe(201);
-    expect(await voiceRes.json()).toEqual({ id: 'vp_1' });
+    expect(await voiceRes.json()).toEqual({
+      id: 'vp_1',
+      speakerName: 'Anna',
+      hasEmbedding: true,
+      createdAt: '2026-06-30T20:00:00.000Z',
+      sampleCount: 1,
+      threshold: 0.82,
+      isUpdate: false,
+    });
 
     const noTranscriptRes = await app.request('/media/recordings/rec_rediarize_missing/rediarize', {
       method: 'POST',
@@ -1225,6 +1240,49 @@ describe('Media Routes', () => {
       'rec_rediarize_ok',
       expect.objectContaining({ pipelineStatus: 'completed' })
     );
+  });
+
+  // ---------------------------------------------------------------
+  // Issue #1331 - transcript enrollment duplicated existing profiles
+  // Date: 2026-06-30
+  // Bug: repeated transcript enrollment returned a new-profile response.
+  // Fix: reused profiles return update metadata and HTTP 200.
+  // ---------------------------------------------------------------
+  it('Regression: Issue #1331 - POST /media/recordings/:recordingId/voice-profiles/from-speaker returns update state for repeated enrollment', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_voice_repeat',
+      workspace_id: 'ws_1',
+      transcript_json: '[{"text":"hello","speakerId":"0","timestamp":0,"endTimestamp":1}]',
+    });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+      id: 'vp_existing',
+      speaker_name: 'Anna',
+      created_at: '2026-06-30T20:00:00.000Z',
+      sample_count: 2,
+      threshold: 0.91,
+      isUpdate: true,
+      embedding_json: '[0.1,0.2,0.3]',
+    });
+
+    const res = await app.request(
+      '/media/recordings/rec_voice_repeat/voice-profiles/from-speaker',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      id: 'vp_existing',
+      speakerName: 'Anna',
+      hasEmbedding: true,
+      createdAt: '2026-06-30T20:00:00.000Z',
+      sampleCount: 2,
+      threshold: 0.91,
+      isUpdate: true,
+    });
   });
 
   it('POST /media/recordings/:recordingId/voice-profiles/from-speaker returns embedding_failed without saving unusable profile', async () => {
