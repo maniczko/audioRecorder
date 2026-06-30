@@ -9,7 +9,7 @@ export function normalizeVoiceProfileEmbedding(value: unknown): number[] {
   const values = Array.isArray(value)
     ? value
     : ArrayBuffer.isView(value)
-      ? Array.from(value as ArrayLike<number>)
+      ? Array.from(value as unknown as ArrayLike<number>)
       : [];
 
   return values.filter((item): item is number => typeof item === 'number' && Number.isFinite(item));
