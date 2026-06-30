@@ -606,6 +606,48 @@ function formatEmptyTranscriptDiagnostics(recording) {
   return details.join(' · ');
 }
 
+function getVoiceProfileLabeling(recording) {
+  return (
+    recording?.voiceProfileLabeling ||
+    recording?.transcriptionDiagnostics?.voiceProfileLabeling ||
+    recording?.diarization?.transcriptionDiagnostics?.voiceProfileLabeling ||
+    recording?.diarization?.voiceProfileLabeling ||
+    null
+  );
+}
+
+function formatVoiceProfileLabelingStatus(recording) {
+  const labeling = getVoiceProfileLabeling(recording);
+  if (!labeling || typeof labeling !== 'object') return '';
+  const profileCount = Number(labeling.profileCount || 0);
+  const matchedSpeakerCount = Number(labeling.matchedSpeakerCount || 0);
+  const attemptedSpeakerCount = Number(labeling.attemptedSpeakerCount || 0);
+  const mode = String(labeling.mode || 'unknown');
+  const reason = String(labeling.reason || '');
+
+  if (!labeling.applied && profileCount <= 0) return '';
+  if (labeling.applied) {
+    const matchedLabel = matchedSpeakerCount > 0 ? ` (${matchedSpeakerCount} traf.)` : '';
+    return `Profile glosowe: uzyte${matchedLabel}.`;
+  }
+  if (reason === 'disabled_by_processing_mode') {
+    if (mode === 'fast') return 'Profile glosowe: pominiete w trybie szybkim.';
+    if (mode === 'segmented') return 'Profile glosowe: pominiete dla czesci nagrania.';
+    return 'Profile glosowe: pominiete w tym trybie przetwarzania.';
+  }
+  if (reason === 'no_match') {
+    const attemptedLabel = attemptedSpeakerCount > 0 ? ` (${attemptedSpeakerCount} sprawdz.)` : '';
+    return `Profile glosowe: sprawdzone bez trafienia${attemptedLabel}.`;
+  }
+  if (reason === 'no_eligible_speaker_audio') {
+    return 'Profile glosowe: brak wystarczajacej probki mowcy.';
+  }
+  if (reason === 'no_speakers') {
+    return 'Profile glosowe: brak wykrytych mowcow do porownania.';
+  }
+  return '';
+}
+
 function formatAudioQualityPanel(audioQuality) {
   if (!audioQuality || typeof audioQuality !== 'object') return '';
   const parts: string[] = [];
@@ -1438,6 +1480,10 @@ export default function StudioMeetingView({
   const transcript = useMemo(
     () => displayRecording?.transcript || [],
     [displayRecording?.transcript]
+  );
+  const voiceProfileLabelingStatus = useMemo(
+    () => formatVoiceProfileLabelingStatus(displayRecording || selectedRecording),
+    [displayRecording, selectedRecording]
   );
 
   const speakerStats = useMemo(
@@ -3903,6 +3949,12 @@ export default function StudioMeetingView({
           {voiceProfileError && !pendingNewSpeakerAssignment && !pendingVoiceProfileEnrollment ? (
             <p className="ff-voice-profile-toast ff-voice-profile-toast-error" role="status">
               {voiceProfileError}
+            </p>
+          ) : null}
+
+          {voiceProfileLabelingStatus ? (
+            <p className="ff-voice-profile-labeling-status" role="status">
+              {voiceProfileLabelingStatus}
             </p>
           ) : null}
 

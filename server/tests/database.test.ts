@@ -92,6 +92,16 @@ describe('Database (Async Worker SQLite)', () => {
         transcriptOutcome: 'empty',
         emptyReason: 'no_segments_from_stt',
         userMessage: 'Nie wykryto wypowiedzi w nagraniu.',
+        transcriptionDiagnostics: {
+          voiceProfileLabeling: {
+            applied: false,
+            reason: 'no_speakers',
+            mode: 'full',
+            profileCount: 2,
+            attemptedSpeakerCount: 0,
+            matchedSpeakerCount: 0,
+          },
+        },
         qualityMetrics: {
           sttProviderId: 'groq',
           sttProviderLabel: 'Groq Whisper',
@@ -110,6 +120,12 @@ describe('Database (Async Worker SQLite)', () => {
       expect(diarization.pipelineVersion).toBe('3.1.4');
       expect(diarization.pipelineBuildTime).toBe('2026-03-21T20:40:00.000Z');
       expect(diarization.transcriptOutcome).toBe('empty');
+      expect(diarization.transcriptionDiagnostics.voiceProfileLabeling).toMatchObject({
+        applied: false,
+        reason: 'no_speakers',
+        mode: 'full',
+        profileCount: 2,
+      });
       expect(diarization.qualityMetrics).toMatchObject({
         sttProviderId: 'groq',
         werProxy: 0.18,
