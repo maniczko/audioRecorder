@@ -260,6 +260,7 @@ describe('GitHub workflows validation', () => {
     expect(vercelWorkflow).toContain('VITE_GOOGLE_CLIENT_ID');
     expect(vercelWorkflow).toContain('missing+=("VITE_GOOGLE_CLIENT_ID")');
     expect(vercelWorkflow).toContain('VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}');
+    expect(vercelWorkflow).toContain('VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}');
   });
 
   it('retries Railway metadata variable writes before failing the release gate', () => {
