@@ -158,6 +158,18 @@ function hasProductionBrowserOrigin(value?: string) {
   );
 }
 
+function logCorsStartupConfig(allowedOrigins: string, allowVercelPreviews: boolean) {
+  const origins = splitAllowedOrigins(allowedOrigins);
+  console.log('[Config] CORS', {
+    nodeEnv: config.NODE_ENV,
+    productionDeployment: isProductionDeployment(),
+    allowedOriginCount: origins.length,
+    allowedOrigins: origins,
+    allowVercelPreviews,
+    hasWildcard: origins.includes('*'),
+  });
+}
+
 function isProductionDeployment() {
   return Boolean(
     config.NODE_ENV === 'production' ||
@@ -172,6 +184,8 @@ export function validateRequiredApiKeys() {
 
   const allowedOrigins = config.VOICELOG_ALLOWED_ORIGINS;
   const allowVercelPreviews = config.VOICELOG_ALLOW_VERCEL_PREVIEWS === true;
+  logCorsStartupConfig(allowedOrigins, allowVercelPreviews);
+
   if (isProductionDeployment()) {
     if (splitAllowedOrigins(allowedOrigins).includes('*')) {
       errors.push(
@@ -186,7 +200,7 @@ export function validateRequiredApiKeys() {
         'Production CORS is configured only for local development origins.\n' +
           '  Browser requests from Vercel will be blocked with Access-Control-Allow-Origin=http://localhost:3000.\n' +
           '  Set VOICELOG_ALLOWED_ORIGINS to the deployed frontend origin, for example:\n' +
-          '  VOICELOG_ALLOWED_ORIGINS=https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app\n' +
+          '  VOICELOG_ALLOWED_ORIGINS=https://voicelog-audiorecorder.vercel.app\n' +
           '  Or intentionally allow Vercel previews with VOICELOG_ALLOW_VERCEL_PREVIEWS=true.'
       );
     }
