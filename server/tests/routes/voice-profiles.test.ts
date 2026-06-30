@@ -120,6 +120,37 @@ describe('Voice Profiles Routes', () => {
     );
   });
 
+  it.each([
+    ['empty array', []],
+    ['null', null],
+    ['undefined', undefined],
+  ])(
+    'POST /voice-profiles - rejects %s embedding before profile persistence',
+    async (_label, embeddingValue) => {
+      mockTranscriptionService.computeEmbedding.mockResolvedValue(embeddingValue);
+
+      const res = await app.request('/voice-profiles', {
+        method: 'POST',
+        headers: {
+          'X-Speaker-Name': 'Alice',
+          'Content-Type': 'audio/webm',
+          Authorization: 'Bearer fake_token',
+        },
+        body: Buffer.from('fake-audio-data-at-least-1k-bytes'.repeat(40)),
+      });
+
+      expect(res.status).toBe(503);
+      await expect(res.json()).resolves.toEqual(
+        expect.objectContaining({
+          code: 'embedding_failed',
+          stage: 'embedding',
+          message: expect.any(String),
+        })
+      );
+      expect(mockWorkspaceService.upsertVoiceProfile).not.toHaveBeenCalled();
+    }
+  );
+
   it('DELETE /voice-profiles/:id', async () => {
     mockWorkspaceService.deleteVoiceProfile.mockResolvedValue(undefined);
 

@@ -5,6 +5,7 @@ import {
   normalizePartTranscriptionCheckpoint,
   parseMediaManifest,
 } from '../lib/mediaStoragePolicy.ts';
+import { requireVoiceProfileEmbedding } from '../lib/voiceProfileEmbedding.ts';
 
 type VoiceProfileEnrollmentCode =
   | 'speaker_segment_not_found'
@@ -1044,9 +1045,9 @@ export default class TranscriptionService extends EventEmitter {
     }
 
     try {
-      let embedding: any[] = [];
+      let embedding: number[] = [];
       try {
-        embedding = await this.computeEmbedding(clipPath);
+        embedding = requireVoiceProfileEmbedding(await this.computeEmbedding(clipPath));
       } catch (error) {
         throw voiceProfileError(
           'embedding_failed',
@@ -1068,7 +1069,7 @@ export default class TranscriptionService extends EventEmitter {
           workspaceId: asset.workspace_id,
           speakerName,
           audioPath: newPath,
-          embedding: embedding || [],
+          embedding,
         });
       } catch (error) {
         throw voiceProfileError(

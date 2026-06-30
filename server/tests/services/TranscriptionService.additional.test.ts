@@ -453,6 +453,44 @@ describe('TranscriptionService - Additional Coverage', () => {
       expect((globalThis as any).__mockFs.unlinkSync).toHaveBeenCalledWith(tempClipPath);
     });
 
+    test.each([
+      ['empty array', []],
+      ['null', null],
+      ['undefined', undefined],
+    ])('rejects %s embedding without saving a voice profile', async (_label, embeddingValue) => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, `clip_vp_empty_embedding_${_label}.wav`);
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockSpeakerEmbedder.computeEmbedding.mockResolvedValue(embeddingValue);
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Voice sample', speakerId: '1', timestamp: 0, endTimestamp: 4 },
+        ]),
+      };
+
+      await expect(
+        service.createVoiceProfileFromSpeaker(asset, '1', 'Barbara', 'user1')
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
+    });
+
     test('classifies profile persistence failures as profile_save_failed', async () => {
       const fs = await import('node:fs');
       const path = await import('node:path');

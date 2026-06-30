@@ -6,6 +6,10 @@ import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
+import {
+  createVoiceProfileEmbeddingFailure,
+  requireVoiceProfileEmbedding,
+} from '../lib/voiceProfileEmbedding.ts';
 
 const workspaceStatePatchLocks = new Map<string, Promise<void>>();
 const DEFAULT_WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS = 30_000;
@@ -331,7 +335,28 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const audioPath = path.join(config.uploadDir, `${profileId}${ext}`);
     fs.writeFileSync(audioPath, buffer);
 
-    const embedding = await transcriptionService.computeEmbedding(audioPath);
+    let embedding: number[];
+    try {
+      embedding = requireVoiceProfileEmbedding(
+        await transcriptionService.computeEmbedding(audioPath)
+      );
+    } catch (error) {
+      try {
+        fs.unlinkSync(audioPath);
+      } catch (_) {}
+      const failure =
+        (error as any)?.code === 'embedding_failed'
+          ? (error as ReturnType<typeof createVoiceProfileEmbeddingFailure>)
+          : createVoiceProfileEmbeddingFailure(error);
+      return c.json(
+        {
+          code: failure.code,
+          stage: failure.stage,
+          message: failure.message,
+        },
+        failure.statusCode
+      );
+    }
 
     const profile = await workspaceService.upsertVoiceProfile({
       id: profileId,
@@ -339,7 +364,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       workspaceId: session.workspace_id,
       speakerName: speakerName.trim(),
       audioPath,
-      embedding: embedding || [],
+      embedding,
     });
 
     const sampleCount = profile.sample_count || 1;
@@ -348,7 +373,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       {
         id: profile.id,
         speakerName: profile.speaker_name,
-        hasEmbedding: (embedding || []).length > 0,
+        hasEmbedding: embedding.length > 0,
         createdAt: profile.created_at,
         sampleCount,
         threshold: typeof profile.threshold === 'number' ? profile.threshold : 0.82,
