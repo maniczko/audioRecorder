@@ -1,4 +1,4 @@
-import { partitionWorkflowFailures } from './fetch-github-errors.js';
+import { parseErrors, partitionWorkflowFailures } from './github-error-reporting.mjs';
 
 function makeRun(overrides: Record<string, unknown>) {
   return {
@@ -98,5 +98,42 @@ describe('partitionWorkflowFailures', () => {
     expect(result.activeFailures.map((run) => run.id)).toEqual([3]);
     expect(result.resolvedFailures.map((run) => run.id)).toEqual([1]);
     expect(result.latestByWorkflow).toHaveLength(2);
+  });
+});
+
+describe('parseErrors', () => {
+  it('keeps terminal Vitest worker failures instead of recorder stderr from tests', () => {
+    const errors = parseErrors(`
+stderr | src/hooks/useAudioHardware.test.ts > useAudioHardware > cleanupRecorder is invoked when recorder setup fails
+Recording start failed. Error: MediaRecorder init failed
+[2985:0xaaf5000] allocation failure
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+Unhandled Errors
+Error: [vitest-pool]: Worker forks emitted error.
+Caused by: Error: Worker exited unexpectedly
+ELIFECYCLE Command failed with exit code 1.
+`);
+
+    expect(errors.map((error) => error.line)).toContain(
+      'FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory'
+    );
+    expect(errors.map((error) => error.line)).toContain(
+      'Error: [vitest-pool]: Worker forks emitted error.'
+    );
+    expect(errors.map((error) => error.line)).not.toContain(
+      'Recording start failed. Error: MediaRecorder init failed'
+    );
+  });
+
+  it('keeps compressed-size action setup failures as actionable GitHub errors', () => {
+    const errors = parseErrors(`
+Run preactjs/compressed-size-action@v3
+Error: Unable to locate executable file: build. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable.
+Process completed with exit code 1.
+`);
+
+    expect(errors.map((error) => error.line)).toContain(
+      'Error: Unable to locate executable file: build. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable.'
+    );
   });
 });

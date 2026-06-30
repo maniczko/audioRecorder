@@ -100,6 +100,78 @@ describe('GitHub workflows validation', () => {
     }
   });
 
+  it('runs compressed-size-action with the package-manager build command', () => {
+    const workflowNames = ['bundle-size.yml', 'code-review.yml'];
+
+    for (const workflowName of workflowNames) {
+      const workflowPath = path.join(workflowDir, workflowName);
+      const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
+        jobs?: Record<
+          string,
+          {
+            steps?: Array<{
+              run?: string;
+              uses?: string;
+              with?: Record<string, unknown>;
+            }>;
+          }
+        >;
+      } | null;
+
+      for (const [jobName, job] of Object.entries(parsed?.jobs ?? {})) {
+        const steps = job.steps ?? [];
+        const compressedSizeStep = steps.find((step) =>
+          step.uses?.startsWith('preactjs/compressed-size-action@')
+        );
+
+        if (!compressedSizeStep) {
+          continue;
+        }
+
+        expect(
+          compressedSizeStep.with?.['build-script'],
+          `${workflowName} ${jobName} build-script`
+        ).toBe('pnpm run build');
+        expect(
+          steps.some((step) => step.run === 'pnpm run build'),
+          `${workflowName} ${jobName} duplicate standalone build`
+        ).toBe(false);
+      }
+    }
+  });
+
+  it('gives code review coverage check extra heap for the large coverage suite', () => {
+    const workflowPath = path.join(workflowDir, 'code-review.yml');
+    const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
+      jobs?: {
+        'coverage-check'?: {
+          env?: Record<string, string>;
+          steps?: Array<{
+            run?: string;
+          }>;
+        };
+      };
+    } | null;
+
+    expect(parsed?.jobs?.['coverage-check']?.env?.NODE_OPTIONS).toBe('--max-old-space-size=8192');
+
+    const coverageRun = parsed?.jobs?.['coverage-check']?.steps?.find((step) =>
+      step.run?.includes('vitest run --coverage')
+    )?.run;
+    expect(coverageRun).toContain('--exclude=src/App.test.tsx');
+    expect(coverageRun).toContain('--exclude=src/App.integration.test.tsx');
+    expect(coverageRun).toContain('--exclude=src/hooks/useMeetings.test.tsx');
+    expect(coverageRun).toContain('--maxWorkers=2');
+  });
+
+  it('installs Vercel preview CLI without requiring a pnpm global bin dir', () => {
+    const workflowPath = path.join(workflowDir, 'preview.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('npm install -g vercel@latest');
+    expect(content).not.toContain('pnpm install -g vercel@latest');
+  });
+
   it('gives optimized ci test job extra heap for the large Vitest suite', () => {
     const workflowPath = path.join(workflowDir, 'ci-optimized.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
