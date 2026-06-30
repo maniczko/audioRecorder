@@ -9,6 +9,7 @@ import { logger } from './logger.ts';
 import { config } from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
 import { isCreatedAtExpiredByRetention } from './lib/retentionPolicy.ts';
+import { requireVoiceProfileEmbedding } from './lib/voiceProfileEmbedding.ts';
 import type { SessionPayload, WorkspaceStatePayload } from '../src/shared/contracts.ts';
 import {
   STORAGE_CONTENT_TYPE,
@@ -3309,16 +3310,18 @@ export class Database {
   }
 
   async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
+    const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const timestamp = this.nowIso();
     await this._execute(
       'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp]
+      [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(validEmbedding), timestamp]
     );
     return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
   }
 
   async upsertVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
     const MAX_SAMPLES = 5;
+    const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const existing = await this._get(
       'SELECT * FROM voice_profiles WHERE workspace_id = ? AND LOWER(speaker_name) = LOWER(?)',
       [workspaceId, speakerName.trim()]
@@ -3336,9 +3339,7 @@ export class Database {
             error.message
           );
         }
-        const averaged = embedding?.length
-          ? addToAverageEmbedding(existingEmb, existingCount, embedding)
-          : existingEmb;
+        const averaged = addToAverageEmbedding(existingEmb, existingCount, validEmbedding);
         await this._execute(
           'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ? WHERE id = ?',
           [JSON.stringify(averaged), existingCount + 1, audioPath, existing.id]
@@ -3358,7 +3359,7 @@ export class Database {
         workspaceId,
         speakerName.trim(),
         audioPath,
-        JSON.stringify(embedding || []),
+        JSON.stringify(validEmbedding),
         timestamp,
       ]
     );

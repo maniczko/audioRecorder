@@ -1136,6 +1136,27 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.sample_count).toBe(1);
     });
 
+    test('saveVoiceProfile rejects empty embedding without inserting a profile', async () => {
+      await expect(
+        db.saveVoiceProfile({
+          id: 'vp_empty_save',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Empty Save',
+          audioPath: '/tmp/empty-save.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      await expect(
+        db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_empty_save'])
+      ).resolves.toBeNull();
+    });
+
     test('upsertVoiceProfile creates new profile when not exists', async () => {
       const profile = {
         id: 'vp_test2',
@@ -1149,6 +1170,27 @@ describe('Database - Additional Coverage Tests', () => {
       const result = await db.upsertVoiceProfile(profile);
       expect(result.speaker_name).toBe('Bob');
       expect(result.isUpdate).toBeUndefined();
+    });
+
+    test('upsertVoiceProfile rejects empty embedding without inserting a profile', async () => {
+      await expect(
+        db.upsertVoiceProfile({
+          id: 'vp_empty_upsert',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Empty Upsert',
+          audioPath: '/tmp/empty-upsert.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      await expect(
+        db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_empty_upsert'])
+      ).resolves.toBeNull();
     });
 
     test('upsertVoiceProfile updates existing profile with new sample', async () => {
@@ -1175,6 +1217,39 @@ describe('Database - Additional Coverage Tests', () => {
       const result = await db.upsertVoiceProfile(profile2);
       expect(result.sample_count).toBe(2);
       expect(result.isUpdate).toBe(true);
+    });
+
+    test('upsertVoiceProfile rejects empty embedding without mutating an existing profile', async () => {
+      await db.upsertVoiceProfile({
+        id: 'vp_existing_empty_guard',
+        userId: 'u1',
+        workspaceId: 'ws1',
+        speakerName: 'Guarded Existing',
+        audioPath: '/tmp/guarded-original.wav',
+        embedding: [0.11, 0.22, 0.33],
+      });
+
+      await expect(
+        db.upsertVoiceProfile({
+          id: 'vp_existing_empty_guard_new',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Guarded Existing',
+          audioPath: '/tmp/guarded-new.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      const current = await db._get('SELECT * FROM voice_profiles WHERE id = ?', [
+        'vp_existing_empty_guard',
+      ]);
+      expect(current.sample_count).toBe(1);
+      expect(current.audio_path).toBe('/tmp/guarded-original.wav');
+      expect(JSON.parse(current.embedding_json)).toEqual([0.11, 0.22, 0.33]);
     });
 
     test('updateVoiceProfileThreshold clamps value between 0.5 and 0.99', async () => {

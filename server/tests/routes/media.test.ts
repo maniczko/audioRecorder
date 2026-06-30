@@ -1227,6 +1227,44 @@ describe('Media Routes', () => {
     );
   });
 
+  it('POST /media/recordings/:recordingId/voice-profiles/from-speaker returns embedding_failed without saving unusable profile', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_empty_embedding',
+      workspace_id: 'ws_1',
+      transcript_json: '[{"text":"hello","speakerId":"0","timestamp":0,"endTimestamp":1}]',
+    });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockRejectedValue(
+      Object.assign(
+        new Error('Nie udalo sie utworzyc profilu glosu. Sprobuj ponownie za chwile.'),
+        {
+          code: 'embedding_failed',
+          stage: 'embedding',
+          statusCode: 503,
+        }
+      )
+    );
+
+    const res = await app.request(
+      '/media/recordings/rec_empty_embedding/voice-profiles/from-speaker',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+      }
+    );
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        recordingId: 'rec_empty_embedding',
+        speakerId: '0',
+        speakerName: 'Anna',
+      })
+    );
+  });
+
   it('POST /media/recordings/:recordingId/rediarize returns no_changes when diarization fails', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_rediarize_fail',
