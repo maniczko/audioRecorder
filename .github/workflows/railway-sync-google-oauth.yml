@@ -1,0 +1,102 @@
+name: Railway Sync Google OAuth
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-google-oauth:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate required secrets
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALENDAR_SCOPES: ${{ secrets.GOOGLE_CALENDAR_SCOPES }}
+          GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}
+        run: |
+          test -n "$RAILWAY_TOKEN"
+          test -n "$RAILWAY_SERVICE_ID"
+          test -n "$GOOGLE_CLIENT_ID"
+          test -n "$GOOGLE_CLIENT_SECRET"
+          test -n "$GOOGLE_CALENDAR_SCOPES"
+          test -n "$GOOGLE_OAUTH_REDIRECT_URI"
+          case "$GOOGLE_OAUTH_REDIRECT_URI" in
+            https://audiorecorder-production.up.railway.app/integrations/google/callback) ;;
+            *) echo "GOOGLE_OAUTH_REDIRECT_URI must point to the Railway production callback" >&2; exit 1 ;;
+          esac
+
+      - name: Set Railway production Google OAuth secrets
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALENDAR_SCOPES: ${{ secrets.GOOGLE_CALENDAR_SCOPES }}
+          GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}
+        run: |
+          railway link \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            || true
+          printf '%s' "$GOOGLE_CLIENT_ID" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --skip-deploys \
+            --stdin \
+            GOOGLE_CLIENT_ID
+          printf '%s' "$GOOGLE_CLIENT_SECRET" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --skip-deploys \
+            --stdin \
+            GOOGLE_CLIENT_SECRET
+          printf '%s' "$GOOGLE_CALENDAR_SCOPES" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --skip-deploys \
+            --stdin \
+            GOOGLE_CALENDAR_SCOPES
+          printf '%s' "$GOOGLE_OAUTH_REDIRECT_URI" | railway variable set \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --skip-deploys \
+            --stdin \
+            GOOGLE_OAUTH_REDIRECT_URI
+
+      - name: Verify Railway variable names
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway variable list \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --json \
+            | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{const parsed=JSON.parse(data);const keys=Array.isArray(parsed)?parsed.map(v=>v.name||v.key):Object.keys(parsed);for (const key of ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_CALENDAR_SCOPES','GOOGLE_OAUTH_REDIRECT_URI']) { console.log(key); if (!keys.includes(key)) process.exitCode=1; }});"
+
+      - name: Deploy Railway service
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway up \
+            --ci \
+            --detach \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            --message "Sync Google OAuth config from GitHub secrets"
