@@ -254,6 +254,14 @@ describe('GitHub workflows validation', () => {
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
   });
 
+  it('passes Google Tasks client id into the production Vercel build', () => {
+    const vercelWorkflow = readFileSync(path.join(workflowDir, 'vercel-production.yml'), 'utf8');
+
+    expect(vercelWorkflow).toContain('VITE_GOOGLE_CLIENT_ID');
+    expect(vercelWorkflow).toContain('missing+=("VITE_GOOGLE_CLIENT_ID")');
+    expect(vercelWorkflow).toContain('VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}');
+  });
+
   it('retries Railway metadata variable writes before failing the release gate', () => {
     const railwayWorkflow = readFileSync(
       path.join(workflowDir, 'railway-build-metadata.yml'),
