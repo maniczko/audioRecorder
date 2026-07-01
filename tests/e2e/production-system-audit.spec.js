@@ -13,8 +13,25 @@ const VOICE_PROFILE_SPEAKER_ID = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEA
 const VOICE_PROFILE_SPEAKER_NAME = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_SPEAKER_NAME || '';
 const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 const AUDIT_PREFIX = 'audit_20260524_';
-const API_REQUEST_TIMEOUT_MS = 30_000;
-const CLEANUP_REQUEST_TIMEOUT_MS = 8_000;
+
+function readPositiveIntEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+
+const API_REQUEST_TIMEOUT_MS = readPositiveIntEnv('PRODUCTION_AUDIT_API_TIMEOUT_MS', 45_000);
+const STATE_PATCH_REQUEST_TIMEOUT_MS = readPositiveIntEnv(
+  'PRODUCTION_AUDIT_STATE_PATCH_TIMEOUT_MS',
+  Math.max(API_REQUEST_TIMEOUT_MS, 45_000)
+);
+const CLEANUP_REQUEST_TIMEOUT_MS = readPositiveIntEnv(
+  'PRODUCTION_AUDIT_CLEANUP_TIMEOUT_MS',
+  15_000
+);
+const PRODUCTION_AUDIT_TEST_TIMEOUT_MS = readPositiveIntEnv(
+  'PRODUCTION_AUDIT_TEST_TIMEOUT_MS',
+  180_000
+);
 
 const coreTabs = ['Studio', 'Nagrania', 'Kalendarz', 'Zadania', 'Osoby', 'Notatki'];
 
@@ -142,7 +159,7 @@ async function fetchWorkspaceState(request) {
 
 async function patchWorkspaceState(request, delta, options = {}) {
   const attempts = options.attempts || 3;
-  const timeout = options.timeout || API_REQUEST_TIMEOUT_MS;
+  const timeout = options.timeout || STATE_PATCH_REQUEST_TIMEOUT_MS;
   let lastError = null;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -300,7 +317,7 @@ async function openProfileSurface(page) {
 
 test.describe('Production system audit', () => {
   test.describe.configure({ mode: 'serial' });
-  test.setTimeout(120_000);
+  test.setTimeout(PRODUCTION_AUDIT_TEST_TIMEOUT_MS);
 
   test.skip(
     !AUDIT_REQUIRED && (!AUTH_TOKEN || !WORKSPACE_ID),
