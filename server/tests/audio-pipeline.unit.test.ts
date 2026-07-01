@@ -4,10 +4,16 @@ import path from 'node:path';
 import { EventEmitter } from 'events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.example.test/v1' } = {}) {
+async function loadAudioPipeline({
+  openAiKey = '',
+  baseUrl = 'https://api.example.test/v1',
+  profileMatch = null,
+} = {}) {
   vi.resetModules();
   (globalThis as any).__audioPipelineExecCalls = 0;
   (globalThis as any).__audioPipelineExecCommands = [];
+  const matchSpeakerToProfileMock = vi.fn().mockResolvedValue(profileMatch);
+  (globalThis as any).__audioPipelineMatchSpeakerToProfile = matchSpeakerToProfileMock;
 
   // Set environment variables BEFORE importing any modules
   process.env.VOICELOG_OPENAI_API_KEY = openAiKey;
@@ -25,7 +31,7 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
     },
   }));
   vi.doMock('../speakerEmbedder.ts', () => ({
-    matchSpeakerToProfile: vi.fn().mockResolvedValue(null),
+    matchSpeakerToProfile: matchSpeakerToProfileMock,
   }));
   vi.doMock('node:child_process', () => ({
     exec: vi.fn((cmd, opts, callback) => {
@@ -58,6 +64,57 @@ async function loadAudioPipeline({ openAiKey = '', baseUrl = 'https://api.exampl
   }));
 
   return import('../audioPipeline.ts');
+}
+
+function mockProfileLabelingFetches() {
+  const sttPayload = {
+    text: 'Anna omawia plan',
+    segments: [
+      {
+        text: 'Anna omawia plan',
+        start: 0,
+        end: 3,
+        words: [
+          { word: 'Anna', start: 0, end: 0.8 },
+          { word: 'omawia', start: 0.9, end: 1.8 },
+          { word: 'plan', start: 1.9, end: 3 },
+        ],
+      },
+    ],
+    words: [
+      { word: 'Anna', start: 0, end: 0.8 },
+      { word: 'omawia', start: 0.9, end: 1.8 },
+      { word: 'plan', start: 1.9, end: 3 },
+    ],
+  };
+  const diarizationPayload = {
+    choices: [
+      {
+        message: {
+          content: JSON.stringify({
+            segments: [{ i: 0, s: 'A' }],
+          }),
+        },
+      },
+    ],
+  };
+
+  (global.fetch as any).mockImplementation((url: string) => {
+    if (String(url).includes('/audio/transcriptions')) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: vi.fn().mockResolvedValue(JSON.stringify(sttPayload)),
+        json: vi.fn().mockResolvedValue(sttPayload),
+      });
+    }
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      text: vi.fn().mockResolvedValue(JSON.stringify(diarizationPayload)),
+      json: vi.fn().mockResolvedValue(diarizationPayload),
+    });
+  });
 }
 
 describe('audioPipeline exports', () => {
@@ -236,6 +293,128 @@ describe('audioPipeline exports', () => {
       pipeline.diarizeFromTranscript([{ text: 'Ala', start: 0, end: 1 }])
     ).resolves.toBeNull();
   });
+
+  // ---------------------------------------------------------------
+  // Issue #1332 - profile label provenance hidden across processing modes
+  // Date: 2026-06-30
+  // Bug: result payload showed final speaker labels without saying if profiles were used.
+  // Fix: transcriptionDiagnostics.voiceProfileLabeling exposes applied/skipped state.
+  // ---------------------------------------------------------------
+  it('Regression: Issue #1332 - full mode reports voice profile labels as applied when a profile matches', async () => {
+    const pipeline = await loadAudioPipeline({
+      openAiKey: 'key-1',
+      profileMatch: { name: 'Anna', confidence: 0.91 },
+    });
+
+    mockProfileLabelingFetches();
+
+    const result = await pipeline.transcribeRecording(
+      {
+        id: 'rec_profile_full',
+        file_path: '/tmp/profile-full.wav',
+        content_type: 'audio/wav',
+        diarization_json: JSON.stringify({
+          audioQuality: { qualityLabel: 'good', enhancementRecommended: false },
+        }),
+      },
+      {
+        processingMode: 'full',
+        skipEarlyPyannote: true,
+        skipChunkVAD: true,
+        transcriptCorrection: false,
+        voiceProfiles: [{ id: 'vp_anna', speaker_name: 'Anna', embedding_json: '[0.1]' }],
+      }
+    );
+
+    expect((globalThis as any).__audioPipelineMatchSpeakerToProfile).toHaveBeenCalled();
+    expect(result.speakerNames).toMatchObject({ '0': 'Anna' });
+    expect(result.transcriptionDiagnostics.voiceProfileLabeling).toMatchObject({
+      applied: true,
+      reason: 'matched',
+      mode: 'full',
+      profileCount: 1,
+      attemptedSpeakerCount: 1,
+      matchedSpeakerCount: 1,
+    });
+    expect(result.diarization.transcriptionDiagnostics.voiceProfileLabeling).toMatchObject({
+      applied: true,
+      reason: 'matched',
+    });
+  }, 30000);
+
+  it('Regression: Issue #1332 - fast mode reports voice profile labels as skipped', async () => {
+    const pipeline = await loadAudioPipeline({
+      openAiKey: 'key-1',
+      profileMatch: { name: 'Anna', confidence: 0.91 },
+    });
+
+    mockProfileLabelingFetches();
+
+    const result = await pipeline.transcribeRecording(
+      {
+        id: 'rec_profile_fast',
+        file_path: '/tmp/profile-fast.wav',
+        content_type: 'audio/wav',
+        diarization_json: JSON.stringify({
+          audioQuality: { qualityLabel: 'good', enhancementRecommended: false },
+        }),
+      },
+      {
+        processingMode: 'fast',
+        skipEarlyPyannote: true,
+        skipChunkVAD: true,
+        skipVoiceProfileMatch: true,
+        transcriptCorrection: false,
+        voiceProfiles: [{ id: 'vp_anna', speaker_name: 'Anna', embedding_json: '[0.1]' }],
+      }
+    );
+
+    expect((globalThis as any).__audioPipelineMatchSpeakerToProfile).not.toHaveBeenCalled();
+    expect(result.transcriptionDiagnostics.voiceProfileLabeling).toMatchObject({
+      applied: false,
+      reason: 'disabled_by_processing_mode',
+      mode: 'fast',
+      profileCount: 1,
+      attemptedSpeakerCount: 0,
+      matchedSpeakerCount: 0,
+    });
+  }, 30000);
+
+  it('Regression: Issue #1332 - segmented mode reports voice profile labels as skipped per part', async () => {
+    const pipeline = await loadAudioPipeline({
+      openAiKey: 'key-1',
+      profileMatch: { name: 'Anna', confidence: 0.91 },
+    });
+
+    mockProfileLabelingFetches();
+
+    const result = await pipeline.transcribeRecording(
+      {
+        id: 'rec_profile_segmented',
+        file_path: '/tmp/profile-segmented.wav',
+        content_type: 'audio/wav',
+        diarization_json: JSON.stringify({
+          audioQuality: { qualityLabel: 'good', enhancementRecommended: false },
+        }),
+      },
+      {
+        segmentedPart: { index: 0 },
+        skipEarlyPyannote: true,
+        skipChunkVAD: true,
+        skipVoiceProfileMatch: true,
+        transcriptCorrection: false,
+        voiceProfiles: [{ id: 'vp_anna', speaker_name: 'Anna', embedding_json: '[0.1]' }],
+      }
+    );
+
+    expect((globalThis as any).__audioPipelineMatchSpeakerToProfile).not.toHaveBeenCalled();
+    expect(result.transcriptionDiagnostics.voiceProfileLabeling).toMatchObject({
+      applied: false,
+      reason: 'disabled_by_processing_mode',
+      mode: 'segmented',
+      profileCount: 1,
+    });
+  }, 30000);
 
   it('analyzes meetings and embeds text chunks through OpenAI endpoints', async () => {
     const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });

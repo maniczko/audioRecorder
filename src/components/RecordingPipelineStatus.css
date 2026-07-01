@@ -84,7 +84,8 @@
 
 .pipeline-error-box {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   background: var(--surface-danger, rgba(239, 68, 68, 0.1));
   border: 1px solid var(--border-danger, rgba(239, 68, 68, 0.2));
   border-radius: 8px;
@@ -92,6 +93,7 @@
   gap: 12px;
   margin-top: 8px;
   width: 100%;
+  min-width: 0;
 }
 
 .pipeline-error-icon {
@@ -104,8 +106,9 @@
   color: var(--text-danger, #ef4444);
   line-height: 1.4;
   flex: 1;
-  word-wrap: break-word;
-  word-break: break-word;
+  min-width: min(100%, 12rem);
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .pipeline-retry-btn {
@@ -122,6 +125,8 @@
   gap: 6px;
   flex-shrink: 0;
   font-weight: 500;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .pipeline-retry-btn svg {
@@ -146,6 +151,24 @@
   content: '⏱';
   font-size: 0.7rem;
   opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+  .pipeline-error-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+
+  .pipeline-error-text {
+    min-width: 0;
+  }
+
+  .pipeline-error-box .pipeline-retry-btn {
+    grid-column: 2;
+    justify-self: start;
+    white-space: normal;
+  }
 }
 
 :root[data-theme='premium-light'] .pipeline-status-wrapper {

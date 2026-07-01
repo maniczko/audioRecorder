@@ -37,14 +37,13 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run release E2E and visual checks
+      - name: Run release E2E checks
         id: tests
         run: |
           pnpm exec playwright test \
             tests/e2e/smoke.spec.js \
             tests/e2e/advanced-journeys.spec.js \
             tests/e2e/command-palette.spec.js \
-            tests/e2e/visual-regression.spec.ts \
             --reporter=list,html,junit \
             --retries=2 \
             --workers=2

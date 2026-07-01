@@ -13,6 +13,24 @@ function shouldAllowCredentials(requestOrigin: string, responseOrigin: string) {
   return Boolean(requestOrigin && responseOrigin && requestOrigin === responseOrigin);
 }
 
+function buildCredentialHeaders(requestOrigin: string, responseOrigin: string) {
+  return shouldAllowCredentials(requestOrigin, responseOrigin)
+    ? { 'Access-Control-Allow-Credentials': 'true' }
+    : {};
+}
+
+function applyCorsHeadersToContext(c: any, requestOrigin: string, allowedOrigins: string) {
+  const cors = buildCorsHeaders(requestOrigin, allowedOrigins);
+  c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
+  c.header('Access-Control-Allow-Headers', cors['Access-Control-Allow-Headers']);
+  c.header('Access-Control-Allow-Methods', cors['Access-Control-Allow-Methods']);
+  c.header('Vary', cors['Vary']);
+
+  if (shouldAllowCredentials(requestOrigin, cors['Access-Control-Allow-Origin'])) {
+    c.header('Access-Control-Allow-Credentials', 'true');
+  }
+}
+
 const SERVER_INFRASTRUCTURE_ERROR_PATTERNS = [
   'enotfound',
   'econnrefused',
@@ -66,10 +84,6 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use('*', async (c, next) => {
     const requestOrigin = c.req.header('origin') || '';
     const cors = buildCorsHeaders(requestOrigin, _allowedOrigins);
-    const allowCredentials = shouldAllowCredentials(
-      requestOrigin,
-      cors['Access-Control-Allow-Origin']
-    );
 
     if (c.req.method === 'OPTIONS') {
       return new Response(null, {
@@ -78,7 +92,7 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
           'Access-Control-Allow-Origin': cors['Access-Control-Allow-Origin'],
           'Access-Control-Allow-Headers': cors['Access-Control-Allow-Headers'],
           'Access-Control-Allow-Methods': cors['Access-Control-Allow-Methods'],
-          ...(allowCredentials ? { 'Access-Control-Allow-Credentials': 'true' } : {}),
+          ...buildCredentialHeaders(requestOrigin, cors['Access-Control-Allow-Origin']),
           'Access-Control-Max-Age': '86400',
           Vary: cors['Vary'],
         },
@@ -87,13 +101,7 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
 
     await next();
 
-    c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
-    c.header('Access-Control-Allow-Headers', cors['Access-Control-Allow-Headers']);
-    c.header('Access-Control-Allow-Methods', cors['Access-Control-Allow-Methods']);
-    if (allowCredentials) {
-      c.header('Access-Control-Allow-Credentials', 'true');
-    }
-    c.header('Vary', cors['Vary']);
+    applyCorsHeadersToContext(c, requestOrigin, _allowedOrigins);
   });
 }
 
@@ -199,12 +207,7 @@ export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http:/
   app.notFound((c) => {
     const requestOrigin = c.req.header('origin');
     if (requestOrigin) {
-      const cors = buildCorsHeaders(requestOrigin, allowedOrigins);
-      c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
-      if (shouldAllowCredentials(requestOrigin, cors['Access-Control-Allow-Origin'])) {
-        c.header('Access-Control-Allow-Credentials', 'true');
-      }
-      c.header('Vary', cors['Vary']);
+      applyCorsHeadersToContext(c, requestOrigin, allowedOrigins);
     }
     return c.json({ message: 'Not found.' }, 404);
   });
@@ -219,12 +222,7 @@ export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http:/
     // post-next() header injection, so we set them explicitly here.
     const requestOrigin = c.req.header('origin');
     if (requestOrigin) {
-      const cors = buildCorsHeaders(requestOrigin, allowedOrigins);
-      c.header('Access-Control-Allow-Origin', cors['Access-Control-Allow-Origin']);
-      if (shouldAllowCredentials(requestOrigin, cors['Access-Control-Allow-Origin'])) {
-        c.header('Access-Control-Allow-Credentials', 'true');
-      }
-      c.header('Vary', cors['Vary']);
+      applyCorsHeadersToContext(c, requestOrigin, allowedOrigins);
     }
 
     if (err.name === 'ContextError' || err instanceof z.ZodError || err?.statusCode === 422) {

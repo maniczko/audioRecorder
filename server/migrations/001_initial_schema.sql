@@ -123,5 +123,10 @@ CREATE TABLE IF NOT EXISTS voice_profiles (
   speaker_name TEXT NOT NULL,
   audio_path TEXT NOT NULL,
   embedding_json TEXT NOT NULL DEFAULT '[]',
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  profile_source TEXT NOT NULL DEFAULT 'unknown',
+  embedding_model TEXT NOT NULL DEFAULT 'unknown',
+  embedding_version TEXT NOT NULL DEFAULT '1',
+  created_by TEXT
 );

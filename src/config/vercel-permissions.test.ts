@@ -49,4 +49,12 @@ describe('Regression: #0 — Permissions-Policy must allow microphone and camera
     const csp = getContentSecurityPolicy();
     expect(csp).toContain("media-src 'self' blob:");
   });
+
+  test('CSP allows Google Identity Services for Google Tasks OAuth', () => {
+    const csp = getContentSecurityPolicy();
+
+    expect(csp).toContain('script-src');
+    expect(csp).toContain('frame-src');
+    expect(csp).toContain('https://accounts.google.com');
+  });
 });

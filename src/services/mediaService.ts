@@ -145,12 +145,17 @@ async function uploadChunkWithRetry({
   }
 }
 
-function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {}) {
+export function mapRemoteTranscriptionResult(response: MediaTranscriptionResponse = {}) {
   const normalized = normalizeMediaTranscriptionResponse(response);
+  const verifiedSegments = Array.isArray(response?.verifiedSegments)
+    ? response.verifiedSegments
+    : Array.isArray(response?.segments)
+      ? response.segments
+      : [];
 
   return {
     diarization: response.diarization || {},
-    verifiedSegments: response.segments || [],
+    verifiedSegments,
     providerId: response.providerId || REMOTE_TRANSCRIPTION_PROVIDER.id,
     providerLabel: response.providerLabel || REMOTE_TRANSCRIPTION_PROVIDER.label,
     pipelineStatus: normalized.pipelineStatus || 'queued',

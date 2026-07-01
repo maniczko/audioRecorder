@@ -56,6 +56,8 @@ export async function bootstrap() {
       allowedOrigins: config.VOICELOG_ALLOWED_ORIGINS || 'http://localhost:3000',
       trustProxy: config.VOICELOG_TRUST_PROXY === true,
       uploadDir: db.uploadDir,
+      rateLimitStore: config.VOICELOG_RATE_LIMIT_STORE,
+      rateLimitWindowMs: config.VOICELOG_RATE_LIMIT_WINDOW_MS,
       adminToken: config.VOICELOG_ADMIN_TOKEN,
       enableHeapdump: config.VOICELOG_ENABLE_HEAPDUMP === true,
     },

@@ -11,10 +11,6 @@ import {
   patchWorkspaceState,
 } from './helpers/productionAudit.js';
 
-function withoutMeeting(meetings, id) {
-  return (Array.isArray(meetings) ? meetings : []).filter((meeting) => meeting?.id !== id);
-}
-
 function hasMeeting(meetings, id) {
   return Array.isArray(meetings) && meetings.some((meeting) => meeting?.id === id);
 }
@@ -39,10 +35,8 @@ test.describe('production persistence gate', () => {
     test.setTimeout(120_000);
     const guard = attachRuntimeGuard(page);
     const meetingId = `${AUDIT_PREFIX}delete_${Date.now()}`;
-    const title = `${AUDIT_PREFIX}delete recording smoke`;
+    const title = `${AUDIT_PREFIX}delete recording smoke ${meetingId}`;
 
-    const initialState = await fetchWorkspaceState(request);
-    const originalMeetings = withoutMeeting(initialState.meetings, meetingId);
     const meeting = createAuditMeeting(meetingId, title, {
       latestRecordingId: `${meetingId}_recording`,
       recordings: [
@@ -60,37 +54,18 @@ test.describe('production persistence gate', () => {
     });
 
     await patchWorkspaceState(request, {
-      meetings: [meeting, ...originalMeetings],
-      calendarMeta: initialState.calendarMeta || {},
+      meetings: { upsert: [meeting] },
     });
 
     await page.goto('/');
     await openRecordingsTab(page);
-    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByText(title).first()).toBeVisible();
 
     const afterSeed = await fetchWorkspaceState(request);
     expect(hasMeeting(afterSeed.meetings, meetingId)).toBe(true);
 
-    const meetingTombstones = [
-      ...((afterSeed.calendarMeta && afterSeed.calendarMeta.meetingTombstones) || []),
-      { id: meetingId, deletedAt: new Date().toISOString(), source: 'production-persistence-gate' },
-    ];
-    const recordingTombstones = [
-      ...((afterSeed.calendarMeta && afterSeed.calendarMeta.recordingTombstones) || []),
-      {
-        id: `${meetingId}_recording`,
-        deletedAt: new Date().toISOString(),
-        source: 'production-persistence-gate',
-      },
-    ];
-
     await patchWorkspaceState(request, {
-      meetings: withoutMeeting(afterSeed.meetings, meetingId),
-      calendarMeta: {
-        ...(afterSeed.calendarMeta || {}),
-        meetingTombstones,
-        recordingTombstones,
-      },
+      meetings: { removeIds: [meetingId] },
     });
 
     await page.reload();

@@ -32,6 +32,31 @@ function isAfter(reference: string, baseline: string) {
 const GOOGLE_BACKEND_SESSION_MESSAGE =
   'Sesja lokalna nie ma tokenu backendu. Zaloguj sie ponownie, aby polaczyc Google Calendar.';
 
+function getGoogleTasksConnectionErrorMessage(error: unknown) {
+  const reason =
+    error && typeof error === 'object' && 'reason' in error
+      ? String((error as { reason?: unknown }).reason || '')
+      : '';
+  const status =
+    error && typeof error === 'object' && 'status' in error
+      ? Number((error as { status?: unknown }).status || 0)
+      : 0;
+
+  if (status === 403 || reason) {
+    if (reason === 'accessNotConfigured' || reason === 'serviceDisabled') {
+      return `Google Tasks API jest wylaczone w Google Cloud albo wlaczone w innym projekcie. Powod Google: ${reason}.`;
+    }
+    if (reason === 'insufficientPermissions' || reason === 'forbidden') {
+      return `Token Google nie ma zakresu https://www.googleapis.com/auth/tasks albo zgoda jest stara. Powod Google: ${reason}.`;
+    }
+    return `Google Tasks API zwrocilo 403. Sprawdz Google Tasks API, scope https://www.googleapis.com/auth/tasks i test usera. Powod Google: ${
+      reason || 'brak reason w odpowiedzi'
+    }.`;
+  }
+
+  return 'Nie udalo sie polaczyc z Google Tasks.';
+}
+
 export default function useGoogleIntegrations({
   currentUser,
   currentWorkspaceId,
@@ -404,7 +429,7 @@ export default function useGoogleIntegrations({
     } catch (error) {
       console.error('Google Tasks connect failed.', error);
       setGoogleTasksStatus('error');
-      setGoogleTasksMessage('Nie udalo sie polaczyc z Google Tasks.');
+      setGoogleTasksMessage(getGoogleTasksConnectionErrorMessage(error));
     }
   }
 

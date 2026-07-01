@@ -6,6 +6,7 @@ import type {
   TranscriptSegment,
   TranscriptionDiagnostics,
   TranscriptionStatusPayload,
+  VoiceProfileLabelingDiagnostics,
   WorkspaceState,
 } from './types.js';
 
@@ -52,6 +53,7 @@ export interface MediaTranscriptionResponse {
   recordingId?: string;
   diarization?: unknown;
   segments?: TranscriptSegment[];
+  verifiedSegments?: TranscriptSegment[];
   providerId?: string;
   providerLabel?: string;
   pipelineStatus?: TranscriptionStatusPayload['pipelineStatus'] | 'completed';
@@ -74,6 +76,7 @@ export interface MediaTranscriptionResponse {
   retryable?: boolean;
   audioValidation?: Record<string, unknown> | null;
   sttAttempts?: TranscriptionDiagnostics['sttAttempts'];
+  voiceProfileLabeling?: VoiceProfileLabelingDiagnostics;
   durationMs?: number;
   reviewSummary?: string | null;
   errorMessage?: string;
@@ -333,6 +336,16 @@ function resolveRetryAfterMs(primary: unknown, fallback: unknown = null): number
   if (Number.isFinite(value) && value > 0) return value;
   const fallbackValue = Number(fallback);
   return Number.isFinite(fallbackValue) && fallbackValue > 0 ? fallbackValue : null;
+}
+
+function resolveVoiceProfileLabeling(
+  diagnostics: TranscriptionDiagnostics | undefined,
+  fallback: unknown = null
+): VoiceProfileLabelingDiagnostics | undefined {
+  return (
+    optionalObject<VoiceProfileLabelingDiagnostics>(diagnostics?.voiceProfileLabeling) ||
+    optionalObject<VoiceProfileLabelingDiagnostics>(fallback)
+  );
 }
 
 function normalizeRetentionDays(value: unknown, fallback = 365): number {
@@ -691,6 +704,9 @@ export function normalizeTranscriptionStatusPayload(
   );
   const segments = parseJsonArray<TranscriptSegment>(asset?.transcript_json);
   const durationMs = resolveTranscriptionDurationMs(asset, diarization, segments);
+  const transcriptionDiagnostics = optionalObject<TranscriptionDiagnostics>(
+    diarization.transcriptionDiagnostics
+  );
 
   return {
     recordingId: String(asset?.id || ''),
@@ -705,8 +721,10 @@ export function normalizeTranscriptionStatusPayload(
     pipelineGitSha: stringValue(diarization.pipelineGitSha),
     pipelineBuildTime: stringValue(diarization.pipelineBuildTime),
     audioQuality: nullableObject<AudioQualityDiagnostics>(diarization.audioQuality),
-    transcriptionDiagnostics: optionalObject<TranscriptionDiagnostics>(
-      diarization.transcriptionDiagnostics
+    transcriptionDiagnostics,
+    voiceProfileLabeling: resolveVoiceProfileLabeling(
+      transcriptionDiagnostics,
+      diarization.voiceProfileLabeling
     ),
     qualityMetrics: nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics),
     activeJob: Boolean(asset?.activeJob),
@@ -743,6 +761,10 @@ export function normalizeMediaTranscriptionResponse(
   );
   const segments = Array.isArray(response?.segments) ? response.segments : [];
   const durationMs = resolveRemoteTranscriptionDurationMs(response, diarization, segments);
+  const transcriptionDiagnostics =
+    optionalObject<TranscriptionDiagnostics>(diarization.transcriptionDiagnostics) ||
+    response?.transcriptionDiagnostics ||
+    undefined;
 
   return {
     recordingId: String(response?.recordingId || ''),
@@ -764,10 +786,11 @@ export function normalizeMediaTranscriptionResponse(
       nullableObject<AudioQualityDiagnostics>(diarization.audioQuality) ||
       response?.audioQuality ||
       null,
-    transcriptionDiagnostics:
-      optionalObject<TranscriptionDiagnostics>(diarization.transcriptionDiagnostics) ||
-      response?.transcriptionDiagnostics ||
-      undefined,
+    transcriptionDiagnostics,
+    voiceProfileLabeling: resolveVoiceProfileLabeling(
+      transcriptionDiagnostics,
+      response?.voiceProfileLabeling || diarization.voiceProfileLabeling
+    ),
     qualityMetrics:
       nullableObject<TranscriptionQualityMetrics>(diarization.qualityMetrics) ||
       response?.qualityMetrics ||

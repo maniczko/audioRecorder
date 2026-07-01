@@ -251,13 +251,25 @@ paths:
   /media/recordings/{recordingId}/audio:
     put:
       tags: [Media]
-      summary: Upload audio chunk
+      summary: Upload recording audio
+      description: |
+        Uses recordingId as the natural idempotency key. Retrying the same
+        upload for an existing recording returns the current media asset instead
+        of writing another object. Idempotency-Key is optional and is echoed when
+        supplied so clients can correlate retry attempts.
       parameters:
         - in: path
           name: recordingId
           required: true
           schema:
             type: string
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 160
+          description: Optional retry correlation key; recordingId remains authoritative.
       requestBody:
         required: true
         content:
@@ -267,25 +279,98 @@ paths:
               format: binary
       responses:
         '200':
-          description: Chunk uploaded
+          description: Audio uploaded or existing upload returned idempotently
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, workspaceId, sizeBytes, idempotent, idempotencyScope]
+                properties:
+                  id:
+                    type: string
+                  workspaceId:
+                    type: string
+                  sizeBytes:
+                    type: integer
+                  storageMode:
+                    type: string
+                    enum: [single, segmented]
+                  sourceSizeBytes:
+                    type: integer
+                  normalizedSizeBytes:
+                    type: integer
+                  audioValidation:
+                    nullable: true
+                  audioQuality:
+                    nullable: true
+                  idempotent:
+                    type: boolean
+                    description: True when the response returned an already existing asset.
+                  idempotencyKey:
+                    type: string
+                    nullable: true
+                  idempotencyScope:
+                    type: string
+                    example: recordingId
         '400':
           description: Missing workspace header
         '413':
-          description: Chunk too large (>3MB)
+          description: Audio too large
 
   /media/recordings/{recordingId}/audio/chunk:
     put:
       tags: [Media]
       summary: Upload named audio chunk
+      description: |
+        Stores a numbered chunk for chunked upload. When Idempotency-Key is
+        supplied and the same chunk index already exists, the server returns the
+        existing chunk position without overwriting stored bytes.
       parameters:
         - in: path
           name: recordingId
           required: true
           schema:
             type: string
+        - in: query
+          name: index
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+        - in: query
+          name: total
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 600
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 160
       responses:
         '200':
-          description: Chunk saved
+          description: Chunk saved or existing chunk returned idempotently
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [index, total, idempotent, idempotencyScope]
+                properties:
+                  index:
+                    type: integer
+                  total:
+                    type: integer
+                  idempotent:
+                    type: boolean
+                  idempotencyKey:
+                    type: string
+                    nullable: true
+                  idempotencyScope:
+                    type: string
+                    example: recordingId:chunkIndex
         '400':
           description: Invalid parameters
         '413':
@@ -295,15 +380,77 @@ paths:
     post:
       tags: [Media]
       summary: Finalize audio recording
+      description: |
+        Assembles chunks and creates the media asset. If the asset already
+        exists for the same workspace, finalize is retry-safe and returns the
+        existing asset without reassembling or rewriting media.
       parameters:
         - in: path
           name: recordingId
           required: true
           schema:
             type: string
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 160
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspaceId, total]
+              properties:
+                workspaceId:
+                  type: string
+                meetingId:
+                  type: string
+                contentType:
+                  type: string
+                total:
+                  type: integer
+                  minimum: 1
       responses:
         '200':
-          description: Recording finalized
+          description: Recording finalized or existing asset returned idempotently
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, workspaceId, sizeBytes, idempotent, idempotencyScope]
+                properties:
+                  id:
+                    type: string
+                  workspaceId:
+                    type: string
+                  sizeBytes:
+                    type: integer
+                  storageMode:
+                    type: string
+                    enum: [single, segmented]
+                  partCount:
+                    type: integer
+                  sourceSizeBytes:
+                    type: integer
+                  normalizedSizeBytes:
+                    type: integer
+                  durationMs:
+                    type: integer
+                  audioValidation:
+                    nullable: true
+                  audioQuality:
+                    nullable: true
+                  idempotent:
+                    type: boolean
+                  idempotencyKey:
+                    type: string
+                    nullable: true
+                  idempotencyScope:
+                    type: string
+                    example: recordingId
         '400':
           description: Missing workspace ID
 
@@ -311,15 +458,54 @@ paths:
     post:
       tags: [Media]
       summary: Queue transcription job
+      description: |
+        Starts transcription for uploaded audio. If a recording is already
+        processing or diarizing, or a queued durable job is active, the endpoint
+        returns the current status with idempotent=true instead of duplicating work.
       parameters:
         - in: path
           name: recordingId
           required: true
           schema:
             type: string
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 160
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspaceId:
+                  type: string
+                processingMode:
+                  type: string
       responses:
         '202':
-          description: Transcription queued
+          description: Transcription queued or active job returned idempotently
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recordingId, pipelineStatus, idempotent, idempotencyScope]
+                properties:
+                  recordingId:
+                    type: string
+                  pipelineStatus:
+                    type: string
+                  idempotent:
+                    type: boolean
+                  idempotencyKey:
+                    type: string
+                    nullable: true
+                  idempotencyScope:
+                    type: string
+                    example: recordingId
     get:
       tags: [Media]
       summary: Get transcription status/result
@@ -337,15 +523,58 @@ paths:
     post:
       tags: [Media]
       summary: Retry failed transcription
+      description: |
+        Retry is safe for failed or empty completed transcriptions. Retrying an
+        active job returns the current status instead of duplicating work.
+        Retrying an already completed non-empty transcription returns 409 unless
+        the request explicitly sets force=true.
       parameters:
         - in: path
           name: recordingId
           required: true
           schema:
             type: string
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema:
+            type: string
+            maxLength: 160
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                force:
+                  type: boolean
+                  description: Required to retry an already completed non-empty transcription.
+                processingMode:
+                  type: string
       responses:
         '202':
-          description: Retry queued
+          description: Retry queued or active job returned idempotently
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recordingId, pipelineStatus, idempotent, idempotencyScope]
+                properties:
+                  recordingId:
+                    type: string
+                  pipelineStatus:
+                    type: string
+                  idempotent:
+                    type: boolean
+                  idempotencyKey:
+                    type: string
+                    nullable: true
+                  idempotencyScope:
+                    type: string
+                    example: recordingId
+        '409':
+          description: Transcription is already completed and force=true is required.
 
   /media/recordings/{recordingId}/sketchnote:
     post:
