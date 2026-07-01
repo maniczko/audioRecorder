@@ -46,6 +46,50 @@ const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'application/octet-stream': ['.webm'],
 };
 
+const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
+const ACTIVE_TRANSCRIPTION_STATUSES = new Set(['processing', 'diarization']);
+
+function getIdempotencyKey(c: any): string | undefined {
+  const key = String(c.req.header(IDEMPOTENCY_KEY_HEADER) || '').trim();
+  return key ? key.slice(0, 160) : undefined;
+}
+
+function withIdempotencyMetadata<T extends object>(
+  payload: T,
+  c: any,
+  idempotencyScope: string,
+  idempotent = true
+): T & { idempotent: boolean; idempotencyKey?: string; idempotencyScope: string } {
+  return {
+    ...payload,
+    idempotent,
+    idempotencyKey: getIdempotencyKey(c),
+    idempotencyScope,
+  };
+}
+
+function buildExistingMediaAssetResponse(asset: MediaAsset & { duration_ms?: number | null }) {
+  return {
+    id: asset.id,
+    workspaceId: asset.workspace_id,
+    sizeBytes: asset.size_bytes,
+    storageMode: asset.storage_mode || 'single',
+    partCount: asset.storage_mode === 'segmented' ? undefined : 0,
+    sourceSizeBytes: asset.source_size_bytes || asset.size_bytes,
+    normalizedSizeBytes: asset.normalized_size_bytes || asset.size_bytes,
+    durationMs: asset.duration_ms || 0,
+    audioValidation: null,
+    audioQuality: null,
+  };
+}
+
+function isActiveTranscriptionStatus(asset: MediaAsset, isRuntimeActive = false) {
+  const status = String(asset.transcription_status || '')
+    .trim()
+    .toLowerCase();
+  return ACTIVE_TRANSCRIPTION_STATUSES.has(status) || (status === 'queued' && isRuntimeActive);
+}
+
 function extractLeafPathSegment(filePath: string): string {
   return filePath.split(/[\\/]/).filter(Boolean).pop() ?? filePath;
 }
@@ -794,6 +838,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
     await ensureWorkspaceAccess(c, workspaceId);
 
+    const existingAsset =
+      typeof transcriptionService.getMediaAsset === 'function'
+        ? await transcriptionService.getMediaAsset(recordingId)
+        : null;
+    if (existingAsset?.workspace_id === workspaceId) {
+      return c.json(
+        withIdempotencyMetadata(buildExistingMediaAssetResponse(existingAsset), c, 'recordingId'),
+        200
+      );
+    }
+
     // Early rejection based on Content-Length to avoid buffering oversized uploads
     const contentLength = parseInt(c.req.header('content-length') || '0', 10);
     if (contentLength > MAX_RAW_UPLOAD_BYTES) {
@@ -888,13 +943,18 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     });
 
     return c.json(
-      {
-        id: asset.id,
-        workspaceId: asset.workspace_id,
-        sizeBytes: asset.size_bytes,
-        audioValidation,
-        audioQuality: null,
-      },
+      withIdempotencyMetadata(
+        {
+          id: asset.id,
+          workspaceId: asset.workspace_id,
+          sizeBytes: asset.size_bytes,
+          audioValidation,
+          audioQuality: null,
+        },
+        c,
+        'recordingId',
+        false
+      ),
       200
     );
   });
@@ -1148,6 +1208,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
+      const runtimeActive =
+        typeof transcriptionService.isTranscriptionJobActive === 'function'
+          ? Boolean(transcriptionService.isTranscriptionJobActive(recordingId))
+          : false;
+      if (isActiveTranscriptionStatus(asset, runtimeActive)) {
+        return c.json(
+          withIdempotencyMetadata(normalizeTranscriptionStatusPayload(asset), c, 'recordingId'),
+          202
+        );
+      }
+
       // Guard against OOM - reject when memory is already tight
       const memPressure = getMemoryPressure();
       if (!memPressure.ok) {
@@ -1167,7 +1238,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           requestId: c.get('reqId'),
         });
 
-        return c.json(normalizeTranscriptionStatusPayload(result), 202);
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(result),
+            c,
+            'recordingId',
+            false
+          ),
+          202
+        );
       } catch (err: any) {
         console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
         const status = err?.statusCode || err?.status || 500;
@@ -1195,11 +1274,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         body.force !== true
       ) {
         return c.json(
-          {
-            message: 'Transkrypcja jest juz gotowa. Wymus ponowne przetwarzanie tylko swiadomie.',
-            recordingId,
-            pipelineStatus: 'done',
-          },
+          withIdempotencyMetadata(
+            {
+              code: 'transcription_already_completed',
+              message: 'Transkrypcja jest juz gotowa. Wymus ponowne przetwarzanie tylko swiadomie.',
+              recordingId,
+              pipelineStatus: 'done',
+            },
+            c,
+            'recordingId'
+          ),
           409
         );
       }
@@ -1241,7 +1325,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             force: body.force === true,
           }
         );
-        return c.json(normalizeTranscriptionStatusPayload(currentAsset || asset), 202);
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(currentAsset || asset),
+            c,
+            'recordingId'
+          ),
+          202
+        );
       }
       // If the local file is gone (e.g. after Railway redeploy), try the same
       // reconstructed remote candidates as the audio download endpoint.
@@ -1282,7 +1373,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             force: body.force === true,
           }
         );
-        return c.json(normalizeTranscriptionStatusPayload(result), 202);
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(result),
+            c,
+            'recordingId',
+            false
+          ),
+          202
+        );
       } catch (err: any) {
         console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
         const status = err?.statusCode || err?.status || 500;
@@ -2113,6 +2212,15 @@ Important:
       }
       if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
 
+      const chunksDir = path.join(config.uploadDir, 'chunks');
+      mkdirSync(chunksDir, { recursive: true });
+
+      const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
+      if (getIdempotencyKey(c) && existsSync(chunkPath)) {
+        return c.json(withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex'), 200);
+      }
+
       const buffer = await c.req.arrayBuffer();
       if (buffer.byteLength > 6 * 1024 * 1024)
         return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
@@ -2132,12 +2240,6 @@ Important:
         );
       }
 
-      const chunksDir = path.join(config.uploadDir, 'chunks');
-      mkdirSync(chunksDir, { recursive: true });
-
-      const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
-      const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
-
       try {
         await writeFile(chunkPath, Buffer.from(buffer));
       } catch (writeErr: any) {
@@ -2155,7 +2257,10 @@ Important:
         throw writeErr;
       }
 
-      return c.json({ index, total }, 200);
+      return c.json(
+        withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex', false),
+        200
+      );
     }
   );
 
@@ -2182,17 +2287,7 @@ Important:
           : null;
       if (existingAsset?.workspace_id === workspaceId) {
         return c.json(
-          {
-            id: existingAsset.id,
-            workspaceId: existingAsset.workspace_id,
-            sizeBytes: existingAsset.size_bytes,
-            storageMode: existingAsset.storage_mode || 'single',
-            partCount: existingAsset.storage_mode === 'segmented' ? undefined : 0,
-            sourceSizeBytes: existingAsset.source_size_bytes || existingAsset.size_bytes,
-            normalizedSizeBytes: existingAsset.normalized_size_bytes || existingAsset.size_bytes,
-            durationMs: existingAsset.duration_ms || 0,
-            audioQuality: null,
-          },
+          withIdempotencyMetadata(buildExistingMediaAssetResponse(existingAsset), c, 'recordingId'),
           200
         );
       }
@@ -2336,18 +2431,23 @@ Important:
       scheduleAudioQuality(recordingId, asset);
 
       return c.json(
-        {
-          id: asset.id,
-          workspaceId: asset.workspace_id,
-          sizeBytes: asset.size_bytes,
-          storageMode: asset.storage_mode || (localParts.length ? 'segmented' : 'single'),
-          partCount: localParts.length,
-          sourceSizeBytes: fullStats.size,
-          normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
-          durationMs: normalizedAudio?.durationMs || 0,
-          audioValidation,
-          audioQuality: null,
-        },
+        withIdempotencyMetadata(
+          {
+            id: asset.id,
+            workspaceId: asset.workspace_id,
+            sizeBytes: asset.size_bytes,
+            storageMode: asset.storage_mode || (localParts.length ? 'segmented' : 'single'),
+            partCount: localParts.length,
+            sourceSizeBytes: fullStats.size,
+            normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
+            durationMs: normalizedAudio?.durationMs || 0,
+            audioValidation,
+            audioQuality: null,
+          },
+          c,
+          'recordingId',
+          false
+        ),
         200
       );
     }
