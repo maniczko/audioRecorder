@@ -1455,6 +1455,12 @@ describe('StudioMeetingView', () => {
   });
 
   test.each([
+    ['missing_speaker_id', 400, /Wybierz mowce i osobe przed zapisaniem probki glosu\./i],
+    [
+      'transcription_not_ready',
+      409,
+      /Profil glosu mozna zapisac dopiero po gotowej transkrypcji\./i,
+    ],
     [
       'speaker_segment_not_found',
       422,

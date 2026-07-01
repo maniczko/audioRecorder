@@ -871,6 +871,8 @@ describe('Regression: Issue #0 - apiRequest preserves structured API error field
           message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
           stage: 'audio_source',
           requestId: 'req-voice-1',
+          retryable: false,
+          userAction: 'reimport_audio',
         }),
       text: () => Promise.resolve(''),
       headers: new Headers({ 'content-type': 'application/json' }),
@@ -888,6 +890,8 @@ describe('Regression: Issue #0 - apiRequest preserves structured API error field
       code: 'audio_source_unavailable',
       stage: 'audio_source',
       requestId: 'req-voice-1',
+      retryable: false,
+      userAction: 'reimport_audio',
     });
   });
 
@@ -901,6 +905,8 @@ describe('Regression: Issue #0 - apiRequest preserves structured API error field
           message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
           stage: 'audio_source',
           requestId: 'req-voice-424',
+          retryable: false,
+          userAction: 'reimport_audio',
         }),
       text: () => Promise.resolve(''),
       headers: new Headers({ 'content-type': 'application/json' }),
@@ -918,6 +924,8 @@ describe('Regression: Issue #0 - apiRequest preserves structured API error field
       code: 'audio_source_unavailable',
       stage: 'audio_source',
       requestId: 'req-voice-424',
+      retryable: false,
+      userAction: 'reimport_audio',
     });
   });
 });

@@ -287,11 +287,16 @@ function buildVoiceProfileErrorBody(input: {
   segmentCount?: number;
   matchedSegmentCount?: number;
   requestId?: string;
+  retryable?: boolean;
+  userAction?: string;
 }) {
+  const defaults = getVoiceProfileErrorDefaults(input.code);
   return {
     code: input.code,
     message: input.message,
     stage: input.stage,
+    retryable: input.retryable ?? defaults.retryable,
+    userAction: input.userAction || defaults.userAction,
     recordingId: input.recordingId,
     speakerId: input.speakerId || undefined,
     speakerName: input.speakerName || undefined,
@@ -301,7 +306,30 @@ function buildVoiceProfileErrorBody(input: {
   };
 }
 
-function classifyVoiceProfileEnrollmentError(error: any) {
+function getVoiceProfileErrorDefaults(code: string) {
+  const defaults: Record<string, { retryable: boolean; userAction: string }> = {
+    missing_speaker_id: { retryable: false, userAction: 'select_speaker' },
+    missing_speaker_name: { retryable: false, userAction: 'select_speaker' },
+    recording_not_found: { retryable: false, userAction: 'refresh_recording' },
+    transcription_not_ready: { retryable: true, userAction: 'wait_for_transcription' },
+    speaker_segment_not_found: { retryable: false, userAction: 'select_speaker_segment' },
+    audio_source_unavailable: { retryable: false, userAction: 'reimport_audio' },
+    embedding_failed: { retryable: true, userAction: 'retry_later' },
+    profile_save_failed: { retryable: true, userAction: 'retry' },
+  };
+  return defaults[code] || { retryable: false, userAction: 'contact_support' };
+}
+
+type VoiceProfileEnrollmentErrorDetails = {
+  code: string;
+  stage: string;
+  status: number;
+  message: string;
+  retryable?: boolean;
+  userAction?: string;
+};
+
+function classifyVoiceProfileEnrollmentError(error: any): VoiceProfileEnrollmentErrorDetails {
   const message = String(error?.message || '');
   const lower = message.toLowerCase();
   if (error?.code && error?.stage) {
@@ -310,6 +338,8 @@ function classifyVoiceProfileEnrollmentError(error: any) {
       stage: String(error.stage),
       status: Number(error.statusCode || error.status || 500) || 500,
       message,
+      retryable: typeof error.retryable === 'boolean' ? error.retryable : undefined,
+      userAction: typeof error.userAction === 'string' ? error.userAction : undefined,
     };
   }
   if (
@@ -1536,6 +1566,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         segmentCount,
         matchedSegmentCount,
         requestId,
+        retryable: details.retryable,
+        userAction: details.userAction,
       });
       console.warn('[voice-profile] Enrollment failed', body);
       return c.json(body, details.status as any);
