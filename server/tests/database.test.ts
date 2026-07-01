@@ -503,6 +503,29 @@ describe('Database (Async Worker SQLite)', () => {
         '2026-06-20T09:00:00.000Z',
       ]
     );
+    await db._execute(
+      `INSERT INTO voice_profiles (
+        id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count,
+        threshold, created_at, updated_at, profile_source, embedding_model, embedding_version,
+        created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        'vp_export_missing_sample',
+        'user_export',
+        'ws_export',
+        'Anna',
+        path.join(testUploadDir, 'missing-voice-profile-sample.wav'),
+        JSON.stringify([0.1, 0.2, 0.3]),
+        2,
+        0.87,
+        '2026-06-20T09:10:00.000Z',
+        '2026-06-20T09:20:00.000Z',
+        'manual_upload',
+        'voice-profile-embedding',
+        '1',
+        'user_export',
+      ]
+    );
     await db.writeAuditLog({
       workspaceId: 'ws_export',
       actorUserId: 'user_export',
@@ -512,10 +535,20 @@ describe('Database (Async Worker SQLite)', () => {
       metadata: { source: 'test' },
     });
 
-    const payload = await db.exportWorkspaceData('ws_export', {
-      actorUserId: 'user_export',
-      source: 'test-export',
-    });
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      ...previousFsState,
+      existsSync: false,
+    };
+    let payload;
+    try {
+      payload = await db.exportWorkspaceData('ws_export', {
+        actorUserId: 'user_export',
+        source: 'test-export',
+      });
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+    }
 
     expect(payload).toMatchObject({
       schemaVersion: 'workspace-export-v1',
@@ -535,6 +568,27 @@ describe('Database (Async Worker SQLite)', () => {
         recordingConsent: { policyVersion: 'recording-consent-v1' },
       }),
     });
+    expect(payload.voiceProfileSamples).toEqual([
+      expect.objectContaining({
+        id: 'vp_export_missing_sample',
+        speakerName: 'Anna',
+        userId: 'user_export',
+        audioPath: expect.stringContaining('missing-voice-profile-sample.wav'),
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        sampleFileExists: false,
+        sampleCount: 2,
+        threshold: 0.87,
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'user_export',
+        createdAt: '2026-06-20T09:10:00.000Z',
+        updatedAt: '2026-06-20T09:20:00.000Z',
+      }),
+    ]);
+    expect(payload.voiceProfileSamples[0]).not.toHaveProperty('embedding');
+    expect(payload.voiceProfileSamples[0]).not.toHaveProperty('embeddingJson');
+    expect(payload.voiceProfileSamples[0]).not.toHaveProperty('embedding_json');
     expect(payload.operational.auditLogs).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ action: 'recording.created', entityId: 'rec_export' }),
@@ -547,6 +601,8 @@ describe('Database (Async Worker SQLite)', () => {
     expect(JSON.parse(exportAudit.metadata_json)).toMatchObject({
       source: 'test-export',
       mediaAssetCount: 1,
+      voiceProfileSampleCount: 1,
+      missingVoiceProfileSampleCount: 1,
     });
   });
 
