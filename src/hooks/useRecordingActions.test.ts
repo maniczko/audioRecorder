@@ -645,6 +645,8 @@ describe('useRecordingActions', () => {
           code: 'audio_source_unavailable',
           stage: 'audio_source',
           requestId: 'req-voice-1',
+          retryable: false,
+          userAction: 'reimport_audio',
         })
       );
       const readyRecording = {
@@ -667,6 +669,8 @@ describe('useRecordingActions', () => {
         code: 'audio_source_unavailable',
         stage: 'audio_source',
         requestId: 'req-voice-1',
+        retryable: false,
+        userAction: 'reimport_audio',
       });
     });
 
@@ -679,6 +683,8 @@ describe('useRecordingActions', () => {
         stage: 'audio_source',
         message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
         requestId: 'req-preflight-424',
+        retryable: false,
+        userAction: 'reimport_audio',
       });
       const readyRecording = {
         ...baseMeeting.recordings[0],
@@ -700,6 +706,8 @@ describe('useRecordingActions', () => {
         code: 'audio_source_unavailable',
         stage: 'audio_source',
         requestId: 'req-preflight-424',
+        retryable: false,
+        userAction: 'reimport_audio',
       });
       expect(apiRequestMock).toHaveBeenCalledTimes(1);
       expect(apiRequestMock).toHaveBeenCalledWith(
@@ -709,6 +717,44 @@ describe('useRecordingActions', () => {
           body: { speakerId: '0', speakerName: 'Anna' },
         }
       );
+    });
+
+    test('preserves not-ready retry guidance from voice profile preflight', async () => {
+      remoteApiEnabledMock.mockReturnValue(true);
+      apiRequestMock.mockResolvedValueOnce({
+        ready: false,
+        code: 'transcription_not_ready',
+        status: 409,
+        stage: 'transcript',
+        message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.',
+        requestId: 'req-preflight-409',
+        retryable: true,
+        userAction: 'wait_for_transcription',
+      });
+      const readyRecording = {
+        ...baseMeeting.recordings[0],
+        id: 'recording_ready',
+        pipelineStatus: 'done',
+        transcript: [{ id: 's1', speakerId: '0', text: 'Dobra probka glosu', timestamp: 0 }],
+      };
+
+      const { result } = setupHook(
+        { ...baseMeeting, recordings: [readyRecording] },
+        readyRecording
+      );
+
+      const error = await result.current.autoCreateVoiceProfile('0', 'Anna').catch((e) => e);
+
+      expect(error).toMatchObject({
+        message: 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.',
+        status: 409,
+        code: 'transcription_not_ready',
+        stage: 'transcript',
+        requestId: 'req-preflight-409',
+        retryable: true,
+        userAction: 'wait_for_transcription',
+      });
+      expect(apiRequestMock).toHaveBeenCalledTimes(1);
     });
 
     test('uses explicit display recording id when selectedRecording is missing', async () => {

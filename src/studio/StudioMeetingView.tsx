@@ -1579,6 +1579,9 @@ export default function StudioMeetingView({
     if (code === 'missing_speaker_id' || code === 'missing_speaker_name') {
       return 'Wybierz mowce i osobe przed zapisaniem probki glosu.';
     }
+    if (code === 'transcription_not_ready') {
+      return 'Profil glosu mozna zapisac dopiero po gotowej transkrypcji.';
+    }
 
     return hasActionableMessage
       ? rawMessage
