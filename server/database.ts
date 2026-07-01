@@ -2883,6 +2883,13 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && ['queued', 'retryable_failed'].includes(String(job.status))) {
+      await this._execute(
+        "UPDATE transcription_jobs SET status = 'running', updated_at = ? WHERE id = ?",
+        [this.nowIso(), job.id]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 
@@ -2939,6 +2946,20 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && job.status !== 'completed') {
+      const timestamp = this.nowIso();
+      await this._execute(
+        `UPDATE transcription_jobs
+         SET status = 'completed',
+             locked_by = '',
+             locked_until = '',
+             completed_at = ?,
+             updated_at = ?
+         WHERE id = ?`,
+        [timestamp, timestamp, job.id]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 
@@ -2987,6 +3008,25 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && !['completed', 'cancelled'].includes(String(job.status))) {
+      await this._execute(
+        `UPDATE transcription_jobs
+         SET status = 'failed',
+             locked_by = '',
+             locked_until = '',
+             last_error_code = ?,
+             last_error_message = ?,
+             updated_at = ?
+         WHERE id = ?`,
+        [
+          this._clean(transcriptionDiagnostics?.errorCode || transcriptionDiagnostics?.code || ''),
+          this._clean(errorMessage),
+          this.nowIso(),
+          job.id,
+        ]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 

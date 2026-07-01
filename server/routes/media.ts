@@ -1159,6 +1159,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
       const runtimeStatus = getTranscriptionRuntimeStatus(recordingId);
+      const durableJob =
+        typeof transcriptionService.getDurableTranscriptionJob === 'function'
+          ? await transcriptionService.getDurableTranscriptionJob(recordingId)
+          : null;
+      const durableJobActive = ['queued', 'running', 'retryable_failed'].includes(
+        String(durableJob?.status || '')
+      );
 
       // Detect true orphaned processing. Active long-audio jobs can run well
       // past five minutes, so only inactive stale assets are marked failed.
@@ -1167,7 +1174,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
         Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
-        !runtimeStatus.activeJob
+        !runtimeStatus.activeJob &&
+        !durableJobActive
       ) {
         if (!hasTranscriptSegments(asset)) {
           console.warn(
@@ -1192,6 +1200,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         {
           ...normalizeTranscriptionStatusPayload(asset),
           ...runtimeStatus,
+          ...(durableJobActive ? { activeJob: true, durableJobStatus: durableJob.status } : {}),
           ...(partProgress ? { partProgress } : {}),
         },
         200

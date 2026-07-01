@@ -1546,6 +1546,35 @@ describe('Media Routes', () => {
       expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
     });
 
+    it('does not mark stale processing as failed while a durable job is active', async () => {
+      const staleDate = new Date(Date.now() - 40 * 60 * 1000).toISOString();
+      mockTranscriptionService.getDurableTranscriptionJob = vi.fn().mockResolvedValue({
+        status: 'queued',
+      });
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_durable_active',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: staleDate,
+      });
+
+      const res = await app.request('/media/recordings/rec_durable_active/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toMatchObject({
+        pipelineStatus: 'processing',
+        activeJob: true,
+        durableJobStatus: 'queued',
+      });
+      expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+    });
+
     it('returns queued runtime diagnostics for pending jobs', async () => {
       mockTranscriptionService.getTranscriptionRuntimeStatus.mockReturnValue({
         activeJob: true,
