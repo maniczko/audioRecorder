@@ -368,6 +368,20 @@ function hasVoiceProfileEmbedding(profile: any) {
   }
 }
 
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+
+function voiceProfileMetadata(profile: any) {
+  const fallbackCreatedAt = profile?.created_at ?? profile?.createdAt;
+  const fallbackUserId = profile?.user_id ?? profile?.userId ?? '';
+  return {
+    source: profile?.profile_source ?? profile?.source ?? 'unknown',
+    model: profile?.embedding_model ?? profile?.model ?? 'unknown',
+    version: profile?.embedding_version ?? profile?.version ?? VOICE_PROFILE_EMBEDDING_VERSION,
+    createdBy: profile?.created_by ?? profile?.createdBy ?? fallbackUserId,
+    updatedAt: profile?.updated_at ?? profile?.updatedAt ?? fallbackCreatedAt,
+  };
+}
+
 function buildVoiceProfileResponse(profile: any) {
   const sampleCount = Number.isFinite(Number(profile?.sample_count ?? profile?.sampleCount))
     ? Number(profile?.sample_count ?? profile?.sampleCount)
@@ -381,6 +395,7 @@ function buildVoiceProfileResponse(profile: any) {
     sampleCount,
     threshold: typeof profile?.threshold === 'number' ? profile.threshold : 0.82,
     isUpdate: Boolean(profile?.isUpdate),
+    ...voiceProfileMetadata(profile),
   };
 }
 

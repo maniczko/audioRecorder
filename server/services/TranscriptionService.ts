@@ -7,6 +7,10 @@ import {
 } from '../lib/mediaStoragePolicy.ts';
 import { requireVoiceProfileEmbedding } from '../lib/voiceProfileEmbedding.ts';
 
+const VOICE_PROFILE_EMBEDDING_MODEL = 'voice-profile-embedding';
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+const VOICE_PROFILE_TRANSCRIPT_SOURCE = 'transcript_speaker';
+
 type VoiceProfileEnrollmentCode =
   | 'speaker_segment_not_found'
   | 'audio_source_unavailable'
@@ -1114,6 +1118,10 @@ export default class TranscriptionService extends EventEmitter {
           speakerName,
           audioPath: newPath,
           embedding,
+          source: VOICE_PROFILE_TRANSCRIPT_SOURCE,
+          model: VOICE_PROFILE_EMBEDDING_MODEL,
+          version: VOICE_PROFILE_EMBEDDING_VERSION,
+          createdBy: userId,
         });
       } catch (error) {
         throw voiceProfileError(

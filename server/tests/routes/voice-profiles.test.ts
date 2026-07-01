@@ -38,6 +38,11 @@ describe('Voice Profiles Routes', () => {
         speaker_name: 'John',
         user_id: 'u1',
         created_at: '2024-01-01',
+        updated_at: '2024-01-03',
+        profile_source: 'manual_upload',
+        embedding_model: 'voice-profile-embedding',
+        embedding_version: '1',
+        created_by: 'creator_1',
         embedding_json: JSON.stringify([0.1, 0.2, 0.3]),
         sample_count: 3,
         threshold: 0.87,
@@ -66,13 +71,25 @@ describe('Voice Profiles Routes', () => {
       hasEmbedding: true,
       sampleCount: 3,
       threshold: 0.87,
+      source: 'manual_upload',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'creator_1',
+      updatedAt: '2024-01-03',
     });
     expect(data.profiles[0]).not.toHaveProperty('embedding_json');
+    expect(data.profiles[0]).not.toHaveProperty('embeddingJson');
     expect(data.profiles[0]).not.toHaveProperty('embedding');
+    expect(data.profiles[0]).not.toHaveProperty('vector');
     expect(data.profiles[1]).toMatchObject({
       hasEmbedding: false,
       sampleCount: 0,
       threshold: 0.82,
+      source: 'unknown',
+      model: 'unknown',
+      version: '1',
+      createdBy: 'u1',
+      updatedAt: '2024-01-02',
     });
     expect(mockWorkspaceService.getWorkspaceVoiceProfiles).toHaveBeenCalledWith('w1');
   });
@@ -94,6 +111,11 @@ describe('Voice Profiles Routes', () => {
       workspace_id: 'w1',
       speaker_name: 'Alice',
       created_at: '2024',
+      updated_at: '2024-01-04',
+      profile_source: 'manual_upload',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'u1',
       sample_count: 1,
       threshold: 0.82,
       isUpdate: false,
@@ -112,11 +134,29 @@ describe('Voice Profiles Routes', () => {
     if (res.status !== 201) console.log('POST /voice-profiles error:', await res.clone().json());
     expect(res.status).toBe(201);
     const data = await res.json();
-    expect(data.id).toBe('vp_new');
-    expect(data.speakerName).toBe('Alice');
+    expect(data).toMatchObject({
+      id: 'vp_new',
+      speakerName: 'Alice',
+      source: 'manual_upload',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'u1',
+      updatedAt: '2024-01-04',
+    });
+    expect(data).not.toHaveProperty('embedding_json');
+    expect(data).not.toHaveProperty('embeddingJson');
+    expect(data).not.toHaveProperty('embedding');
+    expect(data).not.toHaveProperty('vector');
     expect(mockTranscriptionService.computeEmbedding).toHaveBeenCalled();
     expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ speakerName: 'Alice', workspaceId: 'w1' })
+      expect.objectContaining({
+        speakerName: 'Alice',
+        workspaceId: 'w1',
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'u1',
+      })
     );
   });
 

@@ -291,6 +291,22 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     }
   };
 
+  const VOICE_PROFILE_EMBEDDING_MODEL = 'voice-profile-embedding';
+  const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+  const VOICE_PROFILE_MANUAL_SOURCE = 'manual_upload';
+
+  const voiceProfileMetadata = (profile: any) => {
+    const fallbackCreatedAt = profile?.created_at ?? profile?.createdAt;
+    const fallbackUserId = profile?.user_id ?? profile?.userId ?? '';
+    return {
+      source: profile?.profile_source ?? profile?.source ?? 'unknown',
+      model: profile?.embedding_model ?? profile?.model ?? 'unknown',
+      version: profile?.embedding_version ?? profile?.version ?? VOICE_PROFILE_EMBEDDING_VERSION,
+      createdBy: profile?.created_by ?? profile?.createdBy ?? fallbackUserId,
+      updatedAt: profile?.updated_at ?? profile?.updatedAt ?? fallbackCreatedAt,
+    };
+  };
+
   // --- Voice Profiles ---
   router.use('/voice-profiles', authMiddleware);
   router.use('/voice-profiles/*', authMiddleware);
@@ -306,6 +322,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       hasEmbedding: hasVoiceProfileEmbedding(p),
       sampleCount: Number.isFinite(Number(p.sample_count)) ? Number(p.sample_count) : 1,
       threshold: typeof p.threshold === 'number' ? p.threshold : 0.82,
+      ...voiceProfileMetadata(p),
     }));
     const payload: VoiceProfilesListPayload = { profiles };
     return c.json(payload, 200);
@@ -365,6 +382,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       speakerName: speakerName.trim(),
       audioPath,
       embedding,
+      source: VOICE_PROFILE_MANUAL_SOURCE,
+      model: VOICE_PROFILE_EMBEDDING_MODEL,
+      version: VOICE_PROFILE_EMBEDDING_VERSION,
+      createdBy: session.user_id,
     });
 
     const sampleCount = profile.sample_count || 1;
@@ -378,6 +399,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
         sampleCount,
         threshold: typeof profile.threshold === 'number' ? profile.threshold : 0.82,
         isUpdate: Boolean(profile.isUpdate),
+        ...voiceProfileMetadata(profile),
       },
       status
     );
