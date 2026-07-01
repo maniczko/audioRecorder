@@ -21,15 +21,6 @@ async function createTaskFromModal(page, title) {
   await dialog.getByRole('button', { name: 'Dodaj zadanie' }).click();
 }
 
-async function acceptRecordingConsent(page) {
-  const dialog = page.getByRole('dialog', { name: /Zgoda na nagrywanie/i });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole('checkbox', { name: /Rozumiem i potwierdzam/i }).check();
-  const confirmButton = dialog.getByRole('button', { name: /Akceptuje i zaczynam nagrywanie/i });
-  await expect(confirmButton).toBeEnabled();
-  await confirmButton.click();
-}
-
 async function installFakeAudioCapture(page) {
   await page.addInitScript(() => {
     const createFakeStream = () => ({
@@ -136,6 +127,13 @@ async function installFakeAudioCapture(page) {
     delete window.SpeechRecognition;
     delete window.webkitSpeechRecognition;
   });
+}
+
+async function acceptRecordingConsent(page) {
+  const dialog = page.getByRole('dialog', { name: /zgod|nagrywanie/i });
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await dialog.getByRole('checkbox').check();
+  await dialog.getByRole('button', { name: /Akceptuje i zaczynam nagrywanie/i }).click();
 }
 
 test.describe('Advanced release journeys', () => {

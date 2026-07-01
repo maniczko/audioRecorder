@@ -45,7 +45,7 @@
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
       "expectedActionCount": 84,
-      "fingerprint": "0a3b9161a9cc56a8",
+      "fingerprint": "594827a76cd40983",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -64,7 +64,7 @@
       "screen": "Recordings",
       "file": "src/RecordingsTab.tsx",
       "expectedActionCount": 25,
-      "fingerprint": "18465b0f120e00af",
+      "fingerprint": "9e4673edeb1f63c1",
       "contractStatus": "covered",
       "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
       "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
@@ -74,10 +74,13 @@
       "screen": "Calendar",
       "file": "src/CalendarTab.tsx",
       "expectedActionCount": 28,
-      "fingerprint": "f885ee599e4dcdca",
+      "fingerprint": "0622033559f2fb5a",
       "contractStatus": "covered",
       "testFiles": ["src/CalendarTab.test.tsx"],
-      "testEvidence": ["opens StudioBriefModal when + button is clicked in month view"],
+      "testEvidence": [
+        "opens StudioBriefModal when + button is clicked in month view",
+        "exposes stable production action ids and accessible names for calendar controls"
+      ],
       "owner": "frontend-calendar"
     },
     {
@@ -122,10 +125,10 @@
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
       "expectedActionCount": 37,
-      "fingerprint": "5ae5c52d48f54aef",
+      "fingerprint": "f2f33d285234a017",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
-      "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone"],
+      "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone", "Voice Profiles Management"],
       "owner": "frontend-profile"
     },
     {

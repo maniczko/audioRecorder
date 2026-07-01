@@ -11,7 +11,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const SRC_DIR = path.join(__dirname, '..', 'src');
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
@@ -35,15 +34,6 @@ function ensureReportsDir() {
   if (!fs.existsSync(REPORTS_DIR)) {
     fs.mkdirSync(REPORTS_DIR, { recursive: true });
   }
-}
-
-function isDecorativeImageLine(line) {
-  return (
-    /<img[^>]*alt\s*=\s*["']{2}/i.test(line) &&
-    (/\saria-hidden\s*=\s*["']true["']/i.test(line) ||
-      /\srole\s*=\s*["']presentation["']/i.test(line) ||
-      /\srole\s*=\s*["']none["']/i.test(line))
-  );
 }
 
 /**
@@ -72,7 +62,10 @@ function checkAltText() {
       }
 
       // Check for empty alt
-      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line) && !isDecorativeImageLine(line)) {
+      if (
+        /<img[^>]*alt\s*=\s*["']{2}/i.test(line) &&
+        !/aria-hidden\s*=\s*["']true["']/i.test(line)
+      ) {
         issues.push({
           file: path.relative(SRC_DIR, file),
           line: index + 1,
@@ -353,4 +346,4 @@ if (require.main === module) {
   runAudit();
 }
 
-module.exports = { runAudit, checkAltText, checkAriaLabels, isDecorativeImageLine };
+module.exports = { runAudit, checkAltText, checkAriaLabels };

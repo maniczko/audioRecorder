@@ -468,4 +468,74 @@ describe('State Routes', () => {
     );
     expect(mockWorkspaceService.saveWorkspaceState).toHaveBeenCalledTimes(2);
   });
+
+  // ----------------------------------------------------------------
+  // Issue #0 - Workspace state PATCH lock can hang production sync
+  // Date: 2026-06-29
+  // Bug: A never-settling state operation kept the per-workspace PATCH
+  //      lock forever, so retries and production persistence checks hung.
+  // Fix: PATCH operations time out and release the lock for a retry.
+  // ----------------------------------------------------------------
+  describe('Regression: Issue #0 - workspace PATCH lock timeout', () => {
+    it('PATCH /state/workspaces/:workspaceId - releases lock after a hung operation', async () => {
+      const previousTimeout = process.env.WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS;
+      process.env.WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS = '15';
+      const baseState = {
+        meetings: [],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+        updatedAt: '2026-06-29T00:00:00.000Z',
+      };
+      const patch = (body: unknown) =>
+        app.request('/state/workspaces/w123', {
+          method: 'PATCH',
+          headers: {
+            Authorization: 'Bearer valid_test_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+      const waitForResponse = async (promise: Promise<Response>, ms = 250) =>
+        await Promise.race([
+          promise,
+          new Promise<'timed-out'>((resolve) => setTimeout(() => resolve('timed-out'), ms)),
+        ]);
+
+      try {
+        mockWorkspaceService.getWorkspaceState.mockImplementationOnce(() => new Promise(() => {}));
+
+        const timedOut = await waitForResponse(
+          patch({ meetings: { upsert: [{ id: 'meeting_hung', title: 'Hung' }] } })
+        );
+        expect(timedOut).not.toBe('timed-out');
+        expect((timedOut as Response).status).toBe(503);
+
+        mockWorkspaceService.getWorkspaceState.mockResolvedValueOnce(baseState);
+        mockWorkspaceService.saveWorkspaceState.mockResolvedValueOnce({
+          ...baseState,
+          meetings: [{ id: 'meeting_retry_after_timeout', title: 'Retry after timeout' }],
+        });
+
+        const retry = await waitForResponse(
+          patch({
+            meetings: {
+              upsert: [{ id: 'meeting_retry_after_timeout', title: 'Retry after timeout' }],
+            },
+          }),
+          500
+        );
+        expect(retry).not.toBe('timed-out');
+        expect((retry as Response).status).toBe(200);
+      } finally {
+        if (previousTimeout === undefined) {
+          delete process.env.WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS;
+        } else {
+          process.env.WORKSPACE_STATE_PATCH_LOCK_TIMEOUT_MS = previousTimeout;
+        }
+      }
+    });
+  });
 });

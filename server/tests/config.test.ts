@@ -87,6 +87,40 @@ describe('config.ts — validateRequiredApiKeys', () => {
     }
   });
 
+  test('logs sanitized CORS startup configuration without secrets', async () => {
+    const previousEnv = { ...process.env };
+
+    try {
+      process.env.OPENAI_API_KEY = 'sk-secret-openai';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_service_role';
+      process.env.NODE_ENV = 'production';
+      process.env.RAILWAY_PROJECT_ID = 'railway-project-test';
+      process.env.VOICELOG_ALLOWED_ORIGINS =
+        'https://voicelog-audiorecorder.vercel.app,https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app';
+      process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS = 'false';
+
+      const { validateRequiredApiKeys } = await import('../config.js');
+      validateRequiredApiKeys();
+
+      expect(logSpy).toHaveBeenCalledWith(
+        '[Config] CORS',
+        expect.objectContaining({
+          allowedOriginCount: 2,
+          allowVercelPreviews: false,
+          nodeEnv: 'production',
+          productionDeployment: true,
+        })
+      );
+      const serializedLogs = logSpy.mock.calls.map((args) => JSON.stringify(args)).join('\n');
+      expect(serializedLogs).toContain('https://voicelog-audiorecorder.vercel.app');
+      expect(serializedLogs).not.toContain('sk-secret-openai');
+      expect(serializedLogs).not.toContain('sb_secret_service_role');
+    } finally {
+      process.env = previousEnv;
+    }
+  });
+
   test('blocks Railway production when SUPABASE_URL is a Postgres URL instead of project API URL', async () => {
     const previousEnv = { ...process.env };
 

@@ -31,9 +31,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build project
-        run: pnpm run build
-
       - name: Check bundle size
         uses: preactjs/compressed-size-action@v3
         with:

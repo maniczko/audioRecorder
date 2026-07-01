@@ -38,6 +38,11 @@ describe('Voice Profiles Routes', () => {
         speaker_name: 'John',
         user_id: 'u1',
         created_at: '2024-01-01',
+        updated_at: '2024-01-03',
+        profile_source: 'manual_upload',
+        embedding_model: 'voice-profile-embedding',
+        embedding_version: '1',
+        created_by: 'creator_1',
         embedding_json: JSON.stringify([0.1, 0.2, 0.3]),
         sample_count: 3,
         threshold: 0.87,
@@ -66,13 +71,25 @@ describe('Voice Profiles Routes', () => {
       hasEmbedding: true,
       sampleCount: 3,
       threshold: 0.87,
+      source: 'manual_upload',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'creator_1',
+      updatedAt: '2024-01-03',
     });
     expect(data.profiles[0]).not.toHaveProperty('embedding_json');
+    expect(data.profiles[0]).not.toHaveProperty('embeddingJson');
     expect(data.profiles[0]).not.toHaveProperty('embedding');
+    expect(data.profiles[0]).not.toHaveProperty('vector');
     expect(data.profiles[1]).toMatchObject({
       hasEmbedding: false,
       sampleCount: 0,
       threshold: 0.82,
+      source: 'unknown',
+      model: 'unknown',
+      version: '1',
+      createdBy: 'u1',
+      updatedAt: '2024-01-02',
     });
     expect(mockWorkspaceService.getWorkspaceVoiceProfiles).toHaveBeenCalledWith('w1');
   });
@@ -94,6 +111,11 @@ describe('Voice Profiles Routes', () => {
       workspace_id: 'w1',
       speaker_name: 'Alice',
       created_at: '2024',
+      updated_at: '2024-01-04',
+      profile_source: 'manual_upload',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'u1',
       sample_count: 1,
       threshold: 0.82,
       isUpdate: false,
@@ -112,15 +134,65 @@ describe('Voice Profiles Routes', () => {
     if (res.status !== 201) console.log('POST /voice-profiles error:', await res.clone().json());
     expect(res.status).toBe(201);
     const data = await res.json();
-    expect(data.id).toBe('vp_new');
-    expect(data.speakerName).toBe('Alice');
+    expect(data).toMatchObject({
+      id: 'vp_new',
+      speakerName: 'Alice',
+      source: 'manual_upload',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'u1',
+      updatedAt: '2024-01-04',
+    });
+    expect(data).not.toHaveProperty('embedding_json');
+    expect(data).not.toHaveProperty('embeddingJson');
+    expect(data).not.toHaveProperty('embedding');
+    expect(data).not.toHaveProperty('vector');
     expect(mockTranscriptionService.computeEmbedding).toHaveBeenCalled();
     expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ speakerName: 'Alice', workspaceId: 'w1' })
+      expect.objectContaining({
+        speakerName: 'Alice',
+        workspaceId: 'w1',
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'u1',
+      })
     );
   });
 
-  it('DELETE /voice-profiles/:id', async () => {
+  it.each([
+    ['empty array', []],
+    ['null', null],
+    ['undefined', undefined],
+  ])(
+    'POST /voice-profiles - rejects %s embedding before profile persistence',
+    async (_label, embeddingValue) => {
+      mockTranscriptionService.computeEmbedding.mockResolvedValue(embeddingValue);
+
+      const res = await app.request('/voice-profiles', {
+        method: 'POST',
+        headers: {
+          'X-Speaker-Name': 'Alice',
+          'Content-Type': 'audio/webm',
+          Authorization: 'Bearer fake_token',
+        },
+        body: Buffer.from('fake-audio-data-at-least-1k-bytes'.repeat(40)),
+      });
+
+      expect(res.status).toBe(503);
+      await expect(res.json()).resolves.toEqual(
+        expect.objectContaining({
+          code: 'embedding_failed',
+          stage: 'embedding',
+          message: expect.any(String),
+        })
+      );
+      expect(mockWorkspaceService.upsertVoiceProfile).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['owner', 'admin'])('DELETE /voice-profiles/:id - allows %s role', async (role) => {
+    mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
     mockWorkspaceService.deleteVoiceProfile.mockResolvedValue(undefined);
 
     const res = await app.request('/voice-profiles/vp_1', {
@@ -128,7 +200,30 @@ describe('Voice Profiles Routes', () => {
       headers: { Authorization: 'Bearer fake_token' },
     });
     expect(res.status).toBe(204);
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledWith('vp_1', 'w1');
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledWith('vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #1338 - voice profile delete permissions
+  // Date: 2026-07-01
+  // Bug: member/viewer roles could delete voice profiles without admin rights.
+  // Fix: delete requires owner/admin membership before mutating profile data.
+  // -----------------------------------------------------------------
+  it.each(['member', 'viewer'])('DELETE /voice-profiles/:id - blocks %s role', async (role) => {
+    mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
+
+    const res = await app.request('/voice-profiles/vp_1', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.message).toBe('Tylko owner lub admin moze usunac profil glosowy.');
+    expect(mockWorkspaceService.deleteVoiceProfile).not.toHaveBeenCalled();
   });
 
   it('DELETE /voice-profiles/:id - is idempotent on repeated deletes in parallel', async () => {
@@ -149,11 +244,51 @@ describe('Voice Profiles Routes', () => {
     expect(first.status).toBe(204);
     expect(second.status).toBe(204);
     expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledTimes(2);
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(1, 'vp_1', 'w1');
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(2, 'vp_1', 'w1');
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(1, 'vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(2, 'vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
   });
 
   describe('PATCH /voice-profiles/:id/threshold', () => {
+    it.each(['owner', 'admin'])(
+      'PATCH /voice-profiles/:id/threshold - allows %s role',
+      async (role) => {
+        mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
+        mockWorkspaceService.updateVoiceProfileThreshold.mockResolvedValue({
+          id: 'vp_1',
+          threshold: 0.92,
+        });
+
+        const res = await app.request('/voice-profiles/vp_1/threshold', {
+          method: 'PATCH',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ threshold: 0.92 }),
+        });
+
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data).toEqual(
+          expect.objectContaining({
+            id: 'vp_1',
+            threshold: 0.92,
+          })
+        );
+        expect(mockWorkspaceService.updateVoiceProfileThreshold).toHaveBeenCalledWith(
+          'vp_1',
+          'w1',
+          0.92
+        );
+      }
+    );
+
     it('PATCH /voice-profiles/:id/threshold - happy path updates threshold', async () => {
       mockWorkspaceService.updateVoiceProfileThreshold.mockResolvedValue({
         id: 'vp_1',
@@ -493,22 +628,31 @@ describe('Voice Profiles Routes', () => {
       );
     });
 
-    it('PATCH /voice-profiles/:id/threshold - viewer role is blocked from threshold edits', async () => {
-      mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: 'viewer' });
+    // -----------------------------------------------------------------
+    // Issue #1338 - voice profile threshold permissions
+    // Date: 2026-07-01
+    // Bug: member role could update threshold while only viewer was blocked.
+    // Fix: threshold update requires owner/admin membership consistently.
+    // -----------------------------------------------------------------
+    it.each(['member', 'viewer'])(
+      'PATCH /voice-profiles/:id/threshold - blocks %s role',
+      async (role) => {
+        mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
 
-      const res = await app.request('/voice-profiles/vp_1/threshold', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer fake_token',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ threshold: 0.83 }),
-      });
+        const res = await app.request('/voice-profiles/vp_1/threshold', {
+          method: 'PATCH',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ threshold: 0.83 }),
+        });
 
-      expect(res.status).toBe(403);
-      const data = await res.json();
-      expect(data.message).toBe('Tylko owner lub admin moze zmieniac threshold.');
-      expect(mockWorkspaceService.updateVoiceProfileThreshold).not.toHaveBeenCalled();
-    });
+        expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.message).toBe('Tylko owner lub admin moze zmieniac threshold.');
+        expect(mockWorkspaceService.updateVoiceProfileThreshold).not.toHaveBeenCalled();
+      }
+    );
   });
 });

@@ -325,6 +325,62 @@ export async function updateGoogleCalendarEvent(accessToken, eventId, updates) {
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object');
+}
+
+async function readGoogleApiErrorPayload(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text();
+    return text ? JSON.parse(text) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function getNestedRecord(source: unknown, key: string): Record<string, unknown> | undefined {
+  if (!isRecord(source)) return undefined;
+  const value = source[key];
+  return isRecord(value) ? value : undefined;
+}
+
+function getGoogleApiReason(payload: unknown): string {
+  const error = getNestedRecord(payload, 'error');
+  const errors = Array.isArray(error?.errors) ? error.errors : [];
+  const firstError = errors.find(isRecord);
+  const reason = firstError?.reason || error?.status;
+  return typeof reason === 'string' ? reason : '';
+}
+
+function getGoogleApiMessage(payload: unknown): string {
+  const error = getNestedRecord(payload, 'error');
+  const message = error?.message;
+  return typeof message === 'string' ? message : '';
+}
+
+async function createGoogleApiError(response: Response, service: string, action: string) {
+  const payload = await readGoogleApiErrorPayload(response);
+  const reason = getGoogleApiReason(payload);
+  const apiMessage = getGoogleApiMessage(payload);
+  const details = [
+    reason ? `Reason: ${reason}` : '',
+    apiMessage && apiMessage !== reason ? `Message: ${apiMessage}` : '',
+  ].filter(Boolean);
+
+  return Object.assign(
+    new Error(
+      `${service} API returned ${response.status} while ${action}.${
+        details.length ? ` ${details.join(' ')}` : ''
+      }`
+    ),
+    {
+      status: response.status,
+      reason,
+      details: payload,
+    }
+  );
+}
+
 export async function fetchGoogleTaskLists(accessToken: string) {
   const response = await fetch(
     'https://tasks.googleapis.com/tasks/v1/users/@me/lists?maxResults=100',
@@ -336,7 +392,7 @@ export async function fetchGoogleTaskLists(accessToken: string) {
   );
 
   if (!response.ok) {
-    throw new Error(`Google Tasks API returned ${response.status} while loading task lists.`);
+    throw await createGoogleApiError(response, 'Google Tasks', 'loading task lists');
   }
 
   return response.json();
@@ -358,7 +414,7 @@ export async function fetchGoogleTasks(accessToken: string, taskListId: string) 
   );
 
   if (!response.ok) {
-    throw new Error(`Google Tasks API returned ${response.status} while loading tasks.`);
+    throw await createGoogleApiError(response, 'Google Tasks', 'loading tasks');
   }
 
   return response.json();
@@ -375,7 +431,7 @@ export async function createGoogleTask(accessToken: string, taskListId: string, 
   });
 
   if (!response.ok) {
-    throw new Error(`Google Tasks API returned ${response.status} while creating a task.`);
+    throw await createGoogleApiError(response, 'Google Tasks', 'creating a task');
   }
 
   return response.json();
@@ -400,7 +456,7 @@ export async function updateGoogleTask(
   );
 
   if (!response.ok) {
-    throw new Error(`Google Tasks API returned ${response.status} while updating a task.`);
+    throw await createGoogleApiError(response, 'Google Tasks', 'updating a task');
   }
 
   return response.json();
