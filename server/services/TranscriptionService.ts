@@ -6,6 +6,7 @@ import {
   parseMediaManifest,
 } from '../lib/mediaStoragePolicy.ts';
 import { requireVoiceProfileEmbedding } from '../lib/voiceProfileEmbedding.ts';
+import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
 
 const VOICE_PROFILE_EMBEDDING_MODEL = 'voice-profile-embedding';
 const VOICE_PROFILE_EMBEDDING_VERSION = '1';
@@ -612,6 +613,14 @@ export default class TranscriptionService extends EventEmitter {
     if (durableJob) {
       this._durableJobContext.set(recordingId, { asset, options });
     }
+    addPipelineBreadcrumb('Transcription job enqueued.', {
+      requestId: options?.requestId || 'internal-stt',
+      workspaceId: asset?.workspace_id,
+      recordingId,
+      jobId: durableJob?.id || '',
+      pipelineStage: 'job_enqueue',
+      operation: 'transcription.enqueue',
+    });
 
     const rss = process.memoryUsage().rss;
     const atCapacity = this.transcriptionJobs.size >= TranscriptionService.MAX_CONCURRENT_JOBS;
@@ -623,6 +632,19 @@ export default class TranscriptionService extends EventEmitter {
         : `${this.transcriptionJobs.size} concurrent jobs (max ${TranscriptionService.MAX_CONCURRENT_JOBS})`;
       if (durableJob) {
         console.log(`[Pipeline] Durable job ${recordingId} remains queued (${reason}).`);
+        addPipelineBreadcrumb(
+          'Transcription job waiting for capacity.',
+          {
+            requestId: options?.requestId || 'internal-stt',
+            workspaceId: asset?.workspace_id,
+            recordingId,
+            jobId: durableJob?.id || '',
+            pipelineStage: 'job_capacity_wait',
+            operation: 'transcription.enqueue',
+            reason,
+          },
+          { level: 'warning' }
+        );
         if (memoryPressure && typeof global.gc === 'function') global.gc();
         return;
       }
@@ -631,6 +653,19 @@ export default class TranscriptionService extends EventEmitter {
         this._pendingQueue.push({ recordingId, asset, options });
         console.log(
           `[Pipeline] Queued job ${recordingId} (${reason}). Queue size: ${this._pendingQueue.length}`
+        );
+        addPipelineBreadcrumb(
+          'Legacy transcription job queued locally.',
+          {
+            requestId: options?.requestId || 'internal-stt',
+            workspaceId: asset?.workspace_id,
+            recordingId,
+            pipelineStage: 'job_capacity_wait',
+            operation: 'transcription.enqueue',
+            queueSize: this._pendingQueue.length,
+            reason,
+          },
+          { level: 'warning' }
         );
       }
       await this.queueTranscription(recordingId, options);
@@ -755,6 +790,15 @@ export default class TranscriptionService extends EventEmitter {
           jobId: activeJob?.id || '',
           processingMode,
         });
+        addPipelineBreadcrumb('Transcription job started.', {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId,
+          jobId: activeJob?.id || '',
+          pipelineStage: 'job_start',
+          operation: 'transcription.process',
+          processingMode,
+        });
 
         const markProcessingPromise = this.markTranscriptionProcessing(recordingId);
         const [wsState, memberNames, voiceProfiles] = await Promise.all([
@@ -804,6 +848,18 @@ export default class TranscriptionService extends EventEmitter {
               skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
               skipVoiceProfileMatch: processingMode !== 'full',
             });
+        addPipelineBreadcrumb('STT pipeline completed.', {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId,
+          jobId: activeJob?.id || '',
+          pipelineStage: 'stt',
+          operation: 'transcription.process',
+          providerId:
+            result?.transcriptionDiagnostics?.sttProviderInfo?.providerId ||
+            result?.transcriptionDiagnostics?.sttProviderInfo?.provider ||
+            '',
+        });
 
         const isEmptyTranscript = result?.transcriptOutcome === 'empty';
         this.emit(`progress-${recordingId}`, {
@@ -847,6 +903,15 @@ export default class TranscriptionService extends EventEmitter {
           durationMs: (performance.now() - startSTT).toFixed(2),
           confidence: result.diarization?.confidence || 0,
         });
+        addPipelineBreadcrumb('Recording result attached.', {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId,
+          jobId: activeJob?.id || '',
+          pipelineStage: 'attach_completion',
+          operation: 'transcription.complete',
+          durationMs: (performance.now() - startSTT).toFixed(2),
+        });
 
         if (!isEmptyTranscript && result.segments && result.segments.length > 0) {
           this.vectorizeTranscriptionResultToRAG(
@@ -867,17 +932,37 @@ export default class TranscriptionService extends EventEmitter {
             (typeof this.db.getTranscriptionJobByRecordingId === 'function'
               ? await this.db.getTranscriptionJobByRecordingId(recordingId)
               : null);
-          logger.error('[Pipeline] Transcription job failed.', {
+          const errorCode =
+            error?.errorCode ||
+            error?.code ||
+            failureDiagnostics?.errorCode ||
+            'TRANSCRIPTION_JOB_FAILED';
+          const sentryContext = {
             requestId: options.requestId || 'internal-stt',
             workspaceId: asset.workspace_id,
             recordingId,
             jobId: currentJob?.id || activeJob?.id || '',
-            errorCode:
-              error?.errorCode ||
-              error?.code ||
-              failureDiagnostics?.errorCode ||
-              'TRANSCRIPTION_JOB_FAILED',
-            message: error?.message || String(error || 'Unknown pipeline error'),
+            pipelineStage: 'failure',
+            operation: 'transcription.process',
+            errorCode,
+            retryable: Boolean(error?.retryable || failureDiagnostics?.retryable),
+            providerId:
+              error?.providerId ||
+              failureDiagnostics?.sttProviderInfo?.providerId ||
+              failureDiagnostics?.sttProviderInfo?.provider ||
+              '',
+          };
+          logger.error(
+            '[Pipeline] Transcription job failed.',
+            {
+              ...sentryContext,
+              message: error?.message || String(error || 'Unknown pipeline error'),
+            },
+            { sentry: false }
+          );
+          capturePipelineException(error, sentryContext, {
+            level: sentryContext.retryable ? 'warning' : 'error',
+            fingerprint: ['audio-pipeline', String(errorCode)],
           });
           if (currentJob && typeof this.db.failTranscriptionJob === 'function') {
             await this.db.failTranscriptionJob(currentJob.id, this.workerId, error);
@@ -950,6 +1035,13 @@ export default class TranscriptionService extends EventEmitter {
         enhancementsPending: true,
         postprocessStage: 'running',
       });
+      addPipelineBreadcrumb('Background post-process started.', {
+        requestId: reqId,
+        workspaceId: asset.workspace_id,
+        recordingId,
+        pipelineStage: 'postprocess',
+        operation: 'transcription.postprocess',
+      });
       this.emit(`progress-${recordingId}`, {
         progress: 100,
         enhancementsPending: true,
@@ -984,6 +1076,13 @@ export default class TranscriptionService extends EventEmitter {
         workspaceId: asset.workspace_id,
         recordingId,
       });
+      addPipelineBreadcrumb('Background post-process completed.', {
+        requestId: reqId,
+        workspaceId: asset.workspace_id,
+        recordingId,
+        pipelineStage: 'postprocess_complete',
+        operation: 'transcription.postprocess',
+      });
     } catch (error: any) {
       await this.updateTranscriptionMetadata(recordingId, {
         enhancementsPending: false,
@@ -995,6 +1094,19 @@ export default class TranscriptionService extends EventEmitter {
         recordingId,
         message: error?.message || String(error),
       });
+      capturePipelineException(
+        error,
+        {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId,
+          pipelineStage: 'postprocess_failure',
+          operation: 'transcription.postprocess',
+          errorCode: error?.errorCode || error?.code || 'POSTPROCESS_FAILED',
+          retryable: true,
+        },
+        { level: 'warning', fingerprint: ['audio-pipeline', 'postprocess'] }
+      );
     } finally {
       await cleanupLocalSource();
     }

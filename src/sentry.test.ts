@@ -1,10 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const sentryMocks = vi.hoisted(() => ({
-  init: vi.fn(),
-  browserTracingIntegration: vi.fn(() => ({ name: 'browser-tracing' })),
-  replayIntegration: vi.fn(() => ({ name: 'replay' })),
-}));
+const sentryMocks = vi.hoisted(() => {
+  const scope = {
+    setLevel: vi.fn(),
+    setContext: vi.fn(),
+    setTag: vi.fn(),
+    setFingerprint: vi.fn(),
+  };
+
+  return {
+    init: vi.fn(),
+    browserTracingIntegration: vi.fn(() => ({ name: 'browser-tracing' })),
+    replayIntegration: vi.fn(() => ({ name: 'replay' })),
+    addBreadcrumb: vi.fn(),
+    captureException: vi.fn(),
+    scope,
+    withScope: vi.fn((callback: (scope: unknown) => void) => {
+      callback(scope);
+    }),
+  };
+});
 
 vi.mock('@sentry/react', () => sentryMocks);
 
@@ -83,5 +98,68 @@ describe('initSentry', () => {
         integrations: [{ name: 'browser-tracing' }, { name: 'replay' }],
       })
     );
+  });
+
+  it('redacts sensitive queue context before sending breadcrumbs', async () => {
+    const { addQueueBreadcrumb } = await import('./sentry');
+
+    addQueueBreadcrumb('Queue failed', {
+      workspaceId: 'ws_1',
+      recordingId: 'rec_1',
+      accessToken: 'secret-token',
+      transcript: 'private transcript',
+      audioBuffer: 'binary audio',
+    });
+
+    expect(sentryMocks.addBreadcrumb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'recording.queue',
+        data: expect.objectContaining({
+          workspaceId: 'ws_1',
+          recordingId: 'rec_1',
+          accessToken: '[redacted]',
+          transcript: '[redacted]',
+          audioBuffer: '[redacted]',
+        }),
+      })
+    );
+    expect(JSON.stringify(sentryMocks.addBreadcrumb.mock.calls[0][0])).not.toContain(
+      'private transcript'
+    );
+  });
+
+  it('captures queue exceptions with safe context and searchable tags', async () => {
+    const { captureQueueException } = await import('./sentry');
+    const error = new Error('Upload crashed');
+
+    captureQueueException(
+      error,
+      {
+        workspaceId: 'ws_1',
+        recordingId: 'rec_1',
+        pipelineStage: 'upload',
+        errorCode: 'upload_failed',
+        segments: [{ text: 'private segment' }],
+      },
+      { level: 'warning', fingerprint: ['recording-queue', 'upload_failed'] }
+    );
+
+    expect(sentryMocks.scope.setLevel).toHaveBeenCalledWith('warning');
+    expect(sentryMocks.scope.setContext).toHaveBeenCalledWith(
+      'recording_queue',
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        recordingId: 'rec_1',
+        pipelineStage: 'upload',
+        errorCode: 'upload_failed',
+        segments: '[redacted]',
+      })
+    );
+    expect(sentryMocks.scope.setTag).toHaveBeenCalledWith('recordingId', 'rec_1');
+    expect(sentryMocks.scope.setFingerprint).toHaveBeenCalledWith([
+      'recording-queue',
+      'upload_failed',
+    ]);
+    expect(sentryMocks.captureException).toHaveBeenCalledWith(error);
   });
 });

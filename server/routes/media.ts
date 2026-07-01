@@ -35,6 +35,7 @@ import {
   splitNormalizedAudioIntoParts,
   validateAudioForTranscription,
 } from '../lib/mediaStoragePipeline.ts';
+import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -853,6 +854,27 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const contentLength = parseInt(c.req.header('content-length') || '0', 10);
     if (contentLength > MAX_RAW_UPLOAD_BYTES) {
       const sizeValidation = validateRawUploadSize(contentLength);
+      capturePipelineException(
+        Object.assign(
+          new Error(
+            sizeValidation.ok === false ? sizeValidation.message : 'Audio upload too large.'
+          ),
+          {
+            code: sizeValidation.ok === false ? sizeValidation.code : 'audio_too_large',
+            statusCode: 413,
+          }
+        ),
+        {
+          requestId: reqId,
+          workspaceId,
+          recordingId,
+          pipelineStage: 'upload_validation',
+          operation: 'media.upload',
+          errorCode: sizeValidation.ok === false ? sizeValidation.code : 'audio_too_large',
+          contentLength,
+        },
+        { level: 'warning', fingerprint: ['audio-upload-validation', 'size'] }
+      );
       if (sizeValidation.ok !== false) {
         return c.json({ code: 'audio_too_large', message: 'Plik audio przekracza limit.' }, 413);
       }
@@ -867,6 +889,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
 
     const mimeValidation = validateAudioMimeType(c.req.header('content-type') || '');
     if (!mimeValidation.ok) {
+      capturePipelineException(
+        Object.assign(new Error(mimeValidation.message), {
+          code: mimeValidation.code,
+          statusCode: mimeValidation.status,
+        }),
+        {
+          requestId: reqId,
+          workspaceId,
+          recordingId,
+          pipelineStage: 'upload_validation',
+          operation: 'media.upload',
+          errorCode: mimeValidation.code,
+          contentType: c.req.header('content-type') || '',
+        },
+        { level: 'warning', fingerprint: ['audio-upload-validation', mimeValidation.code] }
+      );
       return c.json(
         { code: mimeValidation.code, message: mimeValidation.message },
         mimeValidation.status
@@ -914,12 +952,37 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       });
     } catch (uploadErr: any) {
       if (uploadErr instanceof MediaStoragePipelineError) {
+        capturePipelineException(
+          uploadErr,
+          {
+            requestId: reqId,
+            workspaceId,
+            recordingId,
+            pipelineStage: 'upload_validation',
+            operation: 'media.upload',
+            errorCode: uploadErr.code || 'audio_validation_failed',
+            retryable: false,
+          },
+          { level: 'warning', fingerprint: ['audio-upload-validation', uploadErr.code] }
+        );
         return c.json(audioValidationErrorBody(uploadErr), audioValidationErrorStatus(uploadErr));
       }
       if (
         (uploadErr as any).code === 'ENOSPC' ||
         String(uploadErr.message).includes('Brak miejsca na dysku')
       ) {
+        capturePipelineException(
+          uploadErr,
+          {
+            requestId: reqId,
+            workspaceId,
+            recordingId,
+            pipelineStage: 'upload_storage',
+            operation: 'media.upload',
+            errorCode: 'ENOSPC',
+          },
+          { level: 'error', fingerprint: ['audio-upload-storage', 'ENOSPC'] }
+        );
         return c.json(
           { message: 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.' },
           507
@@ -938,6 +1001,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     logger.info(`[Metrics] Uploaded audio chunk`, {
       requestId: reqId,
       recordingId,
+      workspaceId,
+      sizeBytes: asset.size_bytes,
+      durationMs: (performance.now() - uploadStart).toFixed(2),
+    });
+    addPipelineBreadcrumb('Audio upload completed.', {
+      requestId: reqId,
+      workspaceId,
+      recordingId,
+      pipelineStage: 'upload',
+      operation: 'media.upload',
       sizeBytes: asset.size_bytes,
       durationMs: (performance.now() - uploadStart).toFixed(2),
     });
@@ -1232,6 +1305,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       }
 
       try {
+        addPipelineBreadcrumb('Transcription start requested.', {
+          requestId: c.get('reqId'),
+          workspaceId: body.workspaceId || asset.workspace_id,
+          recordingId,
+          pipelineStage: 'job_start_request',
+          operation: 'transcription.start',
+        });
         const result = await startTranscriptionPipeline(recordingId, asset, {
           ...body,
           processingMode: resolveProcessingMode(body.processingMode),
@@ -1250,6 +1330,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       } catch (err: any) {
         console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
         const status = err?.statusCode || err?.status || 500;
+        capturePipelineException(
+          err,
+          {
+            requestId: c.get('reqId'),
+            workspaceId: body.workspaceId || asset.workspace_id,
+            recordingId,
+            pipelineStage: 'job_start_request',
+            operation: 'transcription.start',
+            errorCode: err?.errorCode || err?.code || 'TRANSCRIPTION_START_FAILED',
+            retryable: status === 429 || status === 503,
+          },
+          {
+            level: status === 429 || status === 503 ? 'warning' : 'error',
+            fingerprint: ['audio-pipeline', 'transcription-start'],
+          }
+        );
         return c.json(
           { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
           status
@@ -1355,6 +1451,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       }
 
       try {
+        addPipelineBreadcrumb('Transcription retry requested.', {
+          requestId: c.get('reqId'),
+          workspaceId: asset.workspace_id,
+          recordingId,
+          pipelineStage: 'retry',
+          operation: 'transcription.retry',
+          previousStatus: status || 'unknown',
+        });
         const result = await startTranscriptionPipeline(recordingId, asset, {
           workspaceId: asset.workspace_id,
           meetingId: asset.meeting_id,
@@ -1385,6 +1489,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       } catch (err: any) {
         console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
         const status = err?.statusCode || err?.status || 500;
+        capturePipelineException(
+          err,
+          {
+            requestId: c.get('reqId'),
+            workspaceId: asset.workspace_id,
+            recordingId,
+            pipelineStage: 'retry',
+            operation: 'transcription.retry',
+            errorCode: err?.errorCode || err?.code || 'TRANSCRIPTION_RETRY_FAILED',
+            retryable: status === 429 || status === 503,
+          },
+          {
+            level: status === 429 || status === 503 ? 'warning' : 'error',
+            fingerprint: ['audio-pipeline', 'transcription-retry'],
+          }
+        );
         return c.json(
           { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
           status

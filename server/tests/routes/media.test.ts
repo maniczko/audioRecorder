@@ -2,6 +2,17 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, it, expect, vi } 
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+
+const sentryMocks = vi.hoisted(() => ({
+  addPipelineBreadcrumb: vi.fn(),
+  capturePipelineException: vi.fn(),
+}));
+
+vi.mock('../../sentry.ts', () => ({
+  addPipelineBreadcrumb: sentryMocks.addPipelineBreadcrumb,
+  capturePipelineException: sentryMocks.capturePipelineException,
+}));
+
 import { createApp } from '../../app.ts';
 import { MAX_RAW_UPLOAD_BYTES, buildSegmentedMediaManifest } from '../../lib/mediaStoragePolicy.ts';
 import { createProgressToken, resetProgressTokensForTests } from '../../lib/progressTokens.ts';
@@ -86,6 +97,8 @@ describe('Media Routes', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    sentryMocks.addPipelineBreadcrumb.mockClear();
+    sentryMocks.capturePipelineException.mockClear();
     // Reset fs state to default after each test
     setFsState();
   });
@@ -1605,6 +1618,21 @@ describe('Media Routes', () => {
       const data = await res.json();
       expect(data.message).toContain('STT provider unreachable');
       expect(data.recordingId).toBe('rec_err');
+      expect(sentryMocks.capturePipelineException).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({
+          workspaceId: 'ws_1',
+          recordingId: 'rec_err',
+          pipelineStage: 'job_start_request',
+          operation: 'transcription.start',
+          errorCode: 'TRANSCRIPTION_START_FAILED',
+          retryable: false,
+        }),
+        expect.objectContaining({
+          level: 'error',
+          fingerprint: ['audio-pipeline', 'transcription-start'],
+        })
+      );
     });
 
     it('POST /retry-transcribe returns error JSON when pipeline throws', async () => {

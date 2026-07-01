@@ -1,5 +1,12 @@
 import * as Sentry from '@sentry/node';
 import { logger } from './logger.js';
+import {
+  sanitizeSentryContext,
+  sentryTagsFromContext,
+  type AudioPipelineSentryContext,
+  type SentryCaptureOptions,
+  type SentryContextLevel,
+} from './lib/sentryContext.ts';
 import { resolveBuildMetadata } from './runtime.js';
 
 export function initSentry() {
@@ -29,9 +36,9 @@ export function initSentry() {
   }
 }
 
-export function captureException(error: Error) {
+export function captureException(error: Error, context?: AudioPipelineSentryContext) {
   try {
-    Sentry.captureException(error);
+    capturePipelineException(error, context);
   } catch (err) {
     // Fail silently if Sentry is not initialized
   }
@@ -44,3 +51,45 @@ export function addBreadcrumb(breadcrumb: Parameters<typeof Sentry.addBreadcrumb
     // Fail silently if Sentry is not initialized
   }
 }
+
+export function addPipelineBreadcrumb(
+  message: string,
+  context: AudioPipelineSentryContext = {},
+  options: {
+    category?: string;
+    level?: SentryContextLevel;
+  } = {}
+) {
+  addBreadcrumb({
+    category: options.category || 'audio.pipeline',
+    level: options.level || 'info',
+    message,
+    data: sanitizeSentryContext(context),
+  });
+}
+
+export function capturePipelineException(
+  error: unknown,
+  context: AudioPipelineSentryContext = {},
+  options: SentryCaptureOptions = {}
+) {
+  try {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    const sanitizedContext = sanitizeSentryContext(context);
+    Sentry.withScope((scope) => {
+      scope.setLevel(options.level || (sanitizedContext.retryable ? 'warning' : 'error'));
+      scope.setContext('audio_pipeline', sanitizedContext);
+      for (const [key, value] of Object.entries(sentryTagsFromContext(sanitizedContext))) {
+        scope.setTag(key, value);
+      }
+      if (options.fingerprint?.length) {
+        scope.setFingerprint(options.fingerprint);
+      }
+      Sentry.captureException(normalizedError);
+    });
+  } catch (err) {
+    // Fail silently if Sentry is not initialized
+  }
+}
+
+export { sanitizeSentryContext };
