@@ -1,8 +1,7 @@
-import { initDatabase } from '../database.ts';
-import { config } from '../config.ts';
+import { getDatabase } from '../database.ts';
 
 async function main() {
-  const db = initDatabase({ uploadDir: config.uploadDir });
+  const db = getDatabase();
   await db.init();
   try {
     const workspaceId = String(process.env.VOICELOG_RETENTION_WORKSPACE_ID || '').trim();

@@ -27,6 +27,7 @@ if (!globalObj.__pipelineStageDuration) {
 
 // Custom store for easy JSON API reading in the React dashboard frontend
 const stageStats: Record<string, number[]> = {};
+const capabilityModeCounts: Record<string, number> = {};
 
 export const MetricsService = {
   observeStageDuration(stage: string, durationMs: number) {
@@ -40,12 +41,22 @@ export const MetricsService = {
     pipelineStageDuration.labels(stage).observe(durationMs);
   },
 
+  observeCapabilityMode(capability: string, mode: string) {
+    const safeCapability = String(capability || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeMode = String(mode || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const key = `${safeCapability}:${safeMode}`;
+    capabilityModeCounts[key] = (capabilityModeCounts[key] || 0) + 1;
+  },
+
   async getPrometheusMetrics() {
     return await client.register.metrics();
   },
 
   getJsonSummary() {
     const result: Record<string, any> = {};
+    if (Object.keys(capabilityModeCounts).length > 0) {
+      result.capabilityModes = { ...capabilityModeCounts };
+    }
     for (const [stage, times] of Object.entries(stageStats)) {
       if (times.length === 0) continue;
       const sorted = [...times].sort((a, b) => a - b);

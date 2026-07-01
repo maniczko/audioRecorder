@@ -69,11 +69,20 @@ export class DbAiQuotaStore implements AiQuotaStore {
       CREATE TABLE IF NOT EXISTS ai_quota_counters (
         key TEXT PRIMARY KEY,
         count INTEGER NOT NULL,
-        reset_at INTEGER NOT NULL,
+        reset_at BIGINT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
+    await this.ensurePostgresResetAtBigint();
     this.initialized = true;
+  }
+
+  private async ensurePostgresResetAtBigint() {
+    if (this.db?.type !== 'postgres') return;
+    await this.db._execute(`
+      ALTER TABLE ai_quota_counters
+      ALTER COLUMN reset_at TYPE BIGINT USING reset_at::bigint
+    `);
   }
 
   async increment(checks: AiQuotaCheck[]): Promise<AiQuotaExceeded | null> {

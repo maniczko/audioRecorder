@@ -64,4 +64,20 @@ describe('MetricsService', () => {
     // No stage with 'nonexistent' should be in the summary unless we recorded it
     expect(summary.nonexistent).toBeUndefined();
   });
+
+  test('records capability fallback mode counters for readiness telemetry', () => {
+    MetricsService.observeCapabilityMode('meetingAnalysis', 'fallback');
+    MetricsService.observeCapabilityMode('meetingAnalysis', 'fallback');
+    MetricsService.observeCapabilityMode('supabaseStorage', 'fallback');
+
+    const summary = MetricsService.getJsonSummary();
+
+    expect(summary.capabilityModes).toEqual(
+      expect.objectContaining({
+        'meetingAnalysis:fallback': expect.any(Number),
+        'supabaseStorage:fallback': expect.any(Number),
+      })
+    );
+    expect(summary.capabilityModes['meetingAnalysis:fallback']).toBeGreaterThanOrEqual(2);
+  });
 });

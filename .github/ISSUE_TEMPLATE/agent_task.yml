@@ -1,0 +1,67 @@
+name: Agent task
+description: Agent-executable issue contract.
+title: '[Agent] '
+labels:
+  - agent:ready
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Add `autopilot:allowed` only when this issue is complete enough for autonomous agent work.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Cel / Goal
+      description: Concrete outcome.
+      value: |
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Kontekst / Context
+      description: Business and technical context.
+      value: |
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Zakres / Scope
+      description: In scope and out of scope.
+      value: |
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kryteria akceptacji / Acceptance Criteria
+      description: Observable success criteria.
+      value: |
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Walidacja / Validation
+      description: Exact test, lint, build, smoke, or browser commands.
+      value: |
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: final-report
+    attributes:
+      label: Raport koncowy / Final Report
+      description: What the agent must report before closing.
+      value: |
+        1. What changed
+        2. Tests run
+        3. Evidence paths
+        4. Risks and next steps
+    validations:
+      required: true

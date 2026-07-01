@@ -1,4 +1,5 @@
 import type { WorkspaceStatePayload } from '../../src/shared/contracts.ts';
+import { logger } from '../logger.ts';
 
 export default class WorkspaceService {
   db: any;
@@ -14,24 +15,39 @@ export default class WorkspaceService {
     return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 
-  async updateRetentionPolicy(workspaceId: string, retentionDays: number, actorUserId = '') {
+  async updateRetentionPolicy(
+    workspaceId: string,
+    retentionDays: number,
+    actorUserId = '',
+    requestId = ''
+  ) {
     const current = await this.db.getWorkspaceState(workspaceId);
     const next = await this.db.saveWorkspaceState(workspaceId, {
       ...current,
       retentionDays,
     });
-    await this.db.writeAuditLog?.({
-      workspaceId,
-      actorUserId,
-      action: 'workspace.retention.updated',
-      entityType: 'workspace',
-      entityId: workspaceId,
-      metadata: {
-        previousRetentionDays: current.retentionDays,
-        retentionDays: next.retentionDays,
-        source: 'api',
-      },
-    });
+    try {
+      const auditWriter = this.db.writeAuditLogBestEffort || this.db.writeAuditLog;
+      await auditWriter?.call(this.db, {
+        workspaceId,
+        actorUserId,
+        action: 'workspace.retention.updated',
+        entityType: 'workspace',
+        entityId: workspaceId,
+        metadata: {
+          previousRetentionDays: current.retentionDays,
+          retentionDays: next.retentionDays,
+          source: 'api',
+          requestId,
+        },
+      });
+    } catch (error: any) {
+      logger.warn('[audit] Failed to persist retention audit log', {
+        workspaceId,
+        action: 'workspace.retention.updated',
+        error: error?.message || String(error),
+      });
+    }
     return { retentionDays: next.retentionDays, state: next };
   }
 
@@ -41,6 +57,10 @@ export default class WorkspaceService {
 
   async exportWorkspaceData(workspaceId: string, options: any = {}) {
     return await this.db.exportWorkspaceData(workspaceId, options);
+  }
+
+  async listAuditLogs(workspaceId: string, options: any = {}) {
+    return await this.db.listAuditLogs(workspaceId, options);
   }
 
   async updateWorkspaceMemberRole(workspaceId: string, targetUserId: string, memberRole: string) {
@@ -72,8 +92,8 @@ export default class WorkspaceService {
     return await this.db.upsertVoiceProfile(data);
   }
 
-  async deleteVoiceProfile(id: string, workspaceId: string) {
-    return await this.db.deleteVoiceProfile(id, workspaceId);
+  async deleteVoiceProfile(id: string, workspaceId: string, options: any = {}) {
+    return await this.db.deleteVoiceProfile(id, workspaceId, options);
   }
 
   async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {

@@ -54,6 +54,19 @@ function transcriptSize(recording: any) {
   return Array.isArray(recording?.transcript) ? recording.transcript.length : 0;
 }
 
+function normalizeRecordingStatus(value: any) {
+  const status = String(value || '')
+    .trim()
+    .toLowerCase();
+  return status === 'completed' ? 'done' : status;
+}
+
+function recordingStatus(recording: any) {
+  return normalizeRecordingStatus(
+    recording?.pipelineStatus || recording?.transcriptionStatus || recording?.status
+  );
+}
+
 function recordingReadabilityScore(recording: any) {
   if (!recording || typeof recording !== 'object') return -1;
   const segments = transcriptSize(recording);
@@ -63,9 +76,9 @@ function recordingReadabilityScore(recording: any) {
         0
       )
     : 0;
-  const isDone = recording.pipelineStatus === 'done' || recording.transcriptionStatus === 'done';
-  const isProcessing =
-    recording.pipelineStatus === 'processing' || recording.transcriptionStatus === 'processing';
+  const status = recordingStatus(recording);
+  const isDone = status === 'done';
+  const isProcessing = status === 'processing';
 
   return segments * 100_000 + textLength + (isDone ? 1_000 : 0) - (isProcessing ? 1_000 : 0);
 }
@@ -469,7 +482,7 @@ export default function useMeetingLifecycle({
 
     const hasTranscript =
       Array.isArray(selectedRecording.transcript) && selectedRecording.transcript.length > 0;
-    const isDone = selectedRecording.pipelineStatus === 'done';
+    const isDone = recordingStatus(selectedRecording) === 'done';
     if (hasTranscript || !isDone) return;
     if (hydrateAttemptedRef.current.has(selectedRecording.id)) return;
 
@@ -492,6 +505,9 @@ export default function useMeetingLifecycle({
                 return {
                   ...r,
                   transcript: segments,
+                  pipelineStatus: response?.pipelineStatus || r.pipelineStatus || 'done',
+                  transcriptionStatus:
+                    response?.pipelineStatus || r.transcriptionStatus || r.pipelineStatus || 'done',
                   speakerNames: response?.speakerNames || r.speakerNames || {},
                   speakerCount: response?.speakerCount || r.speakerCount || 0,
                   diarizationConfidence: response?.confidence || r.diarizationConfidence || 0,
@@ -515,6 +531,8 @@ export default function useMeetingLifecycle({
     selectedMeeting?.id,
     selectedRecording?.id,
     selectedRecording?.pipelineStatus,
+    selectedRecording?.transcriptionStatus,
+    selectedRecording?.status,
     selectedRecording?.transcript?.length,
     setMeetings,
   ]);
