@@ -600,6 +600,72 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         };
   const uploadDir = config.uploadDir || process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
 
+  async function writeAuditEvent(
+    c: any,
+    {
+      workspaceId,
+      action,
+      entityType,
+      entityId,
+      metadata = {},
+    }: {
+      workspaceId: string;
+      action: string;
+      entityType: string;
+      entityId: string;
+      metadata?: Record<string, unknown>;
+    }
+  ) {
+    const auditTarget =
+      typeof transcriptionService.writeAuditLog === 'function' ? transcriptionService : services.db;
+    if (typeof auditTarget?.writeAuditLog !== 'function') {
+      return;
+    }
+
+    const session = c.get('session') as any;
+    try {
+      await auditTarget.writeAuditLog({
+        workspaceId,
+        actorUserId: String(session?.user_id || ''),
+        action,
+        entityType,
+        entityId,
+        metadata: {
+          ...metadata,
+          requestId: String(c.get('reqId') || ''),
+        },
+      });
+    } catch (error: any) {
+      const { logger } = await import('../logger.ts');
+      logger.warn('[audit] Failed to persist audit event', {
+        workspaceId,
+        action,
+        entityType,
+        entityId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  async function writeRecordingAuditEvent(
+    c: any,
+    asset: any,
+    action: string,
+    metadata: Record<string, unknown> = {}
+  ) {
+    await writeAuditEvent(c, {
+      workspaceId: String(asset?.workspace_id || ''),
+      action,
+      entityType: 'recording',
+      entityId: String(asset?.id || ''),
+      metadata: {
+        meetingId: String(asset?.meeting_id || ''),
+        source: 'api',
+        ...metadata,
+      },
+    });
+  }
+
   function resolveProcessingMode(input: any) {
     return input === 'full' || input === 'fast'
       ? input
@@ -902,12 +968,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           };
           stream.on('close', cleanup);
           stream.on('error', cleanup);
+          const contentLength = statSync(materialized.localPath).size;
           c.header(
             'Content-Type',
             safeType === 'application/octet-stream' ? 'audio/webm' : safeType
           );
-          c.header('Content-Length', String(statSync(materialized.localPath).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'segmented'),
+              sizeBytes: contentLength,
+              delivery: 'segmented',
+            }
+          );
           return c.body(stream as any, 200);
         } catch (err: any) {
           console.error('[media] Segmented audio materialization failed', {
@@ -936,6 +1014,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
               resolvedPath: storagePath,
             });
           }
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: storagePath === asset.file_path ? 'remote' : 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch (err: any) {
           console.error('[media] Supabase download failed', {
@@ -955,9 +1044,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         // Local file path - try local first, then fall back to Supabase with basename
         if (existsSync(asset.file_path)) {
           const stream = createReadStream(asset.file_path);
+          const contentLength = statSync(asset.file_path).size;
           c.header('Content-Type', safeType);
-          c.header('Content-Length', String(statSync(asset.file_path).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: contentLength,
+              delivery: 'local',
+            }
+          );
           return c.body(stream as any, 200);
         }
 
@@ -976,6 +1077,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           c.header('Content-Type', safeType);
           c.header('Content-Length', String(arrayBuffer.byteLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch {
           console.warn('[media] Audio 404 - local file missing, Supabase fallback failed', {
@@ -1018,6 +1130,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const session = c.get('session');
       await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id, {
         actorUserId: String(session?.user_id || ''),
+        requestId: String(c.get('reqId') || ''),
       });
       return c.body(null, 204);
     } catch (err: any) {
@@ -1089,6 +1202,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
 
     const status = String(asset.transcription_status || '').trim();
+    const processingMode = resolveProcessingMode(body.processingMode);
     if (['queued', 'processing', 'diarization'].includes(status)) {
       await transcriptionService.ensureTranscriptionJob(
         recordingId,
@@ -1104,12 +1218,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           workspaceId: asset.workspace_id,
           meetingId: asset.meeting_id,
           contentType: asset.content_type,
-          processingMode: resolveProcessingMode(body.processingMode),
+          processingMode,
           requestId: c.get('reqId'),
         }
       );
 
       const currentAsset = await transcriptionService.getMediaAsset(recordingId);
+      await writeRecordingAuditEvent(
+        c,
+        { ...asset, id: recordingId },
+        'recording.transcription.retry_requested',
+        {
+          previousStatus: status || 'unknown',
+          processingMode,
+          force: body.force === true,
+        }
+      );
       return c.json(normalizeTranscriptionStatusPayload(currentAsset || asset), 202);
     }
     // If the local file is gone (e.g. after Railway redeploy), try the same
@@ -1137,10 +1261,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         workspaceId: asset.workspace_id,
         meetingId: asset.meeting_id,
         contentType: asset.content_type,
-        processingMode: resolveProcessingMode(body.processingMode),
+        processingMode,
         requestId: c.get('reqId'),
       });
 
+      await writeRecordingAuditEvent(
+        c,
+        { ...asset, id: recordingId },
+        'recording.transcription.retry_requested',
+        {
+          previousStatus: status || 'unknown',
+          processingMode,
+          force: body.force === true,
+        }
+      );
       return c.json(normalizeTranscriptionStatusPayload(result), 202);
     } catch (err: any) {
       console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
@@ -1876,7 +2010,31 @@ Important:
     await ensureWorkspaceAccess(c, workspaceId);
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
-    return c.json(result || { mode: 'no-key' }, 200);
+    const payload = result || { mode: 'no-key' };
+    const meeting = body?.meeting && typeof body.meeting === 'object' ? body.meeting : {};
+    const recordingId = String(
+      body.recordingId ||
+        body.recording_id ||
+        meeting.recordingId ||
+        meeting.recording_id ||
+        meeting.mediaAssetId ||
+        meeting.media_asset_id ||
+        body.meetingId ||
+        meeting.id ||
+        workspaceId
+    ).trim();
+    await writeAuditEvent(c, {
+      workspaceId,
+      action: 'recording.ai.analyzed',
+      entityType: 'recording',
+      entityId: recordingId,
+      metadata: {
+        meetingId: String(body.meetingId || meeting.id || ''),
+        mode: String((payload as any)?.mode || 'analysis'),
+        source: 'api',
+      },
+    });
+    return c.json(payload, 200);
   });
 
   // Chunked upload: PUT /recordings/:id/audio/chunk?index=N&total=M

@@ -267,6 +267,7 @@ describe('Database (Async Worker SQLite)', () => {
 
       await db.deleteMediaAsset('rec_delete_actor', 'ws_delete_actor', {
         actorUserId: 'actual_deleter',
+        requestId: 'req_delete_actor',
       });
 
       const auditRow = await db._get(
@@ -278,9 +279,136 @@ describe('Database (Async Worker SQLite)', () => {
         actor_user_id: 'actual_deleter',
         action: 'recording.deleted',
       });
+      expect(JSON.parse(auditRow.metadata_json)).toMatchObject({
+        requestId: 'req_delete_actor',
+      });
     } finally {
       (global as any).__TEST_FS_STATE__ = previousFsState;
       deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
+  test('Issue #1230 - listAuditLogs filters recording events with safe metadata', async () => {
+    await db._execute(
+      `INSERT INTO audit_logs (
+        id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+      ) VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        'audit_list_recent',
+        'ws_audit_list',
+        'user_recent',
+        'recording.audio.downloaded',
+        'recording',
+        'rec_audit_list',
+        JSON.stringify({ requestId: 'req_recent', source: 'api' }),
+        '2026-06-28T12:00:00.000Z',
+        'audit_list_older',
+        'ws_audit_list',
+        'user_older',
+        'recording.ai.analyzed',
+        'recording',
+        'rec_audit_list',
+        JSON.stringify({ requestId: 'req_older', mode: 'openai' }),
+        '2026-06-28T11:00:00.000Z',
+        'audit_list_other_recording',
+        'ws_audit_list',
+        'user_other',
+        'recording.deleted',
+        'recording',
+        'rec_other',
+        JSON.stringify({ requestId: 'req_other' }),
+        '2026-06-28T13:00:00.000Z',
+      ]
+    );
+
+    const firstPage = await db.listAuditLogs('ws_audit_list', {
+      recordingId: 'rec_audit_list',
+      limit: 1,
+    });
+
+    expect(firstPage.events).toEqual([
+      expect.objectContaining({
+        id: 'audit_list_recent',
+        workspaceId: 'ws_audit_list',
+        actorUserId: 'user_recent',
+        action: 'recording.audio.downloaded',
+        eventType: 'recording.audio.downloaded',
+        entityType: 'recording',
+        entityId: 'rec_audit_list',
+        recordingId: 'rec_audit_list',
+        metadata: { requestId: 'req_recent', source: 'api' },
+        createdAt: '2026-06-28T12:00:00.000Z',
+      }),
+    ]);
+    expect(firstPage.nextCursor).toBe('2026-06-28T12:00:00.000Z');
+
+    const secondPage = await db.listAuditLogs('ws_audit_list', {
+      recordingId: 'rec_audit_list',
+      cursor: firstPage.nextCursor,
+      limit: 1,
+    });
+    expect(secondPage.events[0]).toMatchObject({
+      id: 'audit_list_older',
+      recordingId: 'rec_audit_list',
+    });
+    expect(JSON.stringify(firstPage)).not.toContain('rec_other');
+  });
+
+  test('Issue #1230 - deleteMediaAsset succeeds when audit storage is unavailable', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const writeAuditSpy = vi
+      .spyOn(db, 'writeAuditLog')
+      .mockRejectedValueOnce(new Error('audit database unavailable'));
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      const now = new Date().toISOString();
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'rec_delete_audit_down',
+          'ws_delete_audit_down',
+          'meeting_delete_audit_down',
+          'user_delete_audit_down',
+          'workspaces/ws_delete_audit_down/recordings/rec_delete_audit_down/audio.webm',
+          'audio/webm',
+          123,
+          'single',
+          '{}',
+          123,
+          123,
+          'completed',
+          '[]',
+          '{}',
+          now,
+          now,
+        ]
+      );
+
+      await expect(
+        db.deleteMediaAsset('rec_delete_audit_down', 'ws_delete_audit_down')
+      ).resolves.toBeUndefined();
+      await expect(db.getMediaAsset('rec_delete_audit_down')).resolves.toBeNull();
+      expect(writeAuditSpy).toHaveBeenCalled();
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+      writeAuditSpy.mockRestore();
     }
   });
 
@@ -418,12 +546,14 @@ describe('Database (Async Worker SQLite)', () => {
         nowIso: '2026-06-20T12:00:00.000Z',
         actorUserId: 'maintainer_1',
         source: 'test-maintenance',
+        requestId: 'req_retention_repeat',
       });
       const second = await db.cleanupExpiredRecordingsByRetention({
         workspaceId: 'ws_retention_repeat',
         nowIso: '2026-06-20T12:00:00.000Z',
         actorUserId: 'maintainer_1',
         source: 'test-maintenance',
+        requestId: 'req_retention_repeat_2',
       });
 
       expect(first).toMatchObject({
@@ -442,6 +572,16 @@ describe('Database (Async Worker SQLite)', () => {
       const deleteAudit = auditRows.find((row: any) => row.action === 'recording.deleted');
       expect(JSON.parse(deleteAudit.metadata_json)).toMatchObject({
         source: 'test-maintenance',
+        requestId: 'req_retention_repeat',
+      });
+      const cleanupAudit = auditRows.find((row: any) => {
+        if (row.action !== 'retention.cleanup.completed') {
+          return false;
+        }
+        return JSON.parse(row.metadata_json).requestId === 'req_retention_repeat';
+      });
+      expect(JSON.parse(cleanupAudit.metadata_json)).toMatchObject({
+        requestId: 'req_retention_repeat',
       });
     } finally {
       (global as any).__TEST_FS_STATE__ = previousFsState;
@@ -545,6 +685,7 @@ describe('Database (Async Worker SQLite)', () => {
       payload = await db.exportWorkspaceData('ws_export', {
         actorUserId: 'user_export',
         source: 'test-export',
+        requestId: 'req_export_workspace',
       });
     } finally {
       (global as any).__TEST_FS_STATE__ = previousFsState;
@@ -601,6 +742,7 @@ describe('Database (Async Worker SQLite)', () => {
     );
     expect(JSON.parse(exportAudit.metadata_json)).toMatchObject({
       source: 'test-export',
+      requestId: 'req_export_workspace',
       mediaAssetCount: 1,
       voiceProfileSampleCount: 1,
       missingVoiceProfileSampleCount: 1,

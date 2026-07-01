@@ -50,6 +50,8 @@ describe('Media Routes', () => {
       getSpeakerAcousticFeatures: vi.fn(),
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
+      writeAuditLog: vi.fn(),
+      analyzeMeetingWithOpenAI: vi.fn(),
       isTranscriptionJobActive: vi.fn(() => false),
       getTranscriptionRuntimeStatus: vi.fn(() => ({
         activeJob: false,
@@ -443,6 +445,23 @@ describe('Media Routes', () => {
         workspaceId: 'ws_1',
         meetingId: 'm_1',
         contentType: 'audio/webm',
+      })
+    );
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.transcription.retry_requested',
+        entityType: 'recording',
+        entityId: 'rec_retry',
+        metadata: expect.objectContaining({
+          meetingId: 'm_1',
+          previousStatus: 'failed',
+          processingMode: 'fast',
+          force: false,
+          source: 'api',
+          requestId: expect.any(String),
+        }),
       })
     );
   });
@@ -1128,6 +1147,44 @@ describe('Media Routes', () => {
     expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_stream.webm');
   });
 
+  it('GET /media/recordings/:recordingId/audio - writes a sanitized download audit event', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_audit_download',
+      workspace_id: 'ws_1',
+      meeting_id: 'm_audit',
+      file_path: '/tmp/audit-download.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1234,
+      storage_mode: 'single',
+    });
+
+    const res = await app.request('/media/recordings/rec_audit_download/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.audio.downloaded',
+        entityType: 'recording',
+        entityId: 'rec_audit_download',
+        metadata: expect.objectContaining({
+          meetingId: 'm_audit',
+          contentType: 'audio/webm',
+          storageMode: 'single',
+          delivery: 'local',
+          source: 'api',
+          requestId: expect.any(String),
+        }),
+      })
+    );
+    const auditPayload = mockTranscriptionService.writeAuditLog.mock.calls[0][0];
+    expect(JSON.stringify(auditPayload.metadata)).not.toContain('/tmp/audit-download.webm');
+  });
+
   it('POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_norm',
@@ -1384,6 +1441,43 @@ describe('Media Routes', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ mode: 'no-key' });
+  });
+
+  it('POST /media/analyze writes a sanitized AI audit event without raw transcript text', async () => {
+    mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+      mode: 'openai',
+      summary: 'Gotowe podsumowanie',
+    });
+
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId: 'ws_1',
+        recordingId: 'rec_ai_audit',
+        meeting: { id: 'm_ai_audit', title: 'Demo' },
+        segments: [{ speaker: 'Anna', text: 'RAW TRANSCRIPT SECRET' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.ai.analyzed',
+        entityType: 'recording',
+        entityId: 'rec_ai_audit',
+        metadata: expect.objectContaining({
+          meetingId: 'm_ai_audit',
+          mode: 'openai',
+          source: 'api',
+          requestId: expect.any(String),
+        }),
+      })
+    );
+    const auditPayload = mockTranscriptionService.writeAuditLog.mock.calls[0][0];
+    expect(JSON.stringify(auditPayload.metadata)).not.toContain('RAW TRANSCRIPT SECRET');
   });
 
   // Regression coverage note.

@@ -78,7 +78,7 @@ async function withWorkspaceStatePatchLock<T>(
 }
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
-  const router = new Hono<{ Variables: { session: any; user: any } }>();
+  const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
   const { authService, workspaceService, transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
 
@@ -153,6 +153,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     return ['owner', 'admin'].includes(String(membership?.member_role || ''));
   }
 
+  function requireAuditReader(membership: any) {
+    return ['owner', 'admin', 'operator'].includes(String(membership?.member_role || ''));
+  }
+
   router.put('/workspaces/:workspaceId/retention', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
@@ -171,7 +175,8 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       await workspaceService.updateRetentionPolicy(
         workspaceId,
         Math.floor(retentionDays),
-        String(session?.user_id || '')
+        String(session?.user_id || ''),
+        String(c.get('reqId') || '')
       ),
       200
     );
@@ -191,6 +196,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
         nowIso: body.nowIso,
         actorUserId: String(session?.user_id || ''),
         source: 'api',
+        requestId: String(c.get('reqId') || ''),
       }),
       200
     );
@@ -208,6 +214,25 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       await workspaceService.exportWorkspaceData(workspaceId, {
         actorUserId: String(session?.user_id || ''),
         source: 'api',
+        requestId: String(c.get('reqId') || ''),
+      }),
+      200
+    );
+  });
+
+  router.get('/workspaces/:workspaceId/audit-logs', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireAuditReader(membership)) {
+      return c.json({ message: 'Tylko owner, admin lub operator moze przegladac audyt.' }, 403);
+    }
+
+    const limit = Number(c.req.query('limit') || 100);
+    return c.json(
+      await workspaceService.listAuditLogs(workspaceId, {
+        recordingId: String(c.req.query('recordingId') || '').trim(),
+        cursor: String(c.req.query('cursor') || '').trim(),
+        limit: Number.isFinite(limit) ? Math.floor(limit) : 100,
       }),
       200
     );
