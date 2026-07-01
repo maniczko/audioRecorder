@@ -62,6 +62,81 @@ async function mockUnmatchedLocalBackendRequests(page) {
   }
 }
 
+async function mockProductionCapabilities(page) {
+  await page.route('**/api/capabilities**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ok: true,
+        status: 'ready',
+        generatedAt: '2026-05-14T10:00:00.000Z',
+        capabilities: {
+          stt: {
+            id: 'stt',
+            label: 'Transkrypcja STT',
+            enabled: true,
+            status: 'available',
+            provider: 'openai',
+          },
+          diarization: {
+            id: 'diarization',
+            label: 'Diarization',
+            enabled: true,
+            status: 'available',
+            provider: 'pyannote',
+          },
+          meetingAnalysis: {
+            id: 'meetingAnalysis',
+            label: 'Analiza spotkan',
+            enabled: true,
+            status: 'available',
+            provider: 'anthropic',
+          },
+          supabaseStorage: {
+            id: 'supabaseStorage',
+            label: 'Magazyn audio',
+            enabled: true,
+            status: 'available',
+            provider: 'supabase-storage',
+          },
+          liveTranscription: {
+            id: 'liveTranscription',
+            label: 'Transkrypcja live',
+            enabled: true,
+            status: 'available',
+            provider: 'browser-speech-recognition',
+          },
+          embeddings: {
+            id: 'embeddings',
+            label: 'Embeddingi',
+            enabled: true,
+            status: 'available',
+            provider: 'openai',
+          },
+          imageGeneration: {
+            id: 'imageGeneration',
+            label: 'Generowanie obrazow',
+            enabled: true,
+            status: 'available',
+            provider: 'gemini',
+          },
+        },
+        degradedCapabilities: [],
+        telemetry: {
+          fallbackModeUsed: false,
+          fallbackModeCapabilities: [],
+        },
+      }),
+    });
+  });
+}
+
+async function mockVisualBackendRequests(page) {
+  await mockUnmatchedLocalBackendRequests(page);
+  await mockProductionCapabilities(page);
+}
+
 async function freezeClock(page) {
   await page.addInitScript(`
     {
@@ -83,7 +158,7 @@ async function freezeClock(page) {
 }
 
 async function seedReleaseData(page) {
-  await mockUnmatchedLocalBackendRequests(page);
+  await mockVisualBackendRequests(page);
   const meeting = {
     id: 'meeting_visual_baseline',
     workspaceId: 'ws_e2e',
@@ -264,6 +339,7 @@ async function seedReferenceData(
     tasksCreateReference?: boolean;
   } = {}
 ) {
+  await mockVisualBackendRequests(page);
   const referenceMeeting = {
     id: 'meeting_reference_main',
     workspaceId: 'ws_e2e',
