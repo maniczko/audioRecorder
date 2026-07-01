@@ -125,10 +125,10 @@
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
       "expectedActionCount": 37,
-      "fingerprint": "5ae5c52d48f54aef",
+      "fingerprint": "f2f33d285234a017",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
-      "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone"],
+      "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone", "Voice Profiles Management"],
       "owner": "frontend-profile"
     },
     {

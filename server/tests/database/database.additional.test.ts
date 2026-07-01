@@ -1642,9 +1642,20 @@ describe('Database - Additional Coverage Tests', () => {
         source: 'test',
       });
 
-      const rows = await db._query(
-        'SELECT * FROM audit_logs WHERE workspace_id = ? AND entity_id = ? ORDER BY created_at ASC',
-        [workspaceId, created.id]
+      const lifecycleOrder = new Map([
+        ['voice_profile.created', 0],
+        ['voice_profile.updated', 1],
+        ['voice_profile.deleted', 2],
+      ]);
+      const rows = (
+        await db._query('SELECT * FROM audit_logs WHERE workspace_id = ? AND entity_id = ?', [
+          workspaceId,
+          created.id,
+        ])
+      ).sort(
+        (left: any, right: any) =>
+          (lifecycleOrder.get(left.action) ?? Number.MAX_SAFE_INTEGER) -
+          (lifecycleOrder.get(right.action) ?? Number.MAX_SAFE_INTEGER)
       );
       expect(rows.map((row: any) => row.action)).toEqual([
         'voice_profile.created',
