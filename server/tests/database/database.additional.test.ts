@@ -1116,7 +1116,12 @@ describe('Database - Additional Coverage Tests', () => {
           embedding_json TEXT,
           sample_count INTEGER DEFAULT 1,
           threshold REAL DEFAULT 0.82,
-          created_at TEXT
+          created_at TEXT,
+          updated_at TEXT,
+          profile_source TEXT DEFAULT 'unknown',
+          embedding_model TEXT DEFAULT 'unknown',
+          embedding_version TEXT DEFAULT '1',
+          created_by TEXT
         )
       `);
     });
@@ -1134,6 +1139,42 @@ describe('Database - Additional Coverage Tests', () => {
       const result = await db.saveVoiceProfile(profile);
       expect(result.speaker_name).toBe('Alice');
       expect(result.sample_count).toBe(1);
+    });
+
+    // ---------------------------------------------------------------
+    // Issue #1333 - voice profile operational metadata
+    // Date: 2026-07-01
+    // Bug: voice profile rows had no source/model/version/creator/update metadata.
+    // Fix: profile writes persist metadata while keeping old rows readable.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1333 - saveVoiceProfile writes operational metadata', async () => {
+      const nowSpy = vi.spyOn(db, 'nowIso').mockReturnValueOnce('2026-07-01T10:00:00.000Z');
+
+      try {
+        const result = await db.saveVoiceProfile({
+          id: 'vp_issue_1333_save',
+          userId: 'creator_1333',
+          workspaceId: 'ws_issue_1333',
+          speakerName: 'Metadata Save',
+          audioPath: '/tmp/metadata-save.wav',
+          embedding: [0.1, 0.2, 0.3],
+          source: 'manual_upload',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'creator_1333',
+        });
+
+        expect(result).toMatchObject({
+          profile_source: 'manual_upload',
+          embedding_model: 'voice-profile-embedding',
+          embedding_version: '1',
+          created_by: 'creator_1333',
+          created_at: '2026-07-01T10:00:00.000Z',
+          updated_at: '2026-07-01T10:00:00.000Z',
+        });
+      } finally {
+        nowSpy.mockRestore();
+      }
     });
 
     test('saveVoiceProfile rejects empty embedding without inserting a profile', async () => {
@@ -1217,6 +1258,55 @@ describe('Database - Additional Coverage Tests', () => {
       const result = await db.upsertVoiceProfile(profile2);
       expect(result.sample_count).toBe(2);
       expect(result.isUpdate).toBe(true);
+    });
+
+    test('Regression: Issue #1333 - upsertVoiceProfile preserves creation metadata and refreshes updated_at', async () => {
+      const nowSpy = vi
+        .spyOn(db, 'nowIso')
+        .mockReturnValueOnce('2026-07-01T11:00:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:05:00.000Z');
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_original',
+          userId: 'creator_1333',
+          workspaceId: 'ws_issue_1333_upsert',
+          speakerName: 'Metadata Upsert',
+          audioPath: '/tmp/metadata-original.wav',
+          embedding: [0.1, 0.2, 0.3],
+          source: 'manual_upload',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'creator_1333',
+        });
+
+        const result = await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_second',
+          userId: 'other_user',
+          workspaceId: 'ws_issue_1333_upsert',
+          speakerName: 'Metadata Upsert',
+          audioPath: '/tmp/metadata-second.wav',
+          embedding: [0.4, 0.5, 0.6],
+          source: 'transcript_speaker',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'other_user',
+        });
+
+        expect(result).toMatchObject({
+          id: 'vp_issue_1333_original',
+          sample_count: 2,
+          profile_source: 'manual_upload',
+          embedding_model: 'voice-profile-embedding',
+          embedding_version: '1',
+          created_by: 'creator_1333',
+          created_at: '2026-07-01T11:00:00.000Z',
+          updated_at: '2026-07-01T11:05:00.000Z',
+          isUpdate: true,
+        });
+      } finally {
+        nowSpy.mockRestore();
+      }
     });
 
     // ---------------------------------------------------------------
@@ -1308,6 +1398,39 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.threshold).toBe(0.99);
     });
 
+    test('Regression: Issue #1333 - updateVoiceProfileThreshold refreshes updated_at metadata', async () => {
+      const nowSpy = vi
+        .spyOn(db, 'nowIso')
+        .mockReturnValueOnce('2026-07-01T12:00:00.000Z')
+        .mockReturnValueOnce('2026-07-01T12:10:00.000Z');
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_threshold',
+          userId: 'u1',
+          workspaceId: 'ws_issue_1333_threshold',
+          speakerName: 'Threshold Metadata',
+          audioPath: '/tmp/threshold-metadata.wav',
+          embedding: [0.1, 0.2, 0.3],
+        });
+
+        await db.updateVoiceProfileThreshold(
+          'vp_issue_1333_threshold',
+          'ws_issue_1333_threshold',
+          0.9
+        );
+        const result = await db._get(
+          'SELECT threshold, updated_at FROM voice_profiles WHERE id = ?',
+          ['vp_issue_1333_threshold']
+        );
+
+        expect(result.threshold).toBe(0.9);
+        expect(result.updated_at).toBe('2026-07-01T12:10:00.000Z');
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+
     test('getWorkspaceVoiceProfiles returns profiles', async () => {
       const profiles = await db.getWorkspaceVoiceProfiles('ws1');
       expect(profiles.length).toBeGreaterThan(0);
@@ -1336,10 +1459,11 @@ describe('Database - Additional Coverage Tests', () => {
     test('Regression: #0 — ignores missing voice profile files without Sentry noise', async () => {
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       const missingPath = path.join(testUploadDir, 'missing-voice-profile.wav');
+      const createdAt = new Date().toISOString();
 
       await db._execute(
-        `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, threshold, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, threshold, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'vp_missing_audio',
           'u1',
@@ -1349,7 +1473,8 @@ describe('Database - Additional Coverage Tests', () => {
           '[]',
           1,
           0.82,
-          new Date().toISOString(),
+          createdAt,
+          createdAt,
         ]
       );
 

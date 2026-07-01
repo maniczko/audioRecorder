@@ -1190,6 +1190,11 @@ describe('Media Routes', () => {
       id: 'vp_1',
       speaker_name: 'Anna',
       created_at: '2026-06-30T20:00:00.000Z',
+      updated_at: '2026-06-30T20:01:00.000Z',
+      profile_source: 'transcript_speaker',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'user_1',
       sample_count: 1,
       threshold: 0.82,
       embedding_json: '[0.1,0.2,0.3]',
@@ -1215,15 +1220,25 @@ describe('Media Routes', () => {
       body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
     });
     expect(voiceRes.status).toBe(201);
-    expect(await voiceRes.json()).toEqual({
+    const voicePayload = await voiceRes.json();
+    expect(voicePayload).toEqual({
       id: 'vp_1',
       speakerName: 'Anna',
       hasEmbedding: true,
       createdAt: '2026-06-30T20:00:00.000Z',
+      updatedAt: '2026-06-30T20:01:00.000Z',
+      source: 'transcript_speaker',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'user_1',
       sampleCount: 1,
       threshold: 0.82,
       isUpdate: false,
     });
+    expect(voicePayload).not.toHaveProperty('embedding_json');
+    expect(voicePayload).not.toHaveProperty('embeddingJson');
+    expect(voicePayload).not.toHaveProperty('embedding');
+    expect(voicePayload).not.toHaveProperty('vector');
 
     const noTranscriptRes = await app.request('/media/recordings/rec_rediarize_missing/rediarize', {
       method: 'POST',
@@ -1258,6 +1273,11 @@ describe('Media Routes', () => {
       id: 'vp_existing',
       speaker_name: 'Anna',
       created_at: '2026-06-30T20:00:00.000Z',
+      updated_at: '2026-06-30T20:05:00.000Z',
+      profile_source: 'transcript_speaker',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'user_1',
       sample_count: 2,
       threshold: 0.91,
       isUpdate: true,
@@ -1279,6 +1299,11 @@ describe('Media Routes', () => {
       speakerName: 'Anna',
       hasEmbedding: true,
       createdAt: '2026-06-30T20:00:00.000Z',
+      updatedAt: '2026-06-30T20:05:00.000Z',
+      source: 'transcript_speaker',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'user_1',
       sampleCount: 2,
       threshold: 0.91,
       isUpdate: true,

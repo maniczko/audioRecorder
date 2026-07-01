@@ -220,6 +220,35 @@ function _buildPersistentAudioStorageError(error?: unknown): Error {
 }
 
 const WORKER_QUERY_TIMEOUT_MS = 15000;
+const DEFAULT_VOICE_PROFILE_SOURCE = 'unknown';
+const DEFAULT_VOICE_PROFILE_MODEL = 'unknown';
+const DEFAULT_VOICE_PROFILE_VERSION = '1';
+
+function normalizeVoiceProfileMetadata({
+  source,
+  model,
+  version,
+  createdBy,
+  userId,
+}: {
+  source?: unknown;
+  model?: unknown;
+  version?: unknown;
+  createdBy?: unknown;
+  userId?: unknown;
+}) {
+  const normalizeText = (value: unknown, fallback: string) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text || fallback;
+  };
+
+  return {
+    source: normalizeText(source, DEFAULT_VOICE_PROFILE_SOURCE),
+    model: normalizeText(model, DEFAULT_VOICE_PROFILE_MODEL),
+    version: normalizeText(version, DEFAULT_VOICE_PROFILE_VERSION),
+    createdBy: normalizeText(createdBy, normalizeText(userId, '')),
+  };
+}
 
 export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
   if (!/\badd\s+column\b/i.test(query)) return false;
@@ -3309,17 +3338,59 @@ export class Database {
     ]);
   }
 
-  async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
+  async saveVoiceProfile({
+    id,
+    userId,
+    workspaceId,
+    speakerName,
+    audioPath,
+    embedding,
+    source,
+    model,
+    version,
+    createdBy,
+  }: any) {
     const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const timestamp = this.nowIso();
+    const metadata = normalizeVoiceProfileMetadata({
+      source,
+      model,
+      version,
+      createdBy,
+      userId,
+    });
     await this._execute(
-      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(validEmbedding), timestamp]
+      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at, updated_at, profile_source, embedding_model, embedding_version, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        id,
+        userId,
+        workspaceId,
+        speakerName,
+        audioPath,
+        JSON.stringify(validEmbedding),
+        timestamp,
+        timestamp,
+        metadata.source,
+        metadata.model,
+        metadata.version,
+        metadata.createdBy,
+      ]
     );
     return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
   }
 
-  async upsertVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
+  async upsertVoiceProfile({
+    id,
+    userId,
+    workspaceId,
+    speakerName,
+    audioPath,
+    embedding,
+    source,
+    model,
+    version,
+    createdBy,
+  }: any) {
     const MAX_SAMPLES = 5;
     const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const existing = await this._get(
@@ -3340,9 +3411,10 @@ export class Database {
           );
         }
         const averaged = addToAverageEmbedding(existingEmb, existingCount, validEmbedding);
+        const timestamp = this.nowIso();
         await this._execute(
-          'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ? WHERE id = ?',
-          [JSON.stringify(averaged), existingCount + 1, audioPath, existing.id]
+          'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ?, updated_at = ? WHERE id = ?',
+          [JSON.stringify(averaged), existingCount + 1, audioPath, timestamp, existing.id]
         );
       }
       return {
@@ -3351,8 +3423,15 @@ export class Database {
       };
     }
     const timestamp = this.nowIso();
+    const metadata = normalizeVoiceProfileMetadata({
+      source,
+      model,
+      version,
+      createdBy,
+      userId,
+    });
     await this._execute(
-      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)',
+      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, created_at, updated_at, profile_source, embedding_model, embedding_version, created_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)',
       [
         id,
         userId,
@@ -3361,6 +3440,11 @@ export class Database {
         audioPath,
         JSON.stringify(validEmbedding),
         timestamp,
+        timestamp,
+        metadata.source,
+        metadata.model,
+        metadata.version,
+        metadata.createdBy,
       ]
     );
     return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
@@ -3368,9 +3452,10 @@ export class Database {
 
   async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {
     const clamped = Math.max(0.5, Math.min(0.99, threshold));
+    const timestamp = this.nowIso();
     await this._execute(
-      'UPDATE voice_profiles SET threshold = ? WHERE id = ? AND workspace_id = ?',
-      [clamped, id, workspaceId]
+      'UPDATE voice_profiles SET threshold = ?, updated_at = ? WHERE id = ? AND workspace_id = ?',
+      [clamped, timestamp, id, workspaceId]
     );
     return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
   }

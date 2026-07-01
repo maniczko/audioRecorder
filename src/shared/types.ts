@@ -204,6 +204,11 @@ export interface VoiceProfileSummary {
   speakerName: string;
   userId: string;
   createdAt: string;
+  updatedAt?: string;
+  source?: string;
+  model?: string;
+  version?: string;
+  createdBy?: string;
   hasEmbedding?: boolean;
   sampleCount?: number;
   threshold?: number;
