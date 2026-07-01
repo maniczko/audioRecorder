@@ -574,9 +574,12 @@ describe('Database (Async Worker SQLite)', () => {
         source: 'test-maintenance',
         requestId: 'req_retention_repeat',
       });
-      const cleanupAudit = auditRows.find(
-        (row: any) => row.action === 'retention.cleanup.completed'
-      );
+      const cleanupAudit = auditRows.find((row: any) => {
+        if (row.action !== 'retention.cleanup.completed') {
+          return false;
+        }
+        return JSON.parse(row.metadata_json).requestId === 'req_retention_repeat';
+      });
       expect(JSON.parse(cleanupAudit.metadata_json)).toMatchObject({
         requestId: 'req_retention_repeat',
       });
