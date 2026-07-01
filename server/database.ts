@@ -224,6 +224,7 @@ const DEFAULT_VOICE_PROFILE_SOURCE = 'unknown';
 const DEFAULT_VOICE_PROFILE_MODEL = 'unknown';
 const DEFAULT_VOICE_PROFILE_VERSION = '1';
 const VOICE_PROFILE_SAMPLE_STORAGE_POLICY = 'durable_until_profile_delete_or_replaced';
+const VOICE_PROFILE_RETENTION_POLICY = 'retained_until_profile_delete';
 
 function normalizeVoiceProfileMetadata({
   source,
@@ -259,6 +260,24 @@ function localFileExists(filePath: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+function buildVoiceProfileAuditMetadata(profile: any, overrides: Record<string, unknown> = {}) {
+  const audioPath = String(profile?.audio_path || profile?.audioPath || '');
+  return {
+    source: String(profile?.profile_source || profile?.source || DEFAULT_VOICE_PROFILE_SOURCE),
+    model: String(profile?.embedding_model || profile?.model || DEFAULT_VOICE_PROFILE_MODEL),
+    version: String(
+      profile?.embedding_version || profile?.version || DEFAULT_VOICE_PROFILE_VERSION
+    ),
+    sampleStoragePolicy: VOICE_PROFILE_SAMPLE_STORAGE_POLICY,
+    retentionPolicy: VOICE_PROFILE_RETENTION_POLICY,
+    sampleCount: Number(profile?.sample_count || profile?.sampleCount || 1),
+    threshold: Number.isFinite(Number(profile?.threshold)) ? Number(profile.threshold) : 0.82,
+    sampleHasPath: Boolean(audioPath),
+    sampleFileExists: localFileExists(audioPath),
+    ...overrides,
+  };
 }
 
 export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
@@ -2649,6 +2668,7 @@ export class Database {
           userId: String(profile.user_id || ''),
           audioPath,
           sampleStoragePolicy: VOICE_PROFILE_SAMPLE_STORAGE_POLICY,
+          retentionPolicy: VOICE_PROFILE_RETENTION_POLICY,
           sampleFileExists: localFileExists(audioPath),
           sampleCount: Number(profile.sample_count || 1),
           threshold: Number.isFinite(Number(profile.threshold)) ? Number(profile.threshold) : 0.82,
@@ -3425,7 +3445,16 @@ export class Database {
         metadata.createdBy,
       ]
     );
-    return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    await this.writeAuditLog({
+      workspaceId,
+      actorUserId: metadata.createdBy || userId || '',
+      action: 'voice_profile.created',
+      entityType: 'voice_profile',
+      entityId: id,
+      metadata: buildVoiceProfileAuditMetadata(row),
+    });
+    return row;
   }
 
   async upsertVoiceProfile({
@@ -3474,8 +3503,22 @@ export class Database {
       } else if (audioPath && existing.audio_path !== audioPath) {
         _deleteFileIfPresent(audioPath, '[database] Failed to delete unused voice profile audio');
       }
+      const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [existing.id]);
+      if (existingCount < MAX_SAMPLES) {
+        await this.writeAuditLog({
+          workspaceId,
+          actorUserId: String(userId || ''),
+          action: 'voice_profile.updated',
+          entityType: 'voice_profile',
+          entityId: row.id,
+          metadata: buildVoiceProfileAuditMetadata(row, {
+            source: String(source || row.profile_source || DEFAULT_VOICE_PROFILE_SOURCE),
+            replacedSample: Boolean(existing.audio_path && existing.audio_path !== audioPath),
+          }),
+        });
+      }
       return {
-        ...(await this._get('SELECT * FROM voice_profiles WHERE id = ?', [existing.id])),
+        ...row,
         isUpdate: true,
       };
     }
@@ -3504,7 +3547,16 @@ export class Database {
         metadata.createdBy,
       ]
     );
-    return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    await this.writeAuditLog({
+      workspaceId,
+      actorUserId: metadata.createdBy || userId || '',
+      action: 'voice_profile.created',
+      entityType: 'voice_profile',
+      entityId: id,
+      metadata: buildVoiceProfileAuditMetadata(row),
+    });
+    return row;
   }
 
   async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {
@@ -3524,7 +3576,7 @@ export class Database {
     );
   }
 
-  async deleteVoiceProfile(id, workspaceId) {
+  async deleteVoiceProfile(id, workspaceId, options: any = {}) {
     const row = await this._get('SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?', [
       id,
       workspaceId,
@@ -3536,6 +3588,19 @@ export class Database {
       id,
       workspaceId,
     ]);
+    if (row) {
+      await this.writeAuditLog({
+        workspaceId,
+        actorUserId: String(options.actorUserId || row.user_id || ''),
+        action: 'voice_profile.deleted',
+        entityType: 'voice_profile',
+        entityId: row.id,
+        metadata: buildVoiceProfileAuditMetadata(row, {
+          source: String(options.source || 'api'),
+          sampleHadPath: Boolean(row.audio_path),
+        }),
+      });
+    }
   }
 
   async getHealth() {
