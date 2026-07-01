@@ -47,21 +47,21 @@ export function registerAppRoutes(
   registerHealthRoute(app, (services as any).db);
   registerCapabilitiesRoute(app);
 
-  app.get('/metrics', async (c) => {
+  app.get('/metrics', middlewares.applyRateLimit('admin-sensitive', 20), async (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
     const metrics = await MetricsService.getPrometheusMetrics();
     return c.text(metrics);
   });
 
-  app.get('/api/admin/metrics', (c) => {
+  app.get('/api/admin/metrics', middlewares.applyRateLimit('admin-sensitive', 20), (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
     const summary = MetricsService.getJsonSummary();
     return c.json(summary);
   });
 
-  app.get('/api/admin/heapdump', async (c) => {
+  app.get('/api/admin/heapdump', middlewares.applyRateLimit('admin-sensitive', 5), async (c) => {
     if (
       services.config?.enableHeapdump !== true &&
       process.env.VOICELOG_ENABLE_HEAPDUMP !== 'true'

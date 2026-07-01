@@ -101,6 +101,7 @@ describe('Security & Payload Limits', () => {
 
     // applyRateLimit("auth-login", 20) means 20 requests allowed per minute
     let any429 = false;
+    let rateLimitedResponse: Response | null = null;
     for (let i = 0; i < 25; i++) {
       const res = await app.request('/auth/login', {
         method: 'POST',
@@ -109,16 +110,20 @@ describe('Security & Payload Limits', () => {
       });
       if (res.status === 429) {
         any429 = true;
+        rateLimitedResponse = res;
         break;
       }
     }
     expect(any429).toBe(true);
+    expect(rateLimitedResponse?.headers.get('Retry-After')).toMatch(/^\d+$/);
+    await expect(rateLimitedResponse?.json()).resolves.toMatchObject({
+      code: 'rate_limited',
+      retryable: true,
+      route: 'auth-login',
+    });
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining('[RATE LIMIT] unknown exceeded 20 req/min on /auth-login')
     );
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'APP ERROR STACK',
-      expect.stringContaining('Zbyt wiele prob. Limit: 20')
-    );
+    expect(consoleErrorSpy).not.toHaveBeenCalledWith('APP ERROR STACK', expect.anything());
   });
 });
