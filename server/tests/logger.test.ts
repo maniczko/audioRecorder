@@ -10,10 +10,13 @@ vi.mock('@sentry/node', () => ({
 
 describe('logger.ts', () => {
   let originalSentryDsn: string | undefined;
+  let originalNodeEnv: string | undefined;
 
   beforeEach(() => {
     vi.resetModules();
     originalSentryDsn = process.env.SENTRY_DSN;
+    originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
     delete process.env.SENTRY_DSN;
   });
 
@@ -25,6 +28,11 @@ describe('logger.ts', () => {
       process.env.SENTRY_DSN = originalSentryDsn;
     } else {
       delete process.env.SENTRY_DSN;
+    }
+    if (originalNodeEnv !== undefined) {
+      process.env.NODE_ENV = originalNodeEnv;
+    } else {
+      delete process.env.NODE_ENV;
     }
   });
 
@@ -110,5 +118,54 @@ describe('logger.ts', () => {
     await Promise.resolve();
     expect(mockCaptureMessage).not.toHaveBeenCalled();
     expect(mockCaptureException).not.toHaveBeenCalled();
+  });
+
+  test('emits production info logs as structured JSON through the public logger', async () => {
+    process.env.NODE_ENV = 'production';
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const { logger } = await import('../logger.ts');
+
+    logger.info('request completed', {
+      requestId: 'req-1',
+      workspaceId: 'ws-1',
+      route: '/health',
+      status: 200,
+      durationMs: '12.30',
+    });
+
+    const parsed = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+    expect(parsed).toMatchObject({
+      level: 'info',
+      service: 'voicelog-server',
+      message: 'request completed',
+      data: {
+        requestId: 'req-1',
+        workspaceId: 'ws-1',
+        route: '/health',
+        status: 200,
+        durationMs: '12.30',
+      },
+    });
+  });
+
+  test('production logger redacts token and transcript fields before writing JSON', async () => {
+    process.env.NODE_ENV = 'production';
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const { logger } = await import('../logger.ts');
+
+    logger.info('pipeline data', {
+      requestId: 'req-2',
+      accessToken: 'secret-token',
+      transcriptJson: 'private transcript',
+    });
+
+    const parsed = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+    expect(parsed.data).toMatchObject({
+      requestId: 'req-2',
+      accessToken: '[redacted]',
+      transcriptJson: '[redacted]',
+    });
+    expect(JSON.stringify(parsed)).not.toContain('secret-token');
+    expect(JSON.stringify(parsed)).not.toContain('private transcript');
   });
 });

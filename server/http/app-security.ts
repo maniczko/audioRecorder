@@ -222,7 +222,7 @@ export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http:/
 export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.onError((err: any, c) => {
     setSecurityHeaders(c);
-    console.error('APP ERROR STACK', err.stack);
+    logger.error('APP ERROR STACK', err, { sentry: false });
 
     // Ensure CORS headers are always present on error responses.
     // app.onError creates a new response that may bypass the cors middleware's

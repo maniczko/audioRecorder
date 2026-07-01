@@ -117,6 +117,7 @@ describe('TranscriptionService', () => {
   });
 
   it('deduplicates in-flight transcription jobs and persists successful results', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const service = new TranscriptionService(
       mockDb,
       mockWorkspaceService,
@@ -140,11 +141,13 @@ describe('TranscriptionService', () => {
     const asset = { id: 'asset_1', file_path: 'test.wav', workspace_id: 'ws_1' };
 
     service.ensureTranscriptionJob('rec_1', asset, {
+      requestId: 'req-rec-1',
       participants: ['Kasia'],
       vocabulary: 'lead',
       processingMode: 'fast',
     });
     service.ensureTranscriptionJob('rec_1', asset, {
+      requestId: 'req-rec-1',
       participants: ['Kasia'],
       vocabulary: 'lead',
       processingMode: 'fast',
@@ -166,6 +169,24 @@ describe('TranscriptionService', () => {
     expect(mockDb.saveTranscriptionResult).toHaveBeenCalledWith(
       'rec_1',
       expect.objectContaining({ pipelineStatus: 'completed' })
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      '[INFO] [Pipeline] Starting transcription job.',
+      expect.objectContaining({
+        requestId: 'req-rec-1',
+        workspaceId: 'ws_1',
+        recordingId: 'rec_1',
+        jobId: '',
+      })
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      '[INFO] [Metrics] Pipeline completed successfully.',
+      expect.objectContaining({
+        requestId: 'req-rec-1',
+        workspaceId: 'ws_1',
+        recordingId: 'rec_1',
+        jobId: '',
+      })
     );
     expect(mockDb.queueTranscription).not.toHaveBeenCalled();
     expect(service.transcriptionJobs.has('rec_1')).toBe(false);
@@ -324,6 +345,7 @@ describe('TranscriptionService', () => {
   }, 10000);
 
   it('Regression: #0 - persists retryable STT rate-limit diagnostics on failure', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const service = new TranscriptionService(
       mockDb,
       mockWorkspaceService,
@@ -348,9 +370,19 @@ describe('TranscriptionService', () => {
     mockAudioPipeline.transcribeRecording.mockRejectedValue(failure);
     const asset = { id: 'asset_429', file_path: 'test.wav', workspace_id: 'ws_1' };
 
-    service.ensureTranscriptionJob('rec_429', asset, {});
+    service.ensureTranscriptionJob('rec_429', asset, { requestId: 'req-429' });
     await service.transcriptionJobs.get('rec_429');
 
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[ERROR] [Pipeline] Transcription job failed.',
+      expect.objectContaining({
+        requestId: 'req-429',
+        workspaceId: 'ws_1',
+        recordingId: 'rec_429',
+        jobId: '',
+        errorCode: 'stt_rate_limited',
+      })
+    );
     expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(
       'rec_429',
       'Rate limit reached for audio transcriptions.',
