@@ -428,7 +428,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.delete('/voice-profiles/:id', async (c) => {
     const session = c.get('session') as any;
-    await workspaceService.deleteVoiceProfile(c.req.param('id'), session.workspace_id);
+    await workspaceService.deleteVoiceProfile(c.req.param('id'), session.workspace_id, {
+      actorUserId: String(session?.user_id || ''),
+      source: 'api',
+    });
     return new Response(null, { status: 204 });
   });
 

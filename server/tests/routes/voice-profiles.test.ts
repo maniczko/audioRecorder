@@ -199,7 +199,10 @@ describe('Voice Profiles Routes', () => {
       headers: { Authorization: 'Bearer fake_token' },
     });
     expect(res.status).toBe(204);
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledWith('vp_1', 'w1');
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledWith('vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
   });
 
   it('DELETE /voice-profiles/:id - is idempotent on repeated deletes in parallel', async () => {
@@ -220,8 +223,14 @@ describe('Voice Profiles Routes', () => {
     expect(first.status).toBe(204);
     expect(second.status).toBe(204);
     expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenCalledTimes(2);
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(1, 'vp_1', 'w1');
-    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(2, 'vp_1', 'w1');
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(1, 'vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
+    expect(mockWorkspaceService.deleteVoiceProfile).toHaveBeenNthCalledWith(2, 'vp_1', 'w1', {
+      actorUserId: 'u1',
+      source: 'api',
+    });
   });
 
   describe('PATCH /voice-profiles/:id/threshold', () => {

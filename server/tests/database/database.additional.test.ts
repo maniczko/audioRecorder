@@ -1375,7 +1375,9 @@ describe('Database - Additional Coverage Tests', () => {
       const nowSpy = vi
         .spyOn(db, 'nowIso')
         .mockReturnValueOnce('2026-07-01T11:00:00.000Z')
-        .mockReturnValueOnce('2026-07-01T11:05:00.000Z');
+        .mockReturnValueOnce('2026-07-01T11:01:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:05:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:06:00.000Z');
 
       try {
         await db.upsertVoiceProfile({
@@ -1513,6 +1515,7 @@ describe('Database - Additional Coverage Tests', () => {
       const nowSpy = vi
         .spyOn(db, 'nowIso')
         .mockReturnValueOnce('2026-07-01T12:00:00.000Z')
+        .mockReturnValueOnce('2026-07-01T12:01:00.000Z')
         .mockReturnValueOnce('2026-07-01T12:10:00.000Z');
 
       try {
@@ -1590,6 +1593,90 @@ describe('Database - Additional Coverage Tests', () => {
         ).resolves.toBeNull();
       } finally {
         unlinkSpy.mockRestore();
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Issue #1335 - voice profile export, retention, and audit model
+    // Date: 2026-07-01
+    // Bug: profile lifecycle changes were not visible in workspace audit logs.
+    // Fix: create/update/delete events record safe metadata without embeddings.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1335 - voice profile lifecycle writes safe audit metadata', async () => {
+      const workspaceId = 'ws_issue_1335_audit';
+      const originalPath = path.join(testUploadDir, 'vp_issue_1335_original.wav');
+      const replacementPath = path.join(testUploadDir, 'vp_issue_1335_replacement.wav');
+      fs.writeFileSync(originalPath, Buffer.from('original sample'));
+      fs.writeFileSync(replacementPath, Buffer.from('replacement sample'));
+
+      const created = await db.upsertVoiceProfile({
+        id: 'vp_issue_1335_audit',
+        userId: 'creator_1335',
+        workspaceId,
+        speakerName: 'Audited Speaker',
+        audioPath: originalPath,
+        embedding: [0.1, 0.2, 0.3],
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'creator_1335',
+      });
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1335_audit_replacement',
+        userId: 'updater_1335',
+        workspaceId,
+        speakerName: 'Audited Speaker',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'updater_1335',
+      });
+      await db.deleteVoiceProfile(created.id, workspaceId, {
+        actorUserId: 'deleter_1335',
+        source: 'test',
+      });
+
+      const rows = await db._query(
+        'SELECT * FROM audit_logs WHERE workspace_id = ? AND entity_id = ? ORDER BY created_at ASC',
+        [workspaceId, created.id]
+      );
+      expect(rows.map((row: any) => row.action)).toEqual([
+        'voice_profile.created',
+        'voice_profile.updated',
+        'voice_profile.deleted',
+      ]);
+      expect(rows.map((row: any) => row.actor_user_id)).toEqual([
+        'creator_1335',
+        'updater_1335',
+        'deleter_1335',
+      ]);
+
+      const metadata = rows.map((row: any) => JSON.parse(row.metadata_json));
+      expect(metadata[0]).toMatchObject({
+        source: 'manual_upload',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleCount: 1,
+      });
+      expect(metadata[1]).toMatchObject({
+        source: 'manual_upload',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleCount: 2,
+        replacedSample: true,
+      });
+      expect(metadata[2]).toMatchObject({
+        source: 'test',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleHadPath: true,
+      });
+      for (const entry of metadata) {
+        expect(entry).not.toHaveProperty('embedding');
+        expect(entry).not.toHaveProperty('embeddingJson');
+        expect(entry).not.toHaveProperty('embedding_json');
       }
     });
 

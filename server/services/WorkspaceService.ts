@@ -72,8 +72,8 @@ export default class WorkspaceService {
     return await this.db.upsertVoiceProfile(data);
   }
 
-  async deleteVoiceProfile(id: string, workspaceId: string) {
-    return await this.db.deleteVoiceProfile(id, workspaceId);
+  async deleteVoiceProfile(id: string, workspaceId: string, options: any = {}) {
+    return await this.db.deleteVoiceProfile(id, workspaceId, options);
   }
 
   async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {

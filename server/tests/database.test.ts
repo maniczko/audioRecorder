@@ -575,6 +575,7 @@ describe('Database (Async Worker SQLite)', () => {
         userId: 'user_export',
         audioPath: expect.stringContaining('missing-voice-profile-sample.wav'),
         sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
         sampleFileExists: false,
         sampleCount: 2,
         threshold: 0.87,
