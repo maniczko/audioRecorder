@@ -15,7 +15,9 @@ Ten dokument jest aktualnym skrótem hardeningu produkcyjnego. Szczególowy back
 - `/auth/google` nie ufa juz profilowi z klienta. Backend wymaga Google `idToken` i weryfikuje `aud`, `iss`, `exp` oraz `email_verified`.
 - `/ai/*` wymaga autoryzacji, workspace membership, rate limitow i quota per user/workspace/IP/endpoint.
 - Kosztowe endpointy poza `/ai/*` maja testy anonymous `401` i membership `403` tam, gdzie dotyczy STT/LLM/RAG/analyze/image generation.
-- Query token w produkcji jest odrzucony. SSE/progress uzywa krótkotrwalego progress tokenu przypisanego do `recordingId`.
+- Query token w produkcji jest odrzucony. SSE/progress uzywa `Authorization: Bearer`,
+  `X-Progress-Token` albo same-site cookie; krotkotrwaly progress token jest przypisany
+  do `recordingId` i nie powinien trafiac do URL.
 - Production CORS nie pozwala na wildcard z credentials; allowlista pochodzi z `VOICELOG_ALLOWED_ORIGINS`.
 
 ### Audio and data retention

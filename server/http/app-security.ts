@@ -3,6 +3,7 @@ import type { Hono } from 'hono';
 import { z } from 'zod';
 import { logger } from '../logger.ts';
 import { corsHeaders, securityHeaders } from '../lib/serverUtils.ts';
+import { redactSensitiveRequestUrl } from '../lib/requestLogRedaction.ts';
 
 function buildCorsHeaders(origin: string | undefined, allowedOrigins: string) {
   return corsHeaders(origin || '', allowedOrigins);
@@ -66,6 +67,19 @@ function normalizeAppError(err: any, statusCode: number) {
   };
 }
 
+function getRequestLogTarget(c: any) {
+  const rawUrl = String(c.req?.raw?.url || '');
+  if (rawUrl) {
+    try {
+      const parsed = new URL(rawUrl);
+      return redactSensitiveRequestUrl(`${parsed.pathname}${parsed.search}`);
+    } catch {
+      return redactSensitiveRequestUrl(rawUrl);
+    }
+  }
+  return redactSensitiveRequestUrl(String(c.req?.path || ''));
+}
+
 export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use('*', async (c, next) => {
     const requestOrigin = c.req.header('origin') || '';
@@ -101,12 +115,13 @@ export function applyRequestMetadata(app: Hono<any>) {
     c.res.headers.set('X-Request-Id', reqId);
 
     const durationMs = performance.now() - start;
+    const requestTarget = getRequestLogTarget(c);
     logger.info(
-      `[REQ] ${c.req.method} ${c.req.path} - ${c.res.status} [${durationMs.toFixed(1)}ms]`,
+      `[REQ] ${c.req.method} ${requestTarget} - ${c.res.status} [${durationMs.toFixed(1)}ms]`,
       {
         requestId: reqId,
         method: c.req.method,
-        route: c.req.path,
+        route: requestTarget,
         status: c.res.status,
         durationMs: durationMs.toFixed(2),
       }

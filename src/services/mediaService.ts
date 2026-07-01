@@ -29,9 +29,18 @@ const DEFAULT_UPLOAD_POLICY = {
 };
 let uploadPolicyPromise: Promise<typeof DEFAULT_UPLOAD_POLICY> | null = null;
 const mediaApiOptions = MEDIA_API_BASE_URL ? { baseUrl: MEDIA_API_BASE_URL } : {};
+type TranscriptionProgressAuthMode = 'session' | 'progress';
 
-export function buildTranscriptionProgressRequest(recordingId: string, token = '') {
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+export function buildTranscriptionProgressRequest(
+  recordingId: string,
+  token = '',
+  authMode: TranscriptionProgressAuthMode = 'session'
+) {
+  const headers: Record<string, string> = token
+    ? authMode === 'progress'
+      ? { 'X-Progress-Token': token }
+      : { Authorization: `Bearer ${token}` }
+    : {};
 
   return {
     url: `${MEDIA_API_BASE_URL || API_BASE_URL}/media/recordings/${encodeURIComponent(recordingId)}/progress`,

@@ -298,7 +298,8 @@ describe('Media Routes', () => {
       headers: {
         Origin: previewOrigin,
         'Access-Control-Request-Method': 'PUT',
-        'Access-Control-Request-Headers': 'Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id',
+        'Access-Control-Request-Headers':
+          'Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id,X-Progress-Token',
       },
     });
 
@@ -308,6 +309,7 @@ describe('Media Routes', () => {
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type');
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Workspace-Id');
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Meeting-Id');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Progress-Token');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('PUT');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('OPTIONS');
     expect(res.headers.get('Vary')).toContain('Origin');
@@ -320,12 +322,10 @@ describe('Media Routes', () => {
     const progressToken = createProgressToken('rec_progress_expired', 'user_1', 1000);
     vi.setSystemTime(new Date('2026-06-20T10:00:02.000Z'));
 
-    const res = await app.request(
-      `/media/recordings/rec_progress_expired/progress?progressToken=${progressToken}`,
-      {
-        method: 'GET',
-      }
-    );
+    const res = await app.request('/media/recordings/rec_progress_expired/progress', {
+      method: 'GET',
+      headers: { 'X-Progress-Token': progressToken },
+    });
 
     expect(res.status).toBe(401);
     expect(mockTranscriptionService.on).not.toHaveBeenCalled();
