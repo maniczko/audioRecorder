@@ -11,7 +11,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const SRC_DIR = path.join(__dirname, '..', 'src');
 const REPORTS_DIR = path.join(__dirname, '..', 'reports');
@@ -63,7 +62,10 @@ function checkAltText() {
       }
 
       // Check for empty alt
-      if (/<img[^>]*alt\s*=\s*["']{2}/i.test(line)) {
+      if (
+        /<img[^>]*alt\s*=\s*["']{2}/i.test(line) &&
+        !/aria-hidden\s*=\s*["']true["']/i.test(line)
+      ) {
         issues.push({
           file: path.relative(SRC_DIR, file),
           line: index + 1,

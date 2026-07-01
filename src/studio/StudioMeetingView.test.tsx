@@ -188,6 +188,60 @@ describe('StudioMeetingView', () => {
     ).toEqual(['Adam', 'Ewa']);
   });
 
+  test('Regression: Issue #1332 - shows voice profile labeling diagnostics for completed transcripts', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-profile-labels',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '0',
+              text: 'Profile diagnostics should be visible.',
+              timestamp: 0,
+              endTimestamp: 3,
+            },
+          ],
+          duration: 60,
+          voiceProfileLabeling: {
+            applied: true,
+            reason: 'matched',
+            mode: 'full',
+            profileCount: 1,
+            attemptedSpeakerCount: 1,
+            matchedSpeakerCount: 1,
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText(/Profile glosowe: uzyte/i)).toBeInTheDocument();
+  });
+
+  test('Regression: Issue #1332 - hides voice profile labeling diagnostics when no status is available', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-no-profile-labels',
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '0',
+              text: 'No diagnostics should stay quiet.',
+              timestamp: 0,
+              endTimestamp: 3,
+            },
+          ],
+          duration: 60,
+        }}
+      />
+    );
+
+    expect(screen.queryByText(/Profile glosowe:/i)).not.toBeInTheDocument();
+  });
+
   test('Regression: offers verified voice profiles as assignable transcript speaker names', async () => {
     remoteApiEnabledMock.mockReturnValue(true);
     apiRequestMock.mockImplementation((url: string) => {
@@ -1401,6 +1455,12 @@ describe('StudioMeetingView', () => {
   });
 
   test.each([
+    ['missing_speaker_id', 400, /Wybierz mowce i osobe przed zapisaniem probki glosu\./i],
+    [
+      'transcription_not_ready',
+      409,
+      /Profil glosu mozna zapisac dopiero po gotowej transkrypcji\./i,
+    ],
     [
       'speaker_segment_not_found',
       422,

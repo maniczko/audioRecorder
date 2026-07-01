@@ -4,14 +4,15 @@ const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const args = ['exec', 'playwright', 'test', 'tests/e2e/remote-api.spec.js', '--project=remote-api'];
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3105';
 const webCommand =
-  process.env.PLAYWRIGHT_WEB_COMMAND ||
-  'pnpm exec vite --host 127.0.0.1 --port 3105 --strictPort';
+  process.env.PLAYWRIGHT_WEB_COMMAND || 'pnpm exec vite --host 127.0.0.1 --port 3105 --strictPort';
 const env = {
   ...process.env,
   PLAYWRIGHT_BASE_URL: baseUrl,
   PLAYWRIGHT_WEB_COMMAND: webCommand,
+  PLAYWRIGHT_DATA_PROVIDER: 'local',
   PLAYWRIGHT_MEDIA_PROVIDER: 'remote',
   PLAYWRIGHT_INCLUDE_REMOTE_API: 'true',
+  VITE_DATA_PROVIDER: 'local',
 };
 const child =
   process.platform === 'win32'

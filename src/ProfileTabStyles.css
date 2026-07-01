@@ -578,6 +578,41 @@
   margin-top: 20px;
 }
 
+.voice-profile-management {
+  overflow: hidden;
+}
+
+.voice-profile-management-header {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.35fr) 0.7fr 0.9fr 0.85fr 1fr 74px;
+  gap: 12px;
+  align-items: center;
+  padding: 0 8px 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.voice-profile-permission-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.voice-profile-management-row {
+  margin: 0;
+}
+
+.voice-profile-management-row-inner {
+  min-width: 0;
+}
+
 .voice-profile-person-group {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -809,6 +844,12 @@
 
 .profile-delete-sample-btn:hover {
   background: rgba(239, 68, 68, 0.1);
+}
+
+.profile-delete-sample-btn:disabled,
+.vp-threshold-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .voice-profile-threshold-container {
@@ -1065,6 +1106,10 @@
 }
 
 @media (max-width: 720px) {
+  .voice-profile-management-header {
+    display: none;
+  }
+
   .voice-profile-metrics-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

@@ -287,11 +287,16 @@ function buildVoiceProfileErrorBody(input: {
   segmentCount?: number;
   matchedSegmentCount?: number;
   requestId?: string;
+  retryable?: boolean;
+  userAction?: string;
 }) {
+  const defaults = getVoiceProfileErrorDefaults(input.code);
   return {
     code: input.code,
     message: input.message,
     stage: input.stage,
+    retryable: input.retryable ?? defaults.retryable,
+    userAction: input.userAction || defaults.userAction,
     recordingId: input.recordingId,
     speakerId: input.speakerId || undefined,
     speakerName: input.speakerName || undefined,
@@ -301,7 +306,30 @@ function buildVoiceProfileErrorBody(input: {
   };
 }
 
-function classifyVoiceProfileEnrollmentError(error: any) {
+function getVoiceProfileErrorDefaults(code: string) {
+  const defaults: Record<string, { retryable: boolean; userAction: string }> = {
+    missing_speaker_id: { retryable: false, userAction: 'select_speaker' },
+    missing_speaker_name: { retryable: false, userAction: 'select_speaker' },
+    recording_not_found: { retryable: false, userAction: 'refresh_recording' },
+    transcription_not_ready: { retryable: true, userAction: 'wait_for_transcription' },
+    speaker_segment_not_found: { retryable: false, userAction: 'select_speaker_segment' },
+    audio_source_unavailable: { retryable: false, userAction: 'reimport_audio' },
+    embedding_failed: { retryable: true, userAction: 'retry_later' },
+    profile_save_failed: { retryable: true, userAction: 'retry' },
+  };
+  return defaults[code] || { retryable: false, userAction: 'contact_support' };
+}
+
+type VoiceProfileEnrollmentErrorDetails = {
+  code: string;
+  stage: string;
+  status: number;
+  message: string;
+  retryable?: boolean;
+  userAction?: string;
+};
+
+function classifyVoiceProfileEnrollmentError(error: any): VoiceProfileEnrollmentErrorDetails {
   const message = String(error?.message || '');
   const lower = message.toLowerCase();
   if (error?.code && error?.stage) {
@@ -310,6 +338,8 @@ function classifyVoiceProfileEnrollmentError(error: any) {
       stage: String(error.stage),
       status: Number(error.statusCode || error.status || 500) || 500,
       message,
+      retryable: typeof error.retryable === 'boolean' ? error.retryable : undefined,
+      userAction: typeof error.userAction === 'string' ? error.userAction : undefined,
     };
   }
   if (
@@ -352,6 +382,50 @@ function classifyVoiceProfileEnrollmentError(error: any) {
     stage: 'profile_save',
     status: 500,
     message: 'Nie udalo sie zapisac profilu glosu.',
+  };
+}
+
+function hasVoiceProfileEmbedding(profile: any) {
+  if (Array.isArray(profile?.embedding)) return profile.embedding.length > 0;
+  const raw = profile?.embedding_json ?? profile?.embeddingJson;
+  if (Array.isArray(raw)) return raw.length > 0;
+  if (typeof raw !== 'string') return false;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+
+function voiceProfileMetadata(profile: any) {
+  const fallbackCreatedAt = profile?.created_at ?? profile?.createdAt;
+  const fallbackUserId = profile?.user_id ?? profile?.userId ?? '';
+  return {
+    source: profile?.profile_source ?? profile?.source ?? 'unknown',
+    model: profile?.embedding_model ?? profile?.model ?? 'unknown',
+    version: profile?.embedding_version ?? profile?.version ?? VOICE_PROFILE_EMBEDDING_VERSION,
+    createdBy: profile?.created_by ?? profile?.createdBy ?? fallbackUserId,
+    updatedAt: profile?.updated_at ?? profile?.updatedAt ?? fallbackCreatedAt,
+  };
+}
+
+function buildVoiceProfileResponse(profile: any) {
+  const sampleCount = Number.isFinite(Number(profile?.sample_count ?? profile?.sampleCount))
+    ? Number(profile?.sample_count ?? profile?.sampleCount)
+    : 1;
+
+  return {
+    id: profile?.id,
+    speakerName: profile?.speaker_name ?? profile?.speakerName,
+    hasEmbedding: hasVoiceProfileEmbedding(profile),
+    createdAt: profile?.created_at ?? profile?.createdAt,
+    sampleCount,
+    threshold: typeof profile?.threshold === 'number' ? profile.threshold : 0.82,
+    isUpdate: Boolean(profile?.isUpdate),
+    ...voiceProfileMetadata(profile),
   };
 }
 
@@ -1219,6 +1293,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
       const runtimeStatus = getTranscriptionRuntimeStatus(recordingId);
+      const durableJob =
+        typeof transcriptionService.getDurableTranscriptionJob === 'function'
+          ? await transcriptionService.getDurableTranscriptionJob(recordingId)
+          : null;
+      const durableJobActive = ['queued', 'running', 'retryable_failed'].includes(
+        String(durableJob?.status || '')
+      );
 
       // Detect true orphaned processing. Active long-audio jobs can run well
       // past five minutes, so only inactive stale assets are marked failed.
@@ -1227,7 +1308,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
         Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
-        !runtimeStatus.activeJob
+        !runtimeStatus.activeJob &&
+        !durableJobActive
       ) {
         if (!hasTranscriptSegments(asset)) {
           console.warn(
@@ -1252,6 +1334,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         {
           ...normalizeTranscriptionStatusPayload(asset),
           ...runtimeStatus,
+          ...(durableJobActive ? { activeJob: true, durableJobStatus: durableJob.status } : {}),
           ...(partProgress ? { partProgress } : {}),
         },
         200
@@ -1611,7 +1694,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         session.user_id,
         options
       );
-      return c.json(profile, 201);
+      const payload = buildVoiceProfileResponse(profile);
+      const status = payload.isUpdate || payload.sampleCount > 1 ? 200 : 201;
+      return c.json(payload, status);
     } catch (err: any) {
       const details = classifyVoiceProfileEnrollmentError(err);
       const body = buildVoiceProfileErrorBody({
@@ -1624,6 +1709,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         segmentCount,
         matchedSegmentCount,
         requestId,
+        retryable: details.retryable,
+        userAction: details.userAction,
       });
       console.warn('[voice-profile] Enrollment failed', body);
       return c.json(body, details.status as any);

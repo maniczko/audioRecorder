@@ -127,6 +127,39 @@ describe('CalendarTab', () => {
     expect(els.length).toBeGreaterThanOrEqual(1);
   });
 
+  test('exposes stable production action ids and accessible names for calendar controls', () => {
+    renderCalendarTab({
+      userMeetings: [
+        {
+          id: 'meeting_1',
+          title: 'Spotkanie zespolu',
+          startsAt: '2026-03-14T09:00:00.000Z',
+          durationMinutes: 45,
+        },
+        {
+          id: 'meeting_future',
+          title: 'Planowanie kwartalu',
+          startsAt: '2036-03-14T09:00:00.000Z',
+          durationMinutes: 45,
+        },
+      ],
+    });
+
+    expect(
+      screen.getByRole('button', { name: /Filtruj kalendarz: Spotkanie, liczba 2/i })
+    ).toHaveAttribute('data-action-id', 'calendar-filter-meeting');
+    expect(
+      screen.getAllByRole('button', {
+        name: /Otworz wpis kalendarza: Spotkanie zespolu/i,
+      })[0]
+    ).toHaveAttribute('data-action-id', 'calendar-entry-meeting-meeting_1');
+    expect(
+      screen.getByRole('button', {
+        name: /Otworz nadchodzacy wpis kalendarza: Planowanie kwartalu/i,
+      })
+    ).toHaveAttribute('data-action-id', 'calendar-upcoming-meeting-meeting_future');
+  });
+
   test('renders polished Polish calendar labels', () => {
     renderCalendarTab({ userMeetings: [], calendarTasks: [], googleCalendarEvents: [] });
 

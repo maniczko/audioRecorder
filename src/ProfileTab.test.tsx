@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfileTab from './ProfileTab';
 import { apiRequest } from './services/httpClient';
@@ -602,6 +602,144 @@ describe('ProfileTab', () => {
       await userEvent.click(screen.getByText(/Narz/));
 
       expect(await screen.findByText('Brak zapisanych próbek głosu')).toBeInTheDocument();
+    });
+  });
+
+  describe('Voice Profiles Management', () => {
+    it('renders a management table with profile status, samples, threshold, last update, and actions', async () => {
+      vi.mocked(apiRequest).mockResolvedValueOnce({
+        profiles: [
+          {
+            id: 'vp_adam',
+            speakerName: 'Adam',
+            userId: 'u1',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            hasEmbedding: true,
+            sampleCount: 2,
+            threshold: 0.82,
+          },
+        ],
+      });
+
+      render(<ProfileTab {...baseProps} peopleProfiles={[{ name: 'Adam' }, { name: 'Ewa' }]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      const managementTable = await screen.findByRole('table', {
+        name: /Zarzadzanie profilami glosowymi/i,
+      });
+      expect(within(managementTable).getByRole('columnheader', { name: 'Osoba' })).toBeVisible();
+      expect(within(managementTable).getByRole('columnheader', { name: 'Probki' })).toBeVisible();
+      expect(within(managementTable).getByRole('columnheader', { name: 'Prog' })).toBeVisible();
+      expect(within(managementTable).getByRole('columnheader', { name: 'Status' })).toBeVisible();
+      expect(
+        within(managementTable).getByRole('columnheader', { name: 'Ostatnia aktualizacja' })
+      ).toBeVisible();
+      expect(within(managementTable).getByRole('columnheader', { name: 'Akcje' })).toBeVisible();
+
+      const adamRow = within(managementTable).getByRole('row', { name: /Adam/i });
+      expect(within(adamRow).getByText('2/5')).toBeInTheDocument();
+      expect(within(adamRow).getByTestId('voice-profile-management-status')).toHaveClass('ready');
+      expect(within(adamRow).getByLabelText('Prog rozpoznawania Adam')).toHaveValue('82');
+      expect(
+        within(adamRow).getByRole('button', { name: /Usun profil glosowy Adam/i })
+      ).toBeEnabled();
+    });
+
+    it('updates the profile threshold from the management row for workspace admins', async () => {
+      vi.mocked(apiRequest)
+        .mockResolvedValueOnce({
+          profiles: [
+            {
+              id: 'vp_adam',
+              speakerName: 'Adam',
+              userId: 'u1',
+              createdAt: '2026-05-21T10:00:00.000Z',
+              hasEmbedding: true,
+              sampleCount: 1,
+              threshold: 0.82,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ id: 'vp_adam', threshold: 0.9 });
+
+      render(<ProfileTab {...baseProps} peopleProfiles={[{ name: 'Adam' }]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      const slider = await screen.findByLabelText('Prog rozpoznawania Adam');
+      fireEvent.change(slider, { target: { value: '90' } });
+      fireEvent.mouseUp(slider);
+
+      await waitFor(() => {
+        expect(apiRequest).toHaveBeenCalledWith('/voice-profiles/vp_adam/threshold', {
+          method: 'PATCH',
+          body: { threshold: 0.9 },
+        });
+      });
+    });
+
+    it('deletes a profile from the management row for workspace admins', async () => {
+      vi.mocked(apiRequest)
+        .mockResolvedValueOnce({
+          profiles: [
+            {
+              id: 'vp_adam',
+              speakerName: 'Adam',
+              userId: 'u1',
+              createdAt: '2026-05-21T10:00:00.000Z',
+              hasEmbedding: true,
+              sampleCount: 1,
+              threshold: 0.82,
+            },
+          ],
+        })
+        .mockResolvedValueOnce(undefined);
+
+      render(<ProfileTab {...baseProps} peopleProfiles={[{ name: 'Adam' }]} />);
+
+      await userEvent.click(screen.getByText(/Narz/));
+      await userEvent.click(
+        await screen.findByRole('button', { name: /Usun profil glosowy Adam/i })
+      );
+
+      await waitFor(() => {
+        expect(apiRequest).toHaveBeenCalledWith('/voice-profiles/vp_adam', {
+          method: 'DELETE',
+          parseAs: 'raw',
+        });
+      });
+      expect(
+        within(screen.getByTestId('voice-profile-person-adam')).getByTestId(
+          'voice-profile-management-status'
+        )
+      ).toHaveClass('empty');
+    });
+
+    it('keeps threshold and delete controls read-only for workspace members', async () => {
+      vi.mocked(apiRequest).mockResolvedValueOnce({
+        profiles: [
+          {
+            id: 'vp_adam',
+            speakerName: 'Adam',
+            userId: 'u1',
+            createdAt: '2026-05-21T10:00:00.000Z',
+            hasEmbedding: true,
+            sampleCount: 1,
+            threshold: 0.82,
+          },
+        ],
+      });
+
+      render(
+        <ProfileTab {...baseProps} workspaceRole="member" peopleProfiles={[{ name: 'Adam' }]} />
+      );
+
+      await userEvent.click(screen.getByText(/Narz/));
+
+      expect(await screen.findByLabelText('Prog rozpoznawania Adam')).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Usun profil glosowy Adam/i })).toBeDisabled();
+      expect(screen.getByText(/Tylko owner lub admin/i)).toBeInTheDocument();
     });
   });
 
