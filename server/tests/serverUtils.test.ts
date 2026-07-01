@@ -56,6 +56,14 @@ describe('serverUtils', () => {
     });
     expect(securityHeaders()).toEqual({
       'Content-Security-Policy': "default-src 'none'",
+      'Cache-Control': 'no-store, max-age=0',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+      Expires: '0',
+      'Permissions-Policy':
+        'accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+      Pragma: 'no-cache',
+      'Referrer-Policy': 'no-referrer',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
     });

@@ -31,6 +31,13 @@ function applyCorsHeadersToContext(c: any, requestOrigin: string, allowedOrigins
   }
 }
 
+function setSecurityHeaders(c: any) {
+  const headers = securityHeaders();
+  for (const [name, value] of Object.entries(headers)) {
+    c.header(name, value);
+  }
+}
+
 const SERVER_INFRASTRUCTURE_ERROR_PATTERNS = [
   'enotfound',
   'econnrefused',
@@ -89,6 +96,7 @@ export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
       return new Response(null, {
         status: 204,
         headers: {
+          ...securityHeaders(),
           'Access-Control-Allow-Origin': cors['Access-Control-Allow-Origin'],
           'Access-Control-Allow-Headers': cors['Access-Control-Allow-Headers'],
           'Access-Control-Allow-Methods': cors['Access-Control-Allow-Methods'],
@@ -195,16 +203,14 @@ export function applyRateLimiting(app: Hono<any>) {
 
 export function applySecurityHeaders(app: Hono<any>) {
   app.use('*', async (c, next) => {
-    const headers = securityHeaders();
-    c.header('Content-Security-Policy', headers['Content-Security-Policy']);
-    c.header('X-Content-Type-Options', headers['X-Content-Type-Options']);
-    c.header('X-Frame-Options', headers['X-Frame-Options']);
+    setSecurityHeaders(c);
     await next();
   });
 }
 
 export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.notFound((c) => {
+    setSecurityHeaders(c);
     const requestOrigin = c.req.header('origin');
     if (requestOrigin) {
       applyCorsHeadersToContext(c, requestOrigin, allowedOrigins);
@@ -215,6 +221,7 @@ export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http:/
 
 export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.onError((err: any, c) => {
+    setSecurityHeaders(c);
     console.error('APP ERROR STACK', err.stack);
 
     // Ensure CORS headers are always present on error responses.

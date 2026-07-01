@@ -15,6 +15,19 @@ function createServices(allowedOrigins: string) {
   } as any;
 }
 
+function expectHardenedHeaders(res: Response) {
+  expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'none'");
+  expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=31536000; includeSubDomains');
+  expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
+  expect(res.headers.get('Permissions-Policy')).toContain('microphone=()');
+  expect(res.headers.get('Cross-Origin-Resource-Policy')).toBe('cross-origin');
+  expect(res.headers.get('Cache-Control')).toBe('no-store, max-age=0');
+  expect(res.headers.get('Pragma')).toBe('no-cache');
+  expect(res.headers.get('Expires')).toBe('0');
+  expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+}
+
 describe('app security CORS contract', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalAllowVercelPreviews = process.env.VOICELOG_ALLOW_VERCEL_PREVIEWS;
@@ -42,6 +55,7 @@ describe('app security CORS contract', () => {
     expect(allowed.status).toBe(204);
     expect(allowed.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
     expect(allowed.headers.get('Access-Control-Allow-Credentials')).toBe('true');
+    expectHardenedHeaders(allowed);
 
     const disallowed = await app.request('/missing-route', {
       method: 'OPTIONS',
@@ -72,6 +86,36 @@ describe('app security CORS contract', () => {
     expect(res.status).toBe(204);
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
     expect(res.headers.get('Access-Control-Allow-Credentials')).toBeNull();
+    expectHardenedHeaders(res);
+  });
+
+  it('adds hardened security and no-store headers to success, 404, and error responses', async () => {
+    const app = createApp(createServices('https://app.example.test'));
+    app.get('/ok', (c) => c.json({ ok: true }));
+    app.get('/boom', () => {
+      throw Object.assign(new Error('synthetic failure'), { statusCode: 503 });
+    });
+
+    const success = await app.request('/ok', {
+      headers: { Origin: 'https://app.example.test' },
+    });
+    expect(success.status).toBe(200);
+    expect(success.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
+    expectHardenedHeaders(success);
+
+    const missing = await app.request('/missing-route', {
+      headers: { Origin: 'https://app.example.test' },
+    });
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
+    expectHardenedHeaders(missing);
+
+    const error = await app.request('/boom', {
+      headers: { Origin: 'https://app.example.test' },
+    });
+    expect(error.status).toBe(503);
+    expect(error.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
+    expectHardenedHeaders(error);
   });
 
   function expectCredentialedCors(res: Response, origin = productionOrigin) {

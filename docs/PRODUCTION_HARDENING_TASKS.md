@@ -18,6 +18,8 @@ Ten dokument jest aktualnym skrótem hardeningu produkcyjnego. Szczególowy back
 - Query token w produkcji jest odrzucony. SSE/progress uzywa `Authorization: Bearer`,
   `X-Progress-Token` albo same-site cookie; krotkotrwaly progress token jest przypisany
   do `recordingId` i nie powinien trafiac do URL.
+- Backend API wymusza no-store oraz naglowki HSTS, Referrer-Policy, Permissions-Policy i CORP.
+  Frontend CSP pozostaje osobnym kontraktem hostingu Vercel, bo API uzywa `default-src 'none'`.
 - Production CORS nie pozwala na wildcard z credentials; allowlista pochodzi z `VOICELOG_ALLOWED_ORIGINS`.
 
 ### Audio and data retention
