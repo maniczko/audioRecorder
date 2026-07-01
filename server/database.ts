@@ -223,6 +223,7 @@ const WORKER_QUERY_TIMEOUT_MS = 15000;
 const DEFAULT_VOICE_PROFILE_SOURCE = 'unknown';
 const DEFAULT_VOICE_PROFILE_MODEL = 'unknown';
 const DEFAULT_VOICE_PROFILE_VERSION = '1';
+const VOICE_PROFILE_SAMPLE_STORAGE_POLICY = 'durable_until_profile_delete_or_replaced';
 
 function normalizeVoiceProfileMetadata({
   source,
@@ -248,6 +249,16 @@ function normalizeVoiceProfileMetadata({
     version: normalizeText(version, DEFAULT_VOICE_PROFILE_VERSION),
     createdBy: normalizeText(createdBy, normalizeText(userId, '')),
   };
+}
+
+function localFileExists(filePath: unknown): boolean {
+  const resolved = typeof filePath === 'string' ? filePath.trim() : '';
+  if (!resolved) return false;
+  try {
+    return fs.existsSync(resolved);
+  } catch {
+    return false;
+  }
 }
 
 export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
@@ -2542,36 +2553,51 @@ export class Database {
     if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
 
     const exportedAt = this.nowIso();
-    const [workspace, members, state, mediaAssets, ragChunks, auditLogs, transcriptionJobs] =
-      await Promise.all([
-        this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
-        this._query(
-          `SELECT workspace_members.workspace_id, workspace_members.user_id,
+    const [
+      workspace,
+      members,
+      state,
+      mediaAssets,
+      ragChunks,
+      voiceProfiles,
+      auditLogs,
+      transcriptionJobs,
+    ] = await Promise.all([
+      this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
+      this._query(
+        `SELECT workspace_members.workspace_id, workspace_members.user_id,
                   workspace_members.member_role, workspace_members.joined_at,
                   users.email, users.name
            FROM workspace_members
            LEFT JOIN users ON users.id = workspace_members.user_id
            WHERE workspace_members.workspace_id = ?
            ORDER BY workspace_members.joined_at ASC`,
-          [safeWorkspaceId]
-        ),
-        this.getWorkspaceState(safeWorkspaceId),
-        this._query(`SELECT * FROM media_assets WHERE workspace_id = ? ORDER BY created_at ASC`, [
-          safeWorkspaceId,
-        ]),
-        this._query(
-          `SELECT id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
+        [safeWorkspaceId]
+      ),
+      this.getWorkspaceState(safeWorkspaceId),
+      this._query(`SELECT * FROM media_assets WHERE workspace_id = ? ORDER BY created_at ASC`, [
+        safeWorkspaceId,
+      ]),
+      this._query(
+        `SELECT id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
            FROM rag_chunks WHERE workspace_id = ? ORDER BY created_at ASC`,
-          [safeWorkspaceId]
-        ),
-        this._query(`SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC`, [
-          safeWorkspaceId,
-        ]),
-        this._query(
-          `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
-          [safeWorkspaceId]
-        ),
-      ]);
+        [safeWorkspaceId]
+      ),
+      this._query(
+        `SELECT id, user_id, workspace_id, speaker_name, audio_path, sample_count, threshold,
+                  created_at, updated_at, profile_source, embedding_model, embedding_version,
+                  created_by
+           FROM voice_profiles WHERE workspace_id = ? ORDER BY created_at ASC`,
+        [safeWorkspaceId]
+      ),
+      this._query(`SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC`, [
+        safeWorkspaceId,
+      ]),
+      this._query(
+        `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
+        [safeWorkspaceId]
+      ),
+    ]);
 
     const payload = {
       schemaVersion: 'workspace-export-v1',
@@ -2615,6 +2641,25 @@ export class Database {
         embedding: this._safeJsonParse(chunk.embedding_json, []),
         createdAt: String(chunk.created_at || ''),
       })),
+      voiceProfileSamples: voiceProfiles.map((profile: any) => {
+        const audioPath = String(profile.audio_path || '');
+        return {
+          id: String(profile.id || ''),
+          speakerName: String(profile.speaker_name || ''),
+          userId: String(profile.user_id || ''),
+          audioPath,
+          sampleStoragePolicy: VOICE_PROFILE_SAMPLE_STORAGE_POLICY,
+          sampleFileExists: localFileExists(audioPath),
+          sampleCount: Number(profile.sample_count || 1),
+          threshold: Number.isFinite(Number(profile.threshold)) ? Number(profile.threshold) : 0.82,
+          source: String(profile.profile_source || DEFAULT_VOICE_PROFILE_SOURCE),
+          model: String(profile.embedding_model || DEFAULT_VOICE_PROFILE_MODEL),
+          version: String(profile.embedding_version || DEFAULT_VOICE_PROFILE_VERSION),
+          createdBy: String(profile.created_by || profile.user_id || ''),
+          createdAt: String(profile.created_at || ''),
+          updatedAt: String(profile.updated_at || profile.created_at || ''),
+        };
+      }),
       operational: {
         auditLogs: auditLogs.map((entry: any) => ({
           id: String(entry.id || ''),
@@ -2653,6 +2698,10 @@ export class Database {
         exportedAt,
         mediaAssetCount: payload.mediaAssets.length,
         ragChunkCount: payload.ragChunks.length,
+        voiceProfileSampleCount: payload.voiceProfileSamples.length,
+        missingVoiceProfileSampleCount: payload.voiceProfileSamples.filter(
+          (sample: any) => sample.audioPath && !sample.sampleFileExists
+        ).length,
       },
     });
 
@@ -3416,6 +3465,14 @@ export class Database {
           'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ?, updated_at = ? WHERE id = ?',
           [JSON.stringify(averaged), existingCount + 1, audioPath, timestamp, existing.id]
         );
+        if (existing.audio_path && existing.audio_path !== audioPath) {
+          _deleteFileIfPresent(
+            existing.audio_path,
+            '[database] Failed to delete replaced voice profile audio'
+          );
+        }
+      } else if (audioPath && existing.audio_path !== audioPath) {
+        _deleteFileIfPresent(audioPath, '[database] Failed to delete unused voice profile audio');
       }
       return {
         ...(await this._get('SELECT * FROM voice_profiles WHERE id = ?', [existing.id])),

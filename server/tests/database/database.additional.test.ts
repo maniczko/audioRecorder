@@ -1260,6 +1260,117 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.isUpdate).toBe(true);
     });
 
+    // ---------------------------------------------------------------
+    // Issue #1334 - durable voice profile sample storage policy
+    // Date: 2026-07-01
+    // Bug: replacing a voice profile sample left the previous local sample orphaned.
+    // Fix: profile samples are durable until the profile is deleted or replaced.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1334 - upsertVoiceProfile deletes replaced durable sample file', async () => {
+      const originalPath = path.join(testUploadDir, 'vp_issue_1334_original.wav');
+      const replacementPath = path.join(testUploadDir, 'vp_issue_1334_replacement.wav');
+      fs.writeFileSync(originalPath, Buffer.from('old voice sample'));
+      fs.writeFileSync(replacementPath, Buffer.from('new voice sample'));
+
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_update',
+        speakerName: 'Durable Sample',
+        audioPath: originalPath,
+        embedding: [0.1, 0.2, 0.3],
+      });
+      expect(fs.existsSync(originalPath)).toBe(true);
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_replacement',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_update',
+        speakerName: 'Durable Sample',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result).toMatchObject({
+        id: 'vp_issue_1334_original',
+        audio_path: replacementPath,
+        sample_count: 2,
+        isUpdate: true,
+      });
+      expect(fs.existsSync(originalPath)).toBe(false);
+      expect(fs.existsSync(replacementPath)).toBe(true);
+    });
+
+    test('Regression: Issue #1334 - missing replaced voice profile sample is ignored without warning noise', async () => {
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const missingPath = path.join(testUploadDir, 'vp_issue_1334_missing.wav');
+      const replacementPath = path.join(testUploadDir, 'vp_issue_1334_missing_replacement.wav');
+      fs.writeFileSync(replacementPath, Buffer.from('replacement voice sample'));
+
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_missing_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_missing',
+        speakerName: 'Missing Durable Sample',
+        audioPath: missingPath,
+        embedding: [0.1, 0.2, 0.3],
+      });
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_missing_replacement',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_missing',
+        speakerName: 'Missing Durable Sample',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result.audio_path).toBe(replacementPath);
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Failed to delete voice profile audio'),
+        expect.anything(),
+        expect.anything()
+      );
+      warnSpy.mockRestore();
+    });
+
+    test('Regression: Issue #1334 - rejects overflow samples without leaving an unused file', async () => {
+      let currentPath = '';
+      for (let index = 1; index <= 5; index += 1) {
+        currentPath = path.join(testUploadDir, `vp_issue_1334_cap_${index}.wav`);
+        fs.writeFileSync(currentPath, Buffer.from(`sample ${index}`));
+        await db.upsertVoiceProfile({
+          id: `vp_issue_1334_cap_${index}`,
+          userId: 'u1',
+          workspaceId: 'ws_issue_1334_cap',
+          speakerName: 'Capped Durable Sample',
+          audioPath: currentPath,
+          embedding: [index, index + 0.1, index + 0.2],
+        });
+      }
+
+      const overflowPath = path.join(testUploadDir, 'vp_issue_1334_cap_overflow.wav');
+      fs.writeFileSync(overflowPath, Buffer.from('overflow sample'));
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_cap_overflow',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_cap',
+        speakerName: 'Capped Durable Sample',
+        audioPath: overflowPath,
+        embedding: [9, 9.1, 9.2],
+      });
+
+      expect(result).toMatchObject({
+        id: 'vp_issue_1334_cap_1',
+        sample_count: 5,
+        audio_path: currentPath,
+        isUpdate: true,
+      });
+      expect(fs.existsSync(currentPath)).toBe(true);
+      expect(fs.existsSync(overflowPath)).toBe(false);
+    });
+
     test('Regression: Issue #1333 - upsertVoiceProfile preserves creation metadata and refreshes updated_at', async () => {
       const nowSpy = vi
         .spyOn(db, 'nowIso')
@@ -1454,6 +1565,32 @@ describe('Database - Additional Coverage Tests', () => {
       expect(profiles.filter((p: any) => p.id === 'vp_test5')).toHaveLength(0);
 
       unlinkSpy.mockRestore();
+    });
+
+    test('Regression: Issue #1334 - deleteVoiceProfile removes the current durable sample file', async () => {
+      const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+      const samplePath = path.join(testUploadDir, 'vp_issue_1334_delete.wav');
+      fs.writeFileSync(samplePath, Buffer.from('voice sample'));
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1334_delete',
+          userId: 'u1',
+          workspaceId: 'ws_issue_1334_delete',
+          speakerName: 'Delete Durable Sample',
+          audioPath: samplePath,
+          embedding: [0.1, 0.2, 0.3],
+        });
+
+        await db.deleteVoiceProfile('vp_issue_1334_delete', 'ws_issue_1334_delete');
+
+        expect(unlinkSpy).toHaveBeenCalledWith(samplePath);
+        await expect(
+          db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_issue_1334_delete'])
+        ).resolves.toBeNull();
+      } finally {
+        unlinkSpy.mockRestore();
+      }
     });
 
     test('Regression: #0 — ignores missing voice profile files without Sentry noise', async () => {
