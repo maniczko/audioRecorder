@@ -13,6 +13,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
+import { parseErrors, partitionWorkflowFailures } from './github-error-reporting.mjs';
+
+export { parseErrors, partitionWorkflowFailures };
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load environment variables from .env.local FIRST (takes precedence)
@@ -31,7 +35,11 @@ const config = {
 };
 
 // Ensure output directory exists
-if (!fs.existsSync(config.outputDir)) {
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) &&
+  !fs.existsSync(config.outputDir)
+) {
   fs.mkdirSync(config.outputDir, { recursive: true });
   console.log(`📁 Created output directory: ${config.outputDir}`);
 }
@@ -98,48 +106,6 @@ async function fetchWorkflowRuns() {
   return response.data.workflow_runs;
 }
 
-function getWorkflowKey(run) {
-  return run.name || String(run.workflow_id || run.id || 'unknown-workflow');
-}
-
-export function partitionWorkflowFailures(runs) {
-  const latestByWorkflow = new Map();
-
-  for (const run of runs) {
-    const key = getWorkflowKey(run);
-    const currentLatest = latestByWorkflow.get(key);
-
-    if (
-      !currentLatest ||
-      new Date(run.created_at).getTime() > new Date(currentLatest.created_at).getTime()
-    ) {
-      latestByWorkflow.set(key, run);
-    }
-  }
-
-  const activeFailures = [];
-  const resolvedFailures = [];
-
-  for (const run of runs) {
-    if (run.conclusion !== 'failure') {
-      continue;
-    }
-
-    const latestRun = latestByWorkflow.get(getWorkflowKey(run));
-    if (latestRun && latestRun.id === run.id) {
-      activeFailures.push(run);
-    } else {
-      resolvedFailures.push(run);
-    }
-  }
-
-  return {
-    activeFailures,
-    resolvedFailures,
-    latestByWorkflow: Array.from(latestByWorkflow.values()),
-  };
-}
-
 // Fetch job logs
 async function fetchJobLogs(jobId, jobName) {
   console.log(`  📄 Fetching logs for job: ${jobName}`);
@@ -203,37 +169,6 @@ async function fetchJobLogs(jobId, jobName) {
 
     req.end();
   });
-}
-
-// Parse error from logs
-function parseErrors(logs) {
-  const errors = [];
-  const lines = logs.split('\n');
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Look for error patterns
-    if (
-      line.includes('Error:') ||
-      line.includes('ERROR') ||
-      line.includes('❌') ||
-      line.includes('FAILED')
-    ) {
-      // Get context (5 lines before and after)
-      const start = Math.max(0, i - 5);
-      const end = Math.min(lines.length, i + 5);
-      const context = lines.slice(start, end).join('\n');
-
-      errors.push({
-        line: line.trim(),
-        context: context,
-        lineNumber: i + 1,
-      });
-    }
-  }
-
-  return errors;
 }
 
 // Generate error report

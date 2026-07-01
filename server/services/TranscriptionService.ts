@@ -5,6 +5,11 @@ import {
   normalizePartTranscriptionCheckpoint,
   parseMediaManifest,
 } from '../lib/mediaStoragePolicy.ts';
+import { requireVoiceProfileEmbedding } from '../lib/voiceProfileEmbedding.ts';
+
+const VOICE_PROFILE_EMBEDDING_MODEL = 'voice-profile-embedding';
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+const VOICE_PROFILE_TRANSCRIPT_SOURCE = 'transcript_speaker';
 
 type VoiceProfileEnrollmentCode =
   | 'speaker_segment_not_found'
@@ -319,7 +324,7 @@ export default class TranscriptionService extends EventEmitter {
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,
-    options?: { actorUserId?: string }
+    options?: { actorUserId?: string; source?: string; requestId?: string }
   ) {
     return await this.db.deleteMediaAsset(recordingId, workspaceId, options);
   }
@@ -420,6 +425,49 @@ export default class TranscriptionService extends EventEmitter {
     const confidence = confidences.length
       ? confidences.reduce((sum, value) => sum + value, 0) / confidences.length
       : 0;
+    const profileLabelingParts = partResults
+      .map(({ result }) => result?.transcriptionDiagnostics?.voiceProfileLabeling)
+      .filter((value) => value && typeof value === 'object');
+    const matchedSpeakerCount = profileLabelingParts.reduce(
+      (sum, item) => sum + Number(item.matchedSpeakerCount || 0),
+      0
+    );
+    const attemptedSpeakerCount = profileLabelingParts.reduce(
+      (sum, item) => sum + Number(item.attemptedSpeakerCount || 0),
+      0
+    );
+    const profileCount = profileLabelingParts.reduce(
+      (max, item) => Math.max(max, Number(item.profileCount || 0)),
+      0
+    );
+    const appliedPartCount = profileLabelingParts.filter((item) => Boolean(item.applied)).length;
+    const skippedPartCount = profileLabelingParts.filter(
+      (item) => item.reason === 'disabled_by_processing_mode'
+    ).length;
+    const profileLabelingReason =
+      appliedPartCount > 0
+        ? 'matched'
+        : profileLabelingParts.length === 0
+          ? 'not_attempted'
+          : skippedPartCount === profileLabelingParts.length
+            ? 'disabled_by_processing_mode'
+            : profileLabelingParts.some((item) => item.reason === 'no_eligible_speaker_audio')
+              ? 'no_eligible_speaker_audio'
+              : profileLabelingParts.some((item) => item.reason === 'no_speakers')
+                ? 'no_speakers'
+                : profileLabelingParts.some((item) => item.reason === 'no_voice_profiles')
+                  ? 'no_voice_profiles'
+                  : 'no_match';
+    const voiceProfileLabeling = {
+      applied: appliedPartCount > 0,
+      reason: profileLabelingReason,
+      mode: 'segmented',
+      profileCount,
+      attemptedSpeakerCount,
+      matchedSpeakerCount,
+      partCount: partResults.length + failedParts,
+      appliedPartCount,
+    };
     return {
       segments,
       diarization: {
@@ -432,6 +480,7 @@ export default class TranscriptionService extends EventEmitter {
         partCount: partResults.length + failedParts,
         completedParts: partResults.length,
         failedParts,
+        voiceProfileLabeling,
       },
     };
   }
@@ -1044,9 +1093,9 @@ export default class TranscriptionService extends EventEmitter {
     }
 
     try {
-      let embedding: any[] = [];
+      let embedding: number[] = [];
       try {
-        embedding = await this.computeEmbedding(clipPath);
+        embedding = requireVoiceProfileEmbedding(await this.computeEmbedding(clipPath));
       } catch (error) {
         throw voiceProfileError(
           'embedding_failed',
@@ -1062,13 +1111,17 @@ export default class TranscriptionService extends EventEmitter {
       fs.renameSync(clipPath, newPath);
       let profile;
       try {
-        profile = await this.workspaceService.saveVoiceProfile({
+        profile = await this.workspaceService.upsertVoiceProfile({
           id: profileId,
           userId,
           workspaceId: asset.workspace_id,
           speakerName,
           audioPath: newPath,
-          embedding: embedding || [],
+          embedding,
+          source: VOICE_PROFILE_TRANSCRIPT_SOURCE,
+          model: VOICE_PROFILE_EMBEDDING_MODEL,
+          version: VOICE_PROFILE_EMBEDDING_VERSION,
+          createdBy: userId,
         });
       } catch (error) {
         throw voiceProfileError(

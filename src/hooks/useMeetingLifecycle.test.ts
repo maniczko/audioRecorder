@@ -1,8 +1,21 @@
-import { renderHook, act } from '@testing-library/react';
+import { vi, describe, test, expect, beforeEach } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import useMeetingLifecycle from './useMeetingLifecycle';
 import { createEmptyMeetingDraft } from '../lib/meeting';
 import { STORAGE_KEYS } from '../lib/storage';
-import { vi, describe, test, expect, beforeEach } from 'vitest';
+
+const { apiRequestMock, remoteApiEnabledMock } = vi.hoisted(() => ({
+  apiRequestMock: vi.fn(),
+  remoteApiEnabledMock: vi.fn(() => false),
+}));
+
+vi.mock('../services/httpClient', () => ({
+  apiRequest: apiRequestMock,
+}));
+
+vi.mock('../services/config', () => ({
+  remoteApiEnabled: () => remoteApiEnabledMock(),
+}));
 
 describe('useMeetingLifecycle', () => {
   const mockSetMeetings = vi.fn();
@@ -10,6 +23,7 @@ describe('useMeetingLifecycle', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    remoteApiEnabledMock.mockReturnValue(false);
     localStorage.clear();
   });
 
@@ -90,6 +104,80 @@ describe('useMeetingLifecycle', () => {
 
     expect(result.current.selectedRecording?.id).toBe('recording-full-transcript');
     expect(result.current.selectedRecording?.transcript).toHaveLength(1);
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - Completed remote transcript disappeared on second entry
+  // Date: 2026-06-29
+  // Bug: A reloaded recording with transcriptionStatus=completed but no
+  //      local transcript skipped server hydration, so Studio showed an
+  //      empty transcript panel even though the media asset had segments.
+  // Fix: Empty completed recordings hydrate transcript segments from the
+  //      server using either pipelineStatus or transcriptionStatus.
+  // -----------------------------------------------------------------
+  test('Regression: hydrates empty completed recording from server transcript status', async () => {
+    remoteApiEnabledMock.mockReturnValue(true);
+    apiRequestMock.mockResolvedValueOnce({
+      recordingId: 'recording-reloaded',
+      pipelineStatus: 'done',
+      segments: [
+        {
+          id: 'seg-remote-1',
+          speakerId: 'speaker-1',
+          text: 'Transkrypcja wraca po ponownym wejsciu w nagranie.',
+        },
+      ],
+      speakerNames: { 'speaker-1': 'Anna' },
+      speakerCount: 1,
+      confidence: 0.92,
+    });
+
+    const props = {
+      ...baseProps,
+      userMeetings: [
+        {
+          id: 'meeting-reloaded',
+          title: 'Import: Nowe nagranie',
+          latestRecordingId: 'recording-reloaded',
+          recordings: [
+            {
+              id: 'recording-reloaded',
+              transcriptionStatus: 'completed',
+              transcript: [],
+              duration: 120,
+            },
+          ],
+        },
+      ],
+    };
+
+    renderHook(() => useMeetingLifecycle(props as any));
+
+    await waitFor(() => {
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/media/recordings/recording-reloaded/transcribe',
+        {
+          method: 'GET',
+          retries: 2,
+        }
+      );
+    });
+
+    const transcriptUpdater = mockSetMeetings.mock.calls.find(
+      ([candidate]) => typeof candidate === 'function'
+    )?.[0] as ((meetings: any[]) => any[]) | undefined;
+
+    expect(transcriptUpdater).toBeDefined();
+    const nextMeetings = transcriptUpdater?.(props.userMeetings as any[]);
+    const hydratedRecording = nextMeetings?.[0]?.recordings?.[0];
+    expect(hydratedRecording?.transcript).toEqual([
+      {
+        id: 'seg-remote-1',
+        speakerId: 'speaker-1',
+        text: 'Transkrypcja wraca po ponownym wejsciu w nagranie.',
+      },
+    ]);
+    expect(hydratedRecording?.speakerNames).toEqual({ 'speaker-1': 'Anna' });
   });
 
   test('startNewMeetingDraft & saveMeeting', () => {

@@ -9,6 +9,7 @@ import { logger } from './logger.ts';
 import { config } from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
 import { isCreatedAtExpiredByRetention } from './lib/retentionPolicy.ts';
+import { requireVoiceProfileEmbedding } from './lib/voiceProfileEmbedding.ts';
 import type { SessionPayload, WorkspaceStatePayload } from '../src/shared/contracts.ts';
 import {
   STORAGE_CONTENT_TYPE,
@@ -35,6 +36,42 @@ const __dirname = path.dirname(__filename);
 
 const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.';
 const DEFAULT_RETENTION_DAYS = 365;
+const DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS = 2500;
+
+function _resolvePositiveTimeoutMs(value: unknown, fallback: number): number {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return Math.floor(numeric);
+  }
+  return fallback;
+}
+
+function _remoteAudioAvailabilityTimeoutMs(): number {
+  return _resolvePositiveTimeoutMs(
+    process.env.VOICELOG_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS,
+    DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS
+  );
+}
+
+export async function checkRemoteAudioAvailabilityWithTimeout(
+  checkAudioExists: (storagePath: string) => Promise<boolean>,
+  storagePath: string,
+  timeoutMs = _remoteAudioAvailabilityTimeoutMs()
+): Promise<boolean | null> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      checkAudioExists(storagePath),
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
 
 function _resolveWritableUploadDir(preferredDir: string): string {
   const normalizedPreferred = path.resolve(preferredDir);
@@ -183,6 +220,65 @@ function _buildPersistentAudioStorageError(error?: unknown): Error {
 }
 
 const WORKER_QUERY_TIMEOUT_MS = 15000;
+const DEFAULT_VOICE_PROFILE_SOURCE = 'unknown';
+const DEFAULT_VOICE_PROFILE_MODEL = 'unknown';
+const DEFAULT_VOICE_PROFILE_VERSION = '1';
+const VOICE_PROFILE_SAMPLE_STORAGE_POLICY = 'durable_until_profile_delete_or_replaced';
+const VOICE_PROFILE_RETENTION_POLICY = 'retained_until_profile_delete';
+
+function normalizeVoiceProfileMetadata({
+  source,
+  model,
+  version,
+  createdBy,
+  userId,
+}: {
+  source?: unknown;
+  model?: unknown;
+  version?: unknown;
+  createdBy?: unknown;
+  userId?: unknown;
+}) {
+  const normalizeText = (value: unknown, fallback: string) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text || fallback;
+  };
+
+  return {
+    source: normalizeText(source, DEFAULT_VOICE_PROFILE_SOURCE),
+    model: normalizeText(model, DEFAULT_VOICE_PROFILE_MODEL),
+    version: normalizeText(version, DEFAULT_VOICE_PROFILE_VERSION),
+    createdBy: normalizeText(createdBy, normalizeText(userId, '')),
+  };
+}
+
+function localFileExists(filePath: unknown): boolean {
+  const resolved = typeof filePath === 'string' ? filePath.trim() : '';
+  if (!resolved) return false;
+  try {
+    return fs.existsSync(resolved);
+  } catch {
+    return false;
+  }
+}
+
+function buildVoiceProfileAuditMetadata(profile: any, overrides: Record<string, unknown> = {}) {
+  const audioPath = String(profile?.audio_path || profile?.audioPath || '');
+  return {
+    source: String(profile?.profile_source || profile?.source || DEFAULT_VOICE_PROFILE_SOURCE),
+    model: String(profile?.embedding_model || profile?.model || DEFAULT_VOICE_PROFILE_MODEL),
+    version: String(
+      profile?.embedding_version || profile?.version || DEFAULT_VOICE_PROFILE_VERSION
+    ),
+    sampleStoragePolicy: VOICE_PROFILE_SAMPLE_STORAGE_POLICY,
+    retentionPolicy: VOICE_PROFILE_RETENTION_POLICY,
+    sampleCount: Number(profile?.sample_count || profile?.sampleCount || 1),
+    threshold: Number.isFinite(Number(profile?.threshold)) ? Number(profile.threshold) : 0.82,
+    sampleHasPath: Boolean(audioPath),
+    sampleFileExists: localFileExists(audioPath),
+    ...overrides,
+  };
+}
 
 export function isAddColumnAlreadyAppliedMigrationError(query: string, error: unknown): boolean {
   if (!/\badd\s+column\b/i.test(query)) return false;
@@ -832,7 +928,14 @@ export class Database {
       try {
         const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
         for (const part of manifest.parts) {
-          if (!(await audioExistsInStorage(part.path))) {
+          const exists = await checkRemoteAudioAvailabilityWithTimeout(
+            audioExistsInStorage,
+            part.path
+          );
+          if (exists === null) {
+            return null;
+          }
+          if (!exists) {
             return false;
           }
         }
@@ -860,12 +963,20 @@ export class Database {
 
     try {
       const { audioExistsInStorage } = await import('./lib/supabaseStorage.js');
+      let unknownAvailability = false;
       for (const storagePath of this._remoteAudioStorageCandidates(recordingId, asset)) {
-        if (await audioExistsInStorage(storagePath)) {
+        const exists = await checkRemoteAudioAvailabilityWithTimeout(
+          audioExistsInStorage,
+          storagePath
+        );
+        if (exists === true) {
           return true;
         }
+        if (exists === null) {
+          unknownAvailability = true;
+        }
       }
-      return false;
+      return unknownAvailability ? null : false;
     } catch (error) {
       logger.warn(
         '[database] Unable to verify media asset audio availability.',
@@ -2291,10 +2402,103 @@ export class Database {
     );
   }
 
+  async writeAuditLogBestEffort({
+    workspaceId,
+    actorUserId = '',
+    action,
+    entityType,
+    entityId,
+    metadata = {},
+  }: {
+    workspaceId: string;
+    actorUserId?: string;
+    action: string;
+    entityType: string;
+    entityId: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    try {
+      await this.writeAuditLog({
+        workspaceId,
+        actorUserId,
+        action,
+        entityType,
+        entityId,
+        metadata,
+      });
+    } catch (error: any) {
+      logger.warn('[audit] Failed to persist audit log', {
+        workspaceId,
+        action,
+        entityType,
+        entityId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  async listAuditLogs(
+    workspaceId: string,
+    options: { recordingId?: string; cursor?: string; limit?: number } = {}
+  ): Promise<{ events: any[]; nextCursor: string | null }> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+
+    const limitInput = Number(options.limit ?? 100);
+    const limit = Math.max(
+      1,
+      Math.min(200, Math.floor(Number.isFinite(limitInput) ? limitInput : 100))
+    );
+    const recordingId = String(options.recordingId || '').trim();
+    const cursor = String(options.cursor || '').trim();
+    const params: any[] = [safeWorkspaceId];
+    const filters = ['workspace_id = ?'];
+
+    if (recordingId) {
+      filters.push('entity_type = ?', 'entity_id = ?');
+      params.push('recording', recordingId);
+    }
+    if (cursor) {
+      filters.push('created_at < ?');
+      params.push(cursor);
+    }
+
+    params.push(limit + 1);
+    const rows = await this._query(
+      `SELECT id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+       FROM audit_logs
+       WHERE ${filters.join(' AND ')}
+       ORDER BY created_at DESC, id DESC
+       LIMIT ?`,
+      params
+    );
+    const page = rows.slice(0, limit);
+
+    return {
+      events: page.map((entry: any) => {
+        const metadata = this._safeJsonParse(entry.metadata_json, {});
+        return {
+          id: String(entry.id || ''),
+          workspaceId: String(entry.workspace_id || ''),
+          actorUserId: String(entry.actor_user_id || ''),
+          action: String(entry.action || ''),
+          eventType: String(entry.action || ''),
+          entityType: String(entry.entity_type || ''),
+          entityId: String(entry.entity_id || ''),
+          recordingId:
+            String(entry.entity_type || '') === 'recording' ? String(entry.entity_id || '') : '',
+          metadata,
+          createdAt: String(entry.created_at || ''),
+        };
+      }),
+      nextCursor: rows.length > limit ? String(page[page.length - 1]?.created_at || '') : null,
+    };
+  }
+
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,
-    options: { actorUserId?: string; source?: string } = {}
+    options: { actorUserId?: string; source?: string; requestId?: string } = {}
   ): Promise<void> {
     const asset = await this.getMediaAsset(recordingId);
     if (!asset || asset.workspace_id !== workspaceId) return;
@@ -2361,7 +2565,7 @@ export class Database {
       recordingId,
       workspaceId,
     ]);
-    await this.writeAuditLog({
+    await this.writeAuditLogBestEffort({
       workspaceId,
       actorUserId: String(options.actorUserId || asset.created_by_user_id || ''),
       action: 'recording.deleted',
@@ -2375,6 +2579,7 @@ export class Database {
         transcriptPayloadCount,
         hadTranscript: Array.isArray(transcript) ? transcript.length > 0 : Boolean(transcript),
         source: String(options.source || 'manual'),
+        requestId: String(options.requestId || ''),
       },
     });
     await this.tombstoneWorkspaceRecording(workspaceId, recordingId);
@@ -2383,11 +2588,13 @@ export class Database {
   async cleanupExpiredRecordingsByRetention({
     nowIso = this.nowIso(),
     actorUserId = 'system',
+    requestId = '',
     source = 'retention-maintenance',
     workspaceId = '',
   }: {
     nowIso?: string;
     actorUserId?: string;
+    requestId?: string;
     source?: string;
     workspaceId?: string;
   } = {}): Promise<{
@@ -2428,13 +2635,13 @@ export class Database {
         continue;
       }
 
-      await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source });
+      await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source, requestId });
       deleted++;
       deletedRecordingIds.push(row.id);
     }
 
     if (workspaceFilter || deleted > 0) {
-      await this.writeAuditLog({
+      await this.writeAuditLogBestEffort({
         workspaceId: workspaceFilter || 'all',
         actorUserId,
         action: 'retention.cleanup.completed',
@@ -2443,6 +2650,7 @@ export class Database {
         metadata: {
           source,
           nowIso,
+          requestId,
           checked: rows.length,
           deleted,
           deletedRecordingIds,
@@ -2455,42 +2663,57 @@ export class Database {
 
   async exportWorkspaceData(
     workspaceId: string,
-    options: { actorUserId?: string; source?: string } = {}
+    options: { actorUserId?: string; source?: string; requestId?: string } = {}
   ): Promise<any> {
     const safeWorkspaceId = String(workspaceId || '').trim();
     if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
 
     const exportedAt = this.nowIso();
-    const [workspace, members, state, mediaAssets, ragChunks, auditLogs, transcriptionJobs] =
-      await Promise.all([
-        this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
-        this._query(
-          `SELECT workspace_members.workspace_id, workspace_members.user_id,
+    const [
+      workspace,
+      members,
+      state,
+      mediaAssets,
+      ragChunks,
+      voiceProfiles,
+      auditLogs,
+      transcriptionJobs,
+    ] = await Promise.all([
+      this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
+      this._query(
+        `SELECT workspace_members.workspace_id, workspace_members.user_id,
                   workspace_members.member_role, workspace_members.joined_at,
                   users.email, users.name
            FROM workspace_members
            LEFT JOIN users ON users.id = workspace_members.user_id
            WHERE workspace_members.workspace_id = ?
            ORDER BY workspace_members.joined_at ASC`,
-          [safeWorkspaceId]
-        ),
-        this.getWorkspaceState(safeWorkspaceId),
-        this._query(`SELECT * FROM media_assets WHERE workspace_id = ? ORDER BY created_at ASC`, [
-          safeWorkspaceId,
-        ]),
-        this._query(
-          `SELECT id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
+        [safeWorkspaceId]
+      ),
+      this.getWorkspaceState(safeWorkspaceId),
+      this._query(`SELECT * FROM media_assets WHERE workspace_id = ? ORDER BY created_at ASC`, [
+        safeWorkspaceId,
+      ]),
+      this._query(
+        `SELECT id, workspace_id, recording_id, speaker_name, text, embedding_json, created_at
            FROM rag_chunks WHERE workspace_id = ? ORDER BY created_at ASC`,
-          [safeWorkspaceId]
-        ),
-        this._query(`SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC`, [
-          safeWorkspaceId,
-        ]),
-        this._query(
-          `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
-          [safeWorkspaceId]
-        ),
-      ]);
+        [safeWorkspaceId]
+      ),
+      this._query(
+        `SELECT id, user_id, workspace_id, speaker_name, audio_path, sample_count, threshold,
+                  created_at, updated_at, profile_source, embedding_model, embedding_version,
+                  created_by
+           FROM voice_profiles WHERE workspace_id = ? ORDER BY created_at ASC`,
+        [safeWorkspaceId]
+      ),
+      this._query(`SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC`, [
+        safeWorkspaceId,
+      ]),
+      this._query(
+        `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
+        [safeWorkspaceId]
+      ),
+    ]);
 
     const payload = {
       schemaVersion: 'workspace-export-v1',
@@ -2534,6 +2757,26 @@ export class Database {
         embedding: this._safeJsonParse(chunk.embedding_json, []),
         createdAt: String(chunk.created_at || ''),
       })),
+      voiceProfileSamples: voiceProfiles.map((profile: any) => {
+        const audioPath = String(profile.audio_path || '');
+        return {
+          id: String(profile.id || ''),
+          speakerName: String(profile.speaker_name || ''),
+          userId: String(profile.user_id || ''),
+          audioPath,
+          sampleStoragePolicy: VOICE_PROFILE_SAMPLE_STORAGE_POLICY,
+          retentionPolicy: VOICE_PROFILE_RETENTION_POLICY,
+          sampleFileExists: localFileExists(audioPath),
+          sampleCount: Number(profile.sample_count || 1),
+          threshold: Number.isFinite(Number(profile.threshold)) ? Number(profile.threshold) : 0.82,
+          source: String(profile.profile_source || DEFAULT_VOICE_PROFILE_SOURCE),
+          model: String(profile.embedding_model || DEFAULT_VOICE_PROFILE_MODEL),
+          version: String(profile.embedding_version || DEFAULT_VOICE_PROFILE_VERSION),
+          createdBy: String(profile.created_by || profile.user_id || ''),
+          createdAt: String(profile.created_at || ''),
+          updatedAt: String(profile.updated_at || profile.created_at || ''),
+        };
+      }),
       operational: {
         auditLogs: auditLogs.map((entry: any) => ({
           id: String(entry.id || ''),
@@ -2561,7 +2804,7 @@ export class Database {
       },
     };
 
-    await this.writeAuditLog({
+    await this.writeAuditLogBestEffort({
       workspaceId: safeWorkspaceId,
       actorUserId: String(options.actorUserId || ''),
       action: 'workspace.export.generated',
@@ -2569,9 +2812,14 @@ export class Database {
       entityId: safeWorkspaceId,
       metadata: {
         source: String(options.source || 'api'),
+        requestId: String(options.requestId || ''),
         exportedAt,
         mediaAssetCount: payload.mediaAssets.length,
         ragChunkCount: payload.ragChunks.length,
+        voiceProfileSampleCount: payload.voiceProfileSamples.length,
+        missingVoiceProfileSampleCount: payload.voiceProfileSamples.filter(
+          (sample: any) => sample.audioPath && !sample.sampleFileExists
+        ).length,
       },
     });
 
@@ -2733,6 +2981,13 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && ['queued', 'retryable_failed'].includes(String(job.status))) {
+      await this._execute(
+        "UPDATE transcription_jobs SET status = 'running', updated_at = ? WHERE id = ?",
+        [this.nowIso(), job.id]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 
@@ -2789,6 +3044,20 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && job.status !== 'completed') {
+      const timestamp = this.nowIso();
+      await this._execute(
+        `UPDATE transcription_jobs
+         SET status = 'completed',
+             locked_by = '',
+             locked_until = '',
+             completed_at = ?,
+             updated_at = ?
+         WHERE id = ?`,
+        [timestamp, timestamp, job.id]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 
@@ -2837,6 +3106,25 @@ export class Database {
         recordingId,
       ]
     );
+    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (job && !['completed', 'cancelled'].includes(String(job.status))) {
+      await this._execute(
+        `UPDATE transcription_jobs
+         SET status = 'failed',
+             locked_by = '',
+             locked_until = '',
+             last_error_code = ?,
+             last_error_message = ?,
+             updated_at = ?
+         WHERE id = ?`,
+        [
+          this._clean(transcriptionDiagnostics?.errorCode || transcriptionDiagnostics?.code || ''),
+          this._clean(errorMessage),
+          this.nowIso(),
+          job.id,
+        ]
+      );
+    }
     return this.getMediaAsset(recordingId);
   }
 
@@ -3257,17 +3545,70 @@ export class Database {
     ]);
   }
 
-  async saveVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
+  async saveVoiceProfile({
+    id,
+    userId,
+    workspaceId,
+    speakerName,
+    audioPath,
+    embedding,
+    source,
+    model,
+    version,
+    createdBy,
+  }: any) {
+    const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const timestamp = this.nowIso();
+    const metadata = normalizeVoiceProfileMetadata({
+      source,
+      model,
+      version,
+      createdBy,
+      userId,
+    });
     await this._execute(
-      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, userId, workspaceId, speakerName, audioPath, JSON.stringify(embedding || []), timestamp]
+      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, created_at, updated_at, profile_source, embedding_model, embedding_version, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        id,
+        userId,
+        workspaceId,
+        speakerName,
+        audioPath,
+        JSON.stringify(validEmbedding),
+        timestamp,
+        timestamp,
+        metadata.source,
+        metadata.model,
+        metadata.version,
+        metadata.createdBy,
+      ]
     );
-    return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    await this.writeAuditLog({
+      workspaceId,
+      actorUserId: metadata.createdBy || userId || '',
+      action: 'voice_profile.created',
+      entityType: 'voice_profile',
+      entityId: id,
+      metadata: buildVoiceProfileAuditMetadata(row),
+    });
+    return row;
   }
 
-  async upsertVoiceProfile({ id, userId, workspaceId, speakerName, audioPath, embedding }: any) {
+  async upsertVoiceProfile({
+    id,
+    userId,
+    workspaceId,
+    speakerName,
+    audioPath,
+    embedding,
+    source,
+    model,
+    version,
+    createdBy,
+  }: any) {
     const MAX_SAMPLES = 5;
+    const validEmbedding = requireVoiceProfileEmbedding(embedding);
     const existing = await this._get(
       'SELECT * FROM voice_profiles WHERE workspace_id = ? AND LOWER(speaker_name) = LOWER(?)',
       [workspaceId, speakerName.trim()]
@@ -3285,40 +3626,83 @@ export class Database {
             error.message
           );
         }
-        const averaged = embedding?.length
-          ? addToAverageEmbedding(existingEmb, existingCount, embedding)
-          : existingEmb;
+        const averaged = addToAverageEmbedding(existingEmb, existingCount, validEmbedding);
+        const timestamp = this.nowIso();
         await this._execute(
-          'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ? WHERE id = ?',
-          [JSON.stringify(averaged), existingCount + 1, audioPath, existing.id]
+          'UPDATE voice_profiles SET embedding_json = ?, sample_count = ?, audio_path = ?, updated_at = ? WHERE id = ?',
+          [JSON.stringify(averaged), existingCount + 1, audioPath, timestamp, existing.id]
         );
+        if (existing.audio_path && existing.audio_path !== audioPath) {
+          _deleteFileIfPresent(
+            existing.audio_path,
+            '[database] Failed to delete replaced voice profile audio'
+          );
+        }
+      } else if (audioPath && existing.audio_path !== audioPath) {
+        _deleteFileIfPresent(audioPath, '[database] Failed to delete unused voice profile audio');
+      }
+      const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [existing.id]);
+      if (existingCount < MAX_SAMPLES) {
+        await this.writeAuditLog({
+          workspaceId,
+          actorUserId: String(userId || ''),
+          action: 'voice_profile.updated',
+          entityType: 'voice_profile',
+          entityId: row.id,
+          metadata: buildVoiceProfileAuditMetadata(row, {
+            source: String(source || row.profile_source || DEFAULT_VOICE_PROFILE_SOURCE),
+            replacedSample: Boolean(existing.audio_path && existing.audio_path !== audioPath),
+          }),
+        });
       }
       return {
-        ...(await this._get('SELECT * FROM voice_profiles WHERE id = ?', [existing.id])),
+        ...row,
         isUpdate: true,
       };
     }
     const timestamp = this.nowIso();
+    const metadata = normalizeVoiceProfileMetadata({
+      source,
+      model,
+      version,
+      createdBy,
+      userId,
+    });
     await this._execute(
-      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)',
+      'INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, created_at, updated_at, profile_source, embedding_model, embedding_version, created_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)',
       [
         id,
         userId,
         workspaceId,
         speakerName.trim(),
         audioPath,
-        JSON.stringify(embedding || []),
+        JSON.stringify(validEmbedding),
         timestamp,
+        timestamp,
+        metadata.source,
+        metadata.model,
+        metadata.version,
+        metadata.createdBy,
       ]
     );
-    return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    const row = await this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
+    await this.writeAuditLog({
+      workspaceId,
+      actorUserId: metadata.createdBy || userId || '',
+      action: 'voice_profile.created',
+      entityType: 'voice_profile',
+      entityId: id,
+      metadata: buildVoiceProfileAuditMetadata(row),
+    });
+    return row;
   }
 
   async updateVoiceProfileThreshold(id: string, workspaceId: string, threshold: number) {
     const clamped = Math.max(0.5, Math.min(0.99, threshold));
+    const timestamp = this.nowIso();
     await this._execute(
-      'UPDATE voice_profiles SET threshold = ? WHERE id = ? AND workspace_id = ?',
-      [clamped, id, workspaceId]
+      'UPDATE voice_profiles SET threshold = ?, updated_at = ? WHERE id = ? AND workspace_id = ?',
+      [clamped, timestamp, id, workspaceId]
     );
     return this._get('SELECT * FROM voice_profiles WHERE id = ?', [id]);
   }
@@ -3330,7 +3714,7 @@ export class Database {
     );
   }
 
-  async deleteVoiceProfile(id, workspaceId) {
+  async deleteVoiceProfile(id, workspaceId, options: any = {}) {
     const row = await this._get('SELECT * FROM voice_profiles WHERE id = ? AND workspace_id = ?', [
       id,
       workspaceId,
@@ -3342,6 +3726,19 @@ export class Database {
       id,
       workspaceId,
     ]);
+    if (row) {
+      await this.writeAuditLog({
+        workspaceId,
+        actorUserId: String(options.actorUserId || row.user_id || ''),
+        action: 'voice_profile.deleted',
+        entityType: 'voice_profile',
+        entityId: row.id,
+        metadata: buildVoiceProfileAuditMetadata(row, {
+          source: String(options.source || 'api'),
+          sampleHadPath: Boolean(row.audio_path),
+        }),
+      });
+    }
   }
 
   async getHealth() {

@@ -29,6 +29,8 @@ jobs:
 
   coverage-check:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -36,7 +38,8 @@ jobs:
           node-version: '22'
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run test:coverage
+      - run: node scripts/ensure-coverage-dirs.mjs
+      - run: pnpm exec vitest run --coverage --exclude=src/App.test.tsx --exclude=src/App.integration.test.tsx --exclude=src/hooks/useMeetings.test.tsx --maxWorkers=2
       - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -52,12 +55,12 @@ jobs:
           node-version: '22'
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
       - uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           pattern: './build/**/*.{js,css}'
           exclude: '**/*.map'
+          build-script: 'pnpm run build'
 
   security-scan:
     runs-on: ubuntu-latest

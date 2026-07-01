@@ -390,8 +390,9 @@ async function assertVoiceProfilePreflightReady({
   recording,
   speaker,
   name,
+  retryDelayMs,
 }) {
-  const response = await fetch(
+  const response = await fetchWithTransientRetry(
     `${api}/media/recordings/${encodeURIComponent(recording)}/voice-profiles/from-speaker/preflight`,
     {
       method: 'POST',
@@ -401,7 +402,8 @@ async function assertVoiceProfilePreflightReady({
         'X-Workspace-Id': workspace,
       },
       body: JSON.stringify({ speakerId: speaker, speakerName: name }),
-    }
+    },
+    { label: 'voice profile preflight smoke', retryDelayMs }
   );
   const payload = await readJsonResponse(response);
   if (!response.ok) {
@@ -415,8 +417,16 @@ async function assertVoiceProfilePreflightReady({
   }
 }
 
-async function enrollVoiceProfileFromSpeaker({ api, token, workspace, recording, speaker, name }) {
-  const enrollResponse = await fetch(
+async function enrollVoiceProfileFromSpeaker({
+  api,
+  token,
+  workspace,
+  recording,
+  speaker,
+  name,
+  retryDelayMs,
+}) {
+  const enrollResponse = await fetchWithTransientRetry(
     `${api}/media/recordings/${encodeURIComponent(recording)}/voice-profiles/from-speaker`,
     {
       method: 'POST',
@@ -426,7 +436,8 @@ async function enrollVoiceProfileFromSpeaker({ api, token, workspace, recording,
         'X-Workspace-Id': workspace,
       },
       body: JSON.stringify({ speakerId: speaker, speakerName: name }),
-    }
+    },
+    { label: 'voice profile enrollment smoke', retryDelayMs }
   );
 
   const enrollPayload = await readJsonResponse(enrollResponse);
@@ -439,13 +450,17 @@ async function enrollVoiceProfileFromSpeaker({ api, token, workspace, recording,
     );
   }
 
-  const profilesResponse = await fetch(`${api}/voice-profiles`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-Workspace-Id': workspace,
+  const profilesResponse = await fetchWithTransientRetry(
+    `${api}/voice-profiles`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Workspace-Id': workspace,
+      },
     },
-  });
+    { label: 'voice profile refresh smoke', retryDelayMs }
+  );
   const profilesPayload = await readJsonResponse(profilesResponse);
   if (!profilesResponse.ok) {
     throw new Error(`Voice profile refresh smoke failed: ${profilesResponse.status}`);
@@ -468,15 +483,26 @@ async function enrollVoiceProfileFromSpeaker({ api, token, workspace, recording,
   };
 }
 
-async function cleanupVoiceProfileSmokeFixture({ api, token, workspace, recording, profileIds }) {
+async function cleanupVoiceProfileSmokeFixture({
+  api,
+  token,
+  workspace,
+  recording,
+  profileIds,
+  retryDelayMs,
+}) {
   for (const profileId of [...new Set(profileIds.filter(Boolean))]) {
-    const response = await fetch(`${api}/voice-profiles/${encodeURIComponent(profileId)}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-Workspace-Id': workspace,
+    const response = await fetchWithTransientRetry(
+      `${api}/voice-profiles/${encodeURIComponent(profileId)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Workspace-Id': workspace,
+        },
       },
-    });
+      { label: 'voice profile cleanup smoke', retryDelayMs }
+    );
     if (![204, 404].includes(response.status)) {
       throw new Error(
         `Voice profile smoke cleanup failed for profile ${profileId}: ${response.status}`
@@ -485,13 +511,17 @@ async function cleanupVoiceProfileSmokeFixture({ api, token, workspace, recordin
   }
 
   if (recording) {
-    const response = await fetch(`${api}/media/recordings/${encodeURIComponent(recording)}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-Workspace-Id': workspace,
+    const response = await fetchWithTransientRetry(
+      `${api}/media/recordings/${encodeURIComponent(recording)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Workspace-Id': workspace,
+        },
       },
-    });
+      { label: 'voice profile recording cleanup smoke', retryDelayMs }
+    );
     if (![204, 404].includes(response.status)) {
       throw new Error(
         `Voice profile smoke cleanup failed for recording ${recording}: ${response.status}`
@@ -529,8 +559,24 @@ export async function runVoiceProfileSmoke({
     if (!recording || !speaker || !name) {
       return false;
     }
-    await assertVoiceProfilePreflightReady({ api, token, workspace, recording, speaker, name });
-    await enrollVoiceProfileFromSpeaker({ api, token, workspace, recording, speaker, name });
+    await assertVoiceProfilePreflightReady({
+      api,
+      token,
+      workspace,
+      recording,
+      speaker,
+      name,
+      retryDelayMs,
+    });
+    await enrollVoiceProfileFromSpeaker({
+      api,
+      token,
+      workspace,
+      recording,
+      speaker,
+      name,
+      retryDelayMs,
+    });
     return true;
   }
 
@@ -575,7 +621,15 @@ export async function runVoiceProfileSmoke({
       speakerName: name,
     });
 
-    await assertVoiceProfilePreflightReady({ api, token, workspace, recording, speaker, name });
+    await assertVoiceProfilePreflightReady({
+      api,
+      token,
+      workspace,
+      recording,
+      speaker,
+      name,
+      retryDelayMs,
+    });
     const result = await enrollVoiceProfileFromSpeaker({
       api,
       token,
@@ -583,6 +637,7 @@ export async function runVoiceProfileSmoke({
       recording,
       speaker,
       name,
+      retryDelayMs,
     });
     if (result.profileId) profileIds.push(result.profileId);
     return true;
@@ -597,6 +652,7 @@ export async function runVoiceProfileSmoke({
         workspace,
         recording,
         profileIds,
+        retryDelayMs,
       });
     } catch (cleanupError) {
       if (!primaryError) {

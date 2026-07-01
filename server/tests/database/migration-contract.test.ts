@@ -14,6 +14,14 @@ const segmentedStorageColumns = [
   'normalized_size_bytes',
 ] as const;
 
+const voiceProfileMetadataColumns = [
+  'updated_at',
+  'profile_source',
+  'embedding_model',
+  'embedding_version',
+  'created_by',
+] as const;
+
 function readMigration(fileName: string) {
   return fs.readFileSync(path.join(migrationsDir, fileName), 'utf8');
 }
@@ -55,5 +63,27 @@ describe('Database migration contracts', () => {
     expect(migration).toContain("where status in ('queued', 'running', 'retryable_failed')");
     expect(migration).not.toContain('autoincrement');
     expect(migration).not.toContain('serial');
+  });
+
+  test('Regression: Issue #1333 - voice profile metadata migration includes operational columns', () => {
+    const migration = readMigration('20260701_voice_profile_operational_metadata.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    for (const column of voiceProfileMetadataColumns) {
+      expect(migration).toContain(`add column ${column}`);
+    }
+
+    expect(migration).toContain("profile_source text not null default 'unknown'");
+    expect(migration).toContain("embedding_model text not null default 'unknown'");
+    expect(migration).toContain("embedding_version text not null default '1'");
+  });
+
+  test('initial schema contains voice profile operational metadata columns for fresh databases', () => {
+    const initialSchema = readMigration('001_initial_schema.sql').toLowerCase();
+
+    for (const column of voiceProfileMetadataColumns) {
+      expect(initialSchema).toContain(column);
+    }
   });
 });

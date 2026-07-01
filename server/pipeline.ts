@@ -130,6 +130,25 @@ function shouldRetryWithEnhancedProfile(
   return Number(outcome?.transcriptionDiagnostics?.chunksFailedAtStt || 0) > 0;
 }
 
+function resolveProfileLabelingMode(options: any) {
+  if (options?.segmentedPart) return 'segmented';
+  if (options?.processingMode === 'fast' || options?.processingMode === 'full') {
+    return options.processingMode;
+  }
+  return 'unknown';
+}
+
+function createProfileLabelingDiagnostics(options: any, profileCount: number) {
+  return {
+    applied: false,
+    reason: 'not_attempted',
+    mode: resolveProfileLabelingMode(options),
+    profileCount,
+    attemptedSpeakerCount: 0,
+    matchedSpeakerCount: 0,
+  };
+}
+
 // ── Single transcription attempt ──────────────────────────────────────────────
 
 async function runTranscriptionAttempt(
@@ -659,7 +678,14 @@ async function runTranscriptionAttempt(
         ...(diarization as any).speakerGenders,
       };
       const voiceProfiles = options.voiceProfiles || [];
-      if (voiceProfiles.length && diarization.speakerCount > 0 && !options.skipVoiceProfileMatch) {
+      const voiceProfileLabeling = createProfileLabelingDiagnostics(options, voiceProfiles.length);
+      if (options.skipVoiceProfileMatch) {
+        voiceProfileLabeling.reason = 'disabled_by_processing_mode';
+      } else if (!voiceProfiles.length) {
+        voiceProfileLabeling.reason = 'no_voice_profiles';
+      } else if (diarization.speakerCount <= 0) {
+        voiceProfileLabeling.reason = 'no_speakers';
+      } else {
         const speakerSegmentMap = new Map<string, any[]>();
         for (const seg of diarization.segments) {
           const sid = String(seg.speakerId);
@@ -679,6 +705,7 @@ async function runTranscriptionAttempt(
               return Number.isFinite(t) && Number.isFinite(e) && e > t && t >= 0;
             });
             if (!safeSegments.length) continue;
+            voiceProfileLabeling.attemptedSpeakerCount += 1;
             const selectFilter = safeSegments
               .map(
                 (s) =>
@@ -695,6 +722,7 @@ async function runTranscriptionAttempt(
             );
             const matchResult = await matchSpeakerToProfile(clipPath, voiceProfiles);
             if (matchResult) {
+              voiceProfileLabeling.matchedSpeakerCount += 1;
               identifiedNames[speakerId] = matchResult.name;
               const { inferGenderFromPolishName } = await import('./diarization.ts');
               identifiedGenders[speakerId] = inferGenderFromPolishName(matchResult.name);
@@ -710,6 +738,12 @@ async function runTranscriptionAttempt(
             } catch (_) {}
           }
         }
+        voiceProfileLabeling.applied = voiceProfileLabeling.matchedSpeakerCount > 0;
+        voiceProfileLabeling.reason = voiceProfileLabeling.applied
+          ? 'matched'
+          : voiceProfileLabeling.attemptedSpeakerCount > 0
+            ? 'no_match'
+            : 'no_eligible_speaker_audio';
       }
 
       // ── Post-processing: hallucination removal → dedup → merge → LLM ─────
@@ -792,6 +826,10 @@ async function runTranscriptionAttempt(
         werProxy: computeWerProxy(referenceTranscript, hypothesisTranscript),
         diarizationConfidence: verificationResult.confidence,
       };
+      const transcriptionDiagnosticsWithProfileLabeling = {
+        ...transcriptionDiagnostics,
+        voiceProfileLabeling,
+      };
 
       return {
         providerId: sttProviderInfo?.providerId || 'stt-pipeline',
@@ -801,7 +839,8 @@ async function runTranscriptionAttempt(
         emptyReason: '',
         userMessage: '',
         audioQuality: attemptAudioQuality,
-        transcriptionDiagnostics,
+        transcriptionDiagnostics: transcriptionDiagnosticsWithProfileLabeling,
+        voiceProfileLabeling,
         qualityMetrics,
         diarization: {
           speakerNames: identifiedNames,
@@ -813,7 +852,7 @@ async function runTranscriptionAttempt(
           emptyReason: '',
           userMessage: '',
           audioQuality: attemptAudioQuality,
-          transcriptionDiagnostics,
+          transcriptionDiagnostics: transcriptionDiagnosticsWithProfileLabeling,
           qualityMetrics,
         },
         segments: processedSegments,

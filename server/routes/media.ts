@@ -287,11 +287,16 @@ function buildVoiceProfileErrorBody(input: {
   segmentCount?: number;
   matchedSegmentCount?: number;
   requestId?: string;
+  retryable?: boolean;
+  userAction?: string;
 }) {
+  const defaults = getVoiceProfileErrorDefaults(input.code);
   return {
     code: input.code,
     message: input.message,
     stage: input.stage,
+    retryable: input.retryable ?? defaults.retryable,
+    userAction: input.userAction || defaults.userAction,
     recordingId: input.recordingId,
     speakerId: input.speakerId || undefined,
     speakerName: input.speakerName || undefined,
@@ -301,7 +306,30 @@ function buildVoiceProfileErrorBody(input: {
   };
 }
 
-function classifyVoiceProfileEnrollmentError(error: any) {
+function getVoiceProfileErrorDefaults(code: string) {
+  const defaults: Record<string, { retryable: boolean; userAction: string }> = {
+    missing_speaker_id: { retryable: false, userAction: 'select_speaker' },
+    missing_speaker_name: { retryable: false, userAction: 'select_speaker' },
+    recording_not_found: { retryable: false, userAction: 'refresh_recording' },
+    transcription_not_ready: { retryable: true, userAction: 'wait_for_transcription' },
+    speaker_segment_not_found: { retryable: false, userAction: 'select_speaker_segment' },
+    audio_source_unavailable: { retryable: false, userAction: 'reimport_audio' },
+    embedding_failed: { retryable: true, userAction: 'retry_later' },
+    profile_save_failed: { retryable: true, userAction: 'retry' },
+  };
+  return defaults[code] || { retryable: false, userAction: 'contact_support' };
+}
+
+type VoiceProfileEnrollmentErrorDetails = {
+  code: string;
+  stage: string;
+  status: number;
+  message: string;
+  retryable?: boolean;
+  userAction?: string;
+};
+
+function classifyVoiceProfileEnrollmentError(error: any): VoiceProfileEnrollmentErrorDetails {
   const message = String(error?.message || '');
   const lower = message.toLowerCase();
   if (error?.code && error?.stage) {
@@ -310,6 +338,8 @@ function classifyVoiceProfileEnrollmentError(error: any) {
       stage: String(error.stage),
       status: Number(error.statusCode || error.status || 500) || 500,
       message,
+      retryable: typeof error.retryable === 'boolean' ? error.retryable : undefined,
+      userAction: typeof error.userAction === 'string' ? error.userAction : undefined,
     };
   }
   if (
@@ -352,6 +382,50 @@ function classifyVoiceProfileEnrollmentError(error: any) {
     stage: 'profile_save',
     status: 500,
     message: 'Nie udalo sie zapisac profilu glosu.',
+  };
+}
+
+function hasVoiceProfileEmbedding(profile: any) {
+  if (Array.isArray(profile?.embedding)) return profile.embedding.length > 0;
+  const raw = profile?.embedding_json ?? profile?.embeddingJson;
+  if (Array.isArray(raw)) return raw.length > 0;
+  if (typeof raw !== 'string') return false;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+
+function voiceProfileMetadata(profile: any) {
+  const fallbackCreatedAt = profile?.created_at ?? profile?.createdAt;
+  const fallbackUserId = profile?.user_id ?? profile?.userId ?? '';
+  return {
+    source: profile?.profile_source ?? profile?.source ?? 'unknown',
+    model: profile?.embedding_model ?? profile?.model ?? 'unknown',
+    version: profile?.embedding_version ?? profile?.version ?? VOICE_PROFILE_EMBEDDING_VERSION,
+    createdBy: profile?.created_by ?? profile?.createdBy ?? fallbackUserId,
+    updatedAt: profile?.updated_at ?? profile?.updatedAt ?? fallbackCreatedAt,
+  };
+}
+
+function buildVoiceProfileResponse(profile: any) {
+  const sampleCount = Number.isFinite(Number(profile?.sample_count ?? profile?.sampleCount))
+    ? Number(profile?.sample_count ?? profile?.sampleCount)
+    : 1;
+
+  return {
+    id: profile?.id,
+    speakerName: profile?.speaker_name ?? profile?.speakerName,
+    hasEmbedding: hasVoiceProfileEmbedding(profile),
+    createdAt: profile?.created_at ?? profile?.createdAt,
+    sampleCount,
+    threshold: typeof profile?.threshold === 'number' ? profile.threshold : 0.82,
+    isUpdate: Boolean(profile?.isUpdate),
+    ...voiceProfileMetadata(profile),
   };
 }
 
@@ -525,6 +599,72 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           return transcriptionService.getMediaAsset(recordingId);
         };
   const uploadDir = config.uploadDir || process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+
+  async function writeAuditEvent(
+    c: any,
+    {
+      workspaceId,
+      action,
+      entityType,
+      entityId,
+      metadata = {},
+    }: {
+      workspaceId: string;
+      action: string;
+      entityType: string;
+      entityId: string;
+      metadata?: Record<string, unknown>;
+    }
+  ) {
+    const auditTarget =
+      typeof transcriptionService.writeAuditLog === 'function' ? transcriptionService : services.db;
+    if (typeof auditTarget?.writeAuditLog !== 'function') {
+      return;
+    }
+
+    const session = c.get('session') as any;
+    try {
+      await auditTarget.writeAuditLog({
+        workspaceId,
+        actorUserId: String(session?.user_id || ''),
+        action,
+        entityType,
+        entityId,
+        metadata: {
+          ...metadata,
+          requestId: String(c.get('reqId') || ''),
+        },
+      });
+    } catch (error: any) {
+      const { logger } = await import('../logger.ts');
+      logger.warn('[audit] Failed to persist audit event', {
+        workspaceId,
+        action,
+        entityType,
+        entityId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  async function writeRecordingAuditEvent(
+    c: any,
+    asset: any,
+    action: string,
+    metadata: Record<string, unknown> = {}
+  ) {
+    await writeAuditEvent(c, {
+      workspaceId: String(asset?.workspace_id || ''),
+      action,
+      entityType: 'recording',
+      entityId: String(asset?.id || ''),
+      metadata: {
+        meetingId: String(asset?.meeting_id || ''),
+        source: 'api',
+        ...metadata,
+      },
+    });
+  }
 
   function resolveProcessingMode(input: any) {
     return input === 'full' || input === 'fast'
@@ -828,12 +968,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           };
           stream.on('close', cleanup);
           stream.on('error', cleanup);
+          const contentLength = statSync(materialized.localPath).size;
           c.header(
             'Content-Type',
             safeType === 'application/octet-stream' ? 'audio/webm' : safeType
           );
-          c.header('Content-Length', String(statSync(materialized.localPath).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'segmented'),
+              sizeBytes: contentLength,
+              delivery: 'segmented',
+            }
+          );
           return c.body(stream as any, 200);
         } catch (err: any) {
           console.error('[media] Segmented audio materialization failed', {
@@ -862,6 +1014,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
               resolvedPath: storagePath,
             });
           }
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: storagePath === asset.file_path ? 'remote' : 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch (err: any) {
           console.error('[media] Supabase download failed', {
@@ -881,9 +1044,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         // Local file path - try local first, then fall back to Supabase with basename
         if (existsSync(asset.file_path)) {
           const stream = createReadStream(asset.file_path);
+          const contentLength = statSync(asset.file_path).size;
           c.header('Content-Type', safeType);
-          c.header('Content-Length', String(statSync(asset.file_path).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: contentLength,
+              delivery: 'local',
+            }
+          );
           return c.body(stream as any, 200);
         }
 
@@ -902,6 +1077,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           c.header('Content-Type', safeType);
           c.header('Content-Length', String(arrayBuffer.byteLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch {
           console.warn('[media] Audio 404 - local file missing, Supabase fallback failed', {
@@ -944,6 +1130,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const session = c.get('session');
       await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id, {
         actorUserId: String(session?.user_id || ''),
+        requestId: String(c.get('reqId') || ''),
       });
       return c.body(null, 204);
     } catch (err: any) {
@@ -1015,6 +1202,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
 
     const status = String(asset.transcription_status || '').trim();
+    const processingMode = resolveProcessingMode(body.processingMode);
     if (['queued', 'processing', 'diarization'].includes(status)) {
       await transcriptionService.ensureTranscriptionJob(
         recordingId,
@@ -1030,12 +1218,22 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           workspaceId: asset.workspace_id,
           meetingId: asset.meeting_id,
           contentType: asset.content_type,
-          processingMode: resolveProcessingMode(body.processingMode),
+          processingMode,
           requestId: c.get('reqId'),
         }
       );
 
       const currentAsset = await transcriptionService.getMediaAsset(recordingId);
+      await writeRecordingAuditEvent(
+        c,
+        { ...asset, id: recordingId },
+        'recording.transcription.retry_requested',
+        {
+          previousStatus: status || 'unknown',
+          processingMode,
+          force: body.force === true,
+        }
+      );
       return c.json(normalizeTranscriptionStatusPayload(currentAsset || asset), 202);
     }
     // If the local file is gone (e.g. after Railway redeploy), try the same
@@ -1063,10 +1261,20 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         workspaceId: asset.workspace_id,
         meetingId: asset.meeting_id,
         contentType: asset.content_type,
-        processingMode: resolveProcessingMode(body.processingMode),
+        processingMode,
         requestId: c.get('reqId'),
       });
 
+      await writeRecordingAuditEvent(
+        c,
+        { ...asset, id: recordingId },
+        'recording.transcription.retry_requested',
+        {
+          previousStatus: status || 'unknown',
+          processingMode,
+          force: body.force === true,
+        }
+      );
       return c.json(normalizeTranscriptionStatusPayload(result), 202);
     } catch (err: any) {
       console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
@@ -1085,6 +1293,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
       const runtimeStatus = getTranscriptionRuntimeStatus(recordingId);
+      const durableJob =
+        typeof transcriptionService.getDurableTranscriptionJob === 'function'
+          ? await transcriptionService.getDurableTranscriptionJob(recordingId)
+          : null;
+      const durableJobActive = ['queued', 'running', 'retryable_failed'].includes(
+        String(durableJob?.status || '')
+      );
 
       // Detect true orphaned processing. Active long-audio jobs can run well
       // past five minutes, so only inactive stale assets are marked failed.
@@ -1093,7 +1308,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
         Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
-        !runtimeStatus.activeJob
+        !runtimeStatus.activeJob &&
+        !durableJobActive
       ) {
         if (!hasTranscriptSegments(asset)) {
           console.warn(
@@ -1118,6 +1334,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         {
           ...normalizeTranscriptionStatusPayload(asset),
           ...runtimeStatus,
+          ...(durableJobActive ? { activeJob: true, durableJobStatus: durableJob.status } : {}),
           ...(partProgress ? { partProgress } : {}),
         },
         200
@@ -1477,7 +1694,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         session.user_id,
         options
       );
-      return c.json(profile, 201);
+      const payload = buildVoiceProfileResponse(profile);
+      const status = payload.isUpdate || payload.sampleCount > 1 ? 200 : 201;
+      return c.json(payload, status);
     } catch (err: any) {
       const details = classifyVoiceProfileEnrollmentError(err);
       const body = buildVoiceProfileErrorBody({
@@ -1490,6 +1709,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         segmentCount,
         matchedSegmentCount,
         requestId,
+        retryable: details.retryable,
+        userAction: details.userAction,
       });
       console.warn('[voice-profile] Enrollment failed', body);
       return c.json(body, details.status as any);
@@ -1789,7 +2010,31 @@ Important:
     await ensureWorkspaceAccess(c, workspaceId);
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
-    return c.json(result || { mode: 'no-key' }, 200);
+    const payload = result || { mode: 'no-key' };
+    const meeting = body?.meeting && typeof body.meeting === 'object' ? body.meeting : {};
+    const recordingId = String(
+      body.recordingId ||
+        body.recording_id ||
+        meeting.recordingId ||
+        meeting.recording_id ||
+        meeting.mediaAssetId ||
+        meeting.media_asset_id ||
+        body.meetingId ||
+        meeting.id ||
+        workspaceId
+    ).trim();
+    await writeAuditEvent(c, {
+      workspaceId,
+      action: 'recording.ai.analyzed',
+      entityType: 'recording',
+      entityId: recordingId,
+      metadata: {
+        meetingId: String(body.meetingId || meeting.id || ''),
+        mode: String((payload as any)?.mode || 'analysis'),
+        source: 'api',
+      },
+    });
+    return c.json(payload, 200);
   });
 
   // Chunked upload: PUT /recordings/:id/audio/chunk?index=N&total=M

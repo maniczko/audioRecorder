@@ -31,6 +31,7 @@ describe('TranscriptionService - Additional Coverage', () => {
     mockWorkspaceService = {
       getWorkspaceMemberNames: vi.fn().mockResolvedValue(['Anna', 'Jan']),
       saveVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
+      upsertVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
     };
     mockSpeakerEmbedder = {
       computeEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
@@ -251,9 +252,74 @@ describe('TranscriptionService - Additional Coverage', () => {
       expect(profile).toEqual({ id: 'vp_new', speaker_name: 'Anna' });
       expect(mockAudioPipeline.extractSpeakerAudioClip).toHaveBeenCalled();
       expect(mockSpeakerEmbedder.computeEmbedding).toHaveBeenCalled();
-      expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalled();
+      expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user1',
+          workspaceId: 'ws1',
+          speakerName: 'Test Speaker',
+          embedding: [0.1, 0.2, 0.3],
+        })
+      );
+      expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
 
       // Cleanup
+      try {
+        fs.unlinkSync(tempClipPath);
+      } catch (_) {}
+    });
+
+    // ---------------------------------------------------------------
+    // Issue #1331 - transcript enrollment duplicated existing profiles
+    // Date: 2026-06-30
+    // Bug: transcript enrollment used insert-only saveVoiceProfile.
+    // Fix: it reuses the upsert path and returns update metadata.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1331 - reuses an existing profile row for repeated speaker enrollment', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_existing.wav');
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockWorkspaceService.upsertVoiceProfile.mockResolvedValue({
+        id: 'vp_existing',
+        speaker_name: 'Anna',
+        sample_count: 2,
+        isUpdate: true,
+      });
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Hello again', speakerId: '1', timestamp: 0, endTimestamp: 1 },
+        ]),
+      };
+
+      const profile = await service.createVoiceProfileFromSpeaker(asset, '1', 'Anna', 'user1');
+
+      expect(profile).toMatchObject({
+        id: 'vp_existing',
+        sample_count: 2,
+        isUpdate: true,
+      });
+      expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user1',
+          workspaceId: 'ws1',
+          speakerName: 'Anna',
+          embedding: [0.1, 0.2, 0.3],
+        })
+      );
+      expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
+
       try {
         fs.unlinkSync(tempClipPath);
       } catch (_) {}
@@ -453,6 +519,44 @@ describe('TranscriptionService - Additional Coverage', () => {
       expect((globalThis as any).__mockFs.unlinkSync).toHaveBeenCalledWith(tempClipPath);
     });
 
+    test.each([
+      ['empty array', []],
+      ['null', null],
+      ['undefined', undefined],
+    ])('rejects %s embedding without saving a voice profile', async (_label, embeddingValue) => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      const tempClipPath = path.join(mockDb.uploadDir, `clip_vp_empty_embedding_${_label}.wav`);
+      fs.writeFileSync(tempClipPath, Buffer.from('audio'));
+      mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
+      mockSpeakerEmbedder.computeEmbedding.mockResolvedValue(embeddingValue);
+
+      const service = new TranscriptionService(
+        mockDb,
+        mockWorkspaceService,
+        mockAudioPipeline,
+        mockSpeakerEmbedder
+      );
+      const asset = {
+        id: 'rec1',
+        workspace_id: 'ws1',
+        transcript_json: JSON.stringify([
+          { text: 'Voice sample', speakerId: '1', timestamp: 0, endTimestamp: 4 },
+        ]),
+      };
+
+      await expect(
+        service.createVoiceProfileFromSpeaker(asset, '1', 'Barbara', 'user1')
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
+    });
+
     test('classifies profile persistence failures as profile_save_failed', async () => {
       const fs = await import('node:fs');
       const path = await import('node:path');
@@ -460,7 +564,7 @@ describe('TranscriptionService - Additional Coverage', () => {
       const tempClipPath = path.join(mockDb.uploadDir, 'clip_vp_save_fail.wav');
       fs.writeFileSync(tempClipPath, Buffer.from('audio'));
       mockAudioPipeline.extractSpeakerAudioClip.mockResolvedValue(tempClipPath);
-      mockWorkspaceService.saveVoiceProfile.mockRejectedValue(new Error('database unavailable'));
+      mockWorkspaceService.upsertVoiceProfile.mockRejectedValue(new Error('database unavailable'));
 
       const service = new TranscriptionService(
         mockDb,

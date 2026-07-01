@@ -408,12 +408,16 @@ export async function apiRequest(path: string, options: ApiOptions = {}) {
       code?: string;
       stage?: string;
       requestId?: string;
+      retryable?: boolean;
+      userAction?: string;
     };
     error.status = response.status;
     if (errorBody && typeof errorBody === 'object') {
       if (errorBody.code) error.code = String(errorBody.code);
       if (errorBody.stage) error.stage = String(errorBody.stage);
       if (errorBody.requestId) error.requestId = String(errorBody.requestId);
+      if (typeof errorBody.retryable === 'boolean') error.retryable = errorBody.retryable;
+      if (errorBody.userAction) error.userAction = String(errorBody.userAction);
     }
     throw error;
   }

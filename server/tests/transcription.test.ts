@@ -40,6 +40,7 @@ describe('TranscriptionService', () => {
     mockWorkspaceService = {
       getWorkspaceMemberNames: vi.fn().mockResolvedValue(['Anna', 'Jan']),
       saveVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
+      upsertVoiceProfile: vi.fn().mockResolvedValue({ id: 'vp_new', speaker_name: 'Anna' }),
     };
     mockSpeakerEmbedder = {
       computeEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
@@ -180,12 +181,30 @@ describe('TranscriptionService', () => {
     const completedPartResult = {
       segments: [{ id: 'part0_seg', timestamp: 1, start: 1, end: 3, text: 'Gotowa czesc.' }],
       diarization: { speakerNames: { '0': 'Anna' }, speakerCount: 1, confidence: 0.9 },
+      transcriptionDiagnostics: {
+        voiceProfileLabeling: {
+          applied: false,
+          reason: 'disabled_by_processing_mode',
+          mode: 'segmented',
+          profileCount: 1,
+          attemptedSpeakerCount: 0,
+          matchedSpeakerCount: 0,
+        },
+      },
     };
     const pendingPartResult = {
       segments: [{ id: 'part1_seg', timestamp: 2, start: 2, end: 4, text: 'Nowa czesc.' }],
       diarization: { speakerNames: { '0': 'Anna' }, speakerCount: 1, confidence: 0.8 },
       transcriptionDiagnostics: {
         sttProviderInfo: { providerId: 'openai', model: 'gpt-4o-transcribe' },
+        voiceProfileLabeling: {
+          applied: false,
+          reason: 'disabled_by_processing_mode',
+          mode: 'segmented',
+          profileCount: 1,
+          attemptedSpeakerCount: 0,
+          matchedSpeakerCount: 0,
+        },
       },
     };
     const manifest = buildSegmentedMediaManifest({
@@ -240,7 +259,10 @@ describe('TranscriptionService', () => {
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledTimes(1);
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalledWith(
       expect.objectContaining({ file_path: 'ws_1/rec_segmented/part-001.webm' }),
-      expect.objectContaining({ segmentedPart: expect.objectContaining({ index: 1 }) })
+      expect.objectContaining({
+        segmentedPart: expect.objectContaining({ index: 1 }),
+        skipVoiceProfileMatch: true,
+      })
     );
     expect(mockDb.saveMediaPartTranscript).toHaveBeenCalledWith(
       'rec_segmented',
@@ -261,6 +283,14 @@ describe('TranscriptionService', () => {
           partCount: 2,
           completedParts: 2,
           failedParts: 0,
+          voiceProfileLabeling: expect.objectContaining({
+            applied: false,
+            reason: 'disabled_by_processing_mode',
+            mode: 'segmented',
+            profileCount: 1,
+            partCount: 2,
+            appliedPartCount: 0,
+          }),
         }),
       })
     );
@@ -416,7 +446,7 @@ describe('TranscriptionService', () => {
       [expect.objectContaining({ text: 'hello', speakerId: '0', timestamp: 0, endTimestamp: 1 })],
       {}
     );
-    expect(mockWorkspaceService.saveVoiceProfile).toHaveBeenCalledWith(
+    expect(mockWorkspaceService.upsertVoiceProfile).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
         workspaceId: 'ws_1',
@@ -424,6 +454,7 @@ describe('TranscriptionService', () => {
         audioPath: expect.stringMatching(/vp_.*\.wav$/),
       })
     );
+    expect(mockWorkspaceService.saveVoiceProfile).not.toHaveBeenCalled();
     expect(renameSync).toHaveBeenCalledTimes(1);
     expect(unlinkSync).toHaveBeenCalledWith('/tmp/clip.wav');
     expect(profile).toEqual({ id: 'vp_new', speaker_name: 'Anna' });

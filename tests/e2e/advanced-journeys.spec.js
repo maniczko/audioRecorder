@@ -129,6 +129,13 @@ async function installFakeAudioCapture(page) {
   });
 }
 
+async function acceptRecordingConsent(page) {
+  const dialog = page.getByRole('dialog', { name: /zgod|nagrywanie/i });
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await dialog.getByRole('checkbox').check();
+  await dialog.getByRole('button', { name: /Akceptuje i zaczynam nagrywanie/i }).click();
+}
+
 test.describe('Advanced release journeys', () => {
   const remoteProviderEnabled =
     process.env.VITE_DATA_PROVIDER === 'remote' || process.env.REACT_APP_DATA_PROVIDER === 'remote';
@@ -290,6 +297,7 @@ test.describe('Advanced release journeys', () => {
 
     await page.goto('/');
     await page.getByRole('button', { name: 'Nagraj ad hoc' }).click();
+    await acceptRecordingConsent(page);
 
     await expect(page.getByText(/Dostep do mikrofonu zablokowany/i)).toBeVisible();
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
@@ -306,6 +314,7 @@ test.describe('Advanced release journeys', () => {
     const startButton = page.getByRole('button', { name: /Rozpocznij nagrywanie|Nagraj ad hoc/i });
     await expect(startButton.first()).toBeVisible();
     await startButton.first().click();
+    await acceptRecordingConsent(page);
 
     const stopButton = page.getByRole('button', { name: /Zatrzymaj nagrywanie/i }).first();
     await expect(stopButton).toBeVisible({ timeout: 10_000 });
