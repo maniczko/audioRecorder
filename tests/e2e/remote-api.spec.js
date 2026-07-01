@@ -65,8 +65,38 @@ async function readPersistedRecordingQueue(page) {
   });
 }
 
+async function gotoApp(page) {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+}
+
 test.describe('Remote media workspace contract', () => {
   test.beforeEach(async ({ page }) => {
+    await page.route('**/media/upload-policy', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          maxRawUploadBytes: 200 * 1024 * 1024,
+          clientChunkBytes: 4 * 1024 * 1024,
+          singleObjectMaxBytes: 24 * 1024 * 1024,
+          segmentPartMaxBytes: 20 * 1024 * 1024,
+          storageContentType: 'audio/webm',
+        }),
+      });
+    });
+
+    await page.route('**/integrations/google/status**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          configured: false,
+          connected: false,
+          calendarWritable: false,
+        }),
+      });
+    });
+
     await page.route('**/media/analyze', async (route) => {
       await route.fulfill({
         status: 200,
@@ -127,7 +157,7 @@ test.describe('Remote media workspace contract', () => {
     });
 
     await seedLoggedInUser(page);
-    await page.goto('/');
+    await gotoApp(page);
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
     await page.getByTestId('recordings-file-input').setInputFiles(smallAudioFile());
 
@@ -149,7 +179,7 @@ test.describe('Remote media workspace contract', () => {
       localStorage.setItem('voicelog.e2e.forceMissingImportWorkspace', 'true');
     });
 
-    await page.goto('/');
+    await gotoApp(page);
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
     await page.getByTestId('recordings-file-input').setInputFiles(smallAudioFile());
 
@@ -219,7 +249,7 @@ test.describe('Remote media workspace contract', () => {
       },
     });
 
-    await page.goto('/');
+    await gotoApp(page);
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
 
     await expect(page.getByText('Stale remote meeting').first()).toBeVisible();
@@ -302,7 +332,7 @@ test.describe('Remote media workspace contract', () => {
       },
     });
 
-    await page.goto('/');
+    await gotoApp(page);
     await page.locator('.modern-nav-item').filter({ hasText: 'Nagrania' }).click();
 
     await expect(page.getByText('Missing workspace reload').first()).toBeVisible();

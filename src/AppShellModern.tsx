@@ -6,6 +6,7 @@ import TabRouter from './TabRouter';
 import AppHeader from './components/app-shell/AppHeader';
 import AppShellSkeleton from './components/app-shell/AppShellSkeleton';
 import AppSidebar from './components/app-shell/AppSidebar';
+import ProductionReadinessBanner from './components/app-shell/ProductionReadinessBanner';
 import RecordingConsentDialog from './components/app-shell/RecordingConsentDialog';
 import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
@@ -128,6 +129,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
         />
 
         <div className="modern-content-wrapper">
+          <ProductionReadinessBanner />
           <TabRouter calendarMonth={calendarMonth} setCalendarMonth={setCalendarMonth} />
         </div>
       </main>

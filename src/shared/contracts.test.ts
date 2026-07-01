@@ -152,6 +152,43 @@ describe('shared contracts', () => {
     });
   });
 
+  // ---------------------------------------------------------------
+  // Issue #1332 - profile label provenance was hidden from diagnostics
+  // Date: 2026-06-30
+  // Bug: UI/operator diagnostics could not tell if voice profiles labeled speakers.
+  // Fix: normalization preserves voiceProfileLabeling from stored transcription diagnostics.
+  // ---------------------------------------------------------------
+  test('Regression: Issue #1332 - preserves voice profile labeling diagnostics from storage rows', () => {
+    const profileLabeling = {
+      applied: true,
+      reason: 'matched',
+      mode: 'full',
+      profileCount: 2,
+      attemptedSpeakerCount: 1,
+      matchedSpeakerCount: 1,
+    };
+
+    expect(
+      normalizeTranscriptionStatusPayload({
+        id: 'rec_profile_labels',
+        transcription_status: 'completed',
+        transcript_json: JSON.stringify([{ id: 'seg1', text: 'hello' }]),
+        diarization_json: JSON.stringify({
+          transcriptOutcome: 'normal',
+          speakerCount: 1,
+          transcriptionDiagnostics: {
+            voiceProfileLabeling: profileLabeling,
+          },
+        }),
+      } as any)
+    ).toMatchObject({
+      voiceProfileLabeling: profileLabeling,
+      transcriptionDiagnostics: {
+        voiceProfileLabeling: profileLabeling,
+      },
+    });
+  });
+
   test('Regression: #0 - exposes segmented manifest duration in transcription status', () => {
     expect(
       normalizeTranscriptionStatusPayload({
@@ -239,6 +276,29 @@ describe('shared contracts', () => {
       transcriptOutcome: 'empty',
       emptyReason: 'no_segments_from_stt',
       userMessage: 'Brak wypowiedzi.',
+    });
+  });
+
+  test('Regression: Issue #1332 - preserves voice profile labeling diagnostics from remote responses', () => {
+    const profileLabeling = {
+      applied: false,
+      reason: 'disabled_by_processing_mode',
+      mode: 'fast',
+      profileCount: 3,
+      attemptedSpeakerCount: 0,
+      matchedSpeakerCount: 0,
+    };
+
+    expect(
+      normalizeMediaTranscriptionResponse({
+        recordingId: 'rec_profile_labels_remote',
+        pipelineStatus: 'completed',
+        segments: [{ id: 'seg2', text: 'hi' }],
+        voiceProfileLabeling: profileLabeling,
+      } as any)
+    ).toMatchObject({
+      pipelineStatus: 'done',
+      voiceProfileLabeling: profileLabeling,
     });
   });
 

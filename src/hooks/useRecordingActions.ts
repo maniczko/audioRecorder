@@ -604,11 +604,15 @@ export default function useRecordingActions({
           code?: string;
           stage?: string;
           requestId?: string;
+          retryable?: boolean;
+          userAction?: string;
         };
         if (error?.status) voiceProfileError.status = error.status;
         if (error?.code) voiceProfileError.code = String(error.code);
         if (error?.stage) voiceProfileError.stage = String(error.stage);
         if (error?.requestId) voiceProfileError.requestId = String(error.requestId);
+        if (typeof error?.retryable === 'boolean') voiceProfileError.retryable = error.retryable;
+        if (error?.userAction) voiceProfileError.userAction = String(error.userAction);
         return voiceProfileError;
       };
       try {
@@ -642,11 +646,15 @@ export default function useRecordingActions({
         code?: string;
         stage?: string;
         requestId?: string;
+        retryable?: boolean;
+        userAction?: string;
       };
       if (error?.status) voiceProfileError.status = error.status;
       if (error?.code) voiceProfileError.code = String(error.code);
       if (error?.stage) voiceProfileError.stage = String(error.stage);
       if (error?.requestId) voiceProfileError.requestId = String(error.requestId);
+      if (typeof error?.retryable === 'boolean') voiceProfileError.retryable = error.retryable;
+      if (error?.userAction) voiceProfileError.userAction = String(error.userAction);
       throw voiceProfileError;
     }
   }
