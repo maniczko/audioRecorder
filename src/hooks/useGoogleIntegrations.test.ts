@@ -192,6 +192,26 @@ describe('useGoogleIntegrations', () => {
     expect(typeof result.current.googleEnabled).toBe('boolean');
   });
 
+  test('shows Google Tasks API setup guidance when task list loading is forbidden', async () => {
+    const forbidden = Object.assign(
+      new Error(
+        'Google Tasks API returned 403 while loading task lists. Reason: accessNotConfigured.'
+      ),
+      { status: 403, reason: 'accessNotConfigured' }
+    );
+    fetchGoogleTaskListsMock.mockRejectedValueOnce(forbidden);
+
+    const { result } = renderHook(() => useGoogleIntegrations(baseProps as any));
+
+    await act(async () => {
+      await result.current.connectGoogleTasks();
+    });
+
+    expect(result.current.googleTasksStatus).toBe('error');
+    expect(result.current.googleTasksMessage).toContain('Google Tasks API');
+    expect(result.current.googleTasksMessage).toContain('accessNotConfigured');
+  });
+
   test('keeps passive calendar status idle when local session token is not restored', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const missingSessionError = new Error(

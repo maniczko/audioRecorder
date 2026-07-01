@@ -1614,6 +1614,17 @@
   border-color: rgba(255, 75, 95, 0.28);
 }
 
+.ff-voice-profile-labeling-status {
+  margin: 0 4px 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(117, 214, 196, 0.22);
+  border-radius: 6px;
+  background: rgba(117, 214, 196, 0.08);
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
 .ff-voice-coaching-btn {
   width: 100%;
   padding: 5px 0;

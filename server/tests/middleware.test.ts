@@ -1,8 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMiddlewares } from '../routes/middleware.ts';
 import { createProgressToken, resetProgressTokensForTests } from '../lib/progressTokens.ts';
 
 describe('route middleware', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    resetProgressTokensForTests();
+    delete process.env.VOICELOG_ALLOW_PROGRESS_QUERY_TOKEN;
+  });
+
   it('authMiddleware rejects missing or invalid bearer token and stores valid session', async () => {
     const services = {
       authService: {
@@ -119,7 +125,263 @@ describe('route middleware', () => {
     process.env.NODE_ENV = previousEnv;
   });
 
-  it('authMiddleware accepts short-lived progress token only for matching recording', async () => {
+  // -----------------------------------------------------------------
+  // Issue #1235 - progress token must not travel in query strings
+  // Date: 2026-06-28
+  // Bug: SSE progress auth accepted progressToken from URL query params.
+  // Fix: accept short-lived progress auth from header/cookie and reject query transport by default.
+  // -----------------------------------------------------------------
+  describe('Regression: Issue #1235 - safer progress auth transport', () => {
+    it('authMiddleware accepts short-lived progress token from X-Progress-Token header only for matching recording', async () => {
+      resetProgressTokensForTests();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
+      const services = {
+        authService: { getSession: vi.fn() },
+        workspaceService: { getMembership: vi.fn() },
+        config: { trustProxy: false },
+      } as any;
+      const { authMiddleware } = createMiddlewares(services);
+      const token = createProgressToken('rec-1', 'u1', 1000);
+
+      const next = vi.fn();
+      const validCtx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-1/progress',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) => (name === 'X-Progress-Token' ? token : '')),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-1' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+      await authMiddleware(validCtx, next);
+
+      expect(services.authService.getSession).not.toHaveBeenCalled();
+      expect(validCtx.set).toHaveBeenCalledWith(
+        'session',
+        expect.objectContaining({ user_id: 'u1', recording_id: 'rec-1', progress_token: true })
+      );
+      expect(next).toHaveBeenCalledTimes(1);
+
+      const wrongCtx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-2/progress',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) => (name === 'X-Progress-Token' ? token : '')),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-2' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+      const wrongResult = await authMiddleware(wrongCtx, vi.fn());
+      expect(wrongResult.status).toBe(401);
+
+      vi.setSystemTime(new Date('2026-06-18T10:00:02.000Z'));
+      const expiredCtx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-1/progress',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) => (name === 'X-Progress-Token' ? token : '')),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-1' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+      const expiredResult = await authMiddleware(expiredCtx, vi.fn());
+      expect(expiredResult.status).toBe(401);
+    });
+
+    it('authMiddleware accepts short-lived progress token from same-site cookie', async () => {
+      resetProgressTokensForTests();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
+      const services = {
+        authService: { getSession: vi.fn() },
+        workspaceService: { getMembership: vi.fn() },
+        config: { trustProxy: false },
+      } as any;
+      const { authMiddleware } = createMiddlewares(services);
+      const token = createProgressToken('rec-cookie', 'u-cookie', 1000);
+      const next = vi.fn();
+      const ctx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-cookie/progress',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) =>
+              name === 'Cookie' ? `theme=light; progressToken=${encodeURIComponent(token)}` : ''
+            ),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-cookie' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+
+      await authMiddleware(ctx, next);
+
+      expect(services.authService.getSession).not.toHaveBeenCalled();
+      expect(ctx.set).toHaveBeenCalledWith(
+        'session',
+        expect.objectContaining({
+          user_id: 'u-cookie',
+          recording_id: 'rec-cookie',
+          progress_token: true,
+        })
+      );
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('authMiddleware rejects progress token header outside progress stream routes', async () => {
+      resetProgressTokensForTests();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
+      const services = {
+        authService: { getSession: vi.fn() },
+        workspaceService: { getMembership: vi.fn() },
+        config: { trustProxy: false },
+      } as any;
+      const { authMiddleware } = createMiddlewares(services);
+      const token = createProgressToken('rec-audio', 'u-audio', 1000);
+      const ctx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-audio/audio',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) => (name === 'X-Progress-Token' ? token : '')),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-audio' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+
+      const result = await authMiddleware(ctx, vi.fn());
+
+      expect(result.status).toBe(401);
+      expect(ctx.set).not.toHaveBeenCalled();
+      expect(services.authService.getSession).not.toHaveBeenCalled();
+    });
+
+    it('authMiddleware falls back to raw cookie value when progress cookie cannot be decoded', async () => {
+      resetProgressTokensForTests();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
+      const services = {
+        authService: { getSession: vi.fn() },
+        workspaceService: { getMembership: vi.fn() },
+        config: { trustProxy: false },
+      } as any;
+      const { authMiddleware } = createMiddlewares(services);
+      const token = createProgressToken('rec-cookie-raw', 'u-cookie-raw', 1000);
+      const ctx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-cookie-raw/progress',
+          header: vi
+            .fn()
+            .mockImplementation((name: string) =>
+              name === 'Cookie' ? `progressToken=${token}%ZZ` : ''
+            ),
+          query: vi.fn().mockReturnValue(''),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-cookie-raw' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+
+      const result = await authMiddleware(ctx, vi.fn());
+
+      expect(result.status).toBe(401);
+      expect(services.authService.getSession).not.toHaveBeenCalled();
+    });
+
+    it('authMiddleware rejects progressToken query transport unless migration flag is enabled', async () => {
+      resetProgressTokensForTests();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
+      const services = {
+        authService: { getSession: vi.fn() },
+        workspaceService: { getMembership: vi.fn() },
+        config: { trustProxy: false },
+      } as any;
+      const { authMiddleware } = createMiddlewares(services);
+      const token = createProgressToken('rec-query', 'u-query', 1000);
+      const queryCtx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-query/progress',
+          header: vi.fn().mockReturnValue(''),
+          query: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'progressToken' ? token : '')),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-query' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+
+      const rejected = await authMiddleware(queryCtx, vi.fn());
+
+      expect(rejected.status).toBe(401);
+      expect(services.authService.getSession).not.toHaveBeenCalled();
+
+      process.env.VOICELOG_ALLOW_PROGRESS_QUERY_TOKEN = 'true';
+      const next = vi.fn();
+      const migrationCtx: any = {
+        req: {
+          method: 'GET',
+          path: '/media/recordings/rec-query/progress',
+          header: vi.fn().mockReturnValue(''),
+          query: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'progressToken' ? token : '')),
+          param: vi
+            .fn()
+            .mockImplementation((key: string) => (key === 'recordingId' ? 'rec-query' : '')),
+        },
+        json: vi.fn((body, status) => ({ body, status })),
+        set: vi.fn(),
+      };
+
+      await authMiddleware(migrationCtx, next);
+
+      expect(migrationCtx.set).toHaveBeenCalledWith(
+        'session',
+        expect.objectContaining({ user_id: 'u-query', recording_id: 'rec-query' })
+      );
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('authMiddleware accepts short-lived progress token only for matching recording when migration flag allows query transport', async () => {
+    process.env.VOICELOG_ALLOW_PROGRESS_QUERY_TOKEN = 'true';
     resetProgressTokensForTests();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-18T10:00:00.000Z'));
@@ -134,6 +396,7 @@ describe('route middleware', () => {
     const next = vi.fn();
     const validCtx: any = {
       req: {
+        path: '/media/recordings/rec-1/progress',
         header: vi.fn().mockReturnValue(''),
         query: vi.fn().mockImplementation((key: string) => (key === 'progressToken' ? token : '')),
         param: vi.fn().mockImplementation((key: string) => (key === 'recordingId' ? 'rec-1' : '')),
@@ -151,6 +414,7 @@ describe('route middleware', () => {
 
     const wrongCtx: any = {
       req: {
+        path: '/media/recordings/rec-2/progress',
         header: vi.fn().mockReturnValue(''),
         query: vi.fn().mockImplementation((key: string) => (key === 'progressToken' ? token : '')),
         param: vi.fn().mockImplementation((key: string) => (key === 'recordingId' ? 'rec-2' : '')),
@@ -164,6 +428,7 @@ describe('route middleware', () => {
     vi.setSystemTime(new Date('2026-06-18T10:00:02.000Z'));
     const expiredCtx: any = {
       req: {
+        path: '/media/recordings/rec-1/progress',
         header: vi.fn().mockReturnValue(''),
         query: vi.fn().mockImplementation((key: string) => (key === 'progressToken' ? token : '')),
         param: vi.fn().mockImplementation((key: string) => (key === 'recordingId' ? 'rec-1' : '')),

@@ -86,11 +86,20 @@ function buildGoogleAttendees(entry, workspaceMembers) {
     .filter((participant) => participant.email);
 }
 
-function CalendarFilterButton({ active, count, label, onClick }) {
+function productionActionId(prefix, value) {
+  return `${prefix}-${String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')}`;
+}
+
+function CalendarFilterButton({ active, count, label, type, onClick }) {
   return (
     <button
       type="button"
       className={active ? 'calendar-filter-chip active' : 'calendar-filter-chip'}
+      aria-label={`Filtruj kalendarz: ${label}, liczba ${count}`}
+      data-action-id={productionActionId('calendar-filter', type || label)}
       onClick={onClick}
     >
       <span>{label}</span>
@@ -113,6 +122,8 @@ function CalendarEntryChip({
     <span
       role="button"
       tabIndex={0}
+      aria-label={`Otworz wpis kalendarza: ${entry.title}, ${eventTimeLabel(entry)}`}
+      data-action-id={productionActionId('calendar-entry', entry.key || entry.id)}
       className={`${selected ? 'calendar-pill selected' : 'calendar-pill'} ${entry.colorTone}${entry.editable ? ' draggable' : ''}${conflictCount ? ' conflict' : ''}`}
       draggable={entry.editable}
       onClick={(event) => {
@@ -136,10 +147,22 @@ function CalendarEntryChip({
       ) : null}
       {showResize && entry.editable ? (
         <span className="calendar-pill-actions" onClick={(event) => event.stopPropagation()}>
-          <button type="button" className="calendar-resize-button" onClick={() => onResize(-30)}>
+          <button
+            type="button"
+            className="calendar-resize-button"
+            aria-label={`Skroc wpis kalendarza ${entry.title} o 30 minut`}
+            data-action-id={productionActionId('calendar-resize-minus-30', entry.key || entry.id)}
+            onClick={() => onResize(-30)}
+          >
             -30
           </button>
-          <button type="button" className="calendar-resize-button" onClick={() => onResize(30)}>
+          <button
+            type="button"
+            className="calendar-resize-button"
+            aria-label={`Wydluz wpis kalendarza ${entry.title} o 30 minut`}
+            data-action-id={productionActionId('calendar-resize-plus-30', entry.key || entry.id)}
+            onClick={() => onResize(30)}
+          >
             +30
           </button>
         </span>
@@ -509,6 +532,8 @@ export default function CalendarTab({
                   key={entry.key}
                   type="button"
                   className={`agenda-card calendar-upcoming-card ${entry.colorTone}`}
+                  aria-label={`Otworz nadchodzacy wpis kalendarza: ${entry.title}, ${formatDateTime(entry.startsAt)}`}
+                  data-action-id={productionActionId('calendar-upcoming', entry.key || entry.id)}
                   onClick={() => {
                     const date = new Date(entry.startsAt);
                     setSelectedEntryKey(entry.key);
@@ -609,6 +634,7 @@ export default function CalendarTab({
               active={filters[type]}
               count={allEntries.filter((entry) => entry.type === type).length}
               label={eventTypeLabel(type)}
+              type={type}
               onClick={() => setFilters((previous) => ({ ...previous, [type]: !previous[type] }))}
             />
           ))}
@@ -889,6 +915,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Skroc wybrany wpis kalendarza ${selectedEntry.title} o 30 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-minus-30',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, -30)}
                     >
                       Skróć o 30 min
@@ -896,6 +927,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Wydluz wybrany wpis kalendarza ${selectedEntry.title} o 30 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-plus-30',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, 30)}
                     >
                       Wydłuż o 30 min
@@ -903,6 +939,11 @@ export default function CalendarTab({
                     <button
                       type="button"
                       className="ghost-button"
+                      aria-label={`Wydluz wybrany wpis kalendarza ${selectedEntry.title} o 60 minut`}
+                      data-action-id={productionActionId(
+                        'calendar-detail-resize-plus-60',
+                        selectedEntry.key || selectedEntry.id
+                      )}
                       onClick={() => resizeEntry(selectedEntry, 60)}
                     >
                       +1 godzina

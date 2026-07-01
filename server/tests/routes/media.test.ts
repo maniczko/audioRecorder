@@ -50,6 +50,8 @@ describe('Media Routes', () => {
       getSpeakerAcousticFeatures: vi.fn(),
       saveTranscriptionResult: vi.fn(),
       markTranscriptionFailure: vi.fn(),
+      writeAuditLog: vi.fn(),
+      analyzeMeetingWithOpenAI: vi.fn(),
       isTranscriptionJobActive: vi.fn(() => false),
       getTranscriptionRuntimeStatus: vi.fn(() => ({
         activeJob: false,
@@ -125,6 +127,56 @@ describe('Media Routes', () => {
       qualityLabel: 'fair',
       enhancementRecommended: true,
     });
+  });
+
+  // ---------------------------------------------------------------
+  // Issue #1234 - duplicate raw upload should be idempotent
+  // Date: 2026-06-28
+  // Bug: retrying a raw upload for an existing recording wrote through
+  //      storage again instead of returning the existing media asset.
+  // Fix: recordingId is the natural idempotency key and repeat uploads
+  //      return the current asset response without mutating storage.
+  // ---------------------------------------------------------------
+  it('PUT /media/recordings/:recordingId/audio - duplicate upload returns existing asset without reupload', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_existing_upload',
+      workspace_id: 'ws_1',
+      size_bytes: 777,
+      storage_mode: 'single',
+      source_size_bytes: 777,
+      normalized_size_bytes: 777,
+    });
+    mockTranscriptionService.upsertMediaAssetFromPath.mockResolvedValue({
+      id: 'rec_existing_upload',
+      workspace_id: 'ws_1',
+      size_bytes: 999,
+    });
+
+    const res = await app.request('/media/recordings/rec_existing_upload/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws_1',
+        'Idempotency-Key': 'raw-upload-retry-1',
+      },
+      body: Buffer.from('duplicate-audio-data'),
+    });
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      id: 'rec_existing_upload',
+      workspaceId: 'ws_1',
+      sizeBytes: 777,
+      storageMode: 'single',
+      sourceSizeBytes: 777,
+      normalizedSizeBytes: 777,
+      idempotent: true,
+      idempotencyKey: 'raw-upload-retry-1',
+      idempotencyScope: 'recordingId',
+    });
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.analyzeAudioQuality).not.toHaveBeenCalled();
   });
 
   it('PUT /media/recordings/:recordingId/audio - returns 507 when disk is full', async () => {
@@ -246,7 +298,8 @@ describe('Media Routes', () => {
       headers: {
         Origin: previewOrigin,
         'Access-Control-Request-Method': 'PUT',
-        'Access-Control-Request-Headers': 'Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id',
+        'Access-Control-Request-Headers':
+          'Authorization,Content-Type,X-Workspace-Id,X-Meeting-Id,X-Progress-Token',
       },
     });
 
@@ -256,6 +309,7 @@ describe('Media Routes', () => {
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type');
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Workspace-Id');
     expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Meeting-Id');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-Progress-Token');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('PUT');
     expect(res.headers.get('Access-Control-Allow-Methods')).toContain('OPTIONS');
     expect(res.headers.get('Vary')).toContain('Origin');
@@ -268,12 +322,10 @@ describe('Media Routes', () => {
     const progressToken = createProgressToken('rec_progress_expired', 'user_1', 1000);
     vi.setSystemTime(new Date('2026-06-20T10:00:02.000Z'));
 
-    const res = await app.request(
-      `/media/recordings/rec_progress_expired/progress?progressToken=${progressToken}`,
-      {
-        method: 'GET',
-      }
-    );
+    const res = await app.request('/media/recordings/rec_progress_expired/progress', {
+      method: 'GET',
+      headers: { 'X-Progress-Token': progressToken },
+    });
 
     expect(res.status).toBe(401);
     expect(mockTranscriptionService.on).not.toHaveBeenCalled();
@@ -305,6 +357,48 @@ describe('Media Routes', () => {
       'rec_1',
       expect.objectContaining({ processingMode: 'fast' })
     );
+  });
+
+  // ---------------------------------------------------------------
+  // Issue #1234 - active transcription requests should be idempotent
+  // Date: 2026-06-28
+  // Bug: POST /transcribe could enqueue duplicate work for a recording
+  //      that was already queued or processing.
+  // Fix: active pipeline statuses return the current status contract
+  //      without starting another transcription pipeline.
+  // ---------------------------------------------------------------
+  it('POST /media/recordings/:recordingId/transcribe - returns active status without starting duplicate pipeline', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_active_idem',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'processing',
+      diarization_json: '{}',
+      transcript_json: '[]',
+    });
+
+    const res = await app.request('/media/recordings/rec_active_idem/transcribe', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'transcribe-active-1',
+      },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(res.status).toBe(202);
+    await expect(res.json()).resolves.toMatchObject({
+      recordingId: 'rec_active_idem',
+      pipelineStatus: 'processing',
+      idempotent: true,
+      idempotencyKey: 'transcribe-active-1',
+      idempotencyScope: 'recordingId',
+    });
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.ensureTranscriptionJob).not.toHaveBeenCalled();
   });
 
   it('POST /media/recordings/:recordingId/transcribe - returns retry-friendly transient error then succeeds after retry', async () => {
@@ -443,6 +537,23 @@ describe('Media Routes', () => {
         workspaceId: 'ws_1',
         meetingId: 'm_1',
         contentType: 'audio/webm',
+      })
+    );
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.transcription.retry_requested',
+        entityType: 'recording',
+        entityId: 'rec_retry',
+        metadata: expect.objectContaining({
+          meetingId: 'm_1',
+          previousStatus: 'failed',
+          processingMode: 'fast',
+          force: false,
+          source: 'api',
+          requestId: expect.any(String),
+        }),
       })
     );
   });
@@ -1133,6 +1244,44 @@ describe('Media Routes', () => {
     expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_stream.webm');
   });
 
+  it('GET /media/recordings/:recordingId/audio - writes a sanitized download audit event', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_audit_download',
+      workspace_id: 'ws_1',
+      meeting_id: 'm_audit',
+      file_path: '/tmp/audit-download.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1234,
+      storage_mode: 'single',
+    });
+
+    const res = await app.request('/media/recordings/rec_audit_download/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.audio.downloaded',
+        entityType: 'recording',
+        entityId: 'rec_audit_download',
+        metadata: expect.objectContaining({
+          meetingId: 'm_audit',
+          contentType: 'audio/webm',
+          storageMode: 'single',
+          delivery: 'local',
+          source: 'api',
+          requestId: expect.any(String),
+        }),
+      })
+    );
+    const auditPayload = mockTranscriptionService.writeAuditLog.mock.calls[0][0];
+    expect(JSON.stringify(auditPayload.metadata)).not.toContain('/tmp/audit-download.webm');
+  });
+
   it('POST /media/recordings/:recordingId/normalize, /voice-coaching and /acoustic-features handle happy path', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_norm',
@@ -1191,7 +1340,19 @@ describe('Media Routes', () => {
         workspace_id: 'ws_1',
         transcript_json: '[{"id":"s1","text":"hello","timestamp":0,"endTimestamp":1}]',
       });
-    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({ id: 'vp_1' });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+      id: 'vp_1',
+      speaker_name: 'Anna',
+      created_at: '2026-06-30T20:00:00.000Z',
+      updated_at: '2026-06-30T20:01:00.000Z',
+      profile_source: 'transcript_speaker',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'user_1',
+      sample_count: 1,
+      threshold: 0.82,
+      embedding_json: '[0.1,0.2,0.3]',
+    });
     mockTranscriptionService.diarizeFromTranscript.mockResolvedValue({
       speakerCount: 1,
       speakerNames: { '0': 'Speaker 1' },
@@ -1213,7 +1374,25 @@ describe('Media Routes', () => {
       body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
     });
     expect(voiceRes.status).toBe(201);
-    expect(await voiceRes.json()).toEqual({ id: 'vp_1' });
+    const voicePayload = await voiceRes.json();
+    expect(voicePayload).toEqual({
+      id: 'vp_1',
+      speakerName: 'Anna',
+      hasEmbedding: true,
+      createdAt: '2026-06-30T20:00:00.000Z',
+      updatedAt: '2026-06-30T20:01:00.000Z',
+      source: 'transcript_speaker',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'user_1',
+      sampleCount: 1,
+      threshold: 0.82,
+      isUpdate: false,
+    });
+    expect(voicePayload).not.toHaveProperty('embedding_json');
+    expect(voicePayload).not.toHaveProperty('embeddingJson');
+    expect(voicePayload).not.toHaveProperty('embedding');
+    expect(voicePayload).not.toHaveProperty('vector');
 
     const noTranscriptRes = await app.request('/media/recordings/rec_rediarize_missing/rediarize', {
       method: 'POST',
@@ -1229,6 +1408,97 @@ describe('Media Routes', () => {
     expect(mockTranscriptionService.saveTranscriptionResult).toHaveBeenCalledWith(
       'rec_rediarize_ok',
       expect.objectContaining({ pipelineStatus: 'completed' })
+    );
+  });
+
+  // ---------------------------------------------------------------
+  // Issue #1331 - transcript enrollment duplicated existing profiles
+  // Date: 2026-06-30
+  // Bug: repeated transcript enrollment returned a new-profile response.
+  // Fix: reused profiles return update metadata and HTTP 200.
+  // ---------------------------------------------------------------
+  it('Regression: Issue #1331 - POST /media/recordings/:recordingId/voice-profiles/from-speaker returns update state for repeated enrollment', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_voice_repeat',
+      workspace_id: 'ws_1',
+      transcript_json: '[{"text":"hello","speakerId":"0","timestamp":0,"endTimestamp":1}]',
+    });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockResolvedValue({
+      id: 'vp_existing',
+      speaker_name: 'Anna',
+      created_at: '2026-06-30T20:00:00.000Z',
+      updated_at: '2026-06-30T20:05:00.000Z',
+      profile_source: 'transcript_speaker',
+      embedding_model: 'voice-profile-embedding',
+      embedding_version: '1',
+      created_by: 'user_1',
+      sample_count: 2,
+      threshold: 0.91,
+      isUpdate: true,
+      embedding_json: '[0.1,0.2,0.3]',
+    });
+
+    const res = await app.request(
+      '/media/recordings/rec_voice_repeat/voice-profiles/from-speaker',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      id: 'vp_existing',
+      speakerName: 'Anna',
+      hasEmbedding: true,
+      createdAt: '2026-06-30T20:00:00.000Z',
+      updatedAt: '2026-06-30T20:05:00.000Z',
+      source: 'transcript_speaker',
+      model: 'voice-profile-embedding',
+      version: '1',
+      createdBy: 'user_1',
+      sampleCount: 2,
+      threshold: 0.91,
+      isUpdate: true,
+    });
+  });
+
+  it('POST /media/recordings/:recordingId/voice-profiles/from-speaker returns embedding_failed without saving unusable profile', async () => {
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_empty_embedding',
+      workspace_id: 'ws_1',
+      transcript_json: '[{"text":"hello","speakerId":"0","timestamp":0,"endTimestamp":1}]',
+    });
+    mockTranscriptionService.createVoiceProfileFromSpeaker.mockRejectedValue(
+      Object.assign(
+        new Error('Nie udalo sie utworzyc profilu glosu. Sprobuj ponownie za chwile.'),
+        {
+          code: 'embedding_failed',
+          stage: 'embedding',
+          statusCode: 503,
+        }
+      )
+    );
+
+    const res = await app.request(
+      '/media/recordings/rec_empty_embedding/voice-profiles/from-speaker',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speakerId: '0', speakerName: 'Anna' }),
+      }
+    );
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        recordingId: 'rec_empty_embedding',
+        speakerId: '0',
+        speakerName: 'Anna',
+      })
     );
   });
 
@@ -1268,6 +1538,43 @@ describe('Media Routes', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ mode: 'no-key' });
+  });
+
+  it('POST /media/analyze writes a sanitized AI audit event without raw transcript text', async () => {
+    mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+      mode: 'openai',
+      summary: 'Gotowe podsumowanie',
+    });
+
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId: 'ws_1',
+        recordingId: 'rec_ai_audit',
+        meeting: { id: 'm_ai_audit', title: 'Demo' },
+        segments: [{ speaker: 'Anna', text: 'RAW TRANSCRIPT SECRET' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        actorUserId: 'user_1',
+        action: 'recording.ai.analyzed',
+        entityType: 'recording',
+        entityId: 'rec_ai_audit',
+        metadata: expect.objectContaining({
+          meetingId: 'm_ai_audit',
+          mode: 'openai',
+          source: 'api',
+          requestId: expect.any(String),
+        }),
+      })
+    );
+    const auditPayload = mockTranscriptionService.writeAuditLog.mock.calls[0][0];
+    expect(JSON.stringify(auditPayload.metadata)).not.toContain('RAW TRANSCRIPT SECRET');
   });
 
   // Regression coverage note.
@@ -1426,6 +1733,35 @@ describe('Media Routes', () => {
         queuedPosition: null,
         processingAgeMs: 20 * 60 * 1000,
         retryAfterMs: 60_000,
+      });
+      expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
+    });
+
+    it('does not mark stale processing as failed while a durable job is active', async () => {
+      const staleDate = new Date(Date.now() - 40 * 60 * 1000).toISOString();
+      mockTranscriptionService.getDurableTranscriptionJob = vi.fn().mockResolvedValue({
+        status: 'queued',
+      });
+      mockTranscriptionService.getMediaAsset.mockResolvedValue({
+        id: 'rec_durable_active',
+        workspace_id: 'ws_1',
+        transcription_status: 'processing',
+        transcript_json: '[]',
+        diarization_json: '{}',
+        updated_at: staleDate,
+      });
+
+      const res = await app.request('/media/recordings/rec_durable_active/transcribe', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer fake_token' },
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toMatchObject({
+        pipelineStatus: 'processing',
+        activeJob: true,
+        durableJobStatus: 'queued',
       });
       expect(mockTranscriptionService.markTranscriptionFailure).not.toHaveBeenCalled();
     });

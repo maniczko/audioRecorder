@@ -50,6 +50,7 @@ describe('Workspace Routes', () => {
       updateRetentionPolicy: vi.fn(),
       cleanupExpiredRecordingsByRetention: vi.fn(),
       exportWorkspaceData: vi.fn(),
+      listAuditLogs: vi.fn(),
       updateWorkspaceMemberRole: vi.fn(),
       getMembership: vi.fn(),
     };
@@ -217,7 +218,12 @@ describe('Workspace Routes', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ retentionDays: 45 });
-    expect(mockWorkspaceService.updateRetentionPolicy).toHaveBeenCalledWith('ws1', 45, 'u1');
+    expect(mockWorkspaceService.updateRetentionPolicy).toHaveBeenCalledWith(
+      'ws1',
+      45,
+      'u1',
+      expect.any(String)
+    );
   });
 
   it('POST /workspaces/:workspaceId/retention/cleanup runs cleanup with audit source', async () => {
@@ -248,6 +254,7 @@ describe('Workspace Routes', () => {
       nowIso: '2026-06-25T12:00:00.000Z',
       actorUserId: 'u1',
       source: 'api',
+      requestId: expect.any(String),
     });
   });
 
@@ -282,7 +289,78 @@ describe('Workspace Routes', () => {
     expect(mockWorkspaceService.exportWorkspaceData).toHaveBeenCalledWith('ws1', {
       actorUserId: 'u1',
       source: 'api',
+      requestId: expect.any(String),
     });
+  });
+
+  it('GET /workspaces/:workspaceId/audit-logs returns scoped events for operators', async () => {
+    mockWorkspaceService.listAuditLogs.mockResolvedValue({
+      events: [
+        {
+          id: 'audit_1',
+          workspaceId: 'ws1',
+          actorUserId: 'u1',
+          action: 'recording.audio.downloaded',
+          eventType: 'recording.audio.downloaded',
+          entityType: 'recording',
+          entityId: 'rec1',
+          recordingId: 'rec1',
+          metadata: { requestId: 'req_1', source: 'api' },
+          createdAt: '2026-06-28T10:00:00.000Z',
+        },
+      ],
+      nextCursor: null,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('operator')
+    );
+
+    const res = await app.request('/workspaces/ws1/audit-logs?recordingId=rec1&limit=25', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      events: [
+        {
+          action: 'recording.audio.downloaded',
+          recordingId: 'rec1',
+        },
+      ],
+      nextCursor: null,
+    });
+    expect(mockWorkspaceService.listAuditLogs).toHaveBeenCalledWith('ws1', {
+      recordingId: 'rec1',
+      limit: 25,
+      cursor: '',
+    });
+  });
+
+  it('GET /workspaces/:workspaceId/audit-logs blocks regular members', async () => {
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('member')
+    );
+
+    const res = await app.request('/workspaces/ws1/audit-logs', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(res.status).toBe(403);
+    expect(mockWorkspaceService.listAuditLogs).not.toHaveBeenCalled();
   });
 
   it('blocks retention and export controls for non-admin workspace members', async () => {

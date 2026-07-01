@@ -10,6 +10,11 @@ export const AUTH_TOKEN = process.env.PRODUCTION_SMOKE_AUTH_TOKEN || '';
 export const WORKSPACE_ID = process.env.PRODUCTION_SMOKE_WORKSPACE_ID || '';
 export const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 export const AUDIT_PREFIX = process.env.PRODUCTION_AUDIT_PREFIX || 'audit_20260529_';
+const API_REQUEST_TIMEOUT_MS = Number(process.env.PRODUCTION_AUDIT_REQUEST_TIMEOUT_MS || 35_000);
+
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function hasProductionAuditConfig() {
   const missing = [];
@@ -93,19 +98,33 @@ export async function fetchWorkspaceState(request) {
   return payload.state || {};
 }
 
-export async function patchWorkspaceState(request, delta) {
-  const response = await request.patch(
-    apiUrl(`/state/workspaces/${encodeURIComponent(WORKSPACE_ID)}`),
-    {
-      headers: authHeaders(),
-      data: delta,
-      timeout: 30_000,
+export async function patchWorkspaceState(request, delta, options = {}) {
+  const attempts = options.attempts || 3;
+  const timeout = options.timeout || API_REQUEST_TIMEOUT_MS;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await request.patch(
+        apiUrl(`/state/workspaces/${encodeURIComponent(WORKSPACE_ID)}`),
+        {
+          headers: authHeaders(),
+          data: delta,
+          timeout,
+        }
+      );
+      const text = await response.text();
+      expect(response.status(), text).toBeLessThan(500);
+      expect(response.ok(), text).toBe(true);
+      return text ? JSON.parse(text) : {};
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) break;
+      await sleep(attempt * 2_000);
     }
-  );
-  const text = await response.text();
-  expect(response.status(), text).toBeLessThan(500);
-  expect(response.ok(), text).toBe(true);
-  return text ? JSON.parse(text) : {};
+  }
+
+  throw lastError || new Error('Production workspace patch failed.');
 }
 
 export function createAuditMeeting(id, title, overrides = {}) {

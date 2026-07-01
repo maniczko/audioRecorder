@@ -1,0 +1,32 @@
+{
+  "provider": "github_issues",
+  "task_truth": "github_issue_state_labels_comments",
+  "branch_prefix": "codex/issue-",
+  "required_labels": ["agent:ready", "autopilot:allowed"],
+  "blocking_labels": ["agent:blocked", "autopilot:requires-human", "needs-product-decision"],
+  "area_labels": {
+    "area:app": ["gate:quick", "gate:quality-critical"],
+    "area:backend": ["gate:quick", "gate:quality-critical"],
+    "area:data": ["gate:quick", "gate:quality-critical"],
+    "area:frontend": ["gate:quick", "gate:browser"],
+    "area:governance": ["gate:quick"],
+    "area:release": ["gate:quality-critical", "gate:release"],
+    "area:ui": ["gate:quick", "gate:browser"]
+  },
+  "gate_commands": {
+    "gate:quick": "pnpm run test",
+    "gate:quality-critical": "pnpm run test:release:guard",
+    "gate:browser": "pnpm run test:e2e",
+    "gate:runtime": "pnpm run release:prod-smoke",
+    "gate:release": "pnpm run test:release:guard",
+    "gate:corpus": "pnpm run test:stt-corpus"
+  },
+  "required_sections": {
+    "goal": ["Cel", "Goal", "Cel / Goal"],
+    "context": ["Kontekst", "Context", "Kontekst / Context"],
+    "scope": ["Zakres", "Scope", "Zakres / Scope"],
+    "acceptance_criteria": ["Kryteria akceptacji", "Acceptance Criteria", "Kryteria akceptacji / Acceptance Criteria"],
+    "validation": ["Walidacja", "Validation", "Walidacja / Validation"],
+    "final_report": ["Raport koncowy", "Final Report", "Raport koncowy / Final Report"]
+  }
+}

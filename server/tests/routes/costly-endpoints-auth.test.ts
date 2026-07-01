@@ -1,6 +1,36 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { createApp } from '../../app.ts';
 
+function createFakeRateLimitDb() {
+  const rows = new Map<
+    string,
+    { key: string; count: number; reset_at: number; updated_at: string }
+  >();
+  return {
+    async _execute(sql: string, params: unknown[] = []) {
+      if (/CREATE TABLE/i.test(sql)) return;
+      if (/INSERT INTO route_rate_limit_counters/i.test(sql)) {
+        const [key, resetAt, updatedAt, now] = params;
+        const existing = rows.get(String(key));
+        const currentResetAt = Number(existing?.reset_at);
+        const shouldReset =
+          !existing || !Number.isFinite(currentResetAt) || currentResetAt <= Number(now);
+        rows.set(String(key), {
+          key: String(key),
+          count: shouldReset ? 1 : Number(existing?.count || 0) + 1,
+          reset_at: shouldReset ? Number(resetAt) : currentResetAt,
+          updated_at: String(updatedAt),
+        });
+        return;
+      }
+      throw new Error(`Unexpected rate-limit SQL: ${sql}`);
+    },
+    async _get(_sql: string, params: unknown[] = []) {
+      return rows.get(String(params[0])) || null;
+    },
+  };
+}
+
 describe('Costly endpoint auth contract', () => {
   let app: ReturnType<typeof createApp>;
   let transcriptionService: Record<string, ReturnType<typeof vi.fn>>;
@@ -127,24 +157,91 @@ describe('Costly endpoint auth contract', () => {
   });
 
   test('rate limits RAG answer generation before repeated costly archive queries', async () => {
-    authService.getSession.mockResolvedValue(authenticatedSession);
-    workspaceService.getMembership.mockResolvedValue({ member_role: 'member' });
-    transcriptionService.queryRAG.mockResolvedValue([]);
+    const originalSkip = process.env.SKIP_RATE_LIMIT;
+    process.env.SKIP_RATE_LIMIT = 'false';
+    try {
+      authService.getSession.mockResolvedValue(authenticatedSession);
+      workspaceService.getMembership.mockResolvedValue({ member_role: 'member' });
+      transcriptionService.queryRAG.mockResolvedValue([]);
 
-    let lastResponse: Response | null = null;
-    for (let index = 0; index < 11; index += 1) {
-      lastResponse = await app.request('/workspaces/ws_allowed/rag/ask', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer valid-token',
-          'Content-Type': 'application/json',
-          'x-forwarded-for': '203.0.113.77',
-        },
-        body: JSON.stringify({ question: `Pytanie ${index}` }),
-      });
+      let lastResponse: Response | null = null;
+      for (let index = 0; index < 11; index += 1) {
+        lastResponse = await app.request('/workspaces/ws_allowed/rag/ask', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer valid-token',
+            'Content-Type': 'application/json',
+            'x-forwarded-for': '203.0.113.77',
+          },
+          body: JSON.stringify({ question: `Pytanie ${index}` }),
+        });
+      }
+
+      expect(lastResponse?.status).toBe(429);
+      expect(transcriptionService.queryRAG).toHaveBeenCalledTimes(10);
+    } finally {
+      if (originalSkip === undefined) {
+        delete process.env.SKIP_RATE_LIMIT;
+      } else {
+        process.env.SKIP_RATE_LIMIT = originalSkip;
+      }
     }
+  });
 
-    expect(lastResponse?.status).toBe(429);
-    expect(transcriptionService.queryRAG).toHaveBeenCalledTimes(10);
+  test('rate limits RAG by user and workspace across app instances even when IP changes', async () => {
+    const originalStore = process.env.VOICELOG_RATE_LIMIT_STORE;
+    const originalSkip = process.env.SKIP_RATE_LIMIT;
+    process.env.VOICELOG_RATE_LIMIT_STORE = 'db';
+    process.env.SKIP_RATE_LIMIT = 'false';
+    try {
+      authService.getSession.mockResolvedValue(authenticatedSession);
+      workspaceService.getMembership.mockResolvedValue({ member_role: 'member' });
+      transcriptionService.queryRAG.mockResolvedValue([]);
+      const db = createFakeRateLimitDb();
+
+      const sharedServices = {
+        authService: authService as any,
+        workspaceService: workspaceService as any,
+        transcriptionService: transcriptionService as any,
+        db,
+        config: { allowedOrigins: '*', trustProxy: true, uploadDir: process.cwd() },
+      };
+      const firstApp = createApp(sharedServices);
+      const secondApp = createApp(sharedServices);
+
+      let lastResponse: Response | null = null;
+      for (let index = 0; index < 11; index += 1) {
+        const currentApp = index % 2 === 0 ? firstApp : secondApp;
+        lastResponse = await currentApp.request('/workspaces/ws_allowed/rag/ask', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer valid-token',
+            'Content-Type': 'application/json',
+            'x-forwarded-for': `203.0.113.${index + 1}`,
+          },
+          body: JSON.stringify({ question: `Pytanie ${index}` }),
+        });
+      }
+
+      expect(lastResponse?.status).toBe(429);
+      expect(lastResponse?.headers.get('Retry-After')).toMatch(/^\d+$/);
+      await expect(lastResponse?.json()).resolves.toMatchObject({
+        code: 'rate_limited',
+        retryable: true,
+        route: 'rag-ask',
+      });
+      expect(transcriptionService.queryRAG).toHaveBeenCalledTimes(10);
+    } finally {
+      if (originalStore === undefined) {
+        delete process.env.VOICELOG_RATE_LIMIT_STORE;
+      } else {
+        process.env.VOICELOG_RATE_LIMIT_STORE = originalStore;
+      }
+      if (originalSkip === undefined) {
+        delete process.env.SKIP_RATE_LIMIT;
+      } else {
+        process.env.SKIP_RATE_LIMIT = originalSkip;
+      }
+    }
   });
 });

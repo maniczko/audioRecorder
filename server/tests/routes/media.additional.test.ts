@@ -141,7 +141,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
         'rec_to_delete',
         'ws_1',
-        { actorUserId: 'user_1' }
+        expect.objectContaining({ actorUserId: 'user_1', requestId: expect.any(String) })
       );
     });
 
@@ -872,6 +872,58 @@ describe('Media Routes - Additional Coverage', () => {
         });
       });
 
+      // ---------------------------------------------------------------
+      // Issue #1234 - duplicate chunk retry with idempotency key
+      // Date: 2026-06-28
+      // Bug: retrying the same chunk index could overwrite the stored
+      //      chunk with a different retry payload.
+      // Fix: Idempotency-Key marks the duplicate chunk as retry-safe and
+      //      returns the existing chunk without mutating its bytes.
+      // ---------------------------------------------------------------
+      it('keeps existing chunk bytes when duplicate chunk is retried with Idempotency-Key', async () => {
+        const recordingId = 'rec1_chunk_idempotency_key';
+        const chunkPath = path.join(testUploadDir, 'chunks', `${recordingId}_0.chunk`);
+
+        const first = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+            },
+            body: Buffer.from('first-attempt'),
+          }
+        );
+        expect(first.status).toBe(200);
+        expect(readFileSync(chunkPath, 'utf8')).toBe('first-attempt');
+
+        const retry = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk?index=0&total=2`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+              'Content-Type': 'audio/webm',
+              'Idempotency-Key': 'chunk-retry-1',
+            },
+            body: Buffer.from('retry-attempt'),
+          }
+        );
+
+        expect(retry.status).toBe(200);
+        await expect(retry.json()).resolves.toMatchObject({
+          index: 0,
+          total: 2,
+          idempotent: true,
+          idempotencyKey: 'chunk-retry-1',
+          idempotencyScope: 'recordingId:chunkIndex',
+        });
+        expect(readFileSync(chunkPath, 'utf8')).toBe('first-attempt');
+      });
+
       it('returns 507 and keeps retryability when disk is full during chunk upload', async () => {
         const recordingId = 'rec1_chunk_enospc';
         const mockFs = (globalThis as any).__mockFs;
@@ -1116,6 +1168,8 @@ describe('Media Routes - Additional Coverage', () => {
           sourceSizeBytes: 1300,
           normalizedSizeBytes: 1234,
           audioQuality: null,
+          idempotent: true,
+          idempotencyScope: 'recordingId',
         });
         expect(mockTranscriptionService.upsertMediaAssetFromPath).not.toHaveBeenCalled();
         expect(mockTranscriptionService.upsertMediaAssetFromPreparedAudio).not.toHaveBeenCalled();
@@ -1334,6 +1388,8 @@ describe('Media Routes - Additional Coverage', () => {
         ready: false,
         code: 'audio_source_unavailable',
         stage: 'audio_source',
+        retryable: false,
+        userAction: 'reimport_audio',
         recordingId: 'rec_vp_stale_audio',
         speakerId: '0',
         speakerName: 'Anna',
@@ -1559,6 +1615,8 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data.message).toContain('speakerId');
       expect(data.code).toBe('missing_speaker_id');
       expect(data.stage).toBe('validation');
+      expect(data.retryable).toBe(false);
+      expect(data.userAction).toBe('select_speaker');
       expect(data.recordingId).toBe('rec_vp_missing_speaker');
       expect(data.requestId).toEqual(expect.any(String));
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
@@ -1592,6 +1650,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'missing_speaker_name',
           stage: 'validation',
+          retryable: false,
+          userAction: 'select_speaker',
           recordingId: 'rec_vp_missing_name',
           speakerId: '0',
         })
@@ -1623,6 +1683,15 @@ describe('Media Routes - Additional Coverage', () => {
       expect(res.status).toBe(409);
       const data = await res.json();
       expect(data.message).toContain('transkrypcji');
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'transcription_not_ready',
+          stage: 'transcript',
+          retryable: true,
+          userAction: 'wait_for_transcription',
+          requestId: expect.any(String),
+        })
+      );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
@@ -1656,6 +1725,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'speaker_segment_not_found',
           stage: 'transcript',
+          retryable: false,
+          userAction: 'select_speaker_segment',
           recordingId: 'rec_vp_wrong_speaker',
           speakerId: '99',
           speakerName: 'Nobody',
@@ -1755,6 +1826,8 @@ describe('Media Routes - Additional Coverage', () => {
           code: 'audio_source_unavailable',
           message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
           stage: 'audio_source',
+          retryable: false,
+          userAction: 'reimport_audio',
           recordingId: 'rec_vp_fail',
           speakerId: '99',
           speakerName: 'Nobody',
@@ -1801,6 +1874,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'embedding_failed',
           stage: 'embedding',
+          retryable: true,
+          userAction: 'retry_later',
           recordingId: 'rec_vp_embedding_fail',
           speakerId: '2',
           speakerName: 'Barbara',
