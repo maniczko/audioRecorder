@@ -6,6 +6,7 @@
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import {
   checkRemoteAudioAvailabilityWithTimeout,
   initDatabase,
@@ -1603,14 +1604,17 @@ describe('Database - Additional Coverage Tests', () => {
     // Fix: create/update/delete events record safe metadata without embeddings.
     // ---------------------------------------------------------------
     test('Regression: Issue #1335 - voice profile lifecycle writes safe audit metadata', async () => {
-      const workspaceId = 'ws_issue_1335_audit';
-      const originalPath = path.join(testUploadDir, 'vp_issue_1335_original.wav');
-      const replacementPath = path.join(testUploadDir, 'vp_issue_1335_replacement.wav');
+      const suffix = randomUUID();
+      const profileId = `vp_issue_1335_audit_${suffix}`;
+      const replacementProfileId = `vp_issue_1335_audit_replacement_${suffix}`;
+      const workspaceId = `ws_issue_1335_audit_${suffix}`;
+      const originalPath = path.join(testUploadDir, `${profileId}_original.wav`);
+      const replacementPath = path.join(testUploadDir, `${profileId}_replacement.wav`);
       fs.writeFileSync(originalPath, Buffer.from('original sample'));
       fs.writeFileSync(replacementPath, Buffer.from('replacement sample'));
 
       const created = await db.upsertVoiceProfile({
-        id: 'vp_issue_1335_audit',
+        id: profileId,
         userId: 'creator_1335',
         workspaceId,
         speakerName: 'Audited Speaker',
@@ -1622,7 +1626,7 @@ describe('Database - Additional Coverage Tests', () => {
         createdBy: 'creator_1335',
       });
       await db.upsertVoiceProfile({
-        id: 'vp_issue_1335_audit_replacement',
+        id: replacementProfileId,
         userId: 'updater_1335',
         workspaceId,
         speakerName: 'Audited Speaker',
