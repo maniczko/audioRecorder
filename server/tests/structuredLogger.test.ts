@@ -32,8 +32,43 @@ describe('structuredLogger.ts', () => {
       const parsed = JSON.parse(output);
       expect(parsed.level).toBe('info');
       expect(parsed.message).toBe('Server started');
+      expect(parsed.service).toBe('voicelog-server');
       expect(parsed.data).toEqual({ port: 4000 });
       expect(parsed).toHaveProperty('timestamp');
+    });
+
+    test('redacts secrets and transcript-like payloads in production JSON', async () => {
+      process.env.NODE_ENV = 'production';
+      const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      const { structuredLogger } = await import('../lib/structuredLogger.js');
+
+      structuredLogger.info('Pipeline payload received', {
+        requestId: 'req-1',
+        workspaceId: 'ws-1',
+        recordingId: 'rec-1',
+        accessToken: 'secret-token',
+        transcript: 'private transcript',
+        nested: {
+          api_key: 'sk-secret',
+          safe: 'kept',
+        },
+      });
+
+      const parsed = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+      expect(parsed.data).toEqual({
+        requestId: 'req-1',
+        workspaceId: 'ws-1',
+        recordingId: 'rec-1',
+        accessToken: '[redacted]',
+        transcript: '[redacted]',
+        nested: {
+          api_key: '[redacted]',
+          safe: 'kept',
+        },
+      });
+      expect(JSON.stringify(parsed)).not.toContain('secret-token');
+      expect(JSON.stringify(parsed)).not.toContain('private transcript');
+      expect(JSON.stringify(parsed)).not.toContain('sk-secret');
     });
   });
 

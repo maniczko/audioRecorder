@@ -1988,8 +1988,11 @@ describe('Media Routes', () => {
       expect(res.status).toBe(403);
       expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'APP ERROR STACK',
-        expect.stringContaining('Nie masz dostepu do tego workspace.')
+        '[ERROR] APP ERROR STACK',
+        expect.objectContaining({
+          message: 'Nie masz dostepu do tego workspace.',
+          statusCode: 403,
+        })
       );
     });
   });

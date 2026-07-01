@@ -353,6 +353,8 @@ async function runTranscriptionAttempt(
         MetricsService.observeStageDuration(name, pipelineMetrics.stages[name]);
         logger.info(`[Metrics] Pipeline Stage Complete`, {
           requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId: asset.id,
           stage: name,
           durationMs: pipelineMetrics.stages[name],
         });
@@ -890,6 +892,7 @@ async function runTranscriptionAttempt(
       if (pipelineMetrics && pipelineMetrics.total > 0) {
         logger.info(`[Metrics] Pipeline Total Duration`, {
           requestId: pipelineMetrics.requestId,
+          workspaceId: asset.workspace_id,
           recordingId: asset.id,
           totalDurationMs: parseFloat(pipelineMetrics.total.toFixed(2)),
           stages: pipelineMetrics.stages,

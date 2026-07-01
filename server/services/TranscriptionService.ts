@@ -750,7 +750,9 @@ export default class TranscriptionService extends EventEmitter {
 
         logger.info('[Pipeline] Starting transcription job.', {
           requestId: reqId,
+          workspaceId: asset.workspace_id,
           recordingId,
+          jobId: activeJob?.id || '',
           processingMode,
         });
 
@@ -839,7 +841,9 @@ export default class TranscriptionService extends EventEmitter {
 
         logger.info('[Metrics] Pipeline completed successfully.', {
           requestId: reqId,
+          workspaceId: asset.workspace_id,
           recordingId,
+          jobId: activeJob?.id || '',
           durationMs: (performance.now() - startSTT).toFixed(2),
           confidence: result.diarization?.confidence || 0,
         });
@@ -856,12 +860,25 @@ export default class TranscriptionService extends EventEmitter {
       })
       .catch(async (error: any) => {
         try {
+          const { logger } = await import('../logger.ts');
           const failureDiagnostics = buildFailureDiagnostics(error);
           const currentJob =
             activeJob ||
             (typeof this.db.getTranscriptionJobByRecordingId === 'function'
               ? await this.db.getTranscriptionJobByRecordingId(recordingId)
               : null);
+          logger.error('[Pipeline] Transcription job failed.', {
+            requestId: options.requestId || 'internal-stt',
+            workspaceId: asset.workspace_id,
+            recordingId,
+            jobId: currentJob?.id || activeJob?.id || '',
+            errorCode:
+              error?.errorCode ||
+              error?.code ||
+              failureDiagnostics?.errorCode ||
+              'TRANSCRIPTION_JOB_FAILED',
+            message: error?.message || String(error || 'Unknown pipeline error'),
+          });
           if (currentJob && typeof this.db.failTranscriptionJob === 'function') {
             await this.db.failTranscriptionJob(currentJob.id, this.workerId, error);
           }
@@ -964,6 +981,7 @@ export default class TranscriptionService extends EventEmitter {
 
       logger.info('[Pipeline] Background post-process completed.', {
         requestId: reqId,
+        workspaceId: asset.workspace_id,
         recordingId,
       });
     } catch (error: any) {
@@ -973,6 +991,7 @@ export default class TranscriptionService extends EventEmitter {
       });
       logger.warn('[Pipeline] Background post-process failed.', {
         requestId: reqId,
+        workspaceId: asset.workspace_id,
         recordingId,
         message: error?.message || String(error),
       });
