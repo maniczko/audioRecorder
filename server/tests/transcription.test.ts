@@ -1,4 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sentryMocks = vi.hoisted(() => ({
+  addPipelineBreadcrumb: vi.fn(),
+  capturePipelineException: vi.fn(),
+}));
+
+vi.mock('../sentry.ts', () => ({
+  addPipelineBreadcrumb: sentryMocks.addPipelineBreadcrumb,
+  capturePipelineException: sentryMocks.capturePipelineException,
+}));
+
 import TranscriptionService from '../services/TranscriptionService.ts';
 import { buildSegmentedMediaManifest } from '../lib/mediaStoragePolicy.ts';
 
@@ -59,6 +70,8 @@ describe('TranscriptionService', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    sentryMocks.addPipelineBreadcrumb.mockClear();
+    sentryMocks.capturePipelineException.mockClear();
   });
 
   it('falls back to injected audioPipeline and calls transcribeRecording', async () => {
@@ -381,6 +394,22 @@ describe('TranscriptionService', () => {
         recordingId: 'rec_429',
         jobId: '',
         errorCode: 'stt_rate_limited',
+      })
+    );
+    expect(sentryMocks.capturePipelineException).toHaveBeenCalledWith(
+      failure,
+      expect.objectContaining({
+        requestId: 'req-429',
+        workspaceId: 'ws_1',
+        recordingId: 'rec_429',
+        pipelineStage: 'failure',
+        operation: 'transcription.process',
+        errorCode: 'stt_rate_limited',
+        retryable: true,
+      }),
+      expect.objectContaining({
+        level: 'warning',
+        fingerprint: ['audio-pipeline', 'stt_rate_limited'],
       })
     );
     expect(mockDb.markTranscriptionFailure).toHaveBeenCalledWith(

@@ -5,7 +5,7 @@ import {
   type RecordingPipelineStatus,
   type RecordingQueueItem,
 } from '../lib/recordingQueue';
-import { Sentry } from '../sentry';
+import { addQueueBreadcrumb, captureQueueException, type QueueSentryContext } from '../sentry';
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { MeetingAnalysis, TranscriptSegment } from '../shared/types';
 
@@ -242,11 +242,31 @@ function reportBackgroundTranscriptionPending(data: Record<string, unknown>) {
     console.info('[queue] Transcription still processing in background.', data);
   }
   if (typeof window === 'undefined') return;
-  Sentry?.addBreadcrumb?.({
-    category: 'recording.queue',
-    level: 'warning',
-    message: BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE,
-    data,
+  addQueueBreadcrumb(BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE, data, { level: 'warning' });
+}
+
+function buildQueueSentryContext(
+  nextItem: RecordingQueueItem,
+  extra: QueueSentryContext = {}
+): QueueSentryContext {
+  return {
+    workspaceId: nextItem.workspaceId || '',
+    recordingId: nextItem.recordingId,
+    pipelineStage: String(nextItem.status || 'queued'),
+    retryable: false,
+    ...extra,
+  };
+}
+
+function addRecordingQueueBreadcrumb(
+  nextItem: RecordingQueueItem,
+  message: string,
+  extra: QueueSentryContext = {},
+  options: { level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug' } = {}
+) {
+  if (typeof window === 'undefined') return;
+  addQueueBreadcrumb(message, buildQueueSentryContext(nextItem, extra), {
+    level: options.level || 'info',
   });
 }
 
@@ -604,8 +624,23 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const workspaceId = resolveWorkspaceId(target, nextItem);
     const targetWithWorkspace =
       workspaceId && target.workspaceId !== workspaceId ? { ...target, workspaceId } : target;
+    addRecordingQueueBreadcrumb(nextItem, 'Recording queue item selected.', {
+      workspaceId,
+      pipelineStage: 'queue_selected',
+      storageMode: mediaService.mode,
+    });
 
     if (mediaService.mode === 'remote' && !workspaceId) {
+      addRecordingQueueBreadcrumb(
+        nextItem,
+        'Remote queue item missing workspace id.',
+        {
+          pipelineStage: 'workspace_validation',
+          errorCode: 'missing_workspace_id',
+          retryable: false,
+        },
+        { level: 'warning' }
+      );
       updateQueueItem(nextItem.recordingId, {
         status: 'failed_permanent',
         errorMessage: RECORDING_WORKSPACE_REQUIRED_MESSAGE,
@@ -624,6 +659,17 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const localBlob = canReuseRemoteUpload ? null : await getAudioBlob(nextItem.recordingId);
 
     if (!localBlob && !canReuseRemoteUpload) {
+      addRecordingQueueBreadcrumb(
+        nextItem,
+        'Local queue audio blob missing.',
+        {
+          workspaceId,
+          pipelineStage: 'local_audio_lookup',
+          errorCode: 'local_audio_missing',
+          retryable: false,
+        },
+        { level: 'warning' }
+      );
       updateQueueItem(nextItem.recordingId, {
         status: 'failed',
         errorMessage: 'Brakuje lokalnego audio.',
@@ -695,6 +741,11 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         attempts: (nextItem.attempts || 0) + 1,
         errorMessage: '',
       });
+      addRecordingQueueBreadcrumb(nextItem, 'Audio upload started.', {
+        workspaceId,
+        pipelineStage: 'upload',
+        attempt: (nextItem.attempts || 0) + 1,
+      });
 
       uploadResult = await mediaService.persistRecordingAudio(nextItem.recordingId, uploadBlob, {
         workspaceId,
@@ -710,6 +761,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
       updateQueueItem(nextItem.recordingId, {
         audioQuality: uploadResult?.audioQuality || nextItem.audioQuality || null,
+      });
+      addRecordingQueueBreadcrumb(nextItem, 'Audio upload stored.', {
+        workspaceId,
+        pipelineStage: 'upload_complete',
       });
     }
 
@@ -730,6 +785,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       pipelineProgressPercent: processingSnapshot.progressPercent,
       pipelineStageLabel: processingSnapshot.stageLabel,
       recordingMessage: 'Audio przeslane. Oczekiwanie na przetwarzanie...',
+    });
+    addRecordingQueueBreadcrumb(nextItem, 'Transcription job start requested.', {
+      workspaceId,
+      pipelineStage: canReuseRemoteUpload ? 'retry' : 'job_start',
     });
 
     let startedRaw: unknown;
@@ -764,6 +823,12 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     const started = normalizeTranscriptionResponse(startedRaw) as StartedTranscription;
     const transcriptionProviderId = started.providerId || '';
     const transcriptionProviderLabel = started.providerLabel || transcriptionProviderId;
+    addRecordingQueueBreadcrumb(nextItem, 'Transcription job accepted.', {
+      workspaceId,
+      pipelineStage: normalizeRecordingPipelineStatus(started?.pipelineStatus),
+      providerId: transcriptionProviderId,
+      jobId: String((started as any)?.jobId || (started as any)?.durableJobId || ''),
+    });
 
     updateQueueItem(nextItem.recordingId, {
       pipelineGitSha: started?.pipelineGitSha || '',
@@ -954,6 +1019,17 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       });
     } catch (error) {
       console.error('Meeting analysis failed.', error);
+      addRecordingQueueBreadcrumb(
+        nextItem,
+        'AI analysis fallback used.',
+        {
+          workspaceId,
+          pipelineStage: 'ai_analysis',
+          errorCode: (error as any)?.errorCode || (error as any)?.code || 'AI_ANALYSIS_FAILED',
+          retryable: true,
+        },
+        { level: 'warning' }
+      );
       analysis = buildFallbackAnalysis(
         'Analiza AI nie powiodla sie. Zachowalismy transkrypcje i segmenty.',
         {
@@ -1095,6 +1171,18 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         retryAfterMs: delay,
         errorMessage: '',
       });
+      addRecordingQueueBreadcrumb(
+        nextItem,
+        'Queue item scheduled for retry.',
+        {
+          pipelineStage: 'retry',
+          errorCode: error?.errorCode || error?.code || 'TRANSIENT_QUEUE_ERROR',
+          retryable: true,
+          retryCount: retryCount + 1,
+          retryAfterMs: delay,
+        },
+        { level: 'warning' }
+      );
       scheduleBackoffReset?.(nextItem.recordingId, delay);
       return;
     }
@@ -1104,6 +1192,30 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     if (getState().lastQueueErrorKey !== errorKey) {
       if (!isExpectedDomainFailure(error)) {
         console.error('Recording queue item failed.', error);
+        captureQueueException(
+          error,
+          buildQueueSentryContext(nextItem, {
+            pipelineStage: 'queue_failure',
+            errorCode: error?.errorCode || error?.code || 'RECORDING_QUEUE_FAILED',
+            retryable: false,
+            status: error?.status || error?.statusCode || undefined,
+          }),
+          {
+            level: 'error',
+            fingerprint: ['recording-queue', String(error?.errorCode || error?.code || 'failed')],
+          }
+        );
+      } else {
+        addRecordingQueueBreadcrumb(
+          nextItem,
+          'Expected recording queue failure handled.',
+          {
+            pipelineStage: 'queue_failure_expected',
+            errorCode: error?.errorCode || error?.code || 'EXPECTED_QUEUE_FAILURE',
+            retryable: false,
+          },
+          { level: 'warning' }
+        );
       }
       setState({ lastQueueErrorKey: errorKey });
     }

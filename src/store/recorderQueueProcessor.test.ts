@@ -1,4 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+
+const sentryMocks = vi.hoisted(() => ({
+  addQueueBreadcrumb: vi.fn(),
+  captureQueueException: vi.fn(),
+}));
+
+vi.mock('../sentry', () => ({
+  addQueueBreadcrumb: sentryMocks.addQueueBreadcrumb,
+  captureQueueException: sentryMocks.captureQueueException,
+}));
+
 import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   createRecordingQueueItem,
@@ -184,6 +195,8 @@ function buildContext(overrides: Partial<QueueProcessorContext> = {}) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  sentryMocks.addQueueBreadcrumb.mockClear();
+  sentryMocks.captureQueueException.mockClear();
 });
 
 describe('buildAudioPreprocessingPlan', () => {
@@ -1047,6 +1060,41 @@ describe('processRecordingQueueItem', () => {
     );
     expect(context.scheduleBackoffReset).toHaveBeenCalledWith('recording-1', 1000);
     expect(context.removeQueueItem).not.toHaveBeenCalled();
+  });
+
+  it('reports unexpected queue failures to Sentry with recording context', async () => {
+    const uploadError = Object.assign(new Error('Remote upload crashed'), {
+      code: 'upload_failed',
+      status: 502,
+      transcript: 'raw transcript must not be sent',
+    });
+    const context = buildContext();
+    context.mediaService.persistRecordingAudio.mockRejectedValueOnce(uploadError);
+
+    await processRecordingQueueItem(context);
+
+    expect(sentryMocks.captureQueueException).toHaveBeenCalledWith(
+      uploadError,
+      expect.objectContaining({
+        workspaceId: 'workspace-1',
+        recordingId: 'recording-1',
+        pipelineStage: 'queue_failure',
+        errorCode: 'upload_failed',
+        retryable: false,
+        status: 502,
+      }),
+      expect.objectContaining({
+        level: 'error',
+        fingerprint: ['recording-queue', 'upload_failed'],
+      })
+    );
+    expect(context.updateQueueItem).toHaveBeenCalledWith(
+      'recording-1',
+      expect.objectContaining({
+        status: 'failed',
+        errorMessage: 'UI: Remote upload crashed',
+      })
+    );
   });
 
   it('advances transient retry delay when previous backoff count exists', async () => {
