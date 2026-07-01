@@ -56,6 +56,7 @@ vi.mock('../shared/contracts', () => ({
 import {
   buildTranscriptionProgressRequest,
   createMediaService,
+  mapRemoteTranscriptionResult,
   REMOTE_TRANSCRIPTION_PROVIDER,
 } from './mediaService';
 
@@ -88,6 +89,27 @@ describe('mediaService', () => {
     expect(request.url).toBe('http://media-api.local/media/recordings/rec%201/progress');
     expect(request.url).not.toContain('session-token');
     expect(request.headers).toEqual({ Authorization: 'Bearer session-token' });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - remote transcription result lost verifiedSegments
+  // Date: 2026-06-27
+  // Bug: Hosted preview/backend contract variants could return completed
+  //      transcript segments as verifiedSegments, but the media-service mapper
+  //      only copied response.segments. The queue then attached an empty
+  //      transcript even though processing had completed.
+  // Fix: Preserve verifiedSegments first, then fall back to segments.
+  // -----------------------------------------------------------------
+  it('Regression: #0 - preserves verifiedSegments from remote transcription responses', () => {
+    const segment = { id: 'seg-1', text: 'Widoczna transkrypcja', speakerId: 0, timestamp: 0 };
+
+    const result = mapRemoteTranscriptionResult({
+      pipelineStatus: 'done',
+      verifiedSegments: [segment],
+    });
+
+    expect(result.verifiedSegments).toEqual([segment]);
+    expect(result.pipelineStatus).toBe('done');
   });
 
   describe('local mode', () => {

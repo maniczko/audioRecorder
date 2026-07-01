@@ -95,6 +95,45 @@ describe('monitoring error groups', () => {
     expect(groups[0].source).toBe('github-actions');
   });
 
+  it('selects the terminal GitHub CI failure over Vitest stderr noise', () => {
+    const groups = extractGithubFailureGroups({
+      failures: [
+        {
+          runId: 3001,
+          runName: 'Code Review',
+          branch: 'dependabot/npm_and_yarn/development-dependencies-70c9663c6e',
+          commit: 'fe8a218',
+          htmlUrl: 'https://example.test/runs/3001',
+          errors: [
+            {
+              jobName: 'coverage-check',
+              stepName: 'Run pnpm run test:coverage',
+              errors: [
+                {
+                  lineNumber: 40,
+                  line: 'Recording start failed. Error: MediaRecorder init failed',
+                },
+                {
+                  lineNumber: 150,
+                  line: 'FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory',
+                },
+                {
+                  lineNumber: 190,
+                  line: 'Error: [vitest-pool]: Worker forks emitted error.',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].message).toContain('fatal error: reached heap limit');
+    expect(groups[0].originalMessage).not.toContain('Recording start failed');
+    expect(groups[0].occurrences[0].lineNumber).toBe(150);
+  });
+
   it('creates a GitHub group even when job logs were not parsed', () => {
     const groups = extractGithubFailureGroups({
       failures: [

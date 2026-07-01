@@ -88,6 +88,9 @@ jobs:
       - name: Mojibake audit
         run: pnpm run audit:mojibake
 
+      - name: Repo hygiene audit
+        run: pnpm run audit:repo-hygiene
+
       - name: UI action contract audit
         run: pnpm run test:ui-actions:contract
 

@@ -13,6 +13,7 @@ import {
   RotateCw,
   ShieldCheck,
   Settings2,
+  Trash2,
   UserRound,
   UsersRound,
   Wrench,
@@ -176,9 +177,11 @@ function buildVoiceProfilePersonRows(
 function VoiceProfilesSection({
   peopleProfiles = [],
   sessionToken = '',
+  workspaceRole = 'member',
 }: {
   peopleProfiles?: Array<{ name: string }>;
   sessionToken?: string;
+  workspaceRole?: string;
 }) {
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -226,6 +229,10 @@ function VoiceProfilesSection({
   const selectedPersonRow = voiceProfileRows.find((row) => row.key === selectedPersonKey);
   const selectedPersonSampleCount = selectedPersonRow?.sampleCount ?? 0;
   const profiledPeopleCount = voiceProfileRows.filter((row) => row.sampleCount > 0).length;
+  const normalizedWorkspaceRole = String(workspaceRole || '').toLowerCase();
+  const canManageVoiceProfiles =
+    normalizedWorkspaceRole === 'owner' || normalizedWorkspaceRole === 'admin';
+  const voiceProfileReadonlyReason = 'Tylko owner lub admin moze zarzadzac profilami glosowymi.';
 
   async function startRecording() {
     if (!backendApiReady) {
@@ -309,25 +316,44 @@ function VoiceProfilesSection({
   }
 
   async function deleteProfile(id: string) {
+    if (!canManageVoiceProfiles) {
+      setStatus(voiceProfileReadonlyReason);
+      return;
+    }
     if (!sessionToken) {
       setStatus('Zaloguj sie ponownie, aby usunac profil glosowy.');
       return;
     }
-    await apiRequest(`/voice-profiles/${id}`, { method: 'DELETE', parseAs: 'raw' });
-    setProfiles((prev) => prev.filter((p: any) => p.id !== id));
+    try {
+      await apiRequest(`/voice-profiles/${id}`, { method: 'DELETE', parseAs: 'raw' });
+      setProfiles((prev) => prev.filter((p) => p.id !== id));
+      setStatus('Profil glosowy usuniety.');
+    } catch (err: any) {
+      setStatus(`Blad: ${err?.message || 'Nie udalo sie usunac profilu glosowego.'}`);
+    }
   }
 
   async function updateThreshold(id: string, threshold: number) {
-    if (!sessionToken) return;
+    if (!canManageVoiceProfiles) {
+      setStatus(voiceProfileReadonlyReason);
+      return;
+    }
+    if (!sessionToken) {
+      setStatus('Zaloguj sie ponownie, aby zmienic prog profilu glosowego.');
+      return;
+    }
     try {
       const updated = (await apiRequest(`/voice-profiles/${id}/threshold`, {
         method: 'PATCH',
         body: { threshold },
       })) as { id: string; threshold: number };
       setProfiles((prev) =>
-        prev.map((p: any) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
+        prev.map((p) => (p.id === updated.id ? { ...p, threshold: updated.threshold } : p))
       );
-    } catch (_) {}
+      setStatus('Prog profilu glosowego zapisany.');
+    } catch (err: any) {
+      setStatus(`Blad: ${err?.message || 'Nie udalo sie zapisac progu profilu glosowego.'}`);
+    }
   }
 
   function formatElapsed(s) {
@@ -335,7 +361,7 @@ function VoiceProfilesSection({
   }
 
   return (
-    <section className="panel">
+    <section className="panel profile-grid-span-two">
       <div className="panel-header compact">
         <div>
           <div className="eyebrow">AI</div>
@@ -408,17 +434,37 @@ function VoiceProfilesSection({
       </div>
 
       {voiceProfileRows.length > 0 ? (
-        <div className="voice-profiles-grouped">
+        <div
+          className="voice-profiles-grouped voice-profile-management"
+          role="table"
+          aria-label="Zarzadzanie profilami glosowymi"
+        >
+          <div className="voice-profile-management-header" role="row">
+            <span role="columnheader">Osoba</span>
+            <span role="columnheader">Probki</span>
+            <span role="columnheader">Prog</span>
+            <span role="columnheader">Status</span>
+            <span role="columnheader">Ostatnia aktualizacja</span>
+            <span role="columnheader">Akcje</span>
+          </div>
+          {!canManageVoiceProfiles ? (
+            <p className="voice-profile-permission-note">{voiceProfileReadonlyReason}</p>
+          ) : null}
           {voiceProfileRows.map((row) => {
             const lastSampleDate = formatVoiceProfileDate(row.lastSampleAt);
+            const statusLabelAscii = row.sampleCount > 0 ? 'Ma probke' : 'Brak probki';
 
             return (
               <div
                 key={row.key}
-                className={`voice-profile-person-group ${row.sampleCount > 0 ? 'has-sample' : 'no-sample'}`}
+                className={`voice-profile-person-group voice-profile-management-row ${
+                  row.sampleCount > 0 ? 'has-sample' : 'no-sample'
+                }`}
                 data-testid="voice-profile-person-row"
+                role="row"
+                aria-label={`${row.name} ${row.sampleCount}/5 ${statusLabelAscii}`}
               >
-                <div data-testid={row.testId}>
+                <div data-testid={row.testId} className="voice-profile-management-row-inner">
                   <div className="voice-profile-person-header">
                     <div className="voice-profile-avatar-wrap">
                       <span className="voice-profile-person-avatar">
@@ -433,6 +479,7 @@ function VoiceProfilesSection({
                       <div className="voice-profile-title-row">
                         <strong data-testid="voice-profile-person-name">{row.name}</strong>
                         <span
+                          data-testid="voice-profile-management-status"
                           className={`voice-profile-status-pill ${
                             row.sampleCount > 0 ? 'ready' : 'empty'
                           }`}
@@ -501,10 +548,15 @@ function VoiceProfilesSection({
                             type="button"
                             className="icon-button profile-delete-sample-btn"
                             onClick={() => deleteProfile(row.primaryProfile!.id)}
-                            title="Usuń profil głosowy"
-                            aria-label={`Usuń profil głosowy ${row.name}`}
+                            title={
+                              canManageVoiceProfiles
+                                ? 'Usun profil glosowy'
+                                : voiceProfileReadonlyReason
+                            }
+                            aria-label={`Usun profil glosowy ${row.name}`}
+                            disabled={!canManageVoiceProfiles}
                           >
-                            🗑
+                            <Trash2 size={16} aria-hidden="true" />
                           </button>
                         </div>
                         <div className="voice-profile-threshold-container">
@@ -521,6 +573,13 @@ function VoiceProfilesSection({
                             max="99"
                             step="1"
                             value={row.thresholdPct}
+                            aria-label={`Prog rozpoznawania ${row.name}`}
+                            disabled={!canManageVoiceProfiles}
+                            title={
+                              canManageVoiceProfiles
+                                ? 'Zmien prog rozpoznawania'
+                                : voiceProfileReadonlyReason
+                            }
                             onChange={(e) => {
                               const threshold = Number(e.target.value) / 100;
                               setProfiles((prev) =>
@@ -1948,7 +2007,11 @@ export default function ProfileTab({
         {activeCategory === 'tools' && (
           <div className="profile-category-view">
             <div className="profile-grid">
-              <VoiceProfilesSection peopleProfiles={peopleProfiles} sessionToken={sessionToken} />
+              <VoiceProfilesSection
+                peopleProfiles={peopleProfiles}
+                sessionToken={sessionToken}
+                workspaceRole={workspaceRole}
+              />
               <VocabularyManagerSection
                 vocabulary={vocabulary}
                 onUpdateVocabulary={onUpdateVocabulary}

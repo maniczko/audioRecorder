@@ -141,7 +141,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(mockTranscriptionService.deleteMediaAsset).toHaveBeenCalledWith(
         'rec_to_delete',
         'ws_1',
-        { actorUserId: 'user_1' }
+        expect.objectContaining({ actorUserId: 'user_1', requestId: expect.any(String) })
       );
     });
 
@@ -1388,6 +1388,8 @@ describe('Media Routes - Additional Coverage', () => {
         ready: false,
         code: 'audio_source_unavailable',
         stage: 'audio_source',
+        retryable: false,
+        userAction: 'reimport_audio',
         recordingId: 'rec_vp_stale_audio',
         speakerId: '0',
         speakerName: 'Anna',
@@ -1613,6 +1615,8 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data.message).toContain('speakerId');
       expect(data.code).toBe('missing_speaker_id');
       expect(data.stage).toBe('validation');
+      expect(data.retryable).toBe(false);
+      expect(data.userAction).toBe('select_speaker');
       expect(data.recordingId).toBe('rec_vp_missing_speaker');
       expect(data.requestId).toEqual(expect.any(String));
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
@@ -1646,6 +1650,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'missing_speaker_name',
           stage: 'validation',
+          retryable: false,
+          userAction: 'select_speaker',
           recordingId: 'rec_vp_missing_name',
           speakerId: '0',
         })
@@ -1677,6 +1683,15 @@ describe('Media Routes - Additional Coverage', () => {
       expect(res.status).toBe(409);
       const data = await res.json();
       expect(data.message).toContain('transkrypcji');
+      expect(data).toEqual(
+        expect.objectContaining({
+          code: 'transcription_not_ready',
+          stage: 'transcript',
+          retryable: true,
+          userAction: 'wait_for_transcription',
+          requestId: expect.any(String),
+        })
+      );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
@@ -1710,6 +1725,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'speaker_segment_not_found',
           stage: 'transcript',
+          retryable: false,
+          userAction: 'select_speaker_segment',
           recordingId: 'rec_vp_wrong_speaker',
           speakerId: '99',
           speakerName: 'Nobody',
@@ -1809,6 +1826,8 @@ describe('Media Routes - Additional Coverage', () => {
           code: 'audio_source_unavailable',
           message: 'Audio nie jest dostepne na serwerze. Zaimportuj nagranie ponownie.',
           stage: 'audio_source',
+          retryable: false,
+          userAction: 'reimport_audio',
           recordingId: 'rec_vp_fail',
           speakerId: '99',
           speakerName: 'Nobody',
@@ -1855,6 +1874,8 @@ describe('Media Routes - Additional Coverage', () => {
         expect.objectContaining({
           code: 'embedding_failed',
           stage: 'embedding',
+          retryable: true,
+          userAction: 'retry_later',
           recordingId: 'rec_vp_embedding_fail',
           speakerId: '2',
           speakerName: 'Barbara',

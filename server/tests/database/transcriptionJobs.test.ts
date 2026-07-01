@@ -230,6 +230,59 @@ describe('transcription_jobs durable queue', () => {
     }
   });
 
+  test('media status helpers keep durable job state synchronized', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_sync');
+      const queued = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_sync',
+        workspaceId: 'ws_1',
+      });
+
+      await db.markTranscriptionProcessing('rec_sync');
+      const running = await db.getTranscriptionJobByRecordingId('rec_sync');
+      expect(running).toMatchObject({ id: queued.id, status: 'running' });
+
+      await db.saveTranscriptionResult('rec_sync', {
+        pipelineStatus: 'completed',
+        segments: [{ text: 'done' }],
+      });
+      const completed = await db._get('SELECT * FROM transcription_jobs WHERE id = ?', [queued.id]);
+      expect(completed).toMatchObject({
+        status: 'completed',
+        locked_by: '',
+        locked_until: '',
+      });
+      expect(completed.completed_at).toEqual(expect.any(String));
+
+      await insertAsset(db, 'rec_failure');
+      const failureQueued = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_failure',
+        workspaceId: 'ws_1',
+      });
+      await db.acquireTranscriptionJobLease({
+        workerId: 'worker-failure',
+        recordingId: 'rec_failure',
+      });
+
+      await db.markTranscriptionFailure('rec_failure', 'Provider failed', {
+        errorCode: 'provider_failed',
+      });
+      const failed = await db._get('SELECT * FROM transcription_jobs WHERE id = ?', [
+        failureQueued.id,
+      ]);
+      expect(failed).toMatchObject({
+        status: 'failed',
+        locked_by: '',
+        locked_until: '',
+        last_error_code: 'provider_failed',
+        last_error_message: 'Provider failed',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
   test('failed leased jobs retry only after next_run_at and reject wrong-worker updates', async () => {
     const db = await createDb();
     try {

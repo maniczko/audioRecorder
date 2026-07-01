@@ -104,6 +104,70 @@ function firstParsedError(jobFailure) {
   return null;
 }
 
+function parsedErrorText(parsedError) {
+  return toText(parsedError?.line || parsedError?.message || parsedError?.context, '');
+}
+
+function githubParsedErrorScore(parsedError) {
+  const text = parsedErrorText(parsedError).toLowerCase();
+
+  if (!text) {
+    return 0;
+  }
+
+  if (
+    text.includes('fatal error:') ||
+    text.includes('[vitest-pool]') ||
+    text.includes('worker exited unexpectedly') ||
+    text.includes('unable to locate executable file:') ||
+    text.includes('code style issues found') ||
+    text.includes('process completed with exit code') ||
+    /elifecycle.*exit code/.test(text)
+  ) {
+    return 100;
+  }
+
+  if (/^(stderr|stdout)\s+\|/i.test(text)) {
+    return 0;
+  }
+
+  if (
+    text.includes('recording start failed') ||
+    text.includes('immediate workspace sync after delete failed') ||
+    text.includes('audio hydration failed') ||
+    text.includes('[httpclient] retry')
+  ) {
+    return 10;
+  }
+
+  if (/\b(error|failed|failure|unhandled|exception)\b/i.test(text)) {
+    return 50;
+  }
+
+  return 1;
+}
+
+function primaryParsedError(jobFailure) {
+  const errors = Array.isArray(jobFailure?.errors) ? jobFailure.errors : [];
+
+  if (errors.length === 0) {
+    return null;
+  }
+
+  return [...errors].sort((left, right) => {
+    const scoreDelta = githubParsedErrorScore(right) - githubParsedErrorScore(left);
+
+    if (scoreDelta !== 0) {
+      return scoreDelta;
+    }
+
+    return (
+      Number(left?.lineNumber ?? Number.MAX_SAFE_INTEGER) -
+      Number(right?.lineNumber ?? Number.MAX_SAFE_INTEGER)
+    );
+  })[0];
+}
+
 export function extractGithubFailureGroups(report) {
   const groups = new Map();
   const failures = Array.isArray(report?.failures) ? report.failures : [];
@@ -134,7 +198,7 @@ export function extractGithubFailureGroups(report) {
     }
 
     for (const jobFailure of jobFailures) {
-      const parsedError = firstParsedError(jobFailure);
+      const parsedError = primaryParsedError(jobFailure) || firstParsedError(jobFailure);
       const area = [
         failure?.runName || 'workflow',
         jobFailure?.jobName || 'job',

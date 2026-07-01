@@ -703,6 +703,16 @@ function UnifiedLibrary({
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
+  const sortButtonLabel = (label: string, key: RecordingsSortKey) => {
+    const direction =
+      sortConfig.key !== key
+        ? 'brak aktywnego sortowania'
+        : sortConfig.direction === 'asc'
+          ? 'rosnaco'
+          : 'malejaco';
+    return `Sortuj nagrania: ${label}, ${direction}`;
+  };
+
   const ariaSort = (key: RecordingsSortKey) => {
     if (sortConfig.key !== key) return 'none';
     return sortConfig.direction === 'asc' ? 'ascending' : 'descending';
@@ -1199,7 +1209,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('title')}
                     style={{ width: '25%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Spotkanie', 'title')}
+                      data-action-id="recordings-sort-title"
+                    >
                       Spotkanie <span>{sortIndicator('title')}</span>
                     </button>
                   </th>
@@ -1209,7 +1224,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('startsAt')}
                     style={{ width: '16%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Data i godzina', 'startsAt')}
+                      data-action-id="recordings-sort-starts-at"
+                    >
                       Data i godzina <span>{sortIndicator('startsAt')}</span>
                     </button>
                   </th>
@@ -1219,7 +1239,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('durationMinutes')}
                     style={{ width: '9%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Czas', 'durationMinutes')}
+                      data-action-id="recordings-sort-duration"
+                    >
                       Czas <span>{sortIndicator('durationMinutes')}</span>
                     </button>
                   </th>
@@ -1230,7 +1255,12 @@ function UnifiedLibrary({
                     style={{ width: '10%' }}
                     title="Liczba mówców"
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Mowcy', 'speakerCount')}
+                      data-action-id="recordings-sort-speakers"
+                    >
                       Mówcy <span>{sortIndicator('speakerCount')}</span>
                     </button>
                   </th>
@@ -1240,7 +1270,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('status')}
                     style={{ width: '12%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Status', 'status')}
+                      data-action-id="recordings-sort-status"
+                    >
                       Status <span>{sortIndicator('status')}</span>
                     </button>
                   </th>
@@ -1250,7 +1285,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('ai')}
                     style={{ width: '12%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('AI', 'ai')}
+                      data-action-id="recordings-sort-ai"
+                    >
                       AI <span>{sortIndicator('ai')}</span>
                     </button>
                   </th>
@@ -1260,7 +1300,12 @@ function UnifiedLibrary({
                     aria-sort={ariaSort('tags')}
                     style={{ width: '14%' }}
                   >
-                    <button type="button" className="recordings-sort-header">
+                    <button
+                      type="button"
+                      className="recordings-sort-header"
+                      aria-label={sortButtonLabel('Tagi', 'tags')}
+                      data-action-id="recordings-sort-tags"
+                    >
                       Tagi <span>{sortIndicator('tags')}</span>
                     </button>
                   </th>

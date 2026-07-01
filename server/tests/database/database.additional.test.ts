@@ -6,7 +6,12 @@
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
-import { initDatabase, getDatabase } from '../../database.ts';
+import { randomUUID } from 'node:crypto';
+import {
+  checkRemoteAudioAvailabilityWithTimeout,
+  initDatabase,
+  getDatabase,
+} from '../../database.ts';
 import { fileURLToPath } from 'node:url';
 import { logger } from '../../logger.ts';
 
@@ -1112,7 +1117,12 @@ describe('Database - Additional Coverage Tests', () => {
           embedding_json TEXT,
           sample_count INTEGER DEFAULT 1,
           threshold REAL DEFAULT 0.82,
-          created_at TEXT
+          created_at TEXT,
+          updated_at TEXT,
+          profile_source TEXT DEFAULT 'unknown',
+          embedding_model TEXT DEFAULT 'unknown',
+          embedding_version TEXT DEFAULT '1',
+          created_by TEXT
         )
       `);
     });
@@ -1132,6 +1142,63 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.sample_count).toBe(1);
     });
 
+    // ---------------------------------------------------------------
+    // Issue #1333 - voice profile operational metadata
+    // Date: 2026-07-01
+    // Bug: voice profile rows had no source/model/version/creator/update metadata.
+    // Fix: profile writes persist metadata while keeping old rows readable.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1333 - saveVoiceProfile writes operational metadata', async () => {
+      const nowSpy = vi.spyOn(db, 'nowIso').mockReturnValueOnce('2026-07-01T10:00:00.000Z');
+
+      try {
+        const result = await db.saveVoiceProfile({
+          id: 'vp_issue_1333_save',
+          userId: 'creator_1333',
+          workspaceId: 'ws_issue_1333',
+          speakerName: 'Metadata Save',
+          audioPath: '/tmp/metadata-save.wav',
+          embedding: [0.1, 0.2, 0.3],
+          source: 'manual_upload',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'creator_1333',
+        });
+
+        expect(result).toMatchObject({
+          profile_source: 'manual_upload',
+          embedding_model: 'voice-profile-embedding',
+          embedding_version: '1',
+          created_by: 'creator_1333',
+          created_at: '2026-07-01T10:00:00.000Z',
+          updated_at: '2026-07-01T10:00:00.000Z',
+        });
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+
+    test('saveVoiceProfile rejects empty embedding without inserting a profile', async () => {
+      await expect(
+        db.saveVoiceProfile({
+          id: 'vp_empty_save',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Empty Save',
+          audioPath: '/tmp/empty-save.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      await expect(
+        db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_empty_save'])
+      ).resolves.toBeNull();
+    });
+
     test('upsertVoiceProfile creates new profile when not exists', async () => {
       const profile = {
         id: 'vp_test2',
@@ -1145,6 +1212,27 @@ describe('Database - Additional Coverage Tests', () => {
       const result = await db.upsertVoiceProfile(profile);
       expect(result.speaker_name).toBe('Bob');
       expect(result.isUpdate).toBeUndefined();
+    });
+
+    test('upsertVoiceProfile rejects empty embedding without inserting a profile', async () => {
+      await expect(
+        db.upsertVoiceProfile({
+          id: 'vp_empty_upsert',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Empty Upsert',
+          audioPath: '/tmp/empty-upsert.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      await expect(
+        db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_empty_upsert'])
+      ).resolves.toBeNull();
     });
 
     test('upsertVoiceProfile updates existing profile with new sample', async () => {
@@ -1173,6 +1261,238 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.isUpdate).toBe(true);
     });
 
+    // ---------------------------------------------------------------
+    // Issue #1334 - durable voice profile sample storage policy
+    // Date: 2026-07-01
+    // Bug: replacing a voice profile sample left the previous local sample orphaned.
+    // Fix: profile samples are durable until the profile is deleted or replaced.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1334 - upsertVoiceProfile deletes replaced durable sample file', async () => {
+      const originalPath = path.join(testUploadDir, 'vp_issue_1334_original.wav');
+      const replacementPath = path.join(testUploadDir, 'vp_issue_1334_replacement.wav');
+      fs.writeFileSync(originalPath, Buffer.from('old voice sample'));
+      fs.writeFileSync(replacementPath, Buffer.from('new voice sample'));
+
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_update',
+        speakerName: 'Durable Sample',
+        audioPath: originalPath,
+        embedding: [0.1, 0.2, 0.3],
+      });
+      expect(fs.existsSync(originalPath)).toBe(true);
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_replacement',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_update',
+        speakerName: 'Durable Sample',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result).toMatchObject({
+        id: 'vp_issue_1334_original',
+        audio_path: replacementPath,
+        sample_count: 2,
+        isUpdate: true,
+      });
+      expect(fs.existsSync(originalPath)).toBe(false);
+      expect(fs.existsSync(replacementPath)).toBe(true);
+    });
+
+    test('Regression: Issue #1334 - missing replaced voice profile sample is ignored without warning noise', async () => {
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const missingPath = path.join(testUploadDir, 'vp_issue_1334_missing.wav');
+      const replacementPath = path.join(testUploadDir, 'vp_issue_1334_missing_replacement.wav');
+      fs.writeFileSync(replacementPath, Buffer.from('replacement voice sample'));
+
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_missing_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_missing',
+        speakerName: 'Missing Durable Sample',
+        audioPath: missingPath,
+        embedding: [0.1, 0.2, 0.3],
+      });
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_missing_replacement',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_missing',
+        speakerName: 'Missing Durable Sample',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result.audio_path).toBe(replacementPath);
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Failed to delete voice profile audio'),
+        expect.anything(),
+        expect.anything()
+      );
+      warnSpy.mockRestore();
+    });
+
+    test('Regression: Issue #1334 - rejects overflow samples without leaving an unused file', async () => {
+      let currentPath = '';
+      for (let index = 1; index <= 5; index += 1) {
+        currentPath = path.join(testUploadDir, `vp_issue_1334_cap_${index}.wav`);
+        fs.writeFileSync(currentPath, Buffer.from(`sample ${index}`));
+        await db.upsertVoiceProfile({
+          id: `vp_issue_1334_cap_${index}`,
+          userId: 'u1',
+          workspaceId: 'ws_issue_1334_cap',
+          speakerName: 'Capped Durable Sample',
+          audioPath: currentPath,
+          embedding: [index, index + 0.1, index + 0.2],
+        });
+      }
+
+      const overflowPath = path.join(testUploadDir, 'vp_issue_1334_cap_overflow.wav');
+      fs.writeFileSync(overflowPath, Buffer.from('overflow sample'));
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1334_cap_overflow',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1334_cap',
+        speakerName: 'Capped Durable Sample',
+        audioPath: overflowPath,
+        embedding: [9, 9.1, 9.2],
+      });
+
+      expect(result).toMatchObject({
+        id: 'vp_issue_1334_cap_1',
+        sample_count: 5,
+        audio_path: currentPath,
+        isUpdate: true,
+      });
+      expect(fs.existsSync(currentPath)).toBe(true);
+      expect(fs.existsSync(overflowPath)).toBe(false);
+    });
+
+    test('Regression: Issue #1333 - upsertVoiceProfile preserves creation metadata and refreshes updated_at', async () => {
+      const nowSpy = vi
+        .spyOn(db, 'nowIso')
+        .mockReturnValueOnce('2026-07-01T11:00:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:01:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:05:00.000Z')
+        .mockReturnValueOnce('2026-07-01T11:06:00.000Z');
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_original',
+          userId: 'creator_1333',
+          workspaceId: 'ws_issue_1333_upsert',
+          speakerName: 'Metadata Upsert',
+          audioPath: '/tmp/metadata-original.wav',
+          embedding: [0.1, 0.2, 0.3],
+          source: 'manual_upload',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'creator_1333',
+        });
+
+        const result = await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_second',
+          userId: 'other_user',
+          workspaceId: 'ws_issue_1333_upsert',
+          speakerName: 'Metadata Upsert',
+          audioPath: '/tmp/metadata-second.wav',
+          embedding: [0.4, 0.5, 0.6],
+          source: 'transcript_speaker',
+          model: 'voice-profile-embedding',
+          version: '1',
+          createdBy: 'other_user',
+        });
+
+        expect(result).toMatchObject({
+          id: 'vp_issue_1333_original',
+          sample_count: 2,
+          profile_source: 'manual_upload',
+          embedding_model: 'voice-profile-embedding',
+          embedding_version: '1',
+          created_by: 'creator_1333',
+          created_at: '2026-07-01T11:00:00.000Z',
+          updated_at: '2026-07-01T11:05:00.000Z',
+          isUpdate: true,
+        });
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Issue #1331 - transcript enrollment duplicated existing profiles
+    // Date: 2026-06-30
+    // Bug: repeated enrollment could create a second row for the same display name.
+    // Fix: upsert keeps one row and returns update metadata.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1331 - upsertVoiceProfile reuses existing row when new sample has a different id', async () => {
+      await db.upsertVoiceProfile({
+        id: 'vp_issue_1331_original',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1331',
+        speakerName: 'Repeated Speaker',
+        audioPath: '/tmp/repeated-original.wav',
+        embedding: [0.1, 0.2, 0.3],
+      });
+
+      const result = await db.upsertVoiceProfile({
+        id: 'vp_issue_1331_duplicate',
+        userId: 'u1',
+        workspaceId: 'ws_issue_1331',
+        speakerName: ' repeated speaker ',
+        audioPath: '/tmp/repeated-new.wav',
+        embedding: [0.4, 0.5, 0.6],
+      });
+
+      expect(result.id).toBe('vp_issue_1331_original');
+      expect(result.sample_count).toBe(2);
+      expect(result.audio_path).toBe('/tmp/repeated-new.wav');
+      expect(result.isUpdate).toBe(true);
+
+      const rows = await db._query(
+        'SELECT * FROM voice_profiles WHERE workspace_id = ? AND LOWER(speaker_name) = LOWER(?)',
+        ['ws_issue_1331', 'repeated speaker']
+      );
+      expect(rows).toHaveLength(1);
+    });
+
+    test('upsertVoiceProfile rejects empty embedding without mutating an existing profile', async () => {
+      await db.upsertVoiceProfile({
+        id: 'vp_existing_empty_guard',
+        userId: 'u1',
+        workspaceId: 'ws1',
+        speakerName: 'Guarded Existing',
+        audioPath: '/tmp/guarded-original.wav',
+        embedding: [0.11, 0.22, 0.33],
+      });
+
+      await expect(
+        db.upsertVoiceProfile({
+          id: 'vp_existing_empty_guard_new',
+          userId: 'u1',
+          workspaceId: 'ws1',
+          speakerName: 'Guarded Existing',
+          audioPath: '/tmp/guarded-new.wav',
+          embedding: [],
+        })
+      ).rejects.toMatchObject({
+        code: 'embedding_failed',
+        stage: 'embedding',
+        statusCode: 503,
+      });
+
+      const current = await db._get('SELECT * FROM voice_profiles WHERE id = ?', [
+        'vp_existing_empty_guard',
+      ]);
+      expect(current.sample_count).toBe(1);
+      expect(current.audio_path).toBe('/tmp/guarded-original.wav');
+      expect(JSON.parse(current.embedding_json)).toEqual([0.11, 0.22, 0.33]);
+    });
+
     test('updateVoiceProfileThreshold clamps value between 0.5 and 0.99', async () => {
       await db.upsertVoiceProfile({
         id: 'vp_test4',
@@ -1190,6 +1510,40 @@ describe('Database - Additional Coverage Tests', () => {
       await db.updateVoiceProfileThreshold('vp_test4', 'ws1', 1.5);
       result = await db._get('SELECT threshold FROM voice_profiles WHERE id = ?', ['vp_test4']);
       expect(result.threshold).toBe(0.99);
+    });
+
+    test('Regression: Issue #1333 - updateVoiceProfileThreshold refreshes updated_at metadata', async () => {
+      const nowSpy = vi
+        .spyOn(db, 'nowIso')
+        .mockReturnValueOnce('2026-07-01T12:00:00.000Z')
+        .mockReturnValueOnce('2026-07-01T12:01:00.000Z')
+        .mockReturnValueOnce('2026-07-01T12:10:00.000Z');
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1333_threshold',
+          userId: 'u1',
+          workspaceId: 'ws_issue_1333_threshold',
+          speakerName: 'Threshold Metadata',
+          audioPath: '/tmp/threshold-metadata.wav',
+          embedding: [0.1, 0.2, 0.3],
+        });
+
+        await db.updateVoiceProfileThreshold(
+          'vp_issue_1333_threshold',
+          'ws_issue_1333_threshold',
+          0.9
+        );
+        const result = await db._get(
+          'SELECT threshold, updated_at FROM voice_profiles WHERE id = ?',
+          ['vp_issue_1333_threshold']
+        );
+
+        expect(result.threshold).toBe(0.9);
+        expect(result.updated_at).toBe('2026-07-01T12:10:00.000Z');
+      } finally {
+        nowSpy.mockRestore();
+      }
     });
 
     test('getWorkspaceVoiceProfiles returns profiles', async () => {
@@ -1217,13 +1571,138 @@ describe('Database - Additional Coverage Tests', () => {
       unlinkSpy.mockRestore();
     });
 
+    test('Regression: Issue #1334 - deleteVoiceProfile removes the current durable sample file', async () => {
+      const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+      const samplePath = path.join(testUploadDir, 'vp_issue_1334_delete.wav');
+      fs.writeFileSync(samplePath, Buffer.from('voice sample'));
+
+      try {
+        await db.upsertVoiceProfile({
+          id: 'vp_issue_1334_delete',
+          userId: 'u1',
+          workspaceId: 'ws_issue_1334_delete',
+          speakerName: 'Delete Durable Sample',
+          audioPath: samplePath,
+          embedding: [0.1, 0.2, 0.3],
+        });
+
+        await db.deleteVoiceProfile('vp_issue_1334_delete', 'ws_issue_1334_delete');
+
+        expect(unlinkSpy).toHaveBeenCalledWith(samplePath);
+        await expect(
+          db._get('SELECT * FROM voice_profiles WHERE id = ?', ['vp_issue_1334_delete'])
+        ).resolves.toBeNull();
+      } finally {
+        unlinkSpy.mockRestore();
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Issue #1335 - voice profile export, retention, and audit model
+    // Date: 2026-07-01
+    // Bug: profile lifecycle changes were not visible in workspace audit logs.
+    // Fix: create/update/delete events record safe metadata without embeddings.
+    // ---------------------------------------------------------------
+    test('Regression: Issue #1335 - voice profile lifecycle writes safe audit metadata', async () => {
+      const suffix = randomUUID();
+      const profileId = `vp_issue_1335_audit_${suffix}`;
+      const replacementProfileId = `vp_issue_1335_audit_replacement_${suffix}`;
+      const workspaceId = `ws_issue_1335_audit_${suffix}`;
+      const originalPath = path.join(testUploadDir, `${profileId}_original.wav`);
+      const replacementPath = path.join(testUploadDir, `${profileId}_replacement.wav`);
+      fs.writeFileSync(originalPath, Buffer.from('original sample'));
+      fs.writeFileSync(replacementPath, Buffer.from('replacement sample'));
+
+      const created = await db.upsertVoiceProfile({
+        id: profileId,
+        userId: 'creator_1335',
+        workspaceId,
+        speakerName: 'Audited Speaker',
+        audioPath: originalPath,
+        embedding: [0.1, 0.2, 0.3],
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'creator_1335',
+      });
+      await db.upsertVoiceProfile({
+        id: replacementProfileId,
+        userId: 'updater_1335',
+        workspaceId,
+        speakerName: 'Audited Speaker',
+        audioPath: replacementPath,
+        embedding: [0.4, 0.5, 0.6],
+        source: 'manual_upload',
+        model: 'voice-profile-embedding',
+        version: '1',
+        createdBy: 'updater_1335',
+      });
+      await db.deleteVoiceProfile(created.id, workspaceId, {
+        actorUserId: 'deleter_1335',
+        source: 'test',
+      });
+
+      const lifecycleOrder = new Map([
+        ['voice_profile.created', 0],
+        ['voice_profile.updated', 1],
+        ['voice_profile.deleted', 2],
+      ]);
+      const rows = (
+        await db._query('SELECT * FROM audit_logs WHERE workspace_id = ? AND entity_id = ?', [
+          workspaceId,
+          created.id,
+        ])
+      ).sort(
+        (left: any, right: any) =>
+          (lifecycleOrder.get(left.action) ?? Number.MAX_SAFE_INTEGER) -
+          (lifecycleOrder.get(right.action) ?? Number.MAX_SAFE_INTEGER)
+      );
+      expect(rows.map((row: any) => row.action)).toEqual([
+        'voice_profile.created',
+        'voice_profile.updated',
+        'voice_profile.deleted',
+      ]);
+      expect(rows.map((row: any) => row.actor_user_id)).toEqual([
+        'creator_1335',
+        'updater_1335',
+        'deleter_1335',
+      ]);
+
+      const metadata = rows.map((row: any) => JSON.parse(row.metadata_json));
+      expect(metadata[0]).toMatchObject({
+        source: 'manual_upload',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleCount: 1,
+      });
+      expect(metadata[1]).toMatchObject({
+        source: 'manual_upload',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleCount: 2,
+        replacedSample: true,
+      });
+      expect(metadata[2]).toMatchObject({
+        source: 'test',
+        sampleStoragePolicy: 'durable_until_profile_delete_or_replaced',
+        retentionPolicy: 'retained_until_profile_delete',
+        sampleHadPath: true,
+      });
+      for (const entry of metadata) {
+        expect(entry).not.toHaveProperty('embedding');
+        expect(entry).not.toHaveProperty('embeddingJson');
+        expect(entry).not.toHaveProperty('embedding_json');
+      }
+    });
+
     test('Regression: #0 — ignores missing voice profile files without Sentry noise', async () => {
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       const missingPath = path.join(testUploadDir, 'missing-voice-profile.wav');
+      const createdAt = new Date().toISOString();
 
       await db._execute(
-        `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, threshold, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO voice_profiles (id, user_id, workspace_id, speaker_name, audio_path, embedding_json, sample_count, threshold, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'vp_missing_audio',
           'u1',
@@ -1233,7 +1712,8 @@ describe('Database - Additional Coverage Tests', () => {
           '[]',
           1,
           0.82,
-          new Date().toISOString(),
+          createdAt,
+          createdAt,
         ]
       );
 
@@ -1431,6 +1911,27 @@ describe('Database - Additional Coverage Tests', () => {
       expect(result.avatarUrl).toBe('https://example.com/avatar.jpg');
       expect(result.googleEmail).toBe('test@example.com');
       expect(result.extraField).toBeUndefined();
+    });
+
+    // ----------------------------------------------------------------
+    // Issue #0 - Remote audio availability checks can hang workspace sync
+    // Date: 2026-06-29
+    // Bug: Supabase Storage availability checks had no timeout and could
+    //      block workspace state hydration or PATCH persistence indefinitely.
+    // Fix: Slow availability checks resolve as unknown so state sync continues.
+    // ----------------------------------------------------------------
+    describe('Regression: Issue #0 - remote audio availability timeout', () => {
+      test('checkRemoteAudioAvailabilityWithTimeout returns unknown for hung storage checks', async () => {
+        const startedAt = Date.now();
+        const result = await checkRemoteAudioAvailabilityWithTimeout(
+          () => new Promise<boolean>(() => {}),
+          'workspace/recording.webm',
+          15
+        );
+
+        expect(result).toBeNull();
+        expect(Date.now() - startedAt).toBeLessThan(250);
+      });
     });
   });
 });

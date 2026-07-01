@@ -131,6 +131,18 @@ describe('RecordingsTab', () => {
     expect(screen.getAllByText('Transkrypcja').length).toBeGreaterThan(0);
   });
 
+  test('exposes stable production action ids for dynamic sort headers', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} />
+      </ToastProvider>
+    );
+
+    expect(
+      screen.getByRole('button', { name: /Sortuj nagrania: Data i godzina, malejaco/i })
+    ).toHaveAttribute('data-action-id', 'recordings-sort-starts-at');
+  });
+
   test('Regression: imported recording row uses real audio duration instead of meeting duration', () => {
     render(
       <ToastProvider>

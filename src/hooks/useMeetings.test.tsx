@@ -2,6 +2,9 @@ import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import useMeetings from './useMeetings';
 
+vi.unmock('./useMeetings');
+vi.unmock('@/hooks/useMeetings');
+
 const { meetingsState, lifecycleState, taskOpsState, stateServiceState } = vi.hoisted(() => ({
   meetingsState: {
     meetings: [

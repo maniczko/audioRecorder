@@ -331,11 +331,16 @@ function buildVoiceProfileErrorBody(input: {
   segmentCount?: number;
   matchedSegmentCount?: number;
   requestId?: string;
+  retryable?: boolean;
+  userAction?: string;
 }) {
+  const defaults = getVoiceProfileErrorDefaults(input.code);
   return {
     code: input.code,
     message: input.message,
     stage: input.stage,
+    retryable: input.retryable ?? defaults.retryable,
+    userAction: input.userAction || defaults.userAction,
     recordingId: input.recordingId,
     speakerId: input.speakerId || undefined,
     speakerName: input.speakerName || undefined,
@@ -345,7 +350,30 @@ function buildVoiceProfileErrorBody(input: {
   };
 }
 
-function classifyVoiceProfileEnrollmentError(error: any) {
+function getVoiceProfileErrorDefaults(code: string) {
+  const defaults: Record<string, { retryable: boolean; userAction: string }> = {
+    missing_speaker_id: { retryable: false, userAction: 'select_speaker' },
+    missing_speaker_name: { retryable: false, userAction: 'select_speaker' },
+    recording_not_found: { retryable: false, userAction: 'refresh_recording' },
+    transcription_not_ready: { retryable: true, userAction: 'wait_for_transcription' },
+    speaker_segment_not_found: { retryable: false, userAction: 'select_speaker_segment' },
+    audio_source_unavailable: { retryable: false, userAction: 'reimport_audio' },
+    embedding_failed: { retryable: true, userAction: 'retry_later' },
+    profile_save_failed: { retryable: true, userAction: 'retry' },
+  };
+  return defaults[code] || { retryable: false, userAction: 'contact_support' };
+}
+
+type VoiceProfileEnrollmentErrorDetails = {
+  code: string;
+  stage: string;
+  status: number;
+  message: string;
+  retryable?: boolean;
+  userAction?: string;
+};
+
+function classifyVoiceProfileEnrollmentError(error: any): VoiceProfileEnrollmentErrorDetails {
   const message = String(error?.message || '');
   const lower = message.toLowerCase();
   if (error?.code && error?.stage) {
@@ -354,6 +382,8 @@ function classifyVoiceProfileEnrollmentError(error: any) {
       stage: String(error.stage),
       status: Number(error.statusCode || error.status || 500) || 500,
       message,
+      retryable: typeof error.retryable === 'boolean' ? error.retryable : undefined,
+      userAction: typeof error.userAction === 'string' ? error.userAction : undefined,
     };
   }
   if (
@@ -396,6 +426,50 @@ function classifyVoiceProfileEnrollmentError(error: any) {
     stage: 'profile_save',
     status: 500,
     message: 'Nie udalo sie zapisac profilu glosu.',
+  };
+}
+
+function hasVoiceProfileEmbedding(profile: any) {
+  if (Array.isArray(profile?.embedding)) return profile.embedding.length > 0;
+  const raw = profile?.embedding_json ?? profile?.embeddingJson;
+  if (Array.isArray(raw)) return raw.length > 0;
+  if (typeof raw !== 'string') return false;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+const VOICE_PROFILE_EMBEDDING_VERSION = '1';
+
+function voiceProfileMetadata(profile: any) {
+  const fallbackCreatedAt = profile?.created_at ?? profile?.createdAt;
+  const fallbackUserId = profile?.user_id ?? profile?.userId ?? '';
+  return {
+    source: profile?.profile_source ?? profile?.source ?? 'unknown',
+    model: profile?.embedding_model ?? profile?.model ?? 'unknown',
+    version: profile?.embedding_version ?? profile?.version ?? VOICE_PROFILE_EMBEDDING_VERSION,
+    createdBy: profile?.created_by ?? profile?.createdBy ?? fallbackUserId,
+    updatedAt: profile?.updated_at ?? profile?.updatedAt ?? fallbackCreatedAt,
+  };
+}
+
+function buildVoiceProfileResponse(profile: any) {
+  const sampleCount = Number.isFinite(Number(profile?.sample_count ?? profile?.sampleCount))
+    ? Number(profile?.sample_count ?? profile?.sampleCount)
+    : 1;
+
+  return {
+    id: profile?.id,
+    speakerName: profile?.speaker_name ?? profile?.speakerName,
+    hasEmbedding: hasVoiceProfileEmbedding(profile),
+    createdAt: profile?.created_at ?? profile?.createdAt,
+    sampleCount,
+    threshold: typeof profile?.threshold === 'number' ? profile.threshold : 0.82,
+    isUpdate: Boolean(profile?.isUpdate),
+    ...voiceProfileMetadata(profile),
   };
 }
 
@@ -569,6 +643,72 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           return transcriptionService.getMediaAsset(recordingId);
         };
   const uploadDir = config.uploadDir || process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+
+  async function writeAuditEvent(
+    c: any,
+    {
+      workspaceId,
+      action,
+      entityType,
+      entityId,
+      metadata = {},
+    }: {
+      workspaceId: string;
+      action: string;
+      entityType: string;
+      entityId: string;
+      metadata?: Record<string, unknown>;
+    }
+  ) {
+    const auditTarget =
+      typeof transcriptionService.writeAuditLog === 'function' ? transcriptionService : services.db;
+    if (typeof auditTarget?.writeAuditLog !== 'function') {
+      return;
+    }
+
+    const session = c.get('session') as any;
+    try {
+      await auditTarget.writeAuditLog({
+        workspaceId,
+        actorUserId: String(session?.user_id || ''),
+        action,
+        entityType,
+        entityId,
+        metadata: {
+          ...metadata,
+          requestId: String(c.get('reqId') || ''),
+        },
+      });
+    } catch (error: any) {
+      const { logger } = await import('../logger.ts');
+      logger.warn('[audit] Failed to persist audit event', {
+        workspaceId,
+        action,
+        entityType,
+        entityId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  async function writeRecordingAuditEvent(
+    c: any,
+    asset: any,
+    action: string,
+    metadata: Record<string, unknown> = {}
+  ) {
+    await writeAuditEvent(c, {
+      workspaceId: String(asset?.workspace_id || ''),
+      action,
+      entityType: 'recording',
+      entityId: String(asset?.id || ''),
+      metadata: {
+        meetingId: String(asset?.meeting_id || ''),
+        source: 'api',
+        ...metadata,
+      },
+    });
+  }
 
   function resolveProcessingMode(input: any) {
     return input === 'full' || input === 'fast'
@@ -888,12 +1028,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           };
           stream.on('close', cleanup);
           stream.on('error', cleanup);
+          const contentLength = statSync(materialized.localPath).size;
           c.header(
             'Content-Type',
             safeType === 'application/octet-stream' ? 'audio/webm' : safeType
           );
-          c.header('Content-Length', String(statSync(materialized.localPath).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'segmented'),
+              sizeBytes: contentLength,
+              delivery: 'segmented',
+            }
+          );
           return c.body(stream as any, 200);
         } catch (err: any) {
           console.error('[media] Segmented audio materialization failed', {
@@ -922,6 +1074,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
               resolvedPath: storagePath,
             });
           }
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: storagePath === asset.file_path ? 'remote' : 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch (err: any) {
           console.error('[media] Supabase download failed', {
@@ -941,9 +1104,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         // Local file path - try local first, then fall back to Supabase with basename
         if (existsSync(asset.file_path)) {
           const stream = createReadStream(asset.file_path);
+          const contentLength = statSync(asset.file_path).size;
           c.header('Content-Type', safeType);
-          c.header('Content-Length', String(statSync(asset.file_path).size));
+          c.header('Content-Length', String(contentLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: contentLength,
+              delivery: 'local',
+            }
+          );
           return c.body(stream as any, 200);
         }
 
@@ -962,6 +1137,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           c.header('Content-Type', safeType);
           c.header('Content-Length', String(arrayBuffer.byteLength));
           c.header('Content-Disposition', 'attachment');
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: 'remote-fallback',
+            }
+          );
           return c.body(arrayBuffer as any, 200);
         } catch {
           console.warn('[media] Audio 404 - local file missing, Supabase fallback failed', {
@@ -1004,6 +1190,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const session = c.get('session');
       await transcriptionService.deleteMediaAsset(recordingId, asset.workspace_id, {
         actorUserId: String(session?.user_id || ''),
+        requestId: String(c.get('reqId') || ''),
       });
       return c.body(null, 204);
     } catch (err: any) {
@@ -1011,171 +1198,200 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   });
 
-  router.post('/recordings/:recordingId/transcribe', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const body = await c.req.json().catch(() => ({}));
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
+  router.post(
+    '/recordings/:recordingId/transcribe',
+    applyRateLimit('transcription-start', 5),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const body = await c.req.json().catch(() => ({}));
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
 
-    const runtimeActive =
-      typeof transcriptionService.isTranscriptionJobActive === 'function'
-        ? Boolean(transcriptionService.isTranscriptionJobActive(recordingId))
-        : false;
-    if (isActiveTranscriptionStatus(asset, runtimeActive)) {
-      return c.json(
-        withIdempotencyMetadata(normalizeTranscriptionStatusPayload(asset), c, 'recordingId'),
-        202
-      );
+      const runtimeActive =
+        typeof transcriptionService.isTranscriptionJobActive === 'function'
+          ? Boolean(transcriptionService.isTranscriptionJobActive(recordingId))
+          : false;
+      if (isActiveTranscriptionStatus(asset, runtimeActive)) {
+        return c.json(
+          withIdempotencyMetadata(normalizeTranscriptionStatusPayload(asset), c, 'recordingId'),
+          202
+        );
+      }
+
+      // Guard against OOM - reject when memory is already tight
+      const memPressure = getMemoryPressure();
+      if (!memPressure.ok) {
+        console.warn(
+          `[memory] Rejecting transcription ${recordingId}: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%)`
+        );
+        return c.json(
+          { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
+          503
+        );
+      }
+
+      try {
+        const result = await startTranscriptionPipeline(recordingId, asset, {
+          ...body,
+          processingMode: resolveProcessingMode(body.processingMode),
+          requestId: c.get('reqId'),
+        });
+
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(result),
+            c,
+            'recordingId',
+            false
+          ),
+          202
+        );
+      } catch (err: any) {
+        console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
+        const status = err?.statusCode || err?.status || 500;
+        return c.json(
+          { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+          status
+        );
+      }
     }
+  );
 
-    // Guard against OOM - reject when memory is already tight
-    const memPressure = getMemoryPressure();
-    if (!memPressure.ok) {
-      console.warn(
-        `[memory] Rejecting transcription ${recordingId}: heap ${memPressure.heapUsedMB}/${memPressure.heapTotalMB} MB (${(memPressure.ratio * 100).toFixed(0)}%)`
-      );
-      return c.json(
-        { message: 'Serwer jest chwilowo przeciążony. Spróbuj ponownie za chwilę.' },
-        503
-      );
-    }
+  router.post(
+    '/recordings/:recordingId/retry-transcribe',
+    applyRateLimit('transcription-retry', 5),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const body = await c.req.json().catch(() => ({}));
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
 
-    try {
-      const result = await startTranscriptionPipeline(recordingId, asset, {
-        ...body,
-        processingMode: resolveProcessingMode(body.processingMode),
-        requestId: c.get('reqId'),
-      });
+      if (
+        asset.transcription_status === 'completed' &&
+        hasTranscriptSegments(asset) &&
+        body.force !== true
+      ) {
+        return c.json(
+          withIdempotencyMetadata(
+            {
+              code: 'transcription_already_completed',
+              message: 'Transkrypcja jest juz gotowa. Wymus ponowne przetwarzanie tylko swiadomie.',
+              recordingId,
+              pipelineStatus: 'done',
+            },
+            c,
+            'recordingId'
+          ),
+          409
+        );
+      }
 
-      return c.json(
-        withIdempotencyMetadata(
-          normalizeTranscriptionStatusPayload(result),
-          c,
-          'recordingId',
-          false
-        ),
-        202
-      );
-    } catch (err: any) {
-      console.error(`[transcribe] Pipeline error for ${recordingId}:`, err?.message);
-      const status = err?.statusCode || err?.status || 500;
-      return c.json(
-        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
-        status
-      );
-    }
-  });
+      if (!asset.file_path) {
+        return c.json({ message: 'Brak \u015Bcie\u017Cki pliku do ponownego przetworzenia.' }, 409);
+      }
 
-  router.post('/recordings/:recordingId/retry-transcribe', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const body = await c.req.json().catch(() => ({}));
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
-
-    if (
-      asset.transcription_status === 'completed' &&
-      hasTranscriptSegments(asset) &&
-      body.force !== true
-    ) {
-      return c.json(
-        withIdempotencyMetadata(
+      const status = String(asset.transcription_status || '').trim();
+      const processingMode = resolveProcessingMode(body.processingMode);
+      if (['queued', 'processing', 'diarization'].includes(status)) {
+        await transcriptionService.ensureTranscriptionJob(
+          recordingId,
           {
-            code: 'transcription_already_completed',
-            message: 'Transkrypcja jest juz gotowa. Wymus ponowne przetwarzanie tylko swiadomie.',
-            recordingId,
-            pipelineStatus: 'done',
+            id: recordingId,
+            workspace_id: asset.workspace_id,
+            meeting_id: asset.meeting_id,
+            content_type: asset.content_type,
+            file_path: asset.file_path,
+            ...asset,
           },
+          {
+            workspaceId: asset.workspace_id,
+            meetingId: asset.meeting_id,
+            contentType: asset.content_type,
+            processingMode,
+            requestId: c.get('reqId'),
+          }
+        );
+
+        const currentAsset = await transcriptionService.getMediaAsset(recordingId);
+        await writeRecordingAuditEvent(
           c,
-          'recordingId'
-        ),
-        409
-      );
-    }
+          { ...asset, id: recordingId },
+          'recording.transcription.retry_requested',
+          {
+            previousStatus: status || 'unknown',
+            processingMode,
+            force: body.force === true,
+          }
+        );
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(currentAsset || asset),
+            c,
+            'recordingId'
+          ),
+          202
+        );
+      }
+      // If the local file is gone (e.g. after Railway redeploy), try the same
+      // reconstructed remote candidates as the audio download endpoint.
+      if (
+        (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
+        !existsSync(asset.file_path)
+      ) {
+        try {
+          const { storagePath } = await downloadAudioFromStorageCandidates(recordingId, asset);
+          console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
+            recordingId,
+            localPath: asset.file_path,
+            supabasePath: storagePath,
+          });
+          // Update asset to use the resolved Supabase key so pipeline downloads it.
+          asset.file_path = storagePath;
+        } catch {
+          return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
+        }
+      }
 
-    if (!asset.file_path) {
-      return c.json({ message: 'Brak \u015Bcie\u017Cki pliku do ponownego przetworzenia.' }, 409);
-    }
-
-    const status = String(asset.transcription_status || '').trim();
-    if (['queued', 'processing', 'diarization'].includes(status)) {
-      await transcriptionService.ensureTranscriptionJob(
-        recordingId,
-        {
-          id: recordingId,
-          workspace_id: asset.workspace_id,
-          meeting_id: asset.meeting_id,
-          content_type: asset.content_type,
-          file_path: asset.file_path,
-          ...asset,
-        },
-        {
+      try {
+        const result = await startTranscriptionPipeline(recordingId, asset, {
           workspaceId: asset.workspace_id,
           meetingId: asset.meeting_id,
           contentType: asset.content_type,
-          processingMode: resolveProcessingMode(body.processingMode),
+          processingMode,
           requestId: c.get('reqId'),
-        }
-      );
-
-      const currentAsset = await transcriptionService.getMediaAsset(recordingId);
-      return c.json(
-        withIdempotencyMetadata(
-          normalizeTranscriptionStatusPayload(currentAsset || asset),
-          c,
-          'recordingId'
-        ),
-        202
-      );
-    }
-    // If the local file is gone (e.g. after Railway redeploy), try the same
-    // reconstructed remote candidates as the audio download endpoint.
-    if (
-      (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
-      !existsSync(asset.file_path)
-    ) {
-      try {
-        const { storagePath } = await downloadAudioFromStorageCandidates(recordingId, asset);
-        console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
-          recordingId,
-          localPath: asset.file_path,
-          supabasePath: storagePath,
         });
-        // Update asset to use the resolved Supabase key so pipeline downloads it.
-        asset.file_path = storagePath;
-      } catch {
-        return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
+
+        await writeRecordingAuditEvent(
+          c,
+          { ...asset, id: recordingId },
+          'recording.transcription.retry_requested',
+          {
+            previousStatus: status || 'unknown',
+            processingMode,
+            force: body.force === true,
+          }
+        );
+        return c.json(
+          withIdempotencyMetadata(
+            normalizeTranscriptionStatusPayload(result),
+            c,
+            'recordingId',
+            false
+          ),
+          202
+        );
+      } catch (err: any) {
+        console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
+        const status = err?.statusCode || err?.status || 500;
+        return c.json(
+          { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
+          status
+        );
       }
     }
-
-    try {
-      const result = await startTranscriptionPipeline(recordingId, asset, {
-        workspaceId: asset.workspace_id,
-        meetingId: asset.meeting_id,
-        contentType: asset.content_type,
-        processingMode: resolveProcessingMode(body.processingMode),
-        requestId: c.get('reqId'),
-      });
-
-      return c.json(
-        withIdempotencyMetadata(
-          normalizeTranscriptionStatusPayload(result),
-          c,
-          'recordingId',
-          false
-        ),
-        202
-      );
-    } catch (err: any) {
-      console.error(`[retry-transcribe] Pipeline error for ${recordingId}:`, err?.message);
-      const status = err?.statusCode || err?.status || 500;
-      return c.json(
-        { message: err?.message || 'Błąd przetwarzania transkrypcji.', recordingId },
-        status
-      );
-    }
-  });
+  );
 
   router.get('/recordings/:recordingId/transcribe', async (c) => {
     try {
@@ -1184,6 +1400,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
       const runtimeStatus = getTranscriptionRuntimeStatus(recordingId);
+      const durableJob =
+        typeof transcriptionService.getDurableTranscriptionJob === 'function'
+          ? await transcriptionService.getDurableTranscriptionJob(recordingId)
+          : null;
+      const durableJobActive = ['queued', 'running', 'retryable_failed'].includes(
+        String(durableJob?.status || '')
+      );
 
       // Detect true orphaned processing. Active long-audio jobs can run well
       // past five minutes, so only inactive stale assets are marked failed.
@@ -1192,7 +1415,8 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         ['processing', 'queued'].includes(asset.transcription_status) &&
         asset.updated_at &&
         Date.now() - new Date(asset.updated_at).getTime() > STUCK_THRESHOLD_MS &&
-        !runtimeStatus.activeJob
+        !runtimeStatus.activeJob &&
+        !durableJobActive
       ) {
         if (!hasTranscriptSegments(asset)) {
           console.warn(
@@ -1217,6 +1441,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         {
           ...normalizeTranscriptionStatusPayload(asset),
           ...runtimeStatus,
+          ...(durableJobActive ? { activeJob: true, durableJobStatus: durableJob.status } : {}),
           ...(partProgress ? { partProgress } : {}),
         },
         200
@@ -1576,7 +1801,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         session.user_id,
         options
       );
-      return c.json(profile, 201);
+      const payload = buildVoiceProfileResponse(profile);
+      const status = payload.isUpdate || payload.sampleCount > 1 ? 200 : 201;
+      return c.json(payload, status);
     } catch (err: any) {
       const details = classifyVoiceProfileEnrollmentError(err);
       const body = buildVoiceProfileErrorBody({
@@ -1589,34 +1816,40 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         segmentCount,
         matchedSegmentCount,
         requestId,
+        retryable: details.retryable,
+        userAction: details.userAction,
       });
       console.warn('[voice-profile] Enrollment failed', body);
       return c.json(body, details.status as any);
     }
   });
 
-  router.post('/recordings/:recordingId/voice-coaching', async (c) => {
-    try {
-      const recordingId = c.req.param('recordingId');
-      const body = await c.req.json().catch(() => ({}));
-      if (body.speakerId === undefined || body.speakerId === null)
-        return c.json({ message: 'Brakuje speakerId.' }, 400);
-      const asset = await transcriptionService.getMediaAsset(recordingId);
-      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-      await ensureWorkspaceAccess(c, asset.workspace_id);
-      const coaching = await transcriptionService.generateVoiceCoaching(
-        asset,
-        String(body.speakerId),
-        body?.segments || [],
-        {}
-      );
-      return c.json({ coaching }, 200);
-    } catch (err: any) {
-      console.error(`[voice-coaching] Error:`, err?.message);
-      const status = err?.statusCode || err?.status || 500;
-      return c.json({ message: err?.message || 'Blad generowania voice coaching.' }, status);
+  router.post(
+    '/recordings/:recordingId/voice-coaching',
+    applyRateLimit('voice-coaching', 10),
+    async (c) => {
+      try {
+        const recordingId = c.req.param('recordingId');
+        const body = await c.req.json().catch(() => ({}));
+        if (body.speakerId === undefined || body.speakerId === null)
+          return c.json({ message: 'Brakuje speakerId.' }, 400);
+        const asset = await transcriptionService.getMediaAsset(recordingId);
+        if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+        await ensureWorkspaceAccess(c, asset.workspace_id);
+        const coaching = await transcriptionService.generateVoiceCoaching(
+          asset,
+          String(body.speakerId),
+          body?.segments || [],
+          {}
+        );
+        return c.json({ coaching }, 200);
+      } catch (err: any) {
+        console.error(`[voice-coaching] Error:`, err?.message);
+        const status = err?.statusCode || err?.status || 500;
+        return c.json({ message: err?.message || 'Blad generowania voice coaching.' }, status);
+      }
     }
-  });
+  );
 
   router.post('/recordings/:recordingId/acoustic-features', async (c) => {
     try {
@@ -1635,7 +1868,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   });
 
-  router.post('/recordings/:recordingId/rediarize', async (c) => {
+  router.post('/recordings/:recordingId/rediarize', applyRateLimit('rediarize', 10), async (c) => {
     try {
       const recordingId = c.req.param('recordingId');
       const asset = await transcriptionService.getMediaAsset(recordingId);
@@ -1695,51 +1928,56 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
   });
 
-  router.post('/recordings/:recordingId/sketchnote', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const asset = await transcriptionService.getMediaAsset(recordingId);
-    if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
+  router.post(
+    '/recordings/:recordingId/sketchnote',
+    applyRateLimit('sketchnote-image', 5),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const asset = await transcriptionService.getMediaAsset(recordingId);
+      if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
+      await ensureWorkspaceAccess(c, asset.workspace_id);
 
-    let diarization: any = {};
-    try {
-      diarization = JSON.parse(asset.diarization_json || '{}');
-    } catch (_) {}
+      let diarization: any = {};
+      try {
+        diarization = JSON.parse(asset.diarization_json || '{}');
+      } catch (_) {}
 
-    // Accept analysis data from request body (frontend state) or fall back to stored diarization_json
-    const body: any = await c.req.json().catch(() => ({}));
+      // Accept analysis data from request body (frontend state) or fall back to stored diarization_json
+      const body: any = await c.req.json().catch(() => ({}));
 
-    const summaryText =
-      body?.summary || diarization?.reviewSummary?.summary || diarization?.summary;
-    if (!summaryText)
-      return c.json({ message: 'Brak podsumowania do wygenerowania sketchnotki.' }, 400);
+      const summaryText =
+        body?.summary || diarization?.reviewSummary?.summary || diarization?.summary;
+      if (!summaryText)
+        return c.json({ message: 'Brak podsumowania do wygenerowania sketchnotki.' }, 400);
 
-    const asList = (value: any) =>
-      (Array.isArray(value) ? value : [])
-        .map((item) =>
-          String(
-            typeof item === 'object'
-              ? item?.title || item?.text || item?.value || item?.label || ''
-              : item || ''
-          ).trim()
-        )
-        .filter(Boolean);
-    const decisions = asList(body?.decisions || diarization?.decisions);
-    const actionItems = asList(body?.actionItems || diarization?.actionItems || diarization?.tasks);
-    const followUps = asList(body?.followUps || diarization?.followUps);
-    const risks = asList(body?.risks || diarization?.risks);
-    const blockers = asList(body?.blockers || diarization?.blockers);
-    const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
+      const asList = (value: any) =>
+        (Array.isArray(value) ? value : [])
+          .map((item) =>
+            String(
+              typeof item === 'object'
+                ? item?.title || item?.text || item?.value || item?.label || ''
+                : item || ''
+            ).trim()
+          )
+          .filter(Boolean);
+      const decisions = asList(body?.decisions || diarization?.decisions);
+      const actionItems = asList(
+        body?.actionItems || diarization?.actionItems || diarization?.tasks
+      );
+      const followUps = asList(body?.followUps || diarization?.followUps);
+      const risks = asList(body?.risks || diarization?.risks);
+      const blockers = asList(body?.blockers || diarization?.blockers);
+      const quotes = asList(body?.keyQuotes || diarization?.keyQuotes).slice(0, 2);
 
-    if (!process.env.GEMINI_API_KEY) {
-      return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
-    }
+      if (!process.env.GEMINI_API_KEY) {
+        return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
+      }
 
-    try {
-      const { logger } = await import('../logger.ts');
-      logger.info(`Generating Gemini 3 Pro Image sketchnote for recording ${recordingId}...`);
+      try {
+        const { logger } = await import('../logger.ts');
+        logger.info(`Generating Gemini 3 Pro Image sketchnote for recording ${recordingId}...`);
 
-      const prompt = `Create a polished hand-drawn sketchnote poster in Polish that summarizes this meeting.
+        const prompt = `Create a polished hand-drawn sketchnote poster in Polish that summarizes this meeting.
 Style requirements:
 - white or warm paper background
 - bold black hand-lettered headings
@@ -1788,96 +2026,97 @@ Important:
 - use a 4:3 composition
 - prioritize visual clarity over dense text`;
 
-      const geminiUrl =
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
-      const geminiBody = JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseModalities: ['TEXT', 'IMAGE'],
-          imageConfig: {
-            aspectRatio: '4:3',
-            imageSize: '4K',
+        const geminiUrl =
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent';
+        const geminiBody = JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE'],
+            imageConfig: {
+              aspectRatio: '4:3',
+              imageSize: '4K',
+            },
+            thinkingConfig: {
+              thinkingLevel: 'medium',
+            },
           },
-          thinkingConfig: {
-            thinkingLevel: 'medium',
-          },
-        },
-      });
-      const geminiHeaders = {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GEMINI_API_KEY,
-      };
-
-      const MAX_RETRIES = 2;
-      const RETRY_DELAYS = process.env.NODE_ENV === 'test' ? [10, 10] : [5000, 15000];
-      let lastRes: Response | null = null;
-
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        lastRes = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: geminiHeaders,
-          body: geminiBody,
         });
+        const geminiHeaders = {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': process.env.GEMINI_API_KEY,
+        };
 
-        if (lastRes.ok || (lastRes.status !== 429 && lastRes.status !== 503)) break;
+        const MAX_RETRIES = 2;
+        const RETRY_DELAYS = process.env.NODE_ENV === 'test' ? [10, 10] : [5000, 15000];
+        let lastRes: Response | null = null;
 
-        if (attempt < MAX_RETRIES) {
-          const delay = RETRY_DELAYS[attempt] || 15000;
-          logger.warn(
-            `Gemini ${lastRes.status} for recording ${recordingId}, retry ${attempt + 1}/${MAX_RETRIES} in ${delay / 1000}s`
-          );
-          await new Promise((r) => setTimeout(r, delay));
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          lastRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: geminiHeaders,
+            body: geminiBody,
+          });
+
+          if (lastRes.ok || (lastRes.status !== 429 && lastRes.status !== 503)) break;
+
+          if (attempt < MAX_RETRIES) {
+            const delay = RETRY_DELAYS[attempt] || 15000;
+            logger.warn(
+              `Gemini ${lastRes.status} for recording ${recordingId}, retry ${attempt + 1}/${MAX_RETRIES} in ${delay / 1000}s`
+            );
+            await new Promise((r) => setTimeout(r, delay));
+          }
         }
-      }
 
-      const res = lastRes!;
+        const res = lastRes!;
 
-      if (!res.ok) {
-        const errBody = await res.text();
-        let detail = '';
-        try {
-          const parsed = JSON.parse(errBody);
-          detail = parsed?.error?.message || errBody.slice(0, 200);
-        } catch {
-          detail = errBody.slice(0, 200);
+        if (!res.ok) {
+          const errBody = await res.text();
+          let detail = '';
+          try {
+            const parsed = JSON.parse(errBody);
+            detail = parsed?.error?.message || errBody.slice(0, 200);
+          } catch {
+            detail = errBody.slice(0, 200);
+          }
+          const passthrough = [429, 503] as const;
+          const status = passthrough.includes(res.status as any) ? res.status : 500;
+          if (res.status === 429) {
+            logger.warn(`Gemini quota exceeded for recording ${recordingId}: ${detail}`);
+          } else {
+            logger.error('Gemini image gen error:', errBody);
+          }
+          return c.json({ message: `Błąd Gemini (${res.status}): ${detail}` }, status as any);
         }
-        const passthrough = [429, 503] as const;
-        const status = passthrough.includes(res.status as any) ? res.status : 500;
-        if (res.status === 429) {
-          logger.warn(`Gemini quota exceeded for recording ${recordingId}: ${detail}`);
-        } else {
-          logger.error('Gemini image gen error:', errBody);
+
+        const data = await res.json();
+        const inlineImage = data.candidates?.[0]?.content?.parts?.find(
+          (part: any) => part?.inlineData?.data
+        )?.inlineData;
+        if (!inlineImage?.data) {
+          return c.json({ message: 'Model Gemini nie wygenerował obrazu.' }, 500);
         }
-        return c.json({ message: `Błąd Gemini (${res.status}): ${detail}` }, status as any);
-      }
 
-      const data = await res.json();
-      const inlineImage = data.candidates?.[0]?.content?.parts?.find(
-        (part: any) => part?.inlineData?.data
-      )?.inlineData;
-      if (!inlineImage?.data) {
-        return c.json({ message: 'Model Gemini nie wygenerował obrazu.' }, 500);
-      }
+        const mimeType = String(inlineImage.mimeType || 'image/png').trim() || 'image/png';
+        const imageUrl = `data:${mimeType};base64,${inlineImage.data}`;
 
-      const mimeType = String(inlineImage.mimeType || 'image/png').trim() || 'image/png';
-      const imageUrl = `data:${mimeType};base64,${inlineImage.data}`;
-
-      if (imageUrl) {
-        diarization.sketchnoteUrl = imageUrl;
-        if (typeof transcriptionService._execute === 'function') {
-          await transcriptionService._execute(
-            'UPDATE media_assets SET diarization_json = ?, updated_at = ? WHERE id = ?',
-            [JSON.stringify(diarization), new Date().toISOString(), recordingId]
-          );
+        if (imageUrl) {
+          diarization.sketchnoteUrl = imageUrl;
+          if (typeof transcriptionService._execute === 'function') {
+            await transcriptionService._execute(
+              'UPDATE media_assets SET diarization_json = ?, updated_at = ? WHERE id = ?',
+              [JSON.stringify(diarization), new Date().toISOString(), recordingId]
+            );
+          }
         }
-      }
 
-      return c.json({ sketchnoteUrl: imageUrl }, 200);
-    } catch (e: any) {
-      console.error('Sketchnote generation exception:', e);
-      return c.json({ message: `Błąd Gemini: ${e?.message || 'nieznany błąd'}` }, 500);
+        return c.json({ sketchnoteUrl: imageUrl }, 200);
+      } catch (e: any) {
+        console.error('Sketchnote generation exception:', e);
+        return c.json({ message: `Błąd Gemini: ${e?.message || 'nieznany błąd'}` }, 500);
+      }
     }
-  });
+  );
 
   router.post('/analyze', authMiddleware, applyRateLimit('analyze', 10), async (c) => {
     const body = await c.req.json().catch(() => ({}));
@@ -1888,225 +2127,293 @@ Important:
     await ensureWorkspaceAccess(c, workspaceId);
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
-    return c.json(result || { mode: 'no-key' }, 200);
+    const payload = result || { mode: 'no-key' };
+    const meeting = body?.meeting && typeof body.meeting === 'object' ? body.meeting : {};
+    const recordingId = String(
+      body.recordingId ||
+        body.recording_id ||
+        meeting.recordingId ||
+        meeting.recording_id ||
+        meeting.mediaAssetId ||
+        meeting.media_asset_id ||
+        body.meetingId ||
+        meeting.id ||
+        workspaceId
+    ).trim();
+    await writeAuditEvent(c, {
+      workspaceId,
+      action: 'recording.ai.analyzed',
+      entityType: 'recording',
+      entityId: recordingId,
+      metadata: {
+        meetingId: String(body.meetingId || meeting.id || ''),
+        mode: String((payload as any)?.mode || 'analysis'),
+        source: 'api',
+      },
+    });
+    return c.json(payload, 200);
   });
 
   // Chunked upload: PUT /recordings/:id/audio/chunk?index=N&total=M
-  router.get('/recordings/:recordingId/audio/chunk-status', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const workspaceId = c.req.header('X-Workspace-Id') || '';
-    if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
-    await ensureWorkspaceAccess(c, workspaceId);
+  router.get(
+    '/recordings/:recordingId/audio/chunk-status',
+    applyRateLimit('upload-status', 120),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const workspaceId = c.req.header('X-Workspace-Id') || '';
+      if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
+      await ensureWorkspaceAccess(c, workspaceId);
 
-    const total = parseInt(c.req.query('total') || '', 10);
-    if (isNaN(total) || total <= 0) {
-      return c.json({ message: 'Brakuje poprawnego parametru total.' }, 400);
-    }
-
-    const chunksDir = path.join(config.uploadDir, 'chunks');
-    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
-    if (!existsSync(chunksDir)) {
-      return c.json({ nextIndex: 0, uploaded: 0, total, resumable: false }, 200);
-    }
-
-    let nextIndex = 0;
-    for (let i = 0; i < total; i++) {
-      const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
-      if (!existsSync(chunkPath)) {
-        break;
+      const total = parseInt(c.req.query('total') || '', 10);
+      if (isNaN(total) || total <= 0) {
+        return c.json({ message: 'Brakuje poprawnego parametru total.' }, 400);
       }
-      nextIndex = i + 1;
-    }
 
-    return c.json(
-      {
-        nextIndex,
-        uploaded: nextIndex,
-        total,
-        resumable: nextIndex > 0 && nextIndex < total,
-      },
-      200
-    );
-  });
+      const chunksDir = path.join(config.uploadDir, 'chunks');
+      const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+      if (!existsSync(chunksDir)) {
+        return c.json({ nextIndex: 0, uploaded: 0, total, resumable: false }, 200);
+      }
 
-  router.put('/recordings/:recordingId/audio/chunk', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const workspaceId = c.req.header('X-Workspace-Id') || '';
-    if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
-    await ensureWorkspaceAccess(c, workspaceId);
+      let nextIndex = 0;
+      for (let i = 0; i < total; i++) {
+        const chunkPath = path.join(chunksDir, `${safeId}_${i}.chunk`);
+        if (!existsSync(chunkPath)) {
+          break;
+        }
+        nextIndex = i + 1;
+      }
 
-    const index = parseInt(c.req.query('index') || '', 10);
-    const total = parseInt(c.req.query('total') || '', 10);
-    if (isNaN(index) || isNaN(total) || index < 0 || total <= 0 || index >= total) {
-      return c.json({ message: 'Nieprawidłowe parametry chunka (index/total).' }, 400);
-    }
-    if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
-
-    const chunksDir = path.join(config.uploadDir, 'chunks');
-    mkdirSync(chunksDir, { recursive: true });
-
-    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
-    if (getIdempotencyKey(c) && existsSync(chunkPath)) {
-      return c.json(withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex'), 200);
-    }
-
-    const buffer = await c.req.arrayBuffer();
-    if (buffer.byteLength > 6 * 1024 * 1024)
-      return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
-
-    // Check disk space before writing
-    const diskSpace = checkDiskSpace(uploadDir, DISK_SPACE_BLOCK_UPLOAD_BYTES);
-    if (!diskSpace.ok) {
-      const { logger } = await import('../logger.ts');
-      logger.error(`[ENOSPC] Disk space critically low: ${diskSpace.freeBytes} bytes free`);
       return c.json(
         {
-          message:
-            'Brak miejsca na dysku serwera. Zwolnij miejsce lub skontaktuj z administratorem.',
-          freeBytes: diskSpace.freeBytes,
+          nextIndex,
+          uploaded: nextIndex,
+          total,
+          resumable: nextIndex > 0 && nextIndex < total,
         },
-        507
-      );
-    }
-
-    try {
-      await writeFile(chunkPath, Buffer.from(buffer));
-    } catch (writeErr: any) {
-      if (writeErr.code === 'ENOSPC') {
-        const { logger } = await import('../logger.ts');
-        logger.error(
-          `[ENOSPC] Failed to write chunk ${index}/${total} for recording ${recordingId}`
-        );
-        // Cleanup partial write
-        try {
-          await unlink(chunkPath);
-        } catch (_) {}
-        return c.json({ message: 'Brak miejsca na dysku podczas zapisu chunka.' }, 507);
-      }
-      throw writeErr;
-    }
-
-    return c.json(
-      withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex', false),
-      200
-    );
-  });
-
-  // Chunked upload finalize: POST /recordings/:id/audio/finalize
-  router.post('/recordings/:recordingId/audio/finalize', async (c) => {
-    const recordingId = c.req.param('recordingId');
-    const session = c.get('session') as any;
-    const body = await c.req.json().catch(() => ({}));
-    const workspaceId = body.workspaceId || c.req.header('X-Workspace-Id') || '';
-    const meetingId = body.meetingId || c.req.header('X-Meeting-Id') || '';
-    const contentType = body.contentType || 'application/octet-stream';
-    const total = parseInt(body.total || '0', 10);
-
-    if (!workspaceId) return c.json({ message: 'Brakuje workspaceId.' }, 400);
-    if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele żądania.' }, 400);
-    await ensureWorkspaceAccess(c, workspaceId);
-
-    const existingAsset =
-      typeof transcriptionService.getMediaAsset === 'function'
-        ? await transcriptionService.getMediaAsset(recordingId)
-        : null;
-    if (existingAsset?.workspace_id === workspaceId) {
-      return c.json(
-        withIdempotencyMetadata(buildExistingMediaAssetResponse(existingAsset), c, 'recordingId'),
         200
       );
     }
+  );
 
-    const chunksDir = path.join(config.uploadDir, 'chunks');
-    const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+  router.put(
+    '/recordings/:recordingId/audio/chunk',
+    applyRateLimit('upload-chunk', 300),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const workspaceId = c.req.header('X-Workspace-Id') || '';
+      if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
+      await ensureWorkspaceAccess(c, workspaceId);
 
-    let assembledPath = '';
-    try {
-      assembledPath = await assembleChunksToTempFile(chunksDir, safeId, total);
-    } catch (error: any) {
-      return c.json({ message: error?.message || 'Nie udało się złożyć chunków.' }, 400);
-    }
+      const index = parseInt(c.req.query('index') || '', 10);
+      const total = parseInt(c.req.query('total') || '', 10);
+      if (isNaN(index) || isNaN(total) || index < 0 || total <= 0 || index >= total) {
+        return c.json({ message: 'Nieprawidłowe parametry chunka (index/total).' }, 400);
+      }
+      if (total > 600) return c.json({ message: 'Za dużo chunków (max 600, ~1.2GB).' }, 400);
 
-    const fullStats = await stat(assembledPath);
-    const sizeValidation = validateRawUploadSize(fullStats.size);
-    if (sizeValidation.ok === false) {
-      try {
-        await unlink(assembledPath);
-      } catch (_) {}
-      await cleanupChunkFiles(chunksDir, safeId, total);
-      return c.json(
-        { code: sizeValidation.code, message: sizeValidation.message },
-        sizeValidation.status
-      );
-    }
+      const chunksDir = path.join(config.uploadDir, 'chunks');
+      mkdirSync(chunksDir, { recursive: true });
 
-    const mimeValidation = validateAudioMimeType(contentType);
-    if (!mimeValidation.ok) {
-      try {
-        await unlink(assembledPath);
-      } catch (_) {}
-      await cleanupChunkFiles(chunksDir, safeId, total);
-      return c.json(
-        { code: mimeValidation.code, message: mimeValidation.message },
-        mimeValidation.status
-      );
-    }
-
-    let normalizedAudio: Awaited<ReturnType<typeof normalizeAudioForStorage>> | null = null;
-    let localParts: Awaited<ReturnType<typeof splitNormalizedAudioIntoParts>> = [];
-    let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
-    let asset: MediaAsset;
-    try {
-      normalizedAudio = await normalizeAudioForStorage({
-        sourcePath: assembledPath,
-        workDir: path.join(config.uploadDir, 'normalized'),
-        recordingId,
-        signal: c.req.raw.signal,
-      });
-      audioValidation = await validateAudioForTranscription({
-        filePath: normalizedAudio.path,
-        contentType: normalizedAudio.contentType,
-        signal: c.req.raw.signal,
-      });
-
-      if (shouldUseSegmentedStorage(normalizedAudio.sizeBytes)) {
-        localParts = await splitNormalizedAudioIntoParts({
-          normalizedPath: normalizedAudio.path,
-          workDir: path.join(config.uploadDir, 'parts'),
-          recordingId,
-          durationMs: normalizedAudio.durationMs,
-          signal: c.req.raw.signal,
-        });
+      const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const chunkPath = path.join(chunksDir, `${safeId}_${index}.chunk`);
+      if (getIdempotencyKey(c) && existsSync(chunkPath)) {
+        return c.json(withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex'), 200);
       }
 
-      const upsertPrepared =
-        typeof transcriptionService.upsertMediaAssetFromPreparedAudio === 'function'
-          ? transcriptionService.upsertMediaAssetFromPreparedAudio.bind(transcriptionService)
-          : null;
+      const buffer = await c.req.arrayBuffer();
+      if (buffer.byteLength > 6 * 1024 * 1024)
+        return c.json({ message: 'Chunk jest zbyt duży (max 6MB).' }, 413);
 
-      asset = upsertPrepared
-        ? await upsertPrepared({
+      // Check disk space before writing
+      const diskSpace = checkDiskSpace(uploadDir, DISK_SPACE_BLOCK_UPLOAD_BYTES);
+      if (!diskSpace.ok) {
+        const { logger } = await import('../logger.ts');
+        logger.error(`[ENOSPC] Disk space critically low: ${diskSpace.freeBytes} bytes free`);
+        return c.json(
+          {
+            message:
+              'Brak miejsca na dysku serwera. Zwolnij miejsce lub skontaktuj z administratorem.',
+            freeBytes: diskSpace.freeBytes,
+          },
+          507
+        );
+      }
+
+      try {
+        await writeFile(chunkPath, Buffer.from(buffer));
+      } catch (writeErr: any) {
+        if (writeErr.code === 'ENOSPC') {
+          const { logger } = await import('../logger.ts');
+          logger.error(
+            `[ENOSPC] Failed to write chunk ${index}/${total} for recording ${recordingId}`
+          );
+          // Cleanup partial write
+          try {
+            await unlink(chunkPath);
+          } catch (_) {}
+          return c.json({ message: 'Brak miejsca na dysku podczas zapisu chunka.' }, 507);
+        }
+        throw writeErr;
+      }
+
+      return c.json(
+        withIdempotencyMetadata({ index, total }, c, 'recordingId:chunkIndex', false),
+        200
+      );
+    }
+  );
+
+  // Chunked upload finalize: POST /recordings/:id/audio/finalize
+  router.post(
+    '/recordings/:recordingId/audio/finalize',
+    applyRateLimit('upload-finalize', 30),
+    async (c) => {
+      const recordingId = c.req.param('recordingId');
+      const session = c.get('session') as any;
+      const body = await c.req.json().catch(() => ({}));
+      const workspaceId = body.workspaceId || c.req.header('X-Workspace-Id') || '';
+      const meetingId = body.meetingId || c.req.header('X-Meeting-Id') || '';
+      const contentType = body.contentType || 'application/octet-stream';
+      const total = parseInt(body.total || '0', 10);
+
+      if (!workspaceId) return c.json({ message: 'Brakuje workspaceId.' }, 400);
+      if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele żądania.' }, 400);
+      await ensureWorkspaceAccess(c, workspaceId);
+
+      const existingAsset =
+        typeof transcriptionService.getMediaAsset === 'function'
+          ? await transcriptionService.getMediaAsset(recordingId)
+          : null;
+      if (existingAsset?.workspace_id === workspaceId) {
+        return c.json(
+          withIdempotencyMetadata(buildExistingMediaAssetResponse(existingAsset), c, 'recordingId'),
+          200
+        );
+      }
+
+      const chunksDir = path.join(config.uploadDir, 'chunks');
+      const safeId = String(recordingId).replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      let assembledPath = '';
+      try {
+        assembledPath = await assembleChunksToTempFile(chunksDir, safeId, total);
+      } catch (error: any) {
+        return c.json({ message: error?.message || 'Nie udało się złożyć chunków.' }, 400);
+      }
+
+      const fullStats = await stat(assembledPath);
+      const sizeValidation = validateRawUploadSize(fullStats.size);
+      if (sizeValidation.ok === false) {
+        try {
+          await unlink(assembledPath);
+        } catch (_) {}
+        await cleanupChunkFiles(chunksDir, safeId, total);
+        return c.json(
+          { code: sizeValidation.code, message: sizeValidation.message },
+          sizeValidation.status
+        );
+      }
+
+      const mimeValidation = validateAudioMimeType(contentType);
+      if (!mimeValidation.ok) {
+        try {
+          await unlink(assembledPath);
+        } catch (_) {}
+        await cleanupChunkFiles(chunksDir, safeId, total);
+        return c.json(
+          { code: mimeValidation.code, message: mimeValidation.message },
+          mimeValidation.status
+        );
+      }
+
+      let normalizedAudio: Awaited<ReturnType<typeof normalizeAudioForStorage>> | null = null;
+      let localParts: Awaited<ReturnType<typeof splitNormalizedAudioIntoParts>> = [];
+      let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
+      let asset: MediaAsset;
+      try {
+        normalizedAudio = await normalizeAudioForStorage({
+          sourcePath: assembledPath,
+          workDir: path.join(config.uploadDir, 'normalized'),
+          recordingId,
+          signal: c.req.raw.signal,
+        });
+        audioValidation = await validateAudioForTranscription({
+          filePath: normalizedAudio.path,
+          contentType: normalizedAudio.contentType,
+          signal: c.req.raw.signal,
+        });
+
+        if (shouldUseSegmentedStorage(normalizedAudio.sizeBytes)) {
+          localParts = await splitNormalizedAudioIntoParts({
+            normalizedPath: normalizedAudio.path,
+            workDir: path.join(config.uploadDir, 'parts'),
             recordingId,
-            workspaceId,
-            meetingId,
-            contentType: normalizedAudio.contentType,
-            normalizedFilePath: normalizedAudio.path,
-            sourceSizeBytes: fullStats.size,
-            normalizedSizeBytes: normalizedAudio.sizeBytes,
             durationMs: normalizedAudio.durationMs,
-            parts: localParts,
-            createdByUserId: session.user_id,
-          })
-        : await transcriptionService.upsertMediaAssetFromPath({
-            recordingId,
-            workspaceId,
-            meetingId,
-            contentType: normalizedAudio.contentType,
-            filePath: normalizedAudio.path,
-            createdByUserId: session.user_id,
+            signal: c.req.raw.signal,
           });
-    } catch (err: any) {
+        }
+
+        const upsertPrepared =
+          typeof transcriptionService.upsertMediaAssetFromPreparedAudio === 'function'
+            ? transcriptionService.upsertMediaAssetFromPreparedAudio.bind(transcriptionService)
+            : null;
+
+        asset = upsertPrepared
+          ? await upsertPrepared({
+              recordingId,
+              workspaceId,
+              meetingId,
+              contentType: normalizedAudio.contentType,
+              normalizedFilePath: normalizedAudio.path,
+              sourceSizeBytes: fullStats.size,
+              normalizedSizeBytes: normalizedAudio.sizeBytes,
+              durationMs: normalizedAudio.durationMs,
+              parts: localParts,
+              createdByUserId: session.user_id,
+            })
+          : await transcriptionService.upsertMediaAssetFromPath({
+              recordingId,
+              workspaceId,
+              meetingId,
+              contentType: normalizedAudio.contentType,
+              filePath: normalizedAudio.path,
+              createdByUserId: session.user_id,
+            });
+      } catch (err: any) {
+        try {
+          await unlink(assembledPath);
+        } catch (_) {}
+        if (normalizedAudio?.path) {
+          try {
+            await unlink(normalizedAudio.path);
+          } catch (_) {}
+        }
+        for (const part of localParts) {
+          try {
+            await unlink(part.localPath);
+          } catch (_) {}
+        }
+        if (
+          err instanceof MediaStoragePipelineError ||
+          err?.code === 'audio_normalization_failed'
+        ) {
+          await cleanupChunkFiles(chunksDir, safeId, total);
+          return c.json(audioValidationErrorBody(err), audioValidationErrorStatus(err));
+        }
+        if (
+          (err as any).code === 'ENOSPC' ||
+          String(err.message).includes('Brak miejsca na dysku')
+        ) {
+          return c.json(
+            { message: 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.' },
+            507
+          );
+        }
+        throw err;
+      }
+
+      await cleanupChunkFiles(chunksDir, safeId, total);
       try {
         await unlink(assembledPath);
       } catch (_) {}
@@ -2120,57 +2427,31 @@ Important:
           await unlink(part.localPath);
         } catch (_) {}
       }
-      if (err instanceof MediaStoragePipelineError || err?.code === 'audio_normalization_failed') {
-        await cleanupChunkFiles(chunksDir, safeId, total);
-        return c.json(audioValidationErrorBody(err), audioValidationErrorStatus(err));
-      }
-      if ((err as any).code === 'ENOSPC' || String(err.message).includes('Brak miejsca na dysku')) {
-        return c.json(
-          { message: 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.' },
-          507
-        );
-      }
-      throw err;
-    }
 
-    await cleanupChunkFiles(chunksDir, safeId, total);
-    try {
-      await unlink(assembledPath);
-    } catch (_) {}
-    if (normalizedAudio?.path) {
-      try {
-        await unlink(normalizedAudio.path);
-      } catch (_) {}
-    }
-    for (const part of localParts) {
-      try {
-        await unlink(part.localPath);
-      } catch (_) {}
-    }
+      scheduleAudioQuality(recordingId, asset);
 
-    scheduleAudioQuality(recordingId, asset);
-
-    return c.json(
-      withIdempotencyMetadata(
-        {
-          id: asset.id,
-          workspaceId: asset.workspace_id,
-          sizeBytes: asset.size_bytes,
-          storageMode: asset.storage_mode || (localParts.length ? 'segmented' : 'single'),
-          partCount: localParts.length,
-          sourceSizeBytes: fullStats.size,
-          normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
-          durationMs: normalizedAudio?.durationMs || 0,
-          audioValidation,
-          audioQuality: null,
-        },
-        c,
-        'recordingId',
-        false
-      ),
-      200
-    );
-  });
+      return c.json(
+        withIdempotencyMetadata(
+          {
+            id: asset.id,
+            workspaceId: asset.workspace_id,
+            sizeBytes: asset.size_bytes,
+            storageMode: asset.storage_mode || (localParts.length ? 'segmented' : 'single'),
+            partCount: localParts.length,
+            sourceSizeBytes: fullStats.size,
+            normalizedSizeBytes: normalizedAudio?.sizeBytes || asset.size_bytes,
+            durationMs: normalizedAudio?.durationMs || 0,
+            audioValidation,
+            audioQuality: null,
+          },
+          c,
+          'recordingId',
+          false
+        ),
+        200
+      );
+    }
+  );
 
   // Disk space management endpoints
   router.get('/disk-space/status', async (c) => {

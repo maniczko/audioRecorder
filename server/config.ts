@@ -22,6 +22,13 @@ const envSchema = z.object({
   VOICELOG_API_HOST: z.string().default('0.0.0.0'),
   VOICELOG_ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
   VOICELOG_TRUST_PROXY: z.preprocess((val) => val === 'true', z.boolean()).default(false),
+  VOICELOG_RATE_LIMIT_STORE: z.preprocess(
+    optionalEnumValue,
+    z.enum(['auto', 'memory', 'db', 'database', 'postgres', 'postgresql']).default('auto')
+  ),
+  VOICELOG_RATE_LIMIT_WINDOW_MS: z
+    .preprocess((val) => (val ? Number(val) : undefined), z.number().int().positive().optional())
+    .default(60000),
   VOICELOG_ADMIN_TOKEN: z.string().optional(),
   VOICELOG_ENABLE_HEAPDUMP: z.preprocess((val) => val === 'true', z.boolean()).default(false),
   VOICELOG_ALLOW_VERCEL_PREVIEWS: z.preprocess((val) => val === 'true', z.boolean()).default(false),
@@ -158,6 +165,18 @@ function hasProductionBrowserOrigin(value?: string) {
   );
 }
 
+function logCorsStartupConfig(allowedOrigins: string, allowVercelPreviews: boolean) {
+  const origins = splitAllowedOrigins(allowedOrigins);
+  console.log('[Config] CORS', {
+    nodeEnv: config.NODE_ENV,
+    productionDeployment: isProductionDeployment(),
+    allowedOriginCount: origins.length,
+    allowedOrigins: origins,
+    allowVercelPreviews,
+    hasWildcard: origins.includes('*'),
+  });
+}
+
 function isProductionDeployment() {
   return Boolean(
     config.NODE_ENV === 'production' ||
@@ -172,6 +191,8 @@ export function validateRequiredApiKeys() {
 
   const allowedOrigins = config.VOICELOG_ALLOWED_ORIGINS;
   const allowVercelPreviews = config.VOICELOG_ALLOW_VERCEL_PREVIEWS === true;
+  logCorsStartupConfig(allowedOrigins, allowVercelPreviews);
+
   if (isProductionDeployment()) {
     if (splitAllowedOrigins(allowedOrigins).includes('*')) {
       errors.push(
@@ -186,7 +207,7 @@ export function validateRequiredApiKeys() {
         'Production CORS is configured only for local development origins.\n' +
           '  Browser requests from Vercel will be blocked with Access-Control-Allow-Origin=http://localhost:3000.\n' +
           '  Set VOICELOG_ALLOWED_ORIGINS to the deployed frontend origin, for example:\n' +
-          '  VOICELOG_ALLOWED_ORIGINS=https://audiorecorder-git-main-iwoczajka-2703s-projects.vercel.app\n' +
+          '  VOICELOG_ALLOWED_ORIGINS=https://voicelog-audiorecorder.vercel.app\n' +
           '  Or intentionally allow Vercel previews with VOICELOG_ALLOW_VERCEL_PREVIEWS=true.'
       );
     }
