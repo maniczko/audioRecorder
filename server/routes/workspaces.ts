@@ -78,7 +78,7 @@ async function withWorkspaceStatePatchLock<T>(
 }
 
 export function createWorkspacesRoutes(services: AppServices, middlewares: AppMiddlewares) {
-  const router = new Hono<{ Variables: { session: any; user: any } }>();
+  const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
   const { authService, workspaceService, transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
 
