@@ -191,7 +191,8 @@ describe('Voice Profiles Routes', () => {
     }
   );
 
-  it('DELETE /voice-profiles/:id', async () => {
+  it.each(['owner', 'admin'])('DELETE /voice-profiles/:id - allows %s role', async (role) => {
+    mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
     mockWorkspaceService.deleteVoiceProfile.mockResolvedValue(undefined);
 
     const res = await app.request('/voice-profiles/vp_1', {
@@ -203,6 +204,26 @@ describe('Voice Profiles Routes', () => {
       actorUserId: 'u1',
       source: 'api',
     });
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #1338 - voice profile delete permissions
+  // Date: 2026-07-01
+  // Bug: member/viewer roles could delete voice profiles without admin rights.
+  // Fix: delete requires owner/admin membership before mutating profile data.
+  // -----------------------------------------------------------------
+  it.each(['member', 'viewer'])('DELETE /voice-profiles/:id - blocks %s role', async (role) => {
+    mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
+
+    const res = await app.request('/voice-profiles/vp_1', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.message).toBe('Tylko owner lub admin moze usunac profil glosowy.');
+    expect(mockWorkspaceService.deleteVoiceProfile).not.toHaveBeenCalled();
   });
 
   it('DELETE /voice-profiles/:id - is idempotent on repeated deletes in parallel', async () => {
@@ -234,6 +255,40 @@ describe('Voice Profiles Routes', () => {
   });
 
   describe('PATCH /voice-profiles/:id/threshold', () => {
+    it.each(['owner', 'admin'])(
+      'PATCH /voice-profiles/:id/threshold - allows %s role',
+      async (role) => {
+        mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
+        mockWorkspaceService.updateVoiceProfileThreshold.mockResolvedValue({
+          id: 'vp_1',
+          threshold: 0.92,
+        });
+
+        const res = await app.request('/voice-profiles/vp_1/threshold', {
+          method: 'PATCH',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ threshold: 0.92 }),
+        });
+
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data).toEqual(
+          expect.objectContaining({
+            id: 'vp_1',
+            threshold: 0.92,
+          })
+        );
+        expect(mockWorkspaceService.updateVoiceProfileThreshold).toHaveBeenCalledWith(
+          'vp_1',
+          'w1',
+          0.92
+        );
+      }
+    );
+
     it('PATCH /voice-profiles/:id/threshold - happy path updates threshold', async () => {
       mockWorkspaceService.updateVoiceProfileThreshold.mockResolvedValue({
         id: 'vp_1',
@@ -573,22 +628,31 @@ describe('Voice Profiles Routes', () => {
       );
     });
 
-    it('PATCH /voice-profiles/:id/threshold - viewer role is blocked from threshold edits', async () => {
-      mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: 'viewer' });
+    // -----------------------------------------------------------------
+    // Issue #1338 - voice profile threshold permissions
+    // Date: 2026-07-01
+    // Bug: member role could update threshold while only viewer was blocked.
+    // Fix: threshold update requires owner/admin membership consistently.
+    // -----------------------------------------------------------------
+    it.each(['member', 'viewer'])(
+      'PATCH /voice-profiles/:id/threshold - blocks %s role',
+      async (role) => {
+        mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: role });
 
-      const res = await app.request('/voice-profiles/vp_1/threshold', {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer fake_token',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ threshold: 0.83 }),
-      });
+        const res = await app.request('/voice-profiles/vp_1/threshold', {
+          method: 'PATCH',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ threshold: 0.83 }),
+        });
 
-      expect(res.status).toBe(403);
-      const data = await res.json();
-      expect(data.message).toBe('Tylko owner lub admin moze zmieniac threshold.');
-      expect(mockWorkspaceService.updateVoiceProfileThreshold).not.toHaveBeenCalled();
-    });
+        expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.message).toBe('Tylko owner lub admin moze zmieniac threshold.');
+        expect(mockWorkspaceService.updateVoiceProfileThreshold).not.toHaveBeenCalled();
+      }
+    );
   });
 });

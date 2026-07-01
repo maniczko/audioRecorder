@@ -408,7 +408,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.patch('/voice-profiles/:id/threshold', async (c) => {
     const session = c.get('session') as any;
     const membership = await ensureWorkspaceAccess(c, session.workspace_id);
-    if (membership?.member_role === 'viewer') {
+    if (!requireWorkspaceAdmin(membership)) {
       return c.json({ message: 'Tylko owner lub admin moze zmieniac threshold.' }, 403);
     }
 
@@ -428,6 +428,11 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.delete('/voice-profiles/:id', async (c) => {
     const session = c.get('session') as any;
+    const membership = await ensureWorkspaceAccess(c, session.workspace_id);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze usunac profil glosowy.' }, 403);
+    }
+
     await workspaceService.deleteVoiceProfile(c.req.param('id'), session.workspace_id, {
       actorUserId: String(session?.user_id || ''),
       source: 'api',
