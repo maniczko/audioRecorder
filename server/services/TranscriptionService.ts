@@ -21,11 +21,7 @@ type VoiceProfileEnrollmentCode =
   | 'profile_save_failed';
 
 type VoiceProfileEnrollmentStage =
-  | 'transcript'
-  | 'audio_source'
-  | 'clip_extraction'
-  | 'embedding'
-  | 'profile_save';
+  'transcript' | 'audio_source' | 'clip_extraction' | 'embedding' | 'profile_save';
 
 function voiceProfileError(
   code: VoiceProfileEnrollmentCode,

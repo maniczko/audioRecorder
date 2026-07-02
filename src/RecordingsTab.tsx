@@ -80,13 +80,7 @@ type PendingImportQueueItem = Partial<RecordingQueueItem> & {
 type RecordingListStatus = 'uploading' | 'uploaded' | 'transcribing' | 'ready' | 'empty' | 'failed';
 
 type RecordingsSortKey =
-  | 'startsAt'
-  | 'title'
-  | 'durationMinutes'
-  | 'speakerCount'
-  | 'status'
-  | 'ai'
-  | 'tags';
+  'startsAt' | 'title' | 'durationMinutes' | 'speakerCount' | 'status' | 'ai' | 'tags';
 
 function positiveDurationSeconds(value: unknown) {
   const parsed = Number(value);
@@ -97,8 +91,7 @@ function getRecordingDurationSeconds(recording: RecordingsTabRecording | null | 
   if (!recording || typeof recording !== 'object') return 0;
   const audioQuality = recording.audioQuality as { durationSeconds?: unknown } | undefined;
   const diagnostics = recording.transcriptionDiagnostics as
-    | { durationSeconds?: unknown }
-    | undefined;
+    { durationSeconds?: unknown } | undefined;
   return (
     positiveDurationSeconds(audioQuality?.durationSeconds) ||
     positiveDurationSeconds(diagnostics?.durationSeconds) ||
