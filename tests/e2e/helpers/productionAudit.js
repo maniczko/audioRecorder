@@ -10,7 +10,21 @@ export const AUTH_TOKEN = process.env.PRODUCTION_SMOKE_AUTH_TOKEN || '';
 export const WORKSPACE_ID = process.env.PRODUCTION_SMOKE_WORKSPACE_ID || '';
 export const AUDIT_REQUIRED = process.env.PRODUCTION_SYSTEM_AUDIT_REQUIRED === 'true';
 export const AUDIT_PREFIX = process.env.PRODUCTION_AUDIT_PREFIX || 'audit_20260529_';
-const API_REQUEST_TIMEOUT_MS = Number(process.env.PRODUCTION_AUDIT_REQUEST_TIMEOUT_MS || 35_000);
+
+function readPositiveIntEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+
+const API_REQUEST_TIMEOUT_MS = readPositiveIntEnv('PRODUCTION_AUDIT_REQUEST_TIMEOUT_MS', 45_000);
+const STATE_PATCH_REQUEST_TIMEOUT_MS = readPositiveIntEnv(
+  'PRODUCTION_AUDIT_STATE_PATCH_TIMEOUT_MS',
+  Math.max(API_REQUEST_TIMEOUT_MS, 45_000)
+);
+export const PRODUCTION_AUDIT_TEST_TIMEOUT_MS = readPositiveIntEnv(
+  'PRODUCTION_AUDIT_TEST_TIMEOUT_MS',
+  180_000
+);
 
 async function sleep(ms) {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -44,7 +58,7 @@ export function authHeaders() {
 export async function fetchProductionSession(request) {
   const response = await request.get(
     apiUrl(`/auth/session?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
-    { headers: authHeaders() }
+    { headers: authHeaders(), timeout: API_REQUEST_TIMEOUT_MS }
   );
 
   expect(response.status(), await response.text()).toBeLessThan(500);
@@ -88,7 +102,7 @@ export async function installProductionSession(page, request) {
 export async function fetchWorkspaceState(request) {
   const response = await request.get(
     apiUrl(`/state/bootstrap?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`),
-    { headers: authHeaders() }
+    { headers: authHeaders(), timeout: API_REQUEST_TIMEOUT_MS }
   );
 
   expect(response.status(), await response.text()).toBeLessThan(500);
@@ -100,7 +114,7 @@ export async function fetchWorkspaceState(request) {
 
 export async function patchWorkspaceState(request, delta, options = {}) {
   const attempts = options.attempts || 3;
-  const timeout = options.timeout || API_REQUEST_TIMEOUT_MS;
+  const timeout = options.timeout || STATE_PATCH_REQUEST_TIMEOUT_MS;
   let lastError = null;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
