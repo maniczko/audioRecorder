@@ -207,4 +207,35 @@ describe('TranscriptPanel', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/Brak transkrypcji/i)).not.toBeInTheDocument();
   });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #0 — Transcript panel hides hydrated selected recording transcript
+  // Date: 2026-07-02
+  // Bug: stale displayRecording data could hide transcript segments that were
+  //      already available on selectedRecording.
+  // Fix: the panel falls back to selectedRecording.transcript when display data
+  //      has no segments.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: falls back to selected recording transcript when display data is stale', () => {
+    renderTranscriptPanel({
+      displayRecording: { id: 'rec-stale-display', transcript: [] },
+      selectedRecording: {
+        id: 'rec-selected-rich',
+        pipelineStatus: 'done',
+        transcript: [
+          {
+            id: 'seg-selected-rich',
+            text: 'Transkrypcja wybranego nagrania zostaje pokazana.',
+            timestamp: 0,
+            speakerId: 0,
+          },
+        ],
+      },
+    });
+
+    expect(
+      screen.getByDisplayValue('Transkrypcja wybranego nagrania zostaje pokazana.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Brak transkrypcji/i)).not.toBeInTheDocument();
+  });
 });

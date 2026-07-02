@@ -1637,6 +1637,42 @@ describe('StudioMeetingView', () => {
     });
   });
 
+  // -----------------------------------------------------------------
+  // Issue #0 - Studio transcript hidden after returning to an existing recording
+  // Date: 2026-07-02
+  // Bug: the right transcript rail used displayRecording.transcript only, so a
+  //      hydrated selectedRecording with transcript could still render empty.
+  // Fix: the rail falls back to selectedRecording.transcript when display data
+  //      is missing or stale.
+  // -----------------------------------------------------------------
+  test('Regression: renders selected recording transcript when display recording is stale', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{ id: 'rec-stale-display', transcript: [], duration: 120 }}
+        selectedRecording={{
+          id: 'rec-selected-rich',
+          transcript: [
+            {
+              id: 'seg-selected-rich',
+              speakerId: '0',
+              text: 'Transkrypcja z wybranego nagrania ma zostac widoczna.',
+              timestamp: 0,
+              endTimestamp: 4,
+            },
+          ],
+          duration: 120,
+          pipelineStatus: 'done',
+        }}
+      />
+    );
+
+    expect(
+      screen.getByDisplayValue('Transkrypcja z wybranego nagrania ma zostac widoczna.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Brak transkrypcji/i)).not.toBeInTheDocument();
+  });
+
   test('Regression: playback controls remain visible for display recording audio without selected recording', () => {
     renderWithContext(
       <StudioMeetingView

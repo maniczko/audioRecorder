@@ -477,10 +477,13 @@ export default function TranscriptPanel({
   const [isNormalizing, setIsNormalizing] = useState(false);
   const [normalizeError, setNormalizeError] = useState('');
 
-  const transcript = useMemo<ReviewableTranscriptSegment[]>(
-    () => (Array.isArray(displayRecording?.transcript) ? displayRecording.transcript : []),
-    [displayRecording?.transcript]
-  );
+  const transcript = useMemo<ReviewableTranscriptSegment[]>(() => {
+    if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
+      return displayRecording.transcript;
+    }
+
+    return Array.isArray(selectedRecording?.transcript) ? selectedRecording.transcript : [];
+  }, [displayRecording?.transcript, selectedRecording?.transcript]);
   const speakerOptions = useMemo(
     () => normalizeSpeakerOptions(transcript, displaySpeakerNames),
     [displaySpeakerNames, transcript]

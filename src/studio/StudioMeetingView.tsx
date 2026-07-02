@@ -1477,10 +1477,12 @@ export default function StudioMeetingView({
         ? 'Transkrypcja w toku…'
         : 'Nagranie w kolejce…';
 
-  const transcript = useMemo(
-    () => displayRecording?.transcript || [],
-    [displayRecording?.transcript]
-  );
+  const transcript = useMemo(() => {
+    if (Array.isArray(displayRecording?.transcript) && displayRecording.transcript.length) {
+      return displayRecording.transcript;
+    }
+    return safeArray(selectedRecording?.transcript);
+  }, [displayRecording?.transcript, selectedRecording?.transcript]);
   const voiceProfileLabelingStatus = useMemo(
     () => formatVoiceProfileLabelingStatus(displayRecording || selectedRecording),
     [displayRecording, selectedRecording]
