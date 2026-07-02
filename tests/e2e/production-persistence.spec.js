@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   AUDIT_PREFIX,
+  PRODUCTION_AUDIT_TEST_TIMEOUT_MS,
   attachRuntimeGuard,
   createAuditMeeting,
   fetchWorkspaceState,
@@ -32,7 +33,7 @@ test.describe('production persistence gate', () => {
   });
 
   test('audit meeting delete persists after refresh and remote sync', async ({ page, request }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(PRODUCTION_AUDIT_TEST_TIMEOUT_MS);
     const guard = attachRuntimeGuard(page);
     const meetingId = `${AUDIT_PREFIX}delete_${Date.now()}`;
     const title = `${AUDIT_PREFIX}delete recording smoke ${meetingId}`;

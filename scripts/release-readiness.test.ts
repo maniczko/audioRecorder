@@ -94,6 +94,17 @@ describe('release readiness gates', () => {
     );
   });
 
+  it('keeps production persistence retries within the production audit timeout budget', () => {
+    const helper = read('tests/e2e/helpers/productionAudit.js');
+    const spec = read('tests/e2e/production-persistence.spec.js');
+
+    expect(helper).toContain('PRODUCTION_AUDIT_STATE_PATCH_TIMEOUT_MS');
+    expect(helper).toContain('PRODUCTION_AUDIT_TEST_TIMEOUT_MS');
+    expect(helper).toContain('45_000');
+    expect(helper).toContain('180_000');
+    expect(spec).toContain('test.setTimeout(PRODUCTION_AUDIT_TEST_TIMEOUT_MS)');
+  });
+
   it('fails strict production gate config when required production secrets are missing', () => {
     expect(() => validateProductionGateEnv({})).toThrow('release:prod-gate:strict missing');
     expect(() =>
