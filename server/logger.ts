@@ -7,6 +7,7 @@ import {
   type SentryContextLevel,
 } from './lib/sentryContext.ts';
 import { structuredLogger } from './lib/structuredLogger.ts';
+import { appendTraceContext } from './tracing.ts';
 
 let _Sentry: any = null;
 let _sentryLoading: Promise<any> | null = null;
@@ -67,12 +68,13 @@ function captureWithContext(
 
 export const logger = {
   info: (msg: string, meta: any = {}) => {
-    structuredLogger.info(msg, meta);
+    structuredLogger.info(msg, appendTraceContext(meta || {}));
   },
   warn: (msg: string, meta: any = {}, options: LoggerOptions = {}) => {
-    structuredLogger.warn(msg, meta);
+    const tracedMeta = appendTraceContext(meta || {});
+    structuredLogger.warn(msg, tracedMeta);
     if (process.env.SENTRY_DSN && options.sentry !== false) {
-      const context = resolveSentryContext(meta, options);
+      const context = appendTraceContext(resolveSentryContext(tracedMeta, options));
       getSentryAsync().then((s) => {
         if (!s) return;
         captureWithContext(
@@ -85,9 +87,13 @@ export const logger = {
     }
   },
   error: (msg: string, err: any = null, options: LoggerOptions = {}) => {
-    structuredLogger.error(msg, err);
+    const tracedErr =
+      err && typeof err === 'object' && !(err instanceof Error) && !Array.isArray(err)
+        ? appendTraceContext(err)
+        : err;
+    structuredLogger.error(msg, tracedErr);
     if (process.env.SENTRY_DSN && options.sentry !== false) {
-      const context = resolveSentryContext(err, options);
+      const context = appendTraceContext(resolveSentryContext(tracedErr, options));
       getSentryAsync().then((s) => {
         if (!s) return;
         captureWithContext(

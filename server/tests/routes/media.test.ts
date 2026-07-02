@@ -8,9 +8,19 @@ const sentryMocks = vi.hoisted(() => ({
   capturePipelineException: vi.fn(),
 }));
 
+const tracingMocks = vi.hoisted(() => ({
+  withAudioSpan: vi.fn((name: string, context: unknown, callback: () => unknown) => callback()),
+  appendTraceContext: vi.fn((context: unknown) => context),
+}));
+
 vi.mock('../../sentry.ts', () => ({
   addPipelineBreadcrumb: sentryMocks.addPipelineBreadcrumb,
   capturePipelineException: sentryMocks.capturePipelineException,
+}));
+
+vi.mock('../../tracing.ts', () => ({
+  withAudioSpan: tracingMocks.withAudioSpan,
+  appendTraceContext: tracingMocks.appendTraceContext,
 }));
 
 import { createApp } from '../../app.ts';
@@ -99,6 +109,8 @@ describe('Media Routes', () => {
     vi.clearAllMocks();
     sentryMocks.addPipelineBreadcrumb.mockClear();
     sentryMocks.capturePipelineException.mockClear();
+    tracingMocks.withAudioSpan.mockClear();
+    tracingMocks.appendTraceContext.mockClear();
     // Reset fs state to default after each test
     setFsState();
   });
@@ -134,6 +146,13 @@ describe('Media Routes', () => {
         workspaceId: 'ws_1',
         contentType: 'audio/webm',
       })
+    );
+    expect(tracingMocks.withAudioSpan.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining([
+        'audio.upload.receive',
+        'audio.upload.validate',
+        'audio.upload.store',
+      ])
     );
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockTranscriptionService.saveAudioQualityDiagnostics).toHaveBeenCalledWith('rec_new', {

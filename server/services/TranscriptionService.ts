@@ -7,6 +7,7 @@ import {
 } from '../lib/mediaStoragePolicy.ts';
 import { requireVoiceProfileEmbedding } from '../lib/voiceProfileEmbedding.ts';
 import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
+import { withAudioSpan } from '../tracing.ts';
 
 const VOICE_PROFILE_EMBEDDING_MODEL = 'voice-profile-embedding';
 const VOICE_PROFILE_EMBEDDING_VERSION = '1';
@@ -604,11 +605,23 @@ export default class TranscriptionService extends EventEmitter {
 
     const durableJob =
       typeof this.db.enqueueTranscriptionJob === 'function'
-        ? await this.db.enqueueTranscriptionJob({
-            recordingId,
-            workspaceId: asset.workspace_id,
-            meetingId: asset.meeting_id || '',
-          })
+        ? await withAudioSpan(
+            'audio.transcription.enqueue',
+            {
+              requestId: options?.requestId || 'internal-stt',
+              workspaceId: asset?.workspace_id,
+              recordingId,
+              meetingId: asset?.meeting_id || '',
+              pipelineStage: 'job_enqueue',
+              operation: 'transcription.enqueue',
+            },
+            () =>
+              this.db.enqueueTranscriptionJob({
+                recordingId,
+                workspaceId: asset.workspace_id,
+                meetingId: asset.meeting_id || '',
+              })
+          )
         : null;
     if (durableJob) {
       this._durableJobContext.set(recordingId, { asset, options });
@@ -703,10 +716,19 @@ export default class TranscriptionService extends EventEmitter {
 
     this._durableWorkerRunning = true;
     try {
-      const leasedJob = await this.db.acquireTranscriptionJobLease({
-        workerId: this.workerId,
-        recordingId: filter.recordingId || '',
-      });
+      const leasedJob = await withAudioSpan(
+        'audio.transcription.acquire',
+        {
+          recordingId: filter.recordingId || '',
+          pipelineStage: 'job_acquire',
+          operation: 'transcription.acquire',
+        },
+        () =>
+          this.db.acquireTranscriptionJobLease({
+            workerId: this.workerId,
+            recordingId: filter.recordingId || '',
+          })
+      );
       if (!leasedJob) return false;
 
       const recordingId = leasedJob.recording_id || filter.recordingId;
@@ -768,161 +790,236 @@ export default class TranscriptionService extends EventEmitter {
     if (activeJob) this._startDurableJobHeartbeat(activeJob);
 
     const jobPromise = Promise.resolve()
-      .then(async () => {
-        const startSTT = performance.now();
-        const reqId = options.requestId || 'internal-stt';
-        const { logger } = await import('../logger.ts');
-        const processingMode =
-          options.processingMode === 'full' || options.processingMode === 'fast'
-            ? options.processingMode
-            : config.VOICELOG_PROCESSING_MODE_DEFAULT;
-        // Disabled: runEnhancementPostProcess re-runs the ENTIRE pipeline with full mode
-        // (re-downloads audio, re-preprocesses, re-transcribes with expensive model).
-        // This doubles processing time and cost. Users can request 'full' mode explicitly.
-        const shouldRunPostprocess = false;
-        let localSourcePath = '';
-        let cleanupLocalSource = async () => {};
-
-        logger.info('[Pipeline] Starting transcription job.', {
-          requestId: reqId,
-          workspaceId: asset.workspace_id,
-          recordingId,
-          jobId: activeJob?.id || '',
-          processingMode,
-        });
-        addPipelineBreadcrumb('Transcription job started.', {
-          requestId: reqId,
-          workspaceId: asset.workspace_id,
-          recordingId,
-          jobId: activeJob?.id || '',
-          pipelineStage: 'job_start',
-          operation: 'transcription.process',
-          processingMode,
-        });
-
-        const markProcessingPromise = this.markTranscriptionProcessing(recordingId);
-        const [wsState, memberNames, voiceProfiles] = await Promise.all([
-          this.db.getWorkspaceState(asset.workspace_id),
-          this.workspaceService.getWorkspaceMemberNames(asset.workspace_id),
-          this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
-        ]);
-        await markProcessingPromise;
-
-        const segmentedManifest =
-          asset.storage_mode === 'segmented' ? parseMediaManifest(asset.media_manifest_json) : null;
-
-        if (!segmentedManifest && typeof this.pipeline.materializeAssetToLocal === 'function') {
-          const materialized = await this.pipeline.materializeAssetToLocal(asset, {
-            signal: options.signal,
-          });
-          localSourcePath = materialized?.localPath || '';
-          cleanupLocalSource =
-            typeof materialized?.cleanup === 'function' ? materialized.cleanup : cleanupLocalSource;
-        }
-
-        const sharedOptions = {
-          ...options,
-          processingMode,
-          localSourcePath,
-          participants: [...(options.participants || []), ...memberNames],
-          vocabulary: [
-            ...(options.vocabulary ? [options.vocabulary] : []),
-            ...(wsState.vocabulary || []),
-          ].join(', '),
-          voiceProfiles,
-          onProgress: (payload: any) => {
-            this.emit(`progress-${recordingId}`, payload);
+      .then(() =>
+        withAudioSpan(
+          'audio.transcription.run',
+          {
+            requestId: options?.requestId || 'internal-stt',
+            workspaceId: asset?.workspace_id,
+            recordingId,
+            jobId: activeJob?.id || '',
+            pipelineStage: 'job_run',
+            operation: 'transcription.process',
+            processingMode:
+              options.processingMode === 'full' || options.processingMode === 'fast'
+                ? options.processingMode
+                : config.VOICELOG_PROCESSING_MODE_DEFAULT,
           },
-        };
+          async () => {
+            const startSTT = performance.now();
+            const reqId = options.requestId || 'internal-stt';
+            const { logger } = await import('../logger.ts');
+            const processingMode =
+              options.processingMode === 'full' || options.processingMode === 'fast'
+                ? options.processingMode
+                : config.VOICELOG_PROCESSING_MODE_DEFAULT;
+            // Disabled: runEnhancementPostProcess re-runs the ENTIRE pipeline with full mode
+            // (re-downloads audio, re-preprocesses, re-transcribes with expensive model).
+            // This doubles processing time and cost. Users can request 'full' mode explicitly.
+            const shouldRunPostprocess = false;
+            let localSourcePath = '';
+            let cleanupLocalSource = async () => {};
 
-        const result = segmentedManifest
-          ? await this.transcribeSegmentedAsset(
+            logger.info('[Pipeline] Starting transcription job.', {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
               recordingId,
-              asset,
-              segmentedManifest,
-              sharedOptions
-            )
-          : await this.pipeline.transcribeRecording(asset, {
-              ...sharedOptions,
-              skipEarlyPyannote: processingMode !== 'full',
-              skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
-              skipVoiceProfileMatch: processingMode !== 'full',
+              jobId: activeJob?.id || '',
+              processingMode,
             });
-        addPipelineBreadcrumb('STT pipeline completed.', {
-          requestId: reqId,
-          workspaceId: asset.workspace_id,
-          recordingId,
-          jobId: activeJob?.id || '',
-          pipelineStage: 'stt',
-          operation: 'transcription.process',
-          providerId:
-            result?.transcriptionDiagnostics?.sttProviderInfo?.providerId ||
-            result?.transcriptionDiagnostics?.sttProviderInfo?.provider ||
-            '',
-        });
+            addPipelineBreadcrumb('Transcription job started.', {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId,
+              jobId: activeJob?.id || '',
+              pipelineStage: 'job_start',
+              operation: 'transcription.process',
+              processingMode,
+            });
 
-        const isEmptyTranscript = result?.transcriptOutcome === 'empty';
-        this.emit(`progress-${recordingId}`, {
-          progress: 100,
-          enhancementsPending: Boolean(result?.enhancementsPending),
-          postprocessStage: result?.postprocessStage || '',
-          message: isEmptyTranscript
-            ? result?.userMessage || 'Nie wykryto wypowiedzi w nagraniu.'
-            : 'Trener wymowy gotowy! (Zakonczono)',
-        });
+            const markProcessingPromise = this.markTranscriptionProcessing(recordingId);
+            const [wsState, memberNames, voiceProfiles] = await Promise.all([
+              this.db.getWorkspaceState(asset.workspace_id),
+              this.workspaceService.getWorkspaceMemberNames(asset.workspace_id),
+              this.db.getWorkspaceVoiceProfiles(asset.workspace_id),
+            ]);
+            await markProcessingPromise;
 
-        await this.saveTranscriptionResult(recordingId, {
-          ...result,
-          pipelineStatus: 'completed',
-        });
-        if (activeJob && typeof this.db.completeTranscriptionJob === 'function') {
-          await this.db.completeTranscriptionJob(activeJob.id, this.workerId);
-        }
+            const segmentedManifest =
+              asset.storage_mode === 'segmented'
+                ? parseMediaManifest(asset.media_manifest_json)
+                : null;
 
-        if (shouldRunPostprocess && !isEmptyTranscript && !segmentedManifest) {
-          this.runEnhancementPostProcess(
-            recordingId,
-            asset,
-            {
-              ...sharedOptions,
-              processingMode: 'full',
-            },
-            cleanupLocalSource
-          ).catch((err: any) => {
-            console.error('[Pipeline] Background post-process failed:', err?.message || err);
-          });
-        } else {
-          await cleanupLocalSource();
-        }
+            if (!segmentedManifest && typeof this.pipeline.materializeAssetToLocal === 'function') {
+              const materialized = await withAudioSpan(
+                'audio.transcription.materialize',
+                {
+                  requestId: reqId,
+                  workspaceId: asset.workspace_id,
+                  recordingId,
+                  jobId: activeJob?.id || '',
+                  pipelineStage: 'audio_materialize',
+                  operation: 'transcription.process',
+                  storageMode: asset.storage_mode || 'single',
+                },
+                () =>
+                  this.pipeline.materializeAssetToLocal(asset, {
+                    signal: options.signal,
+                  })
+              );
+              localSourcePath = materialized?.localPath || '';
+              cleanupLocalSource =
+                typeof materialized?.cleanup === 'function'
+                  ? materialized.cleanup
+                  : cleanupLocalSource;
+            }
 
-        logger.info('[Metrics] Pipeline completed successfully.', {
-          requestId: reqId,
-          workspaceId: asset.workspace_id,
-          recordingId,
-          jobId: activeJob?.id || '',
-          durationMs: (performance.now() - startSTT).toFixed(2),
-          confidence: result.diarization?.confidence || 0,
-        });
-        addPipelineBreadcrumb('Recording result attached.', {
-          requestId: reqId,
-          workspaceId: asset.workspace_id,
-          recordingId,
-          jobId: activeJob?.id || '',
-          pipelineStage: 'attach_completion',
-          operation: 'transcription.complete',
-          durationMs: (performance.now() - startSTT).toFixed(2),
-        });
+            const sharedOptions = {
+              ...options,
+              processingMode,
+              localSourcePath,
+              participants: [...(options.participants || []), ...memberNames],
+              vocabulary: [
+                ...(options.vocabulary ? [options.vocabulary] : []),
+                ...(wsState.vocabulary || []),
+              ].join(', '),
+              voiceProfiles,
+              onProgress: (payload: any) => {
+                this.emit(`progress-${recordingId}`, payload);
+              },
+            };
 
-        if (!isEmptyTranscript && result.segments && result.segments.length > 0) {
-          this.vectorizeTranscriptionResultToRAG(
-            asset.workspace_id,
-            recordingId,
-            result.segments
-          ).catch((err) => {
-            console.error('[RAG] Background vectorization failed:', err);
-          });
-        }
-      })
+            const result = await withAudioSpan(
+              'audio.transcription.stt',
+              {
+                requestId: reqId,
+                workspaceId: asset.workspace_id,
+                recordingId,
+                jobId: activeJob?.id || '',
+                pipelineStage: segmentedManifest ? 'segmented_stt' : 'stt',
+                operation: 'transcription.process',
+                processingMode,
+                storageMode: asset.storage_mode || 'single',
+                partCount: segmentedManifest?.parts?.length || 0,
+              },
+              () =>
+                segmentedManifest
+                  ? this.transcribeSegmentedAsset(
+                      recordingId,
+                      asset,
+                      segmentedManifest,
+                      sharedOptions
+                    )
+                  : this.pipeline.transcribeRecording(asset, {
+                      ...sharedOptions,
+                      skipEarlyPyannote: processingMode !== 'full',
+                      skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
+                      skipVoiceProfileMatch: processingMode !== 'full',
+                    })
+            );
+            addPipelineBreadcrumb('STT pipeline completed.', {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId,
+              jobId: activeJob?.id || '',
+              pipelineStage: 'stt',
+              operation: 'transcription.process',
+              providerId:
+                result?.transcriptionDiagnostics?.sttProviderInfo?.providerId ||
+                result?.transcriptionDiagnostics?.sttProviderInfo?.provider ||
+                '',
+            });
+
+            const isEmptyTranscript = result?.transcriptOutcome === 'empty';
+            this.emit(`progress-${recordingId}`, {
+              progress: 100,
+              enhancementsPending: Boolean(result?.enhancementsPending),
+              postprocessStage: result?.postprocessStage || '',
+              message: isEmptyTranscript
+                ? result?.userMessage || 'Nie wykryto wypowiedzi w nagraniu.'
+                : 'Trener wymowy gotowy! (Zakonczono)',
+            });
+
+            await withAudioSpan(
+              'audio.transcription.persist',
+              {
+                requestId: reqId,
+                workspaceId: asset.workspace_id,
+                recordingId,
+                jobId: activeJob?.id || '',
+                pipelineStage: 'persist_result',
+                operation: 'transcription.complete',
+                providerId: result?.providerId || '',
+                speakerCount: result?.speakerCount || result?.diarization?.speakerCount || 0,
+                segmentCount: Array.isArray(result?.segments) ? result.segments.length : 0,
+              },
+              () =>
+                this.saveTranscriptionResult(recordingId, {
+                  ...result,
+                  pipelineStatus: 'completed',
+                })
+            );
+            if (activeJob && typeof this.db.completeTranscriptionJob === 'function') {
+              await withAudioSpan(
+                'audio.transcription.status_update',
+                {
+                  requestId: reqId,
+                  workspaceId: asset.workspace_id,
+                  recordingId,
+                  jobId: activeJob.id,
+                  pipelineStage: 'status_update',
+                  operation: 'transcription.complete',
+                },
+                () => this.db.completeTranscriptionJob(activeJob.id, this.workerId)
+              );
+            }
+
+            if (shouldRunPostprocess && !isEmptyTranscript && !segmentedManifest) {
+              this.runEnhancementPostProcess(
+                recordingId,
+                asset,
+                {
+                  ...sharedOptions,
+                  processingMode: 'full',
+                },
+                cleanupLocalSource
+              ).catch((err: any) => {
+                console.error('[Pipeline] Background post-process failed:', err?.message || err);
+              });
+            } else {
+              await cleanupLocalSource();
+            }
+
+            logger.info('[Metrics] Pipeline completed successfully.', {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId,
+              jobId: activeJob?.id || '',
+              durationMs: (performance.now() - startSTT).toFixed(2),
+              confidence: result.diarization?.confidence || 0,
+            });
+            addPipelineBreadcrumb('Recording result attached.', {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId,
+              jobId: activeJob?.id || '',
+              pipelineStage: 'attach_completion',
+              operation: 'transcription.complete',
+              durationMs: (performance.now() - startSTT).toFixed(2),
+            });
+
+            if (!isEmptyTranscript && result.segments && result.segments.length > 0) {
+              this.vectorizeTranscriptionResultToRAG(
+                asset.workspace_id,
+                recordingId,
+                result.segments
+              ).catch((err) => {
+                console.error('[RAG] Background vectorization failed:', err);
+              });
+            }
+          }
+        )
+      )
       .catch(async (error: any) => {
         try {
           const { logger } = await import('../logger.ts');
@@ -1049,13 +1146,25 @@ export default class TranscriptionService extends EventEmitter {
         message: 'Trwa dopinanie diarization i dopasowania glosow...',
       });
 
-      const fullResult = await this.pipeline.transcribeRecording(asset, {
-        ...options,
-        processingMode: 'full',
-        skipEarlyPyannote: false,
-        skipChunkVAD: !config.VOICELOG_ENABLE_CHUNK_VAD,
-        skipVoiceProfileMatch: false,
-      });
+      const fullResult = await withAudioSpan(
+        'audio.transcription.postprocess',
+        {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId,
+          pipelineStage: 'postprocess',
+          operation: 'transcription.postprocess',
+          processingMode: 'full',
+        },
+        () =>
+          this.pipeline.transcribeRecording(asset, {
+            ...options,
+            processingMode: 'full',
+            skipEarlyPyannote: false,
+            skipChunkVAD: !config.VOICELOG_ENABLE_CHUNK_VAD,
+            skipVoiceProfileMatch: false,
+          })
+      );
 
       await this.saveTranscriptionResult(recordingId, {
         ...fullResult,
@@ -1280,7 +1389,17 @@ export default class TranscriptionService extends EventEmitter {
   }
 
   async analyzeMeetingWithOpenAI(data: any) {
-    return this.pipeline.analyzeMeetingWithOpenAI(data);
+    return withAudioSpan(
+      'audio.analysis.llm',
+      {
+        requestId: data?.requestId || 'internal-ai',
+        workspaceId: data?.workspaceId || data?.workspace_id || '',
+        recordingId: data?.recordingId || data?.recording_id || '',
+        pipelineStage: 'ai_analysis',
+        operation: 'analysis.meeting',
+      },
+      () => this.pipeline.analyzeMeetingWithOpenAI(data)
+    );
   }
 
   async computeEmbedding(audioPath: string) {

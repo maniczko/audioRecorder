@@ -20,6 +20,7 @@ import {
   isRemoteStoragePath,
   materializeAssetToLocal as materializeStoredAudio,
 } from './lib/mediaStoragePipeline.ts';
+import { withAudioSpan } from './tracing.ts';
 
 // ── Sub-module imports ────────────────────────────────────────────────────────
 import {
@@ -197,7 +198,18 @@ async function runTranscriptionAttempt(
       const uploadDir = getUploadDir();
       tempFilePath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(tempFilePath), { recursive: true });
-      await downloadAudioToFile(workingFilePath, tempFilePath);
+      await withAudioSpan(
+        'audio.transcription.materialize_source',
+        {
+          requestId: options.requestId || 'internal-pipeline',
+          workspaceId: asset.workspace_id,
+          recordingId: asset.id,
+          pipelineStage: 'audio_materialize',
+          operation: 'transcription.process',
+          contentType: baseMime,
+        },
+        () => downloadAudioToFile(workingFilePath, tempFilePath)
+      );
       workingFilePath = tempFilePath;
       logMemory('after-download');
     }
@@ -209,10 +221,23 @@ async function runTranscriptionAttempt(
     notify(10, 'Wyciąganie audio do pamięci podręcznej...');
     if (!prepPath) {
       const allowPreDiarizationSilenceRemoval = options.allowPreDiarizationSilenceRemoval === true;
-      prepPath = await preprocessAudio(workingFilePath, options.signal, profile, {
-        cacheKey: preprocessCacheKey,
-        silenceRemove: allowPreDiarizationSilenceRemoval && SILENCE_REMOVE && !HF_TOKEN_SET,
-      });
+      prepPath = await withAudioSpan(
+        'audio.transcription.preprocess',
+        {
+          requestId: options.requestId || 'internal-pipeline',
+          workspaceId: asset.workspace_id,
+          recordingId: asset.id,
+          pipelineStage: 'audio_preprocess',
+          operation: 'transcription.process',
+          profile,
+          attemptCount,
+        },
+        () =>
+          preprocessAudio(workingFilePath, options.signal, profile, {
+            cacheKey: preprocessCacheKey,
+            silenceRemove: allowPreDiarizationSilenceRemoval && SILENCE_REMOVE && !HF_TOKEN_SET,
+          })
+      );
     }
     let transcribeFilePath = prepPath || workingFilePath;
     const transcribeContentType = prepPath
@@ -237,14 +262,38 @@ async function runTranscriptionAttempt(
       (async () => {
         if (!useVAD) return null;
         notify(30, 'Silero VAD - optymalizacja ciszy...');
-        return await runSileroVAD(transcribeFilePath, options.signal);
+        return await withAudioSpan(
+          'audio.transcription.vad',
+          {
+            requestId: options.requestId || 'internal-pipeline',
+            workspaceId: asset.workspace_id,
+            recordingId: asset.id,
+            pipelineStage: 'vad',
+            operation: 'transcription.process',
+            profile,
+            attemptCount,
+          },
+          () => runSileroVAD(transcribeFilePath, options.signal)
+        );
       })(),
 
       // 2. Pyannote diarization (for per-speaker norm)
       (async () => {
         if (!usePyannote || !PER_SPEAKER_NORM) return null;
         notify(25, 'Wstępna diaryzacja mówców (normalizacja głośności)...');
-        return await runPyannoteDiarization(transcribeFilePath, options.signal);
+        return await withAudioSpan(
+          'audio.transcription.diarization',
+          {
+            requestId: options.requestId || 'internal-pipeline',
+            workspaceId: asset.workspace_id,
+            recordingId: asset.id,
+            pipelineStage: 'early_diarization',
+            operation: 'transcription.process',
+            profile,
+            attemptCount,
+          },
+          () => runPyannoteDiarization(transcribeFilePath, options.signal)
+        );
       })(),
     ]);
 
@@ -367,11 +416,26 @@ async function runTranscriptionAttempt(
         const fields = { ...whisperFields, model };
         try {
           if (isLargeFile) {
-            const chunkPayloads = await transcribeInChunks(
-              transcribeFilePath,
-              transcribeContentType,
-              fields,
-              { ...options, audioQuality: attemptAudioQuality }
+            const chunkPayloads = await withAudioSpan(
+              'audio.transcription.stt_provider',
+              {
+                requestId: reqId,
+                workspaceId: asset.workspace_id,
+                recordingId: asset.id,
+                pipelineStage: 'stt_provider_chunked',
+                operation: 'transcription.process',
+                providerId: _sttUseGroq ? 'groq' : 'openai',
+                processingMode: options.processingMode || 'full',
+                profile,
+                attemptCount,
+                sizeBytes: fileSize,
+                chunkCount: Number(transcriptionDiagnostics.chunksAttempted || 0),
+              },
+              () =>
+                transcribeInChunks(transcribeFilePath, transcribeContentType, fields, {
+                  ...options,
+                  audioQuality: attemptAudioQuality,
+                })
             );
             logMemory('after-chunked-transcription');
             whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
@@ -389,12 +453,28 @@ async function runTranscriptionAttempt(
               throw error;
             }
           } else {
-            const sttResult = await requestAudioTranscription({
-              filePath: transcribeFilePath,
-              contentType: transcribeContentType,
-              fields,
-              signal: options.signal,
-            });
+            const sttResult = await withAudioSpan(
+              'audio.transcription.stt_provider',
+              {
+                requestId: reqId,
+                workspaceId: asset.workspace_id,
+                recordingId: asset.id,
+                pipelineStage: 'stt_provider',
+                operation: 'transcription.process',
+                providerId: _sttUseGroq ? 'groq' : 'openai',
+                processingMode: options.processingMode || 'full',
+                profile,
+                attemptCount,
+                sizeBytes: fileSize,
+              },
+              () =>
+                requestAudioTranscription({
+                  filePath: transcribeFilePath,
+                  contentType: transcribeContentType,
+                  fields,
+                  signal: options.signal,
+                })
+            );
             const finalSttResult = await maybeRetryPoorQualityWithOpenAi({
               sttResult,
               request: {
@@ -480,17 +560,28 @@ async function runTranscriptionAttempt(
           try {
             console.log(`[pipeline] Groq STT failed — retrying with OpenAI model ${model}`);
             if (isLargeFile) {
-              const chunkPayloads = await transcribeInChunks(
-                transcribeFilePath,
-                transcribeContentType,
-                fallbackFields,
+              const chunkPayloads = await withAudioSpan(
+                'audio.transcription.stt_provider',
                 {
-                  ...options,
-                  audioQuality: attemptAudioQuality,
-                  sttPreferredProvider: 'openai',
-                  sttApiKey: OPENAI_API_KEY,
-                  sttBaseUrl: OPENAI_BASE_URL,
-                }
+                  requestId: reqId,
+                  workspaceId: asset.workspace_id,
+                  recordingId: asset.id,
+                  pipelineStage: 'stt_provider_fallback_chunked',
+                  operation: 'transcription.process',
+                  providerId: 'openai',
+                  processingMode: options.processingMode || 'full',
+                  profile,
+                  attemptCount,
+                  sizeBytes: fileSize,
+                },
+                () =>
+                  transcribeInChunks(transcribeFilePath, transcribeContentType, fallbackFields, {
+                    ...options,
+                    audioQuality: attemptAudioQuality,
+                    sttPreferredProvider: 'openai',
+                    sttApiKey: OPENAI_API_KEY,
+                    sttBaseUrl: OPENAI_BASE_URL,
+                  })
               );
               whisperPayload = mergeChunkedPayloads(chunkPayloads, fileSize);
               transcriptionDiagnostics = {
@@ -498,15 +589,31 @@ async function runTranscriptionAttempt(
                 ...(whisperPayload?.transcriptionDiagnostics || {}),
               };
             } else {
-              const fallbackResult = await requestAudioTranscription({
-                filePath: transcribeFilePath,
-                contentType: transcribeContentType,
-                fields: fallbackFields,
-                signal: options.signal,
-                preferredProvider: 'openai',
-                apiKey: OPENAI_API_KEY,
-                baseUrl: OPENAI_BASE_URL,
-              });
+              const fallbackResult = await withAudioSpan(
+                'audio.transcription.stt_provider',
+                {
+                  requestId: reqId,
+                  workspaceId: asset.workspace_id,
+                  recordingId: asset.id,
+                  pipelineStage: 'stt_provider_fallback',
+                  operation: 'transcription.process',
+                  providerId: 'openai',
+                  processingMode: options.processingMode || 'full',
+                  profile,
+                  attemptCount,
+                  sizeBytes: fileSize,
+                },
+                () =>
+                  requestAudioTranscription({
+                    filePath: transcribeFilePath,
+                    contentType: transcribeContentType,
+                    fields: fallbackFields,
+                    signal: options.signal,
+                    preferredProvider: 'openai',
+                    apiKey: OPENAI_API_KEY,
+                    baseUrl: OPENAI_BASE_URL,
+                  })
+              );
               whisperPayload = fallbackResult?.payload || null;
               sttProviderInfo = fallbackResult;
             }
@@ -544,7 +651,19 @@ async function runTranscriptionAttempt(
         notify(80, 'Pyannote - rozpoznawanie i segregacja głosu po wektorach wieloosiowych!');
         const pyannoteSegments =
           earlyPyannoteSegments ??
-          (await runPyannoteDiarization(transcribeFilePath, options.signal));
+          (await withAudioSpan(
+            'audio.transcription.diarization',
+            {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId: asset.id,
+              pipelineStage: 'diarization',
+              operation: 'transcription.process',
+              profile,
+              attemptCount,
+            },
+            () => runPyannoteDiarization(transcribeFilePath, options.signal)
+          ));
         if (pyannoteSegments && verificationSegments.length) {
           const rawWhisperSegments = Array.isArray(whisperPayload?.segments)
             ? whisperPayload.segments
@@ -578,9 +697,23 @@ async function runTranscriptionAttempt(
           );
         notify(80, 'Analiza semantyczna GPT-4o-mini celem wyizolowania rozmówców...');
         try {
-          diarization = await diarizeFromTranscript(verificationSegments, {
-            participants: options.participants,
-          });
+          diarization = await withAudioSpan(
+            'audio.transcription.diarization',
+            {
+              requestId: reqId,
+              workspaceId: asset.workspace_id,
+              recordingId: asset.id,
+              pipelineStage: 'semantic_diarization',
+              operation: 'transcription.process',
+              profile,
+              attemptCount,
+              segmentCount: verificationSegments.length,
+            },
+            () =>
+              diarizeFromTranscript(verificationSegments, {
+                participants: options.participants,
+              })
+          );
           if (DEBUG && diarization) {
             console.log(
               `[pipeline] Transcript diarization: ${diarization.segments.length} segs, ${diarization.speakerCount} speaker(s): ${JSON.stringify(diarization.speakerNames)}`
@@ -652,12 +785,26 @@ async function runTranscriptionAttempt(
         diarization.segments,
         verificationSegments
       );
-      const segmentSecondPass = await retryLowConfidenceSegmentsWithOpenAi({
-        filePath: transcribeFilePath,
-        fields: whisperFields,
-        segments: verificationResult.verifiedSegments,
-        signal: options.signal,
-      });
+      const segmentSecondPass = await withAudioSpan(
+        'audio.transcription.verification',
+        {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId: asset.id,
+          pipelineStage: 'verification',
+          operation: 'transcription.process',
+          profile,
+          attemptCount,
+          segmentCount: verificationResult.verifiedSegments.length,
+        },
+        () =>
+          retryLowConfidenceSegmentsWithOpenAi({
+            filePath: transcribeFilePath,
+            fields: whisperFields,
+            segments: verificationResult.verifiedSegments,
+            signal: options.signal,
+          })
+      );
       verificationResult.verifiedSegments = segmentSecondPass.segments;
       transcriptionDiagnostics = {
         ...transcriptionDiagnostics,
@@ -795,7 +942,20 @@ async function runTranscriptionAttempt(
           ).segments;
         }
         const merged = mergeShortSegments(deduplicated);
-        const corrected = await correctTranscriptWithLLM(merged, options);
+        const corrected = await withAudioSpan(
+          'audio.analysis.transcript_cleanup',
+          {
+            requestId: reqId,
+            workspaceId: asset.workspace_id,
+            recordingId: asset.id,
+            pipelineStage: 'ai_cleanup',
+            operation: 'analysis.transcript_cleanup',
+            profile,
+            attemptCount,
+            segmentCount: merged.length,
+          },
+          () => correctTranscriptWithLLM(merged, options)
+        );
         return corrected;
       })();
       stageEnd('post-processing', startPostProcess);
@@ -942,6 +1102,7 @@ export async function materializeAssetToLocal(asset: any, options: any = {}) {
 }
 
 export async function transcribeRecording(asset: any, options: any = {}) {
+  const reqId = options.requestId || 'internal-pipeline';
   const effectiveAsset = options.localSourcePath
     ? {
         ...asset,
@@ -954,10 +1115,22 @@ export async function transcribeRecording(asset: any, options: any = {}) {
   if (!audioQuality) {
     try {
       audioQuality = await Promise.race([
-        analyzeAudioQuality(effectiveAsset.file_path, {
-          contentType: effectiveAsset.content_type,
-          signal: options.signal,
-        }),
+        withAudioSpan(
+          'audio.transcription.audio_quality',
+          {
+            requestId: reqId,
+            workspaceId: asset.workspace_id,
+            recordingId: asset.id,
+            pipelineStage: 'audio_quality',
+            operation: 'transcription.process',
+            contentType: effectiveAsset.content_type,
+          },
+          () =>
+            analyzeAudioQuality(effectiveAsset.file_path, {
+              contentType: effectiveAsset.content_type,
+              signal: options.signal,
+            })
+        ),
         new Promise((resolve) => setTimeout(() => resolve(null), 250)),
       ]);
     } catch (error: any) {
@@ -1014,7 +1187,18 @@ export async function transcribeRecording(asset: any, options: any = {}) {
       const uploadDir = getUploadDir();
       sourceTempPath = path.join(uploadDir, `temp_transcribe_${crypto.randomUUID()}${ext}`);
       fs.mkdirSync(path.dirname(sourceTempPath), { recursive: true });
-      await downloadAudioToFile(asset.file_path, sourceTempPath);
+      await withAudioSpan(
+        'audio.transcription.materialize_source',
+        {
+          requestId: reqId,
+          workspaceId: asset.workspace_id,
+          recordingId: asset.id,
+          pipelineStage: 'audio_materialize',
+          operation: 'transcription.process',
+          contentType: baseMime,
+        },
+        () => downloadAudioToFile(asset.file_path, sourceTempPath)
+      );
       sourceFilePath = sourceTempPath;
     } catch (error: any) {
       if (!options.signal?.aborted) {
@@ -1047,12 +1231,19 @@ export async function transcribeRecording(asset: any, options: any = {}) {
       };
 
       try {
-        const result = await runTranscriptionAttempt(
-          asset,
-          profileOptions,
-          audioQuality,
-          profile,
-          attemptCount
+        const result = await withAudioSpan(
+          'audio.transcription.attempt',
+          {
+            requestId: reqId,
+            workspaceId: asset.workspace_id,
+            recordingId: asset.id,
+            pipelineStage: 'transcription_attempt',
+            operation: 'transcription.process',
+            processingMode: options.processingMode || 'full',
+            profile,
+            attemptCount,
+          },
+          () => runTranscriptionAttempt(asset, profileOptions, audioQuality, profile, attemptCount)
         );
         lastResult = result;
         if (
