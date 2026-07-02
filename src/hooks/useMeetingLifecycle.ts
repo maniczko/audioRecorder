@@ -157,8 +157,7 @@ export default function useMeetingLifecycle({
 
   const selectedMeeting =
     (userMeetings.find((meeting: MeetingLike) => meeting.id === selectedMeetingId) as
-      | MeetingLike
-      | undefined) || null;
+      MeetingLike | undefined) || null;
   const selectedRecording = selectReadableRecording(selectedMeeting, selectedRecordingId);
   const activeStoredMeetingDraft = currentWorkspaceId
     ? storedMeetingDrafts[currentWorkspaceId] || null

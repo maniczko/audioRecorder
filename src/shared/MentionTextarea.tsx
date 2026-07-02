@@ -4,8 +4,7 @@ import { getTagColor } from './TagBadge';
 import './MentionTextareaStyles.css';
 
 export type MentionTextareaChangeEvent =
-  | ChangeEvent<HTMLTextAreaElement>
-  | { target: { value: string } };
+  ChangeEvent<HTMLTextAreaElement> | { target: { value: string } };
 
 interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   value?: string;

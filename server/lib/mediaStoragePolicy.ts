@@ -8,11 +8,7 @@ export const STORAGE_EXTENSION = '.webm';
 
 export type MediaStorageMode = 'single' | 'segmented';
 export type MediaPartTranscriptionStatus =
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'review';
+  'pending' | 'processing' | 'completed' | 'failed' | 'review';
 
 export interface MediaPartTranscriptionCheckpoint {
   status: MediaPartTranscriptionStatus;
