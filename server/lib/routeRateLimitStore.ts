@@ -1,3 +1,5 @@
+import { logger } from '../logger.ts';
+
 export type RouteRateLimitCheck = {
   key: string;
   limit: number;
@@ -28,6 +30,22 @@ function normalizeNow(value: unknown) {
 
 function retryAfterSeconds(resetAt: number, now: number) {
   return Math.max(1, Math.ceil((resetAt - now) / 1000));
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isResetAtIntegerOverflow(error: unknown) {
+  const message = errorMessage(error);
+  return /out of range for type integer|integer out of range/i.test(message);
+}
+
+function warnRateLimitFallback(message: string, error: unknown) {
+  logger.warn('[Rate limit] DB store fallback', {
+    message,
+    error: errorMessage(error),
+  });
 }
 
 function normalizeStoreName(value: unknown) {
@@ -68,6 +86,8 @@ export class MemoryRouteRateLimitStore implements RouteRateLimitStore {
 
 export class DbRouteRateLimitStore implements RouteRateLimitStore {
   private initialized = false;
+  private fallbackMode = false;
+  private readonly fallbackStore = new MemoryRouteRateLimitStore();
 
   constructor(private readonly db: any) {}
 
@@ -77,14 +97,66 @@ export class DbRouteRateLimitStore implements RouteRateLimitStore {
       CREATE TABLE IF NOT EXISTS route_rate_limit_counters (
         key TEXT PRIMARY KEY,
         count INTEGER NOT NULL,
-        reset_at INTEGER NOT NULL,
+        reset_at BIGINT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
+    await this.ensurePostgresResetAtBigint();
     this.initialized = true;
   }
 
+  private async ensurePostgresResetAtBigint() {
+    if (this.db?.type !== 'postgres') return;
+    await this.repairResetAtColumn();
+  }
+
+  private async repairResetAtColumn() {
+    await this.db._execute(`
+      ALTER TABLE route_rate_limit_counters
+      ALTER COLUMN reset_at TYPE BIGINT USING reset_at::bigint
+    `);
+  }
+
   async increment(checks: RouteRateLimitCheck[]): Promise<RouteRateLimitExceeded | null> {
+    if (this.fallbackMode) {
+      return this.fallbackStore.increment(checks);
+    }
+
+    try {
+      return await this.incrementWithDb(checks);
+    } catch (error) {
+      if (!isResetAtIntegerOverflow(error)) {
+        throw error;
+      }
+      warnRateLimitFallback('reset_at overflow detected; attempting BIGINT repair', error);
+    }
+
+    try {
+      await this.repairResetAtColumn();
+    } catch (error) {
+      warnRateLimitFallback('BIGINT repair failed; using in-memory rate-limit fallback', error);
+      this.fallbackMode = true;
+      return this.fallbackStore.increment(checks);
+    }
+
+    try {
+      return await this.incrementWithDb(checks);
+    } catch (error) {
+      if (!isResetAtIntegerOverflow(error)) {
+        throw error;
+      }
+      warnRateLimitFallback(
+        'reset_at overflow persisted after repair; using in-memory fallback',
+        error
+      );
+      this.fallbackMode = true;
+      return this.fallbackStore.increment(checks);
+    }
+  }
+
+  private async incrementWithDb(
+    checks: RouteRateLimitCheck[]
+  ): Promise<RouteRateLimitExceeded | null> {
     await this.ensureSchema();
 
     for (const check of checks) {
@@ -129,6 +201,8 @@ export class DbRouteRateLimitStore implements RouteRateLimitStore {
   }
 
   async reset() {
+    this.fallbackMode = false;
+    this.fallbackStore.reset();
     await this.ensureSchema();
     await this.db._execute('DELETE FROM route_rate_limit_counters');
   }
