@@ -189,6 +189,17 @@ describe('monitoring error groups', () => {
     expect(groups).toHaveLength(0);
   });
 
+  it('ignores timestamp-prefixed Railway info logs from error reports', () => {
+    const groups = extractRailwayLogGroups([
+      {
+        message:
+          '2026-07-01T18:14:00.128470915Z [INFO] [Bootstrap] Startup transcription recovery: recovered=0, skipped=0, failed=0, alreadyActive=0. timestamp="2026-07-01T18:14:00.116Z" service="voicelog-server"',
+      },
+    ]);
+
+    expect(groups).toHaveLength(0);
+  });
+
   it('keeps real Railway runtime errors actionable after noise filtering', () => {
     const groups = extractRailwayLogGroups([
       { level: 'info', message: '[INFO] [REQ] GET /health - 200 [40ms]' },

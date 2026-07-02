@@ -282,7 +282,7 @@ export function isActionableRailwayLogEntry(entry) {
     return false;
   }
 
-  if (/^\[info\]\s+/i.test(message)) {
+  if (/^(?:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\s+)?\[info\]\s+/i.test(message)) {
     return false;
   }
 
