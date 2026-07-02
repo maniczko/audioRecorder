@@ -1,10 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAudioBlob } from '../lib/audioStore';
 
+const LOCAL_AUDIO_LOOKUP_TIMEOUT_MS = 5_000;
+const REMOTE_AUDIO_LOAD_TIMEOUT_MS = 30_000;
+
 function revokeAudioUrl(url: string) {
   if (url && typeof URL !== 'undefined' && URL.revokeObjectURL) {
     URL.revokeObjectURL(url);
   }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const observedPromise = Promise.resolve(promise);
+  observedPromise.catch(() => undefined);
+
+  return Promise.race([
+    observedPromise,
+    new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    }),
+  ]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
 }
 
 interface UseAudioHydrationOptions {
@@ -64,14 +84,22 @@ export default function useAudioHydration({ mediaService, userMeetings }: UseAud
 
         // Prefer local IndexedDB audio first (ad-hoc/local recordings may not exist on backend yet).
         try {
-          const localBlob = await getAudioBlob(recordingId);
+          const localBlob = await withTimeout(
+            getAudioBlob(recordingId),
+            LOCAL_AUDIO_LOOKUP_TIMEOUT_MS,
+            'Limit czasu odczytu lokalnego audio zostal przekroczony.'
+          );
           blob = localBlob instanceof Blob ? localBlob : null;
         } catch {
           blob = null;
         }
 
         if (!blob) {
-          blob = await mediaService.getRecordingAudioBlob(recordingId);
+          blob = await withTimeout(
+            mediaService.getRecordingAudioBlob(recordingId),
+            REMOTE_AUDIO_LOAD_TIMEOUT_MS,
+            'Limit czasu ladowania audio zostal przekroczony. Sprobuj ponownie.'
+          );
         }
 
         if (!blob || typeof URL === 'undefined' || !URL.createObjectURL) {

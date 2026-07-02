@@ -154,6 +154,35 @@ describe('useAudioHydration', () => {
   });
 
   // -----------------------------------------------------------------
+  // Issue #0 - player stays stuck on "Ladowanie audio..." forever
+  // Date: 2026-07-02
+  // Bug: a hung IndexedDB or backend audio request left hydration in
+  //      loading state indefinitely, so the player never showed retry.
+  // Fix: hydration times out and stores an actionable error state.
+  // -----------------------------------------------------------------
+  it('Regression: #0 - marks hydration as error when audio loading hangs', async () => {
+    const service = makeService({
+      getRecordingAudioBlob: vi.fn().mockReturnValue(new Promise<Blob>(() => {})),
+    });
+    const { result } = renderHook(() =>
+      useAudioHydration({ mediaService: service, userMeetings: STABLE_MEETINGS })
+    );
+
+    act(() => {
+      void result.current.hydrateRecordingAudio('rec-hangs');
+    });
+
+    expect(result.current.audioHydrationStatusByRecordingId['rec-hangs']).toBe('loading');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    expect(result.current.audioHydrationStatusByRecordingId['rec-hangs']).toBe('error');
+    expect(result.current.audioHydrationErrors['rec-hangs']).toMatch(/limit czasu/i);
+  });
+
+  // -----------------------------------------------------------------
   // Issue #0 - missing audio retried on every render after 404
   // Date: 2026-04-05
   // Bug: remote audio 404s were treated as generic errors in the UI flow,

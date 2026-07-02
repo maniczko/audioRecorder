@@ -484,10 +484,9 @@ export function buildRemoteAudioStorageCandidates(
 
   const candidates = new Set<string>();
   const leafName = extractLeafPathSegment(rawPath);
-  const looksLocal =
-    existsSync(rawPath) || path.isAbsolute(rawPath) || /^[a-zA-Z]:[\\/]/.test(rawPath);
+  const looksAbsoluteLocalPath = path.isAbsolute(rawPath) || /^[a-zA-Z]:[\\/]/.test(rawPath);
 
-  if (rawPath && !rawPath.includes('\\') && !looksLocal) {
+  if (rawPath && !rawPath.includes('\\') && !looksAbsoluteLocalPath) {
     candidates.add(rawPath);
   }
 

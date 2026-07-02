@@ -1235,6 +1235,22 @@ describe('Regression: #0 - audio fallback reconstructs Supabase key', () => {
         content_type: 'audio/webm',
       })
     ).toEqual(['legacy-name.webm', 'recording_abc-123.webm']);
+  }, 15_000);
+
+  test('buildRemoteAudioStorageCandidates keeps workspace-prefixed remote storage key', async () => {
+    const { buildRemoteAudioStorageCandidates } = await import('../../routes/media.ts');
+
+    expect(
+      buildRemoteAudioStorageCandidates('recording_ugebiv4j_mqyytzto', {
+        file_path:
+          'workspace_1d0686cff06a4e529eba929f599aaa3a/recording_ugebiv4j_mqyytzto/audio.webm',
+        content_type: 'audio/webm',
+      })
+    ).toEqual([
+      'workspace_1d0686cff06a4e529eba929f599aaa3a/recording_ugebiv4j_mqyytzto/audio.webm',
+      'audio.webm',
+      'recording_ugebiv4j_mqyytzto.webm',
+    ]);
   });
 });
 
