@@ -79,6 +79,7 @@ describe('GitHub workflows validation', () => {
     for (const [jobName, job] of Object.entries(jobs)) {
       const steps = job.steps ?? [];
       const setupNodeStep = steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
+      const setupPnpmStep = steps.find((step) => step.name === 'Setup pnpm');
       const resolveStoreStep = steps.find((step) => step.name === 'Resolve pnpm store');
       const cacheStep = steps.find((step) => step.name === 'Cache pnpm store');
       const installStep = steps.find((step) => step.name === 'Install dependencies');
@@ -89,8 +90,9 @@ describe('GitHub workflows validation', () => {
       expect(setupNodeStep?.with?.cache, `${jobName} setup-node cache before pnpm exists`).toBe(
         undefined
       );
+      expect(setupPnpmStep?.uses, `${jobName} pnpm action`).toBe('pnpm/action-setup@v6');
       expect(resolveStoreStep?.run, `${jobName} pnpm store path`).toContain('pnpm store path');
-      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v4');
+      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v5');
       expect(cacheStep?.with?.path, `${jobName} cache path`).toBe('${{ env.PNPM_STORE_PATH }}');
       expect(cacheStep?.with?.key, `${jobName} cache key`).toContain("hashFiles('pnpm-lock.yaml')");
       expect(installStep?.run, `${jobName} install retry loop`).toContain('for attempt in 1 2 3');
@@ -98,6 +100,46 @@ describe('GitHub workflows validation', () => {
         'pnpm install --frozen-lockfile'
       );
     }
+  });
+
+  it('keeps backend production smoke on the supported cache action major', () => {
+    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('uses: actions/cache@v5');
+    expect(content).not.toContain('uses: actions/cache@v4');
+  });
+
+  it('keeps CodeQL security scanning enabled on current action majors', () => {
+    const workflowPath = path.join(workflowDir, 'codeql.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(existsSync(workflowPath)).toBe(true);
+    expect(content).toContain('uses: actions/checkout@v6');
+    expect(content).toContain('uses: github/codeql-action/init@v4');
+    expect(content).toContain('uses: github/codeql-action/analyze@v4');
+    expect(content).toContain('queries: +security-and-quality');
+  });
+
+  it('keeps production readiness queue reconciliation blocking stale PR work', () => {
+    const workflowPath = path.join(workflowDir, 'codex-production-readiness-queue.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+    const parsed = parse(content) as {
+      on?: {
+        workflow_dispatch?: { inputs?: { mode?: { options?: string[] } } };
+        schedule?: unknown[];
+      };
+      permissions?: Record<string, string>;
+    } | null;
+
+    expect(parsed?.on?.workflow_dispatch?.inputs?.mode?.options).toContain('reconcile');
+    expect(parsed?.on?.schedule).toBeTruthy();
+    expect(parsed?.permissions?.checks).toBe('read');
+    expect(parsed?.permissions?.actions).toBe('read');
+    expect(content).toContain('codex:checks-failed');
+    expect(content).toContain('sync_pr_checks');
+    expect(content).toContain('reconcile_open_prs');
+    expect(content).toContain('if [ "$MODE" = "reconcile" ]; then reconcile_open_prs; exit 0; fi');
   });
 
   it('runs compressed-size-action with the package-manager build command', () => {
@@ -221,7 +263,7 @@ describe('GitHub workflows validation', () => {
 
     expect(content).not.toContain('pnpm install --no-frozen-lockfile');
     expect(resolveStoreStep?.run).toContain('pnpm store path');
-    expect(cacheStep?.uses).toBe('actions/cache@v4');
+    expect(cacheStep?.uses).toBe('actions/cache@v5');
     expect(cacheStep?.with?.path).toBe('${{ env.PNPM_STORE_PATH }}');
     expect(cacheStep?.with?.key).toContain("hashFiles('pnpm-lock.yaml')");
     expect(installStep?.run).toContain('for attempt in 1 2 3');
