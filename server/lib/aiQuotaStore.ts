@@ -1,3 +1,5 @@
+import { logger } from '../logger.ts';
+
 export type AiQuotaCheck = {
   key: string;
   limit: number;
@@ -30,6 +32,22 @@ function retryAfterSeconds(resetAt: number, now: number) {
   return Math.max(1, Math.ceil((resetAt - now) / 1000));
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isResetAtIntegerOverflow(error: unknown) {
+  const message = errorMessage(error);
+  return /out of range for type integer|integer out of range/i.test(message);
+}
+
+function warnQuotaFallback(message: string, error: unknown) {
+  logger.warn('[AI quota] DB quota store fallback', {
+    message,
+    error: errorMessage(error),
+  });
+}
+
 export class MemoryAiQuotaStore implements AiQuotaStore {
   private readonly counters = new Map<string, AiQuotaEntry>();
 
@@ -60,6 +78,8 @@ export class MemoryAiQuotaStore implements AiQuotaStore {
 
 export class DbAiQuotaStore implements AiQuotaStore {
   private initialized = false;
+  private fallbackMode = false;
+  private readonly fallbackStore = new MemoryAiQuotaStore();
 
   constructor(private readonly db: any) {}
 
@@ -79,6 +99,10 @@ export class DbAiQuotaStore implements AiQuotaStore {
 
   private async ensurePostgresResetAtBigint() {
     if (this.db?.type !== 'postgres') return;
+    await this.repairResetAtColumn();
+  }
+
+  private async repairResetAtColumn() {
     await this.db._execute(`
       ALTER TABLE ai_quota_counters
       ALTER COLUMN reset_at TYPE BIGINT USING reset_at::bigint
@@ -86,6 +110,43 @@ export class DbAiQuotaStore implements AiQuotaStore {
   }
 
   async increment(checks: AiQuotaCheck[]): Promise<AiQuotaExceeded | null> {
+    if (this.fallbackMode) {
+      return this.fallbackStore.increment(checks);
+    }
+
+    try {
+      return await this.incrementWithDb(checks);
+    } catch (error) {
+      if (!isResetAtIntegerOverflow(error)) {
+        throw error;
+      }
+      warnQuotaFallback('reset_at overflow detected; attempting BIGINT repair', error);
+    }
+
+    try {
+      await this.repairResetAtColumn();
+    } catch (error) {
+      warnQuotaFallback('BIGINT repair failed; using in-memory quota fallback', error);
+      this.fallbackMode = true;
+      return this.fallbackStore.increment(checks);
+    }
+
+    try {
+      return await this.incrementWithDb(checks);
+    } catch (error) {
+      if (!isResetAtIntegerOverflow(error)) {
+        throw error;
+      }
+      warnQuotaFallback(
+        'reset_at overflow persisted after repair; using in-memory fallback',
+        error
+      );
+      this.fallbackMode = true;
+      return this.fallbackStore.increment(checks);
+    }
+  }
+
+  private async incrementWithDb(checks: AiQuotaCheck[]): Promise<AiQuotaExceeded | null> {
     await this.ensureSchema();
 
     for (const check of checks) {
@@ -126,6 +187,8 @@ export class DbAiQuotaStore implements AiQuotaStore {
   }
 
   async reset() {
+    this.fallbackMode = false;
+    this.fallbackStore.reset();
     await this.ensureSchema();
     await this.db._execute('DELETE FROM ai_quota_counters');
   }
