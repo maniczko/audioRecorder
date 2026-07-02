@@ -492,7 +492,7 @@ describe('release readiness gates', () => {
     );
   });
 
-  it('retries transient dynamic voice-profile fixture upload failures during production deploy smoke', async () => {
+  it('keeps retrying transient dynamic voice-profile failures during production deploy smoke', async () => {
     const mediaAssetsTable: any = {
       update: vi.fn(() => mediaAssetsTable),
       eq: vi.fn(() => mediaAssetsTable),
@@ -563,7 +563,7 @@ describe('release readiness gates', () => {
       }
       if (url.endsWith('/voice-profiles') && init?.method === 'GET') {
         profileListAttempts += 1;
-        if (profileListAttempts === 1) {
+        if (profileListAttempts < 5) {
           return {
             ok: false,
             status: 502,
@@ -623,7 +623,7 @@ describe('release readiness gates', () => {
     ).resolves.toBe(true);
 
     expect(uploadAttempts).toBe(2);
-    expect(profileListAttempts).toBe(2);
+    expect(profileListAttempts).toBe(5);
     expect(mediaAssetsTable.update).toHaveBeenCalledWith(
       expect.objectContaining({
         transcription_status: 'completed',

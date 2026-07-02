@@ -5,6 +5,8 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const MOJIBAKE_PATTERN =
   /[\u00c4\u00c5\u0102\u00c2\ufffd]|\u00e2[\u0080-\u00bf\u20ac\u201a-\u201e]/;
 const TRANSIENT_SMOKE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const DEFAULT_VOICE_PROFILE_RETRY_ATTEMPTS = 6;
+const DEFAULT_VOICE_PROFILE_RETRY_DELAY_MS = 5000;
 
 function normalizeBaseUrl(value, name) {
   const normalized = String(value || '')
@@ -25,6 +27,22 @@ async function fetchText(url) {
 function sleep(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return Promise.resolve();
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parsePositiveInteger(value, fallback) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return fallback;
+
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseNonNegativeInteger(value, fallback) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return fallback;
+
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 async function fetchWithTransientRetry(
@@ -390,6 +408,7 @@ async function assertVoiceProfilePreflightReady({
   recording,
   speaker,
   name,
+  retryAttempts,
   retryDelayMs,
 }) {
   const response = await fetchWithTransientRetry(
@@ -403,7 +422,7 @@ async function assertVoiceProfilePreflightReady({
       },
       body: JSON.stringify({ speakerId: speaker, speakerName: name }),
     },
-    { label: 'voice profile preflight smoke', retryDelayMs }
+    { label: 'voice profile preflight smoke', attempts: retryAttempts, retryDelayMs }
   );
   const payload = await readJsonResponse(response);
   if (!response.ok) {
@@ -424,6 +443,7 @@ async function enrollVoiceProfileFromSpeaker({
   recording,
   speaker,
   name,
+  retryAttempts,
   retryDelayMs,
 }) {
   const enrollResponse = await fetchWithTransientRetry(
@@ -437,7 +457,7 @@ async function enrollVoiceProfileFromSpeaker({
       },
       body: JSON.stringify({ speakerId: speaker, speakerName: name }),
     },
-    { label: 'voice profile enrollment smoke', retryDelayMs }
+    { label: 'voice profile enrollment smoke', attempts: retryAttempts, retryDelayMs }
   );
 
   const enrollPayload = await readJsonResponse(enrollResponse);
@@ -459,7 +479,7 @@ async function enrollVoiceProfileFromSpeaker({
         'X-Workspace-Id': workspace,
       },
     },
-    { label: 'voice profile refresh smoke', retryDelayMs }
+    { label: 'voice profile refresh smoke', attempts: retryAttempts, retryDelayMs }
   );
   const profilesPayload = await readJsonResponse(profilesResponse);
   if (!profilesResponse.ok) {
@@ -489,6 +509,7 @@ async function cleanupVoiceProfileSmokeFixture({
   workspace,
   recording,
   profileIds,
+  retryAttempts,
   retryDelayMs,
 }) {
   for (const profileId of [...new Set(profileIds.filter(Boolean))]) {
@@ -501,7 +522,7 @@ async function cleanupVoiceProfileSmokeFixture({
           'X-Workspace-Id': workspace,
         },
       },
-      { label: 'voice profile cleanup smoke', retryDelayMs }
+      { label: 'voice profile cleanup smoke', attempts: retryAttempts, retryDelayMs }
     );
     if (![204, 404].includes(response.status)) {
       throw new Error(
@@ -520,7 +541,7 @@ async function cleanupVoiceProfileSmokeFixture({
           'X-Workspace-Id': workspace,
         },
       },
-      { label: 'voice profile recording cleanup smoke', retryDelayMs }
+      { label: 'voice profile recording cleanup smoke', attempts: retryAttempts, retryDelayMs }
     );
     if (![204, 404].includes(response.status)) {
       throw new Error(
@@ -540,7 +561,14 @@ export async function runVoiceProfileSmoke({
   mode = process.env.PRODUCTION_SMOKE_VOICE_PROFILE_MODE || 'dynamic',
   now = () => Date.now(),
   supabaseClient,
-  retryDelayMs = 1000,
+  retryAttempts = parsePositiveInteger(
+    process.env.PRODUCTION_SMOKE_VOICE_PROFILE_ATTEMPTS,
+    DEFAULT_VOICE_PROFILE_RETRY_ATTEMPTS
+  ),
+  retryDelayMs = parseNonNegativeInteger(
+    process.env.PRODUCTION_SMOKE_VOICE_PROFILE_RETRY_DELAY_MS,
+    DEFAULT_VOICE_PROFILE_RETRY_DELAY_MS
+  ),
 } = {}) {
   const token = String(authToken || '').trim();
   const workspace = String(workspaceId || '').trim();
@@ -566,6 +594,7 @@ export async function runVoiceProfileSmoke({
       recording,
       speaker,
       name,
+      retryAttempts,
       retryDelayMs,
     });
     await enrollVoiceProfileFromSpeaker({
@@ -575,6 +604,7 @@ export async function runVoiceProfileSmoke({
       recording,
       speaker,
       name,
+      retryAttempts,
       retryDelayMs,
     });
     return true;
@@ -603,6 +633,7 @@ export async function runVoiceProfileSmoke({
       },
       {
         label: 'voice profile fixture upload',
+        attempts: retryAttempts,
         retryDelayMs,
       }
     );
@@ -628,6 +659,7 @@ export async function runVoiceProfileSmoke({
       recording,
       speaker,
       name,
+      retryAttempts,
       retryDelayMs,
     });
     const result = await enrollVoiceProfileFromSpeaker({
@@ -637,6 +669,7 @@ export async function runVoiceProfileSmoke({
       recording,
       speaker,
       name,
+      retryAttempts,
       retryDelayMs,
     });
     if (result.profileId) profileIds.push(result.profileId);
@@ -652,6 +685,7 @@ export async function runVoiceProfileSmoke({
         workspace,
         recording,
         profileIds,
+        retryAttempts,
         retryDelayMs,
       });
     } catch (cleanupError) {
