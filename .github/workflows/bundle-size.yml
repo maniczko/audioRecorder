@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
 
     steps:
       - name: Checkout code
@@ -41,7 +42,8 @@ jobs:
           build-script: 'pnpm run build'
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: build-bundle
           path: build/
@@ -88,15 +90,9 @@ jobs:
               return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
             }
 
-            // Get base branch sizes (if available)
-            let baseTotalSize = 0;
-            let sizeChange = 0;
-            let sizeChangePercent = 0;
 
-            // Try to read from previous runs (simplified)
-            // In production, you'd use GitHub API to compare with base branch
 
-            let comment = '## 📦 Bundle Size Report\n\n';
+            let comment = '## Bundle Size Report\n\n';
             comment += '### Build Artifacts\n\n';
             comment += `| Type | Size |\n`;
             comment += `|------|------|\n`;
@@ -108,11 +104,11 @@ jobs:
               comment += '### Changes\n\n';
 
               if (totalSize > 500 * 1024) {
-                comment += '⚠️ **Warning:** Bundle size is over 500KB\n\n';
+                comment += '**Warning:** Bundle size is over 500KB\n\n';
               }
 
               if (totalSize > 1024 * 1024) {
-                comment += '🚨 **Critical:** Bundle size is over 1MB\n\n';
+                comment += '**Critical:** Bundle size is over 1MB\n\n';
               }
             }
 
@@ -122,7 +118,7 @@ jobs:
             comment += '- Tree-shake unused dependencies\n';
             comment += '- Compress assets with gzip/brotli\n\n';
 
-            comment += '---\n*This is an automated report from Bundle Size Monitor.*\n';
+            comment += '---\nThis is an automated report from Bundle Size Monitor.\n';
 
             // Delete existing comment if exists
             const { data: comments } = await github.rest.issues.listComments({
@@ -131,9 +127,7 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const existingComment = comments.find(c =>
-              c.body.includes('Bundle Size Report')
-            );
+            const existingComment = comments.find((c) => c.body.includes('Bundle Size Report'));
 
             if (existingComment) {
               await github.rest.issues.updateComment({
