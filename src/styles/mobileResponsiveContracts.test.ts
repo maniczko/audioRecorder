@@ -70,7 +70,7 @@ describe('mobile responsive CSS contracts', () => {
 
     expect(css).toContain('.ff-studio-split-view');
     expect(css).toContain('grid-template-columns: minmax(0, 1fr)');
-    expect(css).toContain('var(--mobile-bottom-safe');
+    expect(css).toContain('var(--studio-player-mobile-reserved-space');
   });
 
   it('keeps premium-light Studio tabs, metrics and speaker labels readable', () => {

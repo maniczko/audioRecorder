@@ -38,4 +38,33 @@ describe('Studio transcript layout CSS contract', () => {
     expect(meetingCss).toContain('.ff-speaker-picker-wrap:has(.ff-speaker-dropdown)');
     expect(cssBlock(meetingCss, '.ff-speaker-dropdown')).toContain('z-index: 1200');
   });
+
+  // -----------------------------------------------------------------
+  // Issue #1394 - fixed Studio player covered the last meeting content
+  // Date: 2026-07-02
+  // Bug: the premium-light player behaved like a tall bottom overlay and
+  //      Studio columns did not reserve enough scroll space for it.
+  // Fix: Studio defines a compact player height token and uses it as bottom
+  //      padding/scroll margin for the split content and transcript list.
+  // -----------------------------------------------------------------
+  it('reserves compact bottom space for the fixed Studio player', () => {
+    expect(meetingCss).toContain('--studio-player-reserved-space: 120px');
+    expect(cssBlock(meetingCss, '.ff-studio-split-view')).toContain(
+      'padding-bottom: var(--studio-player-reserved-space)'
+    );
+    expect(cssBlock(meetingCss, '.ff-studio-left-col')).toContain(
+      'scroll-padding-bottom: var(--studio-player-reserved-space)'
+    );
+    expect(cssBlock(meetingCss, '.transcript-list-fill')).toContain(
+      'padding-bottom: var(--studio-player-reserved-space)'
+    );
+  });
+
+  it('keeps the premium-light player compact on desktop and mobile', () => {
+    expect(meetingCss).toContain('--studio-player-height: 96px');
+    expect(meetingCss).toContain('--studio-player-mobile-height: 112px');
+    expect(meetingCss).toContain('min-height: var(--studio-player-height)');
+    expect(meetingCss).toContain('max-height: var(--studio-player-height)');
+    expect(meetingCss).toContain('max-height: var(--studio-player-mobile-height)');
+  });
 });
