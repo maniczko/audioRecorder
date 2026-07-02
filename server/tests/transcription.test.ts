@@ -5,9 +5,19 @@ const sentryMocks = vi.hoisted(() => ({
   capturePipelineException: vi.fn(),
 }));
 
+const tracingMocks = vi.hoisted(() => ({
+  withAudioSpan: vi.fn((name: string, context: unknown, callback: () => unknown) => callback()),
+  appendTraceContext: vi.fn((context: unknown) => context),
+}));
+
 vi.mock('../sentry.ts', () => ({
   addPipelineBreadcrumb: sentryMocks.addPipelineBreadcrumb,
   capturePipelineException: sentryMocks.capturePipelineException,
+}));
+
+vi.mock('../tracing.ts', () => ({
+  withAudioSpan: tracingMocks.withAudioSpan,
+  appendTraceContext: tracingMocks.appendTraceContext,
 }));
 
 import TranscriptionService from '../services/TranscriptionService.ts';
@@ -72,6 +82,8 @@ describe('TranscriptionService', () => {
     vi.restoreAllMocks();
     sentryMocks.addPipelineBreadcrumb.mockClear();
     sentryMocks.capturePipelineException.mockClear();
+    tracingMocks.withAudioSpan.mockClear();
+    tracingMocks.appendTraceContext.mockClear();
   });
 
   it('falls back to injected audioPipeline and calls transcribeRecording', async () => {
@@ -93,6 +105,13 @@ describe('TranscriptionService', () => {
     await job;
 
     expect(mockAudioPipeline.transcribeRecording).toHaveBeenCalled();
+    expect(tracingMocks.withAudioSpan.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining([
+        'audio.transcription.run',
+        'audio.transcription.stt',
+        'audio.transcription.persist',
+      ])
+    );
   }, 30000);
 
   it('throws a descriptive error if transcribeRecording is missing', () => {

@@ -10,6 +10,8 @@ export interface AudioPipelineSentryContext extends Record<string, unknown> {
   errorCode?: string;
   operation?: string;
   retryable?: boolean;
+  traceId?: string;
+  spanId?: string;
 }
 
 export interface SentryCaptureOptions {
@@ -83,6 +85,8 @@ export function sentryTagsFromContext(context: Record<string, unknown>) {
     'pipelineStage',
     'providerId',
     'errorCode',
+    'traceId',
+    'spanId',
   ]) {
     const value = context[key];
     if (value !== undefined && value !== null && value !== '') {

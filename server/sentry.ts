@@ -8,6 +8,7 @@ import {
   type SentryContextLevel,
 } from './lib/sentryContext.ts';
 import { resolveBuildMetadata } from './runtime.js';
+import { appendTraceContext } from './tracing.ts';
 
 export function initSentry() {
   const dsn = process.env.SENTRY_DSN;
@@ -64,7 +65,7 @@ export function addPipelineBreadcrumb(
     category: options.category || 'audio.pipeline',
     level: options.level || 'info',
     message,
-    data: sanitizeSentryContext(context),
+    data: sanitizeSentryContext(appendTraceContext(context)),
   });
 }
 
@@ -75,7 +76,7 @@ export function capturePipelineException(
 ) {
   try {
     const normalizedError = error instanceof Error ? error : new Error(String(error));
-    const sanitizedContext = sanitizeSentryContext(context);
+    const sanitizedContext = sanitizeSentryContext(appendTraceContext(context));
     Sentry.withScope((scope) => {
       scope.setLevel(options.level || (sanitizedContext.retryable ? 'warning' : 'error'));
       scope.setContext('audio_pipeline', sanitizedContext);

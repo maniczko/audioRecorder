@@ -36,6 +36,7 @@ import {
   validateAudioForTranscription,
 } from '../lib/mediaStoragePipeline.ts';
 import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
+import { withAudioSpan } from '../tracing.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -920,11 +921,24 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     );
     try {
       mkdirSync(preflightDir, { recursive: true });
-      const streamed = await streamRequestBodyToFile({
-        request: c.req.raw,
-        filePath: preflightPath,
-        maxBytes: MAX_RAW_UPLOAD_BYTES,
-      });
+      const streamed = await withAudioSpan(
+        'audio.upload.receive',
+        {
+          requestId: reqId,
+          workspaceId,
+          recordingId,
+          pipelineStage: 'upload_receive',
+          operation: 'media.upload',
+          contentType: mimeValidation.normalized.contentType,
+          contentLength,
+        },
+        () =>
+          streamRequestBodyToFile({
+            request: c.req.raw,
+            filePath: preflightPath,
+            maxBytes: MAX_RAW_UPLOAD_BYTES,
+          })
+      );
       const sizeValidation = validateRawUploadSize(streamed.bytesWritten);
       if (sizeValidation.ok === false) {
         return c.json(
@@ -932,24 +946,51 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           sizeValidation.status
         );
       }
-      audioValidation = await validateAudioForTranscription({
-        filePath: preflightPath,
-        contentType: mimeValidation.normalized.contentType,
-        signal: c.req.raw.signal,
-      });
+      audioValidation = await withAudioSpan(
+        'audio.upload.validate',
+        {
+          requestId: reqId,
+          workspaceId,
+          recordingId,
+          pipelineStage: 'upload_validation',
+          operation: 'media.upload',
+          contentType: mimeValidation.normalized.contentType,
+          sizeBytes: streamed.bytesWritten,
+        },
+        () =>
+          validateAudioForTranscription({
+            filePath: preflightPath,
+            contentType: mimeValidation.normalized.contentType,
+            signal: c.req.raw.signal,
+          })
+      );
       if (typeof transcriptionService.upsertMediaAssetFromPath !== 'function') {
         throw Object.assign(new Error('Streaming upload storage adapter is unavailable.'), {
           statusCode: 500,
         });
       }
-      asset = await transcriptionService.upsertMediaAssetFromPath({
-        recordingId,
-        workspaceId,
-        meetingId,
-        contentType: mimeValidation.normalized.contentType,
-        filePath: preflightPath,
-        createdByUserId: session.user_id,
-      });
+      asset = await withAudioSpan(
+        'audio.upload.store',
+        {
+          requestId: reqId,
+          workspaceId,
+          recordingId,
+          meetingId,
+          pipelineStage: 'upload_store',
+          operation: 'media.upload',
+          contentType: mimeValidation.normalized.contentType,
+          sizeBytes: streamed.bytesWritten,
+        },
+        () =>
+          transcriptionService.upsertMediaAssetFromPath({
+            recordingId,
+            workspaceId,
+            meetingId,
+            contentType: mimeValidation.normalized.contentType,
+            filePath: preflightPath,
+            createdByUserId: session.user_id,
+          })
+      );
     } catch (uploadErr: any) {
       if (uploadErr instanceof MediaStoragePipelineError) {
         capturePipelineException(
@@ -1312,11 +1353,23 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           pipelineStage: 'job_start_request',
           operation: 'transcription.start',
         });
-        const result = await startTranscriptionPipeline(recordingId, asset, {
-          ...body,
-          processingMode: resolveProcessingMode(body.processingMode),
-          requestId: c.get('reqId'),
-        });
+        const result = await withAudioSpan(
+          'audio.transcription.request',
+          {
+            requestId: c.get('reqId'),
+            workspaceId: body.workspaceId || asset.workspace_id,
+            recordingId,
+            pipelineStage: 'job_start_request',
+            operation: 'transcription.start',
+            processingMode: resolveProcessingMode(body.processingMode),
+          },
+          () =>
+            startTranscriptionPipeline(recordingId, asset, {
+              ...body,
+              processingMode: resolveProcessingMode(body.processingMode),
+              requestId: c.get('reqId'),
+            })
+        );
 
         return c.json(
           withIdempotencyMetadata(
@@ -1459,13 +1512,25 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           operation: 'transcription.retry',
           previousStatus: status || 'unknown',
         });
-        const result = await startTranscriptionPipeline(recordingId, asset, {
-          workspaceId: asset.workspace_id,
-          meetingId: asset.meeting_id,
-          contentType: asset.content_type,
-          processingMode,
-          requestId: c.get('reqId'),
-        });
+        const result = await withAudioSpan(
+          'audio.transcription.retry',
+          {
+            requestId: c.get('reqId'),
+            workspaceId: asset.workspace_id,
+            recordingId,
+            pipelineStage: 'retry',
+            operation: 'transcription.retry',
+            processingMode,
+          },
+          () =>
+            startTranscriptionPipeline(recordingId, asset, {
+              workspaceId: asset.workspace_id,
+              meetingId: asset.meeting_id,
+              contentType: asset.content_type,
+              processingMode,
+              requestId: c.get('reqId'),
+            })
+        );
 
         await writeRecordingAuditEvent(
           c,
@@ -2452,26 +2517,69 @@ Important:
       let audioValidation: Awaited<ReturnType<typeof validateAudioForTranscription>> | null = null;
       let asset: MediaAsset;
       try {
-        normalizedAudio = await normalizeAudioForStorage({
-          sourcePath: assembledPath,
-          workDir: path.join(config.uploadDir, 'normalized'),
-          recordingId,
-          signal: c.req.raw.signal,
-        });
-        audioValidation = await validateAudioForTranscription({
-          filePath: normalizedAudio.path,
-          contentType: normalizedAudio.contentType,
-          signal: c.req.raw.signal,
-        });
+        normalizedAudio = await withAudioSpan(
+          'audio.upload.normalize',
+          {
+            requestId: c.get('reqId'),
+            workspaceId,
+            recordingId,
+            meetingId,
+            pipelineStage: 'upload_normalize',
+            operation: 'media.upload.finalize',
+            contentType,
+            sourceSizeBytes: fullStats.size,
+          },
+          () =>
+            normalizeAudioForStorage({
+              sourcePath: assembledPath,
+              workDir: path.join(config.uploadDir, 'normalized'),
+              recordingId,
+              signal: c.req.raw.signal,
+            })
+        );
+        audioValidation = await withAudioSpan(
+          'audio.upload.validate',
+          {
+            requestId: c.get('reqId'),
+            workspaceId,
+            recordingId,
+            meetingId,
+            pipelineStage: 'upload_validation',
+            operation: 'media.upload.finalize',
+            contentType: normalizedAudio.contentType,
+            normalizedSizeBytes: normalizedAudio.sizeBytes,
+            durationMs: normalizedAudio.durationMs,
+          },
+          () =>
+            validateAudioForTranscription({
+              filePath: normalizedAudio.path,
+              contentType: normalizedAudio.contentType,
+              signal: c.req.raw.signal,
+            })
+        );
 
         if (shouldUseSegmentedStorage(normalizedAudio.sizeBytes)) {
-          localParts = await splitNormalizedAudioIntoParts({
-            normalizedPath: normalizedAudio.path,
-            workDir: path.join(config.uploadDir, 'parts'),
-            recordingId,
-            durationMs: normalizedAudio.durationMs,
-            signal: c.req.raw.signal,
-          });
+          localParts = await withAudioSpan(
+            'audio.upload.split_parts',
+            {
+              requestId: c.get('reqId'),
+              workspaceId,
+              recordingId,
+              meetingId,
+              pipelineStage: 'upload_split',
+              operation: 'media.upload.finalize',
+              normalizedSizeBytes: normalizedAudio.sizeBytes,
+              durationMs: normalizedAudio.durationMs,
+            },
+            () =>
+              splitNormalizedAudioIntoParts({
+                normalizedPath: normalizedAudio.path,
+                workDir: path.join(config.uploadDir, 'parts'),
+                recordingId,
+                durationMs: normalizedAudio.durationMs,
+                signal: c.req.raw.signal,
+              })
+          );
         }
 
         const upsertPrepared =
@@ -2479,27 +2587,44 @@ Important:
             ? transcriptionService.upsertMediaAssetFromPreparedAudio.bind(transcriptionService)
             : null;
 
-        asset = upsertPrepared
-          ? await upsertPrepared({
-              recordingId,
-              workspaceId,
-              meetingId,
-              contentType: normalizedAudio.contentType,
-              normalizedFilePath: normalizedAudio.path,
-              sourceSizeBytes: fullStats.size,
-              normalizedSizeBytes: normalizedAudio.sizeBytes,
-              durationMs: normalizedAudio.durationMs,
-              parts: localParts,
-              createdByUserId: session.user_id,
-            })
-          : await transcriptionService.upsertMediaAssetFromPath({
-              recordingId,
-              workspaceId,
-              meetingId,
-              contentType: normalizedAudio.contentType,
-              filePath: normalizedAudio.path,
-              createdByUserId: session.user_id,
-            });
+        asset = await withAudioSpan(
+          'audio.upload.store',
+          {
+            requestId: c.get('reqId'),
+            workspaceId,
+            recordingId,
+            meetingId,
+            pipelineStage: 'upload_store',
+            operation: 'media.upload.finalize',
+            contentType: normalizedAudio.contentType,
+            sourceSizeBytes: fullStats.size,
+            normalizedSizeBytes: normalizedAudio.sizeBytes,
+            durationMs: normalizedAudio.durationMs,
+            partCount: localParts.length,
+          },
+          () =>
+            upsertPrepared
+              ? upsertPrepared({
+                  recordingId,
+                  workspaceId,
+                  meetingId,
+                  contentType: normalizedAudio.contentType,
+                  normalizedFilePath: normalizedAudio.path,
+                  sourceSizeBytes: fullStats.size,
+                  normalizedSizeBytes: normalizedAudio.sizeBytes,
+                  durationMs: normalizedAudio.durationMs,
+                  parts: localParts,
+                  createdByUserId: session.user_id,
+                })
+              : transcriptionService.upsertMediaAssetFromPath({
+                  recordingId,
+                  workspaceId,
+                  meetingId,
+                  contentType: normalizedAudio.contentType,
+                  filePath: normalizedAudio.path,
+                  createdByUserId: session.user_id,
+                })
+        );
       } catch (err: any) {
         try {
           await unlink(assembledPath);

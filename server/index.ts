@@ -9,6 +9,7 @@ import { logger } from './logger.ts';
 import { resolveServerPort } from './runtime.ts';
 import { initSentry } from './sentry.ts';
 import * as speakerEmbedder from './speakerEmbedder.ts';
+import { initTracing } from './tracing.ts';
 import {
   runDatabaseStartupChecks,
   runStartupMaintenance,
@@ -25,6 +26,7 @@ const PORT = resolveServerPort(config);
 const HOST = config.VOICELOG_API_HOST || '0.0.0.0';
 
 export async function bootstrap() {
+  await initTracing();
   initSentry();
   validateRequiredApiKeys();
   warnIfUsingDefaultLocalDatabase(config, logger);
