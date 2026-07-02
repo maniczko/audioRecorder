@@ -30,6 +30,24 @@ function createFakeQuotaDb() {
   };
 }
 
+function createIntegerOverflowQuotaDb() {
+  return {
+    async _execute(sql: string) {
+      if (/CREATE TABLE/i.test(sql)) return;
+      if (/ALTER TABLE ai_quota_counters/i.test(sql)) {
+        throw new Error('permission denied for table ai_quota_counters');
+      }
+      if (/INSERT INTO ai_quota_counters/i.test(sql)) {
+        throw new Error('value "1782975650185" is out of range for type integer');
+      }
+      throw new Error(`Unexpected quota SQL: ${sql}`);
+    },
+    async _get() {
+      return null;
+    },
+  };
+}
+
 describe('AI Routes', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
   let mockAuthService: any;
@@ -391,6 +409,32 @@ describe('AI Routes', () => {
       expect(first.status).toBe(200);
       expect(second.status).toBe(429);
       expect(second.headers.get('Retry-After')).toMatch(/^\d+$/);
+    });
+
+    test('Regression: #1360 - production AI quota integer overflow does not 500 suggest-tasks', async () => {
+      vi.stubEnv('VOICELOG_AI_QUOTA_STORE', 'db');
+      vi.stubEnv('ANTHROPIC_API_KEY', '');
+      vi.resetModules();
+      const { createApp: createQuotaApp } = await import('../../app.ts');
+      const quotaApp = createQuotaApp({
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        db: createIntegerOverflowQuotaDb(),
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const res = await quotaApp.request('/ai/suggest-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body: JSON.stringify({
+          transcript: [],
+          people: [],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toEqual({ tasks: [] });
     });
 
     test('returns empty tasks when ANTHROPIC_API_KEY is not configured', async () => {
