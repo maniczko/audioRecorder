@@ -137,7 +137,13 @@ export interface TranscriptionQualityMetrics {
 export interface TranscriptionStatusPayload {
   recordingId: string;
   pipelineStatus:
-    'uploading' | 'queued' | 'processing' | 'diarization' | 'review' | 'done' | 'failed';
+    | 'uploading'
+    | 'queued'
+    | 'processing'
+    | 'diarization'
+    | 'review'
+    | 'done'
+    | 'failed';
   enhancementsPending?: boolean;
   postprocessStage?: 'queued' | 'running' | 'done' | 'failed' | '';
   transcriptOutcome?: 'normal' | 'empty';
@@ -335,6 +341,9 @@ export interface MeetingParticipantInsight {
 
 export interface MeetingAnalysis {
   mode?: string;
+  analysisSource?: 'provider' | 'fallback' | string;
+  fallbackReason?: string;
+  generatedBy?: string;
   speakerCount?: number;
   speakerLabels?: Record<string, string>;
   summary: string;

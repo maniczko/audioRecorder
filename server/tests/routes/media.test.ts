@@ -1569,7 +1569,51 @@ describe('Media Routes', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ mode: 'no-key' });
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        mode: 'no-key',
+        analysisSource: 'fallback',
+        fallbackReason: 'no-key',
+      })
+    );
+  });
+
+  it('POST /media/analyze records fallback metrics and sanitized warning context', async () => {
+    mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+      mode: 'fallback',
+      analysisSource: 'fallback',
+      fallbackReason: 'provider-error',
+    });
+
+    const { MetricsService } = await import('../../services/MetricsService.ts');
+    const metricsSpy = vi.spyOn(MetricsService, 'observeAiFallback');
+
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId: 'ws_1',
+        recordingId: 'rec_ai_fallback',
+        meeting: { id: 'meeting_ai_fallback' },
+        segments: [{ text: 'RAW TRANSCRIPT SHOULD NOT BE LOGGED' }],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        analysisSource: 'fallback',
+        fallbackReason: 'provider-error',
+      })
+    );
+    expect(metricsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        endpoint: 'media.analyze',
+        reason: 'provider-error',
+        mode: 'fallback',
+      })
+    );
   });
 
   it('POST /media/analyze writes a sanitized AI audit event without raw transcript text', async () => {

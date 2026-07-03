@@ -193,6 +193,8 @@ describe('analysis lib - comprehensive tests', () => {
 
       expect(result).toBeDefined();
       expect(result.mode).toBeDefined();
+      expect(result.analysisSource).toBe('fallback');
+      expect(result.fallbackReason).toBe('no-key');
       expect(result.summary).toBeDefined();
     });
 

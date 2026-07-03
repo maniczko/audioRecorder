@@ -1,6 +1,10 @@
 import type { MeetingRisk, MeetingParticipantInsight } from '../shared/types';
 
 export interface AiAnalysisResponse {
+  mode?: string;
+  analysisSource?: string;
+  fallbackReason?: string;
+  generatedBy?: string;
   summary?: string;
   decisions?: string[];
   actionItems?: string[];
@@ -78,7 +82,9 @@ export function validateAndNormalizeRisks(risks: unknown): MeetingRisk[] {
     .map((item) => ({
       risk: item.risk,
       severity: (['high', 'medium', 'low'].includes(item.severity) ? item.severity : 'medium') as
-        'high' | 'medium' | 'low',
+        | 'high'
+        | 'medium'
+        | 'low',
     }));
 }
 

@@ -139,7 +139,7 @@ describe('audioPipeline exports', () => {
     process.env.VOICELOG_OPENAI_BASE_URL = originalEnv.VOICELOG_OPENAI_BASE_URL;
   });
 
-  it('returns null/empty values when OpenAI key is not configured', async () => {
+  it('returns fallback metadata and empty values when OpenAI key is not configured', async () => {
     process.env.OPENAI_API_KEY = '';
     process.env.VOICELOG_OPENAI_API_KEY = '';
 
@@ -154,7 +154,13 @@ describe('audioPipeline exports', () => {
         segments: [{ text: 'x', timestamp: 0, speakerId: 0 }],
         speakerNames: {},
       })
-    ).resolves.toBeNull();
+    ).resolves.toEqual(
+      expect.objectContaining({
+        mode: 'no-key',
+        analysisSource: 'fallback',
+        fallbackReason: 'no-key',
+      })
+    );
     await expect(pipeline.embedTextChunks(['hello'])).resolves.toEqual([]);
     await expect(pipeline.transcribeLiveChunk('/tmp/live.webm', 'audio/webm')).resolves.toBe('');
   }, 30000);
@@ -483,7 +489,7 @@ describe('audioPipeline exports', () => {
     expect((global.fetch as any).mock.calls[1][0]).toContain('/embeddings');
   });
 
-  it('returns null or empty arrays when analysis and embeddings upstream calls fail', async () => {
+  it('returns fallback metadata or empty arrays when analysis and embeddings upstream calls fail', async () => {
     const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -501,7 +507,13 @@ describe('audioPipeline exports', () => {
         segments: [{ text: 'Ustalmy plan', timestamp: 0, speakerId: 0 }],
         speakerNames: { '0': 'Anna' },
       })
-    ).resolves.toBeNull();
+    ).resolves.toEqual(
+      expect.objectContaining({
+        mode: 'fallback',
+        analysisSource: 'fallback',
+        fallbackReason: 'provider-error',
+      })
+    );
     await expect(pipeline.embedTextChunks(['pierwszy'])).resolves.toEqual([]);
     expect(warnSpy).toHaveBeenCalledWith(
       '[postProcessing] analyzeMeetingWithOpenAI failed:',
@@ -515,16 +527,22 @@ describe('audioPipeline exports', () => {
   // Date: 2026-04-05
   // Bug: analyzeMeetingWithOpenAI accessed segments.length even when the
   //      request payload did not include segments, causing runtime 500.
-  // Fix: normalize missing meeting/segments/speakerNames to safe defaults.
+  // Fix: normalize missing meeting/segments/speakerNames to safe fallback metadata.
   // ─────────────────────────────────────────────────────────────────
-  it('Regression: #0 — returns null when analysis payload omits segments', async () => {
+  it('Regression: #0 — returns fallback metadata when analysis payload omits segments', async () => {
     const pipeline = await loadAudioPipeline({ openAiKey: 'key-1' });
 
     await expect(
       pipeline.analyzeMeetingWithOpenAI({
         meeting: { title: 'Weekly' },
       })
-    ).resolves.toBeNull();
+    ).resolves.toEqual(
+      expect.objectContaining({
+        mode: 'fallback',
+        analysisSource: 'fallback',
+        fallbackReason: 'empty-transcript',
+      })
+    );
 
     expect(global.fetch).not.toHaveBeenCalled();
   });

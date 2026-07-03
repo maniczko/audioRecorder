@@ -17,7 +17,6 @@ import { config } from './config.ts';
 import { logger } from './logger.ts';
 import { matchSpeakerToProfile } from './speakerEmbedder.ts';
 import { buildMeetingFeedbackSchemaExample } from '../src/shared/meetingFeedback.ts';
-import { clean } from './audioPipeline.utils.ts';
 import { httpClient } from './lib/httpClient.ts';
 import {
   isRemoteStoragePath,
@@ -36,6 +35,23 @@ const FFMPEG_BINARY = config.FFMPEG_BINARY;
 const PYTHON_BINARY = config.PYTHON_BINARY;
 const ACOUSTIC_FEATURES_SCRIPT = path.join(__dirname, 'acoustic_features.py');
 const TRANSCRIPT_CORRECTION = config.TRANSCRIPT_CORRECTION;
+
+function buildAnalysisFallback(reason: string, mode = 'fallback') {
+  return {
+    mode,
+    analysisSource: 'fallback',
+    fallbackReason: reason,
+    generatedBy: 'server',
+  };
+}
+
+function classifyAiProviderError(error: any) {
+  const message = String(error?.message || error || '').toLowerCase();
+  if (/timeout|aborted|timed out/.test(message)) return 'timeout';
+  if (/429|quota|rate/.test(message)) return 'quota-rate-limit';
+  if (/json|parse|invalid/.test(message)) return 'invalid-model-output';
+  return 'provider-error';
+}
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -273,7 +289,7 @@ export async function correctTranscriptWithLLM(segments: any[], options: any = {
         messages: [
           {
             role: 'user',
-            content: `Popraw poniższe segmenty transkrypcji audio:\n1. Popraw interpunkcję i pisownię.\n2. Popraw słowa błędnie rozpoznane przez STT — jeśli wyraz nie pasuje logicznie do kontekstu zdania, zamień go na najbardziej prawdopodobne poprawne słowo (np. \"muszę iść do sklepów\" zamiast \"muszę iść do skłepów\").\n3. Zachowaj styl i ton wypowiedzi — nie parafrazuj, tylko napraw błędy.\n4. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
+            content: `Popraw poniższe segmenty transkrypcji audio:\n1. Popraw interpunkcję i pisownię.\n2. Popraw słowa błędnie rozpoznane przez STT — jeśli wyraz nie pasuje logicznie do kontekstu zdania, zamień go na najbardziej prawdopodobne poprawne słowo (np. "muszę iść do sklepów" zamiast "muszę iść do skłepów").\n3. Zachowaj styl i ton wypowiedzi — nie parafrazuj, tylko napraw błędy.\n4. Zwróć wyłącznie tablicę JSON z polami id i text.\n\n${JSON.stringify(payload)}`,
           },
         ],
       },
@@ -301,8 +317,15 @@ export async function analyzeMeetingWithOpenAI({
   segments = [],
   speakerNames = {},
 }: any = {}) {
-  if (!config.VOICELOG_ENABLE_MEETING_ANALYSIS) return null;
-  if (!OPENAI_API_KEY || !segments.length) return null;
+  if (!config.VOICELOG_ENABLE_MEETING_ANALYSIS) {
+    return buildAnalysisFallback('disabled-feature-flag', 'disabled');
+  }
+  if (!OPENAI_API_KEY) {
+    return buildAnalysisFallback('no-key', 'no-key');
+  }
+  if (!segments.length) {
+    return buildAnalysisFallback('empty-transcript', 'fallback');
+  }
 
   const fmt = (s: number) => {
     const m = Math.floor(s / 60);
@@ -486,10 +509,15 @@ export async function analyzeMeetingWithOpenAI({
       transcriptLength: transcriptText.length,
     });
 
-    return JSON.parse(content);
+    return {
+      ...JSON.parse(content),
+      mode: 'openai',
+      analysisSource: 'provider',
+      generatedBy: 'openai',
+    };
   } catch (err: any) {
     console.warn('[postProcessing] analyzeMeetingWithOpenAI failed:', err.message);
-    return null;
+    return buildAnalysisFallback(classifyAiProviderError(err), 'fallback');
   }
 }
 

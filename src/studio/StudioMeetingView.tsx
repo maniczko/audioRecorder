@@ -817,6 +817,44 @@ void COMM_LABELS;
 void DECISION_LABELS;
 void DISC_COLORS;
 
+const FALLBACK_REASON_LABELS: Record<string, string> = {
+  'no-key': 'brak skonfigurowanego klucza AI',
+  'disabled-feature-flag': 'analiza AI jest wylaczona',
+  'provider-error': 'provider AI zwrocil blad',
+  'invalid-model-output': 'odpowiedz modelu byla niepoprawna',
+  timeout: 'provider AI przekroczyl limit czasu',
+  'quota-rate-limit': 'limit lub quota providera AI',
+  'empty-transcript': 'brak tresci transkrypcji do analizy',
+};
+
+function getAnalysisStatusMeta(analysis: any) {
+  const mode = String(analysis?.mode || '').trim();
+  const source = String(analysis?.analysisSource || '').trim();
+  const reason = String(analysis?.fallbackReason || '').trim();
+  const isFallback = source === 'fallback' || /fallback|no-key|disabled/i.test(mode);
+
+  if (isFallback) {
+    const normalizedReason = reason || (mode === 'no-key' ? 'no-key' : 'provider-error');
+    return {
+      tone: 'fallback',
+      label: 'Analiza lokalna',
+      description:
+        FALLBACK_REASON_LABELS[normalizedReason] ||
+        'wynik zostal wygenerowany w trybie ograniczonym',
+    };
+  }
+
+  if (mode === 'openai' || mode === 'anthropic' || source === 'provider') {
+    return {
+      tone: 'provider',
+      label: 'Analiza AI',
+      description: mode === 'openai' ? 'wynik providera OpenAI' : 'wynik providera AI',
+    };
+  }
+
+  return null;
+}
+
 export default function StudioMeetingView({
   selectedMeeting,
   displayRecording,
@@ -897,6 +935,7 @@ export default function StudioMeetingView({
     Array.isArray(boardColumnsProp) && boardColumnsProp.length > 0
       ? boardColumnsProp
       : FALLBACK_BOARD_COLUMNS;
+  const analysisStatusMeta = useMemo(() => getAnalysisStatusMeta(studioAnalysis), [studioAnalysis]);
 
   const [addNeedOpen, setAddNeedOpen] = useState(false);
   const [needDraft, setNeedDraft] = useState('');
@@ -2740,6 +2779,16 @@ export default function StudioMeetingView({
                     <p className="soft-copy analysis-shell-description">
                       Najwazniejsze wnioski, decyzje i kolejne kroki zebrane w jednym miejscu.
                     </p>
+                    {analysisStatusMeta ? (
+                      <div
+                        className={`analysis-source-status ${analysisStatusMeta.tone}`}
+                        role="status"
+                        aria-label="Status analizy AI"
+                      >
+                        <span>{analysisStatusMeta.label}</span>
+                        <small>{analysisStatusMeta.description}</small>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="analysis-shell-metrics" aria-label="Podsumowanie spotkania">
                     <div className="analysis-shell-metric">

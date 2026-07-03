@@ -80,4 +80,49 @@ describe('MetricsService', () => {
     );
     expect(summary.capabilityModes['meetingAnalysis:fallback']).toBeGreaterThanOrEqual(2);
   });
+
+  test('records AI fallback counts by workspace, endpoint, and reason', () => {
+    MetricsService.observeAiAnalysis({
+      workspaceId: 'ws_metrics',
+      endpoint: 'media.analyze',
+      source: 'fallback',
+    });
+    MetricsService.observeAiAnalysis({
+      workspaceId: 'ws_metrics',
+      endpoint: 'media.analyze',
+      source: 'provider',
+    });
+    MetricsService.observeAiFallback({
+      workspaceId: 'ws_metrics',
+      endpoint: 'media.analyze',
+      reason: 'no-key',
+      mode: 'no-key',
+    });
+    MetricsService.observeAiFallback({
+      workspaceId: 'ws_metrics',
+      endpoint: 'media.analyze',
+      reason: 'provider-error',
+      mode: 'fallback',
+    });
+
+    const summary = MetricsService.getJsonSummary();
+
+    expect(summary.aiFallbacks).toEqual(
+      expect.objectContaining({
+        total: expect.any(Number),
+        analysisTotal: expect.any(Number),
+        fallbackRate: expect.any(Number),
+        analysisCounts: expect.objectContaining({
+          'ws_metrics:media_analyze:fallback': expect.any(Number),
+          'ws_metrics:media_analyze:provider': expect.any(Number),
+        }),
+        byWorkspace: expect.objectContaining({ ws_metrics: expect.any(Number) }),
+        byEndpoint: expect.objectContaining({ media_analyze: expect.any(Number) }),
+        byReason: expect.objectContaining({
+          'no-key': expect.any(Number),
+          'provider-error': expect.any(Number),
+        }),
+      })
+    );
+  });
 });
