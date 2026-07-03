@@ -1843,6 +1843,11 @@ describe('Database - Additional Coverage Tests', () => {
 
     test('updateWorkspaceMemberRole updates role to valid value', async () => {
       await db._execute(
+        `INSERT OR REPLACE INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        ['ws1', 'Workspace 1', 'u1', 'ROLE01', new Date().toISOString(), new Date().toISOString()]
+      );
+      await db._execute(
         'INSERT OR REPLACE INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, ?, ?)',
         ['ws1', 'u1', 'member', new Date().toISOString()]
       );
@@ -1854,6 +1859,11 @@ describe('Database - Additional Coverage Tests', () => {
     });
 
     test('updateWorkspaceMemberRole clamps invalid role to member', async () => {
+      await db._execute(
+        `INSERT OR REPLACE INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        ['ws1', 'Workspace 1', 'u1', 'ROLE01', new Date().toISOString(), new Date().toISOString()]
+      );
       await db._execute(
         'INSERT OR REPLACE INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, ?, ?)',
         ['ws1', 'u1', 'admin', new Date().toISOString()]

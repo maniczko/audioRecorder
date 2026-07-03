@@ -1196,7 +1196,13 @@ export class Database {
 
   async workspaceIdsForUser(userId: string): Promise<string[]> {
     const rows = await this._query(
-      'SELECT workspace_id FROM workspace_members WHERE user_id = ? ORDER BY joined_at ASC',
+      `
+        SELECT workspace_members.workspace_id
+        FROM workspace_members
+        JOIN workspaces ON workspaces.id = workspace_members.workspace_id
+        WHERE workspace_members.user_id = ?
+        ORDER BY workspace_members.joined_at ASC
+      `,
       [userId]
     );
     return rows.map((row) => row.workspace_id);
@@ -1584,10 +1590,15 @@ export class Database {
   }
 
   async getMembership(workspaceId: string, userId: string): Promise<any> {
-    return this._get('SELECT * FROM workspace_members WHERE workspace_id = ? AND user_id = ?', [
-      workspaceId,
-      userId,
-    ]);
+    return this._get(
+      `
+        SELECT workspace_members.*
+        FROM workspace_members
+        JOIN workspaces ON workspaces.id = workspace_members.workspace_id
+        WHERE workspace_members.workspace_id = ? AND workspace_members.user_id = ?
+      `,
+      [workspaceId, userId]
+    );
   }
 
   async selectWorkspaceForUser(userId: string, preferredWorkspaceId: string = ''): Promise<string> {
