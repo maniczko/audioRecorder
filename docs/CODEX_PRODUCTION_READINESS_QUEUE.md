@@ -113,6 +113,19 @@ When that PR is merged, the workflow:
 4. Checks the issue line in `#1263`.
 5. Dispatches the next unchecked issue.
 
+## Audio E2E readiness
+
+Issue `#1241` adds a dedicated deterministic browser audio gate:
+
+```powershell
+pnpm run test:e2e:audio
+```
+
+The runner starts Playwright with `PLAYWRIGHT_MEDIA_PROVIDER=remote`, mocks browser
+capture APIs instead of using real microphone hardware, and exercises record,
+pause, resume, stop, upload, processing, retry, transcript attach, and fixture
+audio import paths.
+
 ## Blocked work
 
 If Codex cannot complete an issue:
