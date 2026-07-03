@@ -46,6 +46,44 @@ describe('Database (Async Worker SQLite)', () => {
     expect(result).toBeNull();
   });
 
+  test('Regression: Issue #1403 - ignores orphan workspace memberships during bootstrap', async () => {
+    const timestamp = new Date().toISOString();
+    const userId = `user_orphan_${Date.now()}`;
+    const validWorkspaceId = `workspace_valid_${Date.now()}`;
+    const orphanWorkspaceId = `workspace_orphan_${Date.now()}`;
+
+    await db._execute(
+      `INSERT INTO users (
+        id, email, password_hash, name, provider, google_sub, google_email,
+        recovery_code_hash, recovery_code_expires_at, profile_json, created_at, updated_at
+      ) VALUES (?, ?, '', 'Orphan Test', 'local', '', ?, '', '', '{}', ?, ?)`,
+      [`${userId}`, `${userId}@example.test`, `${userId}@example.test`, timestamp, timestamp]
+    );
+    await db._execute(
+      `INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)
+       VALUES (?, 'Valid Workspace', ?, ?, ?, ?)`,
+      [validWorkspaceId, userId, `INV${String(Date.now()).slice(-8)}`, timestamp, timestamp]
+    );
+    await db._execute(
+      `INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at)
+       VALUES (?, ?, 'owner', ?)`,
+      [orphanWorkspaceId, userId, timestamp]
+    );
+    await db._execute(
+      `INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at)
+       VALUES (?, ?, 'owner', ?)`,
+      [validWorkspaceId, userId, timestamp]
+    );
+
+    await expect(db.getMembership(orphanWorkspaceId, userId)).resolves.toBeNull();
+
+    const payload = await db.buildSessionPayload(userId, orphanWorkspaceId);
+    expect(payload.workspaceId).toBe(validWorkspaceId);
+    await expect(
+      db._get('SELECT * FROM workspace_state WHERE workspace_id = ?', [orphanWorkspaceId])
+    ).resolves.toBeNull();
+  });
+
   test("should persist data across simulated 'deploys' (process restarts)", async () => {
     const dbPath = path.join(testUploadDir, 'data.sqlite');
 

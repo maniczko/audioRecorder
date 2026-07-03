@@ -200,6 +200,19 @@ describe('monitoring error groups', () => {
     expect(groups).toHaveLength(0);
   });
 
+  it('ignores expected Railway invalid-login auth failures', () => {
+    const groups = extractRailwayLogGroups([
+      {
+        level: 'error',
+        service: 'voicelog-server',
+        message:
+          '2026-07-02T20:03:24.742922037Z [ERRO] APP ERROR STACK data={"error":{"name":"Error","message":"Niepoprawny email lub haslo.","statusCode":401}} timestamp="2026-07-02T20:03:24.733Z" service="voicelog-server"',
+      },
+    ]);
+
+    expect(groups).toHaveLength(0);
+  });
+
   it('keeps real Railway runtime errors actionable after noise filtering', () => {
     const groups = extractRailwayLogGroups([
       { level: 'info', message: '[INFO] [REQ] GET /health - 200 [40ms]' },

@@ -297,6 +297,13 @@ export function isActionableRailwayLogEntry(entry) {
     return false;
   }
 
+  if (
+    /\bstatuscode"?\s*:?\s*401\b/i.test(message) &&
+    /niepoprawny email lub haslo/i.test(message)
+  ) {
+    return false;
+  }
+
   return /\b(error|fatal|exception|failed|failure|unhandled|crash|timeout)\b/i.test(lowerMessage);
 }
 
