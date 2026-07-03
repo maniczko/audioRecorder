@@ -37,6 +37,8 @@ tags:
     description: Frontend error reporting
   - name: Digest
     description: Email digest notifications
+  - name: AI
+    description: AI proxy endpoints with validated request contracts
 
 security:
   - BearerAuth: []
@@ -409,10 +411,11 @@ paths:
                 meetingId:
                   type: string
                 contentType:
-                  type: string
+                  $ref: '#/components/schemas/AudioContentType'
                 total:
                   type: integer
                   minimum: 1
+                  maximum: 600
       responses:
         '200':
           description: Recording finalized or existing asset returned idempotently
@@ -453,6 +456,12 @@ paths:
                     example: recordingId
         '400':
           description: Missing workspace ID
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   /media/recordings/{recordingId}/transcribe:
     post:
@@ -484,7 +493,7 @@ paths:
                 workspaceId:
                   type: string
                 processingMode:
-                  type: string
+                  $ref: '#/components/schemas/ProcessingMode'
       responses:
         '202':
           description: Transcription queued or active job returned idempotently
@@ -506,6 +515,12 @@ paths:
                   idempotencyScope:
                     type: string
                     example: recordingId
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
     get:
       tags: [Media]
       summary: Get transcription status/result
@@ -551,7 +566,7 @@ paths:
                   type: boolean
                   description: Required to retry an already completed non-empty transcription.
                 processingMode:
-                  type: string
+                  $ref: '#/components/schemas/ProcessingMode'
       responses:
         '202':
           description: Retry queued or active job returned idempotently
@@ -575,6 +590,12 @@ paths:
                     example: recordingId
         '409':
           description: Transcription is already completed and force=true is required.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   /media/recordings/{recordingId}/sketchnote:
     post:
@@ -618,9 +639,21 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceCoachingRequest'
       responses:
         '200':
           description: Voice coaching text
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   /media/recordings/{recordingId}/acoustic-features:
     post:
@@ -646,9 +679,21 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceProfileFromSpeakerRequest'
       responses:
         '201':
           description: Voice profile created
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   /media/recordings/{recordingId}/rediarize:
     post:
@@ -670,9 +715,21 @@ paths:
     post:
       tags: [Media]
       summary: Analyze meeting transcript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiAnalyzeRequest'
       responses:
         '200':
           description: Analysis result
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   /media/recordings/{recordingId}:
     delete:
@@ -713,6 +770,12 @@ paths:
           description: Unauthorized
         '413':
           description: Payload too large
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Voice Profiles
@@ -931,6 +994,66 @@ paths:
         '200':
           description: Digest sent
 
+  /ai/person-profile:
+    post:
+      tags: [AI]
+      summary: Generate AI person profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiPersonProfileRequest'
+      responses:
+        '200':
+          description: Profile analysis or no-key fallback
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /ai/suggest-tasks:
+    post:
+      tags: [AI]
+      summary: Suggest tasks from transcript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiSuggestTasksRequest'
+      responses:
+        '200':
+          description: Suggested tasks or empty fallback
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /ai/search:
+    post:
+      tags: [AI]
+      summary: Semantic command search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiSearchRequest'
+      responses:
+        '200':
+          description: Search matches or no-key fallback
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Components
 # ─────────────────────────────────────────────────────────────────────────────
@@ -942,6 +1065,206 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ValidationError:
+      type: object
+      required: [code, message, stage, details]
+      properties:
+        code:
+          type: string
+          enum: [validation_failed]
+        message:
+          type: string
+        stage:
+          type: string
+          enum: [validation]
+        details:
+          type: array
+          items:
+            type: object
+            required: [path, code, message]
+            properties:
+              path:
+                type: string
+              code:
+                type: string
+              message:
+                type: string
+
+    ProcessingMode:
+      type: string
+      enum: [fast, full]
+
+    AudioContentType:
+      type: string
+      description: Supported audio content type.
+      pattern: '^(audio/|multipart/form-data|video/webm$|application/octet-stream$)'
+
+    TranscriptSegmentInput:
+      type: object
+      required: [text]
+      properties:
+        speakerName:
+          type: string
+          maxLength: 160
+        speakerId:
+          oneOf:
+            - type: string
+            - type: integer
+              minimum: 0
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        meetingTitle:
+          type: string
+          maxLength: 240
+
+    AiAnalyzeRequest:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        meetingId:
+          type: string
+        recordingId:
+          type: string
+        meeting:
+          type: object
+          additionalProperties: true
+        segments:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            additionalProperties: true
+
+    AiPersonProfileRequest:
+      type: object
+      required: [personName, allSegments]
+      properties:
+        workspaceId:
+          type: string
+        meetingId:
+          type: string
+        personName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        meetings:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: true
+        allSegments:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/TranscriptSegmentInput'
+
+    AiSuggestTasksRequest:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        meetingId:
+          type: string
+        transcript:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/TranscriptSegmentInput'
+        people:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                maxLength: 160
+              email:
+                type: string
+                maxLength: 254
+
+    AiSearchRequest:
+      type: object
+      required: [query, items]
+      properties:
+        workspaceId:
+          type: string
+        meetingId:
+          type: string
+        query:
+          type: string
+          minLength: 2
+          maxLength: 200
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required: [id, title]
+            properties:
+              id:
+                type: string
+                minLength: 1
+                maxLength: 160
+              title:
+                type: string
+                minLength: 1
+                maxLength: 240
+              subtitle:
+                type: string
+                maxLength: 500
+              type:
+                type: string
+                maxLength: 80
+              group:
+                type: string
+                maxLength: 120
+
+    VoiceProfileFromSpeakerRequest:
+      type: object
+      required: [speakerId, speakerName]
+      properties:
+        speakerId:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 160
+            - type: integer
+              minimum: 0
+        speakerName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        segments:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: true
+
+    VoiceCoachingRequest:
+      type: object
+      required: [speakerId]
+      properties:
+        speakerId:
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 160
+            - type: integer
+              minimum: 0
+        segments:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: true
+
     User:
       type: object
       properties:

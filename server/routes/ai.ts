@@ -9,7 +9,9 @@ import type {
 import type { AppMiddlewares } from './middleware.ts';
 import type { AppServices } from './middleware.ts';
 import { config } from '../config.ts';
+import { aiRequestSchemaForPath } from '../lib/apiRequestSchemas.ts';
 import { createAiQuotaStore, type AiQuotaStore } from '../lib/aiQuotaStore.ts';
+import { validatePayload } from '../lib/requestValidation.ts';
 import { logger } from '../logger.ts';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -241,7 +243,12 @@ export function createAiRoutes(services: AppServices, middlewares: AppMiddleware
         return c.json({ message: 'Brak uzytkownika w sesji.' }, 401);
       }
 
-      const body = await c.req.json().catch(() => ({}));
+      const rawBody = await c.req.json().catch(() => ({}));
+      const validatedBody = validatePayload(c, aiRequestSchemaForPath(c.req.path), rawBody);
+      if (validatedBody.ok === false) {
+        return validatedBody.response;
+      }
+      const body = validatedBody.data;
       c.set('aiBody', body);
 
       const endpoint = getEndpointFromPath(c.req.path);

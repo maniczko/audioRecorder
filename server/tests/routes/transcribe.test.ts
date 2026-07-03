@@ -51,6 +51,22 @@ describe('Transcribe Routes', () => {
     expect(await res.json()).toEqual({ message: 'Payload too large' });
   });
 
+  it('rejects non-audio live transcription content before provider call', async () => {
+    const res = await app.request('/transcribe/live', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'text/plain' },
+      body: Buffer.alloc(2000, 1),
+    });
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'validation_failed',
+      stage: 'validation',
+      details: expect.arrayContaining([expect.objectContaining({ path: 'contentType' })]),
+    });
+    expect(mockTranscriptionService.transcribeLiveChunk).not.toHaveBeenCalled();
+  });
+
   it('writes temp file, transcribes, and cleans up successful live chunk', async () => {
     mockTranscriptionService.transcribeLiveChunk = vi.fn().mockResolvedValue('hello live');
 
