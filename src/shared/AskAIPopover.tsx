@@ -39,7 +39,7 @@ export default function AskAIPopover({ currentWorkspace, onClose }) {
     try {
       const ms = await createMediaService();
       const res = await ms.askRAG(currentWorkspace.id, query);
-      setAnswer(res?.answer || 'Brak odpowiedzi');
+      setAnswer(typeof res === 'string' ? res : res?.answer || 'Brak odpowiedzi');
     } catch (err) {
       setAnswer('Wystąpił błąd podczas przeszukiwania archiwalnych nagrań.');
     } finally {

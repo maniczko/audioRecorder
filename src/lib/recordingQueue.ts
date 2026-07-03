@@ -247,11 +247,17 @@ export interface RecordingQueueItem {
   queuedPosition?: number | null;
   processingAgeMs?: number | null;
   retryAfterMs?: number | null;
+  errorCode?: string;
+  retryable?: boolean;
+  audioValidation?: unknown;
+  sttAttempts?: unknown[];
   recordingConsent?: RecordingConsentMetadata | null;
   /** Timestamp (ISO string) when processing started — used to compute elapsed processing time */
   lastReconciledAt?: number;
   processingStartedAt?: string;
 }
+
+export type RecordingQueueItemUpdate = Partial<RecordingQueueItem>;
 
 export interface RecordingQueueSummary {
   total: number;
@@ -277,7 +283,7 @@ interface CreateRecordingQueueItemInput {
   recordingConsent?: RecordingConsentMetadata | null;
 }
 
-export function normalizeRecordingPipelineStatus(value) {
+export function normalizeRecordingPipelineStatus(value: unknown): RecordingPipelineStatus {
   if (value === 'completed') {
     return 'done';
   }
@@ -375,6 +381,15 @@ export function normalizeRecordingQueue(queue: unknown[] = []): RecordingQueueIt
         pipelineBuildTime: current.pipelineBuildTime || '',
         audioQuality: current.audioQuality || null,
         transcriptionDiagnostics: current.transcriptionDiagnostics || null,
+        activeJob: Boolean(current.activeJob),
+        queuedPosition: typeof current.queuedPosition === 'number' ? current.queuedPosition : null,
+        processingAgeMs:
+          typeof current.processingAgeMs === 'number' ? current.processingAgeMs : null,
+        retryAfterMs: typeof current.retryAfterMs === 'number' ? current.retryAfterMs : null,
+        errorCode: String(current.errorCode || ''),
+        retryable: Boolean(current.retryable),
+        audioValidation: current.audioValidation || null,
+        sttAttempts: Array.isArray(current.sttAttempts) ? current.sttAttempts : [],
         recordingConsent: current.recordingConsent || null,
         lastReconciledAt: Math.max(0, Number(current.lastReconciledAt) || 0),
       };
@@ -439,7 +454,7 @@ export function removeRecordingQueueItemsForMeeting(
 export function updateRecordingQueueItem(
   queue: unknown[],
   recordingId: string,
-  updates: Partial<RecordingQueueItem>
+  updates: RecordingQueueItemUpdate
 ): RecordingQueueItem[] {
   const existing = normalizeRecordingQueue(queue).find((item) => item.recordingId === recordingId);
   if (!existing) {

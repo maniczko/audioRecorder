@@ -2,12 +2,20 @@ import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
   isWorkspaceMissingErrorMessage,
   normalizeRecordingPipelineStatus,
+  type RecordingQueueItemUpdate,
+  type RecordingQueueMeetingLike,
   type RecordingPipelineStatus,
   type RecordingQueueItem,
 } from '../lib/recordingQueue';
 import { addQueueBreadcrumb, captureQueueException, type QueueSentryContext } from '../sentry';
 import type { TranscriptionStatusPayload } from '../shared/types';
 import type { MeetingAnalysis, TranscriptSegment } from '../shared/types';
+import type {
+  MediaService,
+  MediaServiceMeetingTarget,
+  MediaTranscriptionJobResult,
+  PersistRecordingAudioResult,
+} from '../services/mediaService';
 
 type QueueSnapshot = {
   progressPercent: number;
@@ -15,6 +23,24 @@ type QueueSnapshot = {
 };
 
 type QueueStatePatch = Record<string, unknown>;
+
+export type QueueMeetingTarget = MediaServiceMeetingTarget & RecordingQueueMeetingLike;
+
+export type QueueAttachedRecording = {
+  id: string;
+  createdAt: string;
+  duration: number;
+  transcript: TranscriptionStatusPayload['segments'];
+  pipelineStatus: 'done';
+  processingStartedAt?: string | null;
+  processingEndedAt?: string;
+  [key: string]: unknown;
+};
+
+export type AttachCompletedRecording = (
+  meetingId: QueueMeetingTarget | string,
+  recording: QueueAttachedRecording
+) => boolean | void;
 
 export const BACKGROUND_TRANSCRIPTION_PENDING_MESSAGE =
   'Transkrypcja nadal trwa w tle. Odswiezymy status automatycznie.';
@@ -30,15 +56,15 @@ const TRANSCRIPTION_MAX_HARD_TIMEOUT_MS = 90 * 60 * 1000;
 
 export interface QueueProcessorContext {
   nextItem: RecordingQueueItem;
-  resolveMeetingForQueueItem: (item: RecordingQueueItem) => any;
-  attachCompletedRecording: (meetingId: any, recording: any) => boolean | void;
+  resolveMeetingForQueueItem: (item: RecordingQueueItem) => QueueMeetingTarget | null | undefined;
+  attachCompletedRecording: AttachCompletedRecording;
   setCurrentSegments?: (segments: TranscriptionStatusPayload['segments']) => void;
-  updateQueueItem: (recordingId: string, updates: Record<string, unknown>) => void;
+  updateQueueItem: (recordingId: string, updates: RecordingQueueItemUpdate) => void;
   removeQueueItem: (recordingId: string) => void;
   setState: (patch: QueueStatePatch) => void;
   getState: () => { lastQueueErrorKey?: string };
   getAudioBlob: (recordingId: string) => Promise<Blob | null | undefined>;
-  createMediaService: () => any;
+  createMediaService: () => MediaService;
   filterSilence: (blob: Blob) => Promise<{
     blob: Blob;
     originalDurationS: number;
@@ -47,22 +73,22 @@ export interface QueueProcessorContext {
   }>;
   enhanceAndReencode: (blob: Blob, options: Record<string, unknown>) => Promise<Blob>;
   analyzeMeeting: (input: {
-    meeting: any;
+    meeting: QueueMeetingTarget;
     segments: TranscriptSegment[];
     speakerNames: Record<string, string>;
-    diarization: any;
+    diarization: unknown;
   }) => Promise<MeetingAnalysis>;
   getPipelineSnapshot: (
     status: RecordingPipelineStatus | string | null | undefined,
     upstreamProgress?: number | null,
     upstreamMessage?: string
   ) => QueueSnapshot;
-  normalizeTranscriptionResponse: (response: any) => any;
-  buildFallbackAnalysis: (message: string, diarization: any) => any;
+  normalizeTranscriptionResponse: (response: unknown) => StartedTranscription;
+  buildFallbackAnalysis: (message: string, diarization: unknown) => MeetingAnalysis;
   emptyTranscriptMessage: string;
-  toUserFacingQueueError: (error: any) => string;
-  isExpectedDomainFailure: (error: any) => boolean;
-  isTransientNetworkError: (error: any) => boolean;
+  toUserFacingQueueError: (error: unknown) => string;
+  isExpectedDomainFailure: (error: unknown) => boolean;
+  isTransientNetworkError: (error: unknown) => boolean;
   maxAutoRetries: number;
   retryDelaysMs: number[];
   sleep?: (ms: number) => Promise<void>;
@@ -78,7 +104,7 @@ type StartedTranscription = TranscriptionStatusPayload & {
   pipelineVersion?: string;
   pipelineBuildTime?: string;
   audioQuality?: unknown;
-  transcriptionDiagnostics?: Record<string, any> | null;
+  transcriptionDiagnostics?: TranscriptionStatusPayload['transcriptionDiagnostics'] | null;
   transcriptOutcome?: string;
   emptyReason?: string;
   userMessage?: string;
@@ -147,7 +173,7 @@ function maxTranscriptEndSeconds(segments: unknown) {
 function resolveRecordingDurationSeconds(
   nextItem: RecordingQueueItem,
   transcription: Partial<StartedTranscription> | null | undefined,
-  uploadResult: { durationMs?: unknown } | null
+  uploadResult: PersistRecordingAudioResult | null
 ) {
   const candidates = [
     positiveNumber(uploadResult?.durationMs) / 1000,
@@ -165,8 +191,8 @@ function getPollingSleepMs(value: unknown) {
   return Math.max(1500, Math.min(10_000, retryAfterMs));
 }
 
-function getTransientRetryDelayMs(error: any, fallbackDelayMs: number) {
-  const retryAfterMs = Number(error?.retryAfterMs);
+function getTransientRetryDelayMs(error: unknown, fallbackDelayMs: number) {
+  const retryAfterMs = Number((error as { retryAfterMs?: unknown } | null)?.retryAfterMs);
   if (Number.isFinite(retryAfterMs) && retryAfterMs > 0) {
     return Math.max(5_000, Math.min(5 * 60_000, Math.round(retryAfterMs)));
   }
@@ -231,8 +257,15 @@ export function isRemoteRecordingMissingError(
   );
 }
 
+function getRuntimeEnv(): Record<string, unknown> {
+  return ((import.meta as ImportMeta & { env?: Record<string, unknown> }).env || {}) as Record<
+    string,
+    unknown
+  >;
+}
+
 export function shouldReportBackgroundTranscriptionPendingToConsole(
-  env: Record<string, unknown> = ((import.meta as any).env || {}) as Record<string, unknown>
+  env: Record<string, unknown> = getRuntimeEnv()
 ) {
   return env.VITE_VOICELOG_DEBUG_QUEUE === 'true' || env.PROD !== true;
 }
@@ -331,9 +364,9 @@ export async function attachRecordingWithRetry({
   retries = 7,
   retryDelayMs = 2000,
 }: {
-  attachCompletedRecording: (meetingId: any, recording: any) => boolean | void;
-  meetingId: any;
-  recording: any;
+  attachCompletedRecording: AttachCompletedRecording;
+  meetingId: QueueMeetingTarget | string;
+  recording: QueueAttachedRecording;
   sleep?: (ms: number) => Promise<void>;
   retries?: number;
   retryDelayMs?: number;
@@ -349,7 +382,10 @@ export async function attachRecordingWithRetry({
   return attached !== false;
 }
 
-function getAttachTarget(target: any, nextItem?: RecordingQueueItem) {
+function getAttachTarget(
+  target: QueueMeetingTarget | string | null | undefined,
+  nextItem?: RecordingQueueItem
+): QueueMeetingTarget | string | null | undefined {
   if (target && typeof target === 'object' && target.id) {
     return {
       ...target,
@@ -370,11 +406,17 @@ function getAttachTarget(target: any, nextItem?: RecordingQueueItem) {
   return target;
 }
 
-function resolveWorkspaceId(target: any, nextItem: RecordingQueueItem) {
+function resolveWorkspaceId(
+  target: QueueMeetingTarget | null | undefined,
+  nextItem: RecordingQueueItem
+) {
   return String(target?.workspaceId || nextItem.workspaceId || '').trim();
 }
 
-function hasRecoverableAttachContext(target: any, nextItem: RecordingQueueItem) {
+function hasRecoverableAttachContext(
+  target: QueueMeetingTarget | null | undefined,
+  nextItem: RecordingQueueItem
+) {
   const attachTarget = getAttachTarget(target, nextItem);
   if (!attachTarget || typeof attachTarget !== 'object' || !attachTarget.id) {
     return false;
@@ -435,7 +477,7 @@ export async function waitForCompletedTranscription({
   softPollingMs = TRANSCRIPTION_SOFT_POLLING_MS,
 }: {
   nextItem: RecordingQueueItem;
-  mediaService: any;
+  mediaService: MediaService;
   started: StartedTranscription;
   startStatus: RecordingPipelineStatus;
   updateQueueItem: QueueProcessorContext['updateQueueItem'];
@@ -479,8 +521,8 @@ export async function waitForCompletedTranscription({
       ) as StartedTranscription;
       lastStatus = result;
       consecutiveErrors = 0;
-    } catch (pollError: any) {
-      if (Number(pollError?.status) === 404) {
+    } catch (pollError: unknown) {
+      if (Number((pollError as { status?: unknown } | null)?.status) === 404) {
         throw new RemoteRecordingMissingError(pollError);
       }
 
@@ -494,7 +536,7 @@ export async function waitForCompletedTranscription({
       ) {
         console.warn(
           `[Pipeline] Status poll error (${consecutiveErrors}/${maxConsecutiveErrors}, total ${totalPollErrors}/${maxTotalPollErrors}):`,
-          pollError?.message
+          (pollError as { message?: string } | null)?.message
         );
       }
 
@@ -528,9 +570,18 @@ export async function waitForCompletedTranscription({
         audioQuality: result?.audioQuality || nextItem.audioQuality || null,
         transcriptionDiagnostics: result?.transcriptionDiagnostics || null,
       });
-      const failedError: any = new Error(
+      const failedError = new Error(
         result?.errorMessage || 'Serwer nie zakonczyl transkrypcji.'
-      );
+      ) as Error & {
+        audioQuality?: unknown;
+        transcriptionDiagnostics?: TranscriptionStatusPayload['transcriptionDiagnostics'] | null;
+        errorCode?: string;
+        code?: string;
+        retryable?: boolean;
+        retryAfterMs?: unknown;
+        audioValidation?: unknown;
+        sttAttempts?: unknown[];
+      };
       failedError.audioQuality = result?.audioQuality || null;
       failedError.transcriptionDiagnostics = result?.transcriptionDiagnostics || null;
       failedError.errorCode =
@@ -682,7 +733,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       return;
     }
 
-    let uploadResult: { durationMs?: unknown; audioQuality?: unknown } | null = null;
+    let uploadResult: PersistRecordingAudioResult | null = null;
     if (!nextItem.uploaded) {
       let uploadBlob: Blob | null = localBlob as Blob;
       let vadRemovedS = 0;
@@ -791,13 +842,13 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       pipelineStage: canReuseRemoteUpload ? 'retry' : 'job_start',
     });
 
-    let startedRaw: unknown;
+    let startedRaw: MediaTranscriptionJobResult | null;
     if (canReuseRemoteUpload) {
-      let currentRaw: unknown;
+      let currentRaw: MediaTranscriptionJobResult | null;
       try {
         currentRaw = await mediaService.getTranscriptionJobStatus(nextItem.recordingId);
-      } catch (statusError: any) {
-        if (Number(statusError?.status) === 404) {
+      } catch (statusError: unknown) {
+        if (Number((statusError as { status?: unknown } | null)?.status) === 404) {
           throw new RemoteRecordingMissingError(statusError);
         }
         throw statusError;
@@ -827,7 +878,11 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       workspaceId,
       pipelineStage: normalizeRecordingPipelineStatus(started?.pipelineStatus),
       providerId: transcriptionProviderId,
-      jobId: String((started as any)?.jobId || (started as any)?.durableJobId || ''),
+      jobId: String(
+        (started as { jobId?: unknown; durableJobId?: unknown })?.jobId ||
+          (started as { durableJobId?: unknown })?.durableJobId ||
+          ''
+      ),
     });
 
     updateQueueItem(nextItem.recordingId, {
@@ -847,7 +902,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     const unsubscribeProgress = mediaService.subscribeToTranscriptionProgress?.(
       nextItem.recordingId,
-      (payload: any) => {
+      (payload) => {
         if (!payload || !payload.message) return;
         const progressSnapshot = getPipelineSnapshot(
           payload?.status || 'processing',
@@ -912,7 +967,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         id: nextItem.recordingId,
         createdAt: nextItem.createdAt || new Date().toISOString(),
         duration: resolvedDurationSeconds,
-        transcript: [],
+        transcript: [] as TranscriptionStatusPayload['segments'],
         transcriptOutcome: 'empty',
         emptyReason:
           transcription.emptyReason ||
@@ -939,7 +994,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         },
         transcriptionProvider: transcriptionProviderId,
         transcriptionProviderLabel: transcriptionProviderLabel,
-        pipelineStatus: 'done',
+        pipelineStatus: 'done' as const,
         storageMode: mediaService.mode === 'remote' ? 'remote' : 'indexeddb',
         analysis: buildFallbackAnalysis('Nie wykryto wypowiedzi w nagraniu.', {
           speakerNames: transcription.speakerNames || {},
@@ -951,7 +1006,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
       const attached = await attachRecordingWithRetry({
         attachCompletedRecording,
-        meetingId: getAttachTarget(targetWithWorkspace, nextItem),
+        meetingId: getAttachTarget(targetWithWorkspace, nextItem) ?? targetWithWorkspace,
         recording,
         sleep,
       });
@@ -1025,7 +1080,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         {
           workspaceId,
           pipelineStage: 'ai_analysis',
-          errorCode: (error as any)?.errorCode || (error as any)?.code || 'AI_ANALYSIS_FAILED',
+          errorCode:
+            String((error as { errorCode?: unknown; code?: unknown })?.errorCode || '') ||
+            String((error as { code?: unknown })?.code || '') ||
+            'AI_ANALYSIS_FAILED',
           retryable: true,
         },
         { level: 'warning' }
@@ -1054,7 +1112,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       },
       transcriptionProvider: transcriptionProviderId,
       transcriptionProviderLabel: transcriptionProviderLabel,
-      pipelineStatus: 'done',
+      pipelineStatus: 'done' as const,
       pipelineGitSha: transcription.pipelineGitSha || '',
       pipelineVersion: transcription.pipelineVersion || '',
       pipelineBuildTime: transcription.pipelineBuildTime || '',
@@ -1068,7 +1126,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
 
     const attached = await attachRecordingWithRetry({
       attachCompletedRecording,
-      meetingId: getAttachTarget(targetWithWorkspace, nextItem),
+      meetingId: getAttachTarget(targetWithWorkspace, nextItem) ?? targetWithWorkspace,
       recording,
       sleep,
     });
@@ -1114,7 +1172,18 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
           ? 'Nagranie czeka czesciowo na review.'
           : 'Nagranie zostalo przetworzone.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorDetails = error as
+      | {
+          message?: unknown;
+          errorCode?: unknown;
+          code?: unknown;
+          status?: unknown;
+          statusCode?: unknown;
+          retryAfterMs?: unknown;
+        }
+      | null
+      | undefined;
     if (isBackgroundTranscriptionPendingError(error)) {
       const retryAfterMs = normalizeRetryAfterMs(error.retryAfterMs);
       const status = normalizeRecordingPipelineStatus(error.pipelineStatus || nextItem.status);
@@ -1160,14 +1229,14 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       const delay = getTransientRetryDelayMs(error, fallbackDelay);
       console.warn(
         `[queue] Transient network error (retry ${retryCount + 1}/${maxAutoRetries}), backoff ${delay}ms`,
-        error?.message
+        errorDetails?.message
       );
       updateQueueItem(nextItem.recordingId, {
         status: 'queued',
         retryCount: retryCount + 1,
         backoffUntil: now() + delay,
         lastErrorMessage: toUserFacingQueueError(error),
-        errorCode: error?.errorCode || error?.code || '',
+        errorCode: String(errorDetails?.errorCode || errorDetails?.code || ''),
         retryAfterMs: delay,
         errorMessage: '',
       });
@@ -1176,7 +1245,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         'Queue item scheduled for retry.',
         {
           pipelineStage: 'retry',
-          errorCode: error?.errorCode || error?.code || 'TRANSIENT_QUEUE_ERROR',
+          errorCode:
+            String(errorDetails?.errorCode || '') ||
+            String(errorDetails?.code || '') ||
+            'TRANSIENT_QUEUE_ERROR',
           retryable: true,
           retryCount: retryCount + 1,
           retryAfterMs: delay,
@@ -1196,13 +1268,19 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
           error,
           buildQueueSentryContext(nextItem, {
             pipelineStage: 'queue_failure',
-            errorCode: error?.errorCode || error?.code || 'RECORDING_QUEUE_FAILED',
+            errorCode:
+              String(errorDetails?.errorCode || '') ||
+              String(errorDetails?.code || '') ||
+              'RECORDING_QUEUE_FAILED',
             retryable: false,
-            status: error?.status || error?.statusCode || undefined,
+            status: errorDetails?.status || errorDetails?.statusCode || undefined,
           }),
           {
             level: 'error',
-            fingerprint: ['recording-queue', String(error?.errorCode || error?.code || 'failed')],
+            fingerprint: [
+              'recording-queue',
+              String(errorDetails?.errorCode || errorDetails?.code || 'failed'),
+            ],
           }
         );
       } else {
@@ -1211,7 +1289,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
           'Expected recording queue failure handled.',
           {
             pipelineStage: 'queue_failure_expected',
-            errorCode: error?.errorCode || error?.code || 'EXPECTED_QUEUE_FAILURE',
+            errorCode:
+              String(errorDetails?.errorCode || '') ||
+              String(errorDetails?.code || '') ||
+              'EXPECTED_QUEUE_FAILURE',
             retryable: false,
           },
           { level: 'warning' }
@@ -1221,10 +1302,10 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     }
 
     const isPermanent =
-      error?.status === 409 ||
+      Number(errorDetails?.status) === 409 ||
       isRemoteRecordingMissingError(error) ||
       isWorkspaceMissingErrorMessage(userFacingMessage) ||
-      isWorkspaceMissingErrorMessage(error?.message) ||
+      isWorkspaceMissingErrorMessage(errorDetails?.message) ||
       (!isTransientNetworkError(error) && retryCount >= maxAutoRetries);
 
     updateQueueItem(nextItem.recordingId, {

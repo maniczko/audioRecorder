@@ -10,6 +10,8 @@ import {
   removeRecordingQueueItemsForMeeting,
   updateRecordingQueueItem,
   isWorkspaceMissingErrorMessage,
+  type RecordingQueueItem,
+  type RecordingQueueItemUpdate,
 } from '../lib/recordingQueue';
 import { getAudioBlob } from '../lib/audioStore';
 import { analyzeMeeting } from '../lib/analysis';
@@ -21,10 +23,72 @@ import {
   normalizeMediaTranscriptionResponse,
   type MediaTranscriptionResponse,
 } from '../shared/contracts';
-import type { TranscriptionStatusPayload } from '../shared/types';
-import type { RecordingPipelineStatus } from '../lib/recordingQueue';
+import type { MeetingAnalysis, TranscriptionStatusPayload } from '../shared/types';
+import type { RecordingPipelineStatus, RecordingQueueMeetingLike } from '../lib/recordingQueue';
 import { isTransportErrorMessage } from '../lib/transportErrors';
-import { isRemoteRecordingMissingError, processRecordingQueueItem } from './recorderQueueProcessor';
+import {
+  isRemoteRecordingMissingError,
+  processRecordingQueueItem,
+  type AttachCompletedRecording,
+  type QueueMeetingTarget,
+} from './recorderQueueProcessor';
+
+type RecorderAnalysisStatus = string;
+type RecordingQueueUpdater =
+  RecordingQueueItem[] | ((queue: RecordingQueueItem[]) => RecordingQueueItem[]);
+type QueueMeetingResolver = (item: RecordingQueueItem) => QueueMeetingTarget | null | undefined;
+type PersistedRecorderStore = Partial<RecorderStoreState> & {
+  recordingQueue?: unknown[];
+};
+
+interface StoredRecordingLike {
+  id?: string;
+  createdAt?: string;
+  duration?: number;
+  contentType?: string;
+  mimeType?: string;
+  transcript?: TranscriptionStatusPayload['segments'];
+  pipelineStatus?: string;
+  transcriptionStatus?: string;
+  status?: string;
+  transcriptOutcome?: string;
+  audioQuality?: unknown;
+  [key: string]: unknown;
+}
+
+export interface RecorderStoreState {
+  recordingQueue: RecordingQueueItem[];
+  analysisStatus: RecorderAnalysisStatus;
+  recordingMessage: string;
+  pipelineProgressPercent: number;
+  pipelineStageLabel: string;
+  isProcessingQueue: boolean;
+  lastQueueErrorKey: string;
+  __recordingQueueNeedsPersistence?: boolean;
+}
+
+export interface RecorderStoreActions {
+  setRecordingQueue: (updater: RecordingQueueUpdater) => void;
+  updateQueueItem: (recordingId: string, updates: RecordingQueueItemUpdate) => void;
+  removeQueueItem: (recordingId: string) => void;
+  removeQueueItemsForMeeting: (meetingId: string, recordingIds?: string[]) => void;
+  setAnalysisStatus: (status: RecorderAnalysisStatus) => void;
+  setRecordingMessage: (message: string) => void;
+  setPipelineProgress: (progressPercent: number | null | undefined, stageLabel?: string) => void;
+  retryRecordingQueueItem: (recordingId: string) => void;
+  retryStoredRecording: (
+    meeting: RecordingQueueMeetingLike | null | undefined,
+    recording: StoredRecordingLike | null | undefined,
+    options?: { force?: boolean }
+  ) => string | null;
+  processQueue: (
+    resolveMeetingForQueueItem: QueueMeetingResolver,
+    attachCompletedRecording: AttachCompletedRecording,
+    setCurrentSegments?: (segments: TranscriptionStatusPayload['segments']) => void
+  ) => Promise<void>;
+}
+
+export type RecorderStore = RecorderStoreState & RecorderStoreActions;
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => {
@@ -103,19 +167,36 @@ function getPipelineSnapshot(
   };
 }
 
-function buildFallbackAnalysis(message, diarization) {
+function buildFallbackAnalysis(
+  message: string,
+  diarization: { speakerNames?: Record<string, string>; speakerCount?: number } | unknown
+): MeetingAnalysis {
+  const diarizationSnapshot =
+    diarization && typeof diarization === 'object'
+      ? (diarization as { speakerNames?: Record<string, string>; speakerCount?: number })
+      : {};
   return {
     summary: message,
     decisions: [],
     actionItems: [],
+    tasks: [],
     followUps: [],
-    needsCoverage: [],
-    speakerLabels: diarization.speakerNames,
-    speakerCount: diarization.speakerCount,
+    answersToNeeds: [],
+    suggestedTags: [],
+    meetingType: '',
+    energyLevel: '',
+    risks: [],
+    blockers: [],
+    participantInsights: [],
+    tensions: [],
+    keyQuotes: [],
+    suggestedAgenda: [],
+    speakerLabels: diarizationSnapshot.speakerNames,
+    speakerCount: diarizationSnapshot.speakerCount,
   };
 }
 
-function hasCompletedTranscript(recording) {
+function hasCompletedTranscript(recording: StoredRecordingLike | null | undefined) {
   const transcript = Array.isArray(recording?.transcript) ? recording.transcript : [];
   if (transcript.length === 0) {
     return false;
@@ -138,22 +219,21 @@ type ExtendedMediaTranscriptionResponse = MediaTranscriptionResponse & {
   reviewSummary?: unknown;
 };
 
-function normalizeTranscriptionResponse(
-  response: ExtendedMediaTranscriptionResponse | null | undefined
-): TranscriptionStatusPayload & {
+function normalizeTranscriptionResponse(response: unknown): TranscriptionStatusPayload & {
   providerId?: string;
   providerLabel?: string;
   reviewSummary?: unknown;
 } {
-  const normalized = normalizeMediaTranscriptionResponse(response);
+  const typedResponse = response as ExtendedMediaTranscriptionResponse | null | undefined;
+  const normalized = normalizeMediaTranscriptionResponse(typedResponse);
   return {
     ...normalized,
-    segments: Array.isArray(response?.verifiedSegments)
-      ? response.verifiedSegments
+    segments: Array.isArray(typedResponse?.verifiedSegments)
+      ? typedResponse.verifiedSegments
       : normalized.segments,
-    providerId: response?.providerId,
-    providerLabel: response?.providerLabel,
-    reviewSummary: response?.reviewSummary ?? normalized.reviewSummary,
+    providerId: typedResponse?.providerId,
+    providerLabel: typedResponse?.providerLabel,
+    reviewSummary: typedResponse?.reviewSummary ?? normalized.reviewSummary,
   };
 }
 
@@ -167,11 +247,24 @@ function normalizeErrorForMatching(value: unknown) {
     .toLowerCase();
 }
 
-function toUserFacingQueueError(error: any) {
-  const errorMessage = String(error?.message || 'Blad przetwarzania.');
+function toUserFacingQueueError(error: unknown) {
+  const errorDetails = error as
+    | {
+        message?: unknown;
+        errorCode?: unknown;
+        code?: unknown;
+        status?: unknown;
+        transcriptionDiagnostics?: { errorCode?: unknown };
+      }
+    | null
+    | undefined;
+  const errorMessage = String(errorDetails?.message || 'Blad przetwarzania.');
   const normalizedMessage = normalizeErrorForMatching(errorMessage);
   const errorCode = String(
-    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+    errorDetails?.errorCode ||
+      errorDetails?.code ||
+      errorDetails?.transcriptionDiagnostics?.errorCode ||
+      ''
   );
 
   if (isRemoteRecordingMissingError(error)) {
@@ -247,7 +340,7 @@ function toUserFacingQueueError(error: any) {
   }
 
   if (
-    error?.status === 507 ||
+    Number(errorDetails?.status) === 507 ||
     errorMessage.includes('Brak miejsca na dysku') ||
     errorMessage.includes('ENOSPC')
   ) {
@@ -257,10 +350,23 @@ function toUserFacingQueueError(error: any) {
   return errorMessage;
 }
 
-function isExpectedDomainFailure(error: any) {
-  const errorMessage = String(error?.message || '');
+function isExpectedDomainFailure(error: unknown) {
+  const errorDetails = error as
+    | {
+        message?: unknown;
+        errorCode?: unknown;
+        code?: unknown;
+        status?: unknown;
+        transcriptionDiagnostics?: { errorCode?: unknown };
+      }
+    | null
+    | undefined;
+  const errorMessage = String(errorDetails?.message || '');
   const errorCode = String(
-    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+    errorDetails?.errorCode ||
+      errorDetails?.code ||
+      errorDetails?.transcriptionDiagnostics?.errorCode ||
+      ''
   );
   return (
     [
@@ -279,14 +385,27 @@ function isExpectedDomainFailure(error: any) {
     isRemoteRecordingMissingError(error) ||
     isWorkspaceMissingErrorMessage(errorMessage) ||
     errorMessage.includes(RECORDING_WORKSPACE_REQUIRED_MESSAGE) ||
-    error?.status === 409
+    Number(errorDetails?.status) === 409
   );
 }
 
-function isTransientNetworkError(error: any) {
-  const msg = String(error?.message || '');
+function isTransientNetworkError(error: unknown) {
+  const errorDetails = error as
+    | {
+        message?: unknown;
+        errorCode?: unknown;
+        code?: unknown;
+        status?: unknown;
+        transcriptionDiagnostics?: { errorCode?: unknown };
+      }
+    | null
+    | undefined;
+  const msg = String(errorDetails?.message || '');
   const errorCode = String(
-    error?.errorCode || error?.code || error?.transcriptionDiagnostics?.errorCode || ''
+    errorDetails?.errorCode ||
+      errorDetails?.code ||
+      errorDetails?.transcriptionDiagnostics?.errorCode ||
+      ''
   );
   if (errorCode === 'stt_rate_limited' || errorCode === 'stt_provider_rate_limited') return true;
   if (errorCode === 'stt_quota_exceeded') return false;
@@ -299,7 +418,7 @@ function isTransientNetworkError(error: any) {
     return false;
   }
   return (
-    Number(error?.status) === 429 ||
+    Number(errorDetails?.status) === 429 ||
     isTransportErrorMessage(msg) ||
     normalizeErrorForMatching(msg).includes('http 502') ||
     normalizeErrorForMatching(msg).includes('serwer chwilowo przeciazony pamieciowo') ||
@@ -311,11 +430,11 @@ const MAX_AUTO_RETRIES = 5;
 // Exponential backoff delays for retries: 1s, 4s, 16s, 32s, 64s (~2 min total - enough for Railway restart)
 const RETRY_DELAYS_MS = [1000, 4000, 16000, 32000, 64000];
 
-function hasQueueNormalizationDrift(queue: unknown[], normalizedQueue: unknown[]) {
+function hasQueueNormalizationDrift(queue: unknown[], normalizedQueue: RecordingQueueItem[]) {
   const current = Array.isArray(queue) ? queue : [];
   if (current.length !== normalizedQueue.length) return true;
-  return normalizedQueue.some((item: any, index) => {
-    const previous = current[index] as any;
+  return normalizedQueue.some((item, index) => {
+    const previous = current[index] as Partial<RecordingQueueItem> | null | undefined;
     const hadWorkspaceMissingError = isWorkspaceMissingErrorMessage(previous?.errorMessage);
     return Boolean(
       previous?.recordingId &&
@@ -325,9 +444,9 @@ function hasQueueNormalizationDrift(queue: unknown[], normalizedQueue: unknown[]
   });
 }
 
-export const useRecorderStore = create<any>()(
+export const useRecorderStore = create<RecorderStore>()(
   persist(
-    (set, get: any) => ({
+    (set, get) => ({
       recordingQueue: [],
       analysisStatus: 'idle',
       recordingMessage: '',
@@ -412,6 +531,7 @@ export const useRecorderStore = create<any>()(
 
       retryStoredRecording: (meeting, recording, options: { force?: boolean } = {}) => {
         if (!meeting?.id || !recording?.id) return null;
+        const recordingId = recording.id;
         if (hasCompletedTranscript(recording) && !options?.force) {
           set({
             lastQueueErrorKey: '',
@@ -425,14 +545,14 @@ export const useRecorderStore = create<any>()(
         }
         const createdAt = recording.createdAt || new Date().toISOString();
         const queueItem = {
-          id: recording.id,
-          recordingId: recording.id,
+          id: recordingId,
+          recordingId,
           meetingId: meeting.id,
           workspaceId: meeting.workspaceId || '',
           meetingTitle: meeting.title || 'Spotkanie',
           meetingSnapshot: meeting,
           mimeType: recording.contentType || recording.mimeType || 'audio/mpeg',
-          rawSegments: [] as any[],
+          rawSegments: [] as TranscriptionStatusPayload['segments'],
           duration: Number(recording.duration) || 0,
           status: 'queued' as const,
           uploaded: true,
@@ -449,7 +569,7 @@ export const useRecorderStore = create<any>()(
         set((state) => ({
           recordingQueue: updateRecordingQueueItem(
             [...state.recordingQueue, queueItem],
-            recording.id,
+            recordingId,
             queueItem
           ),
           lastQueueErrorKey: '',
@@ -458,7 +578,7 @@ export const useRecorderStore = create<any>()(
           pipelineProgressPercent: 8,
           pipelineStageLabel: 'Ponawiamy transkrypcje z pliku zapisanego na serwerze',
         }));
-        return recording.id;
+        return recordingId;
       },
 
       processQueue: async (
@@ -659,19 +779,19 @@ export const useRecorderStore = create<any>()(
       storage: createJSONStorage(() => idbJSONStorage),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        if ((state as any).__recordingQueueNeedsPersistence) {
+        if (state.__recordingQueueNeedsPersistence) {
           state.setRecordingQueue(state.recordingQueue);
         }
       },
       merge: (persistedState, currentState) => {
-        const persisted = (persistedState || {}) as any;
-        const recordingQueue = normalizeRecordingQueue(persisted.recordingQueue);
+        const persisted = (persistedState || {}) as PersistedRecorderStore;
+        const recordingQueue = normalizeRecordingQueue(persisted.recordingQueue || []);
         return {
           ...currentState,
           ...persisted,
           recordingQueue,
           __recordingQueueNeedsPersistence: hasQueueNormalizationDrift(
-            persisted.recordingQueue,
+            persisted.recordingQueue || [],
             recordingQueue
           ),
         };
