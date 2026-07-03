@@ -9,6 +9,8 @@ import {
   normalizeMediaTranscriptionResponse,
   type MediaTranscriptionResponse,
 } from '../shared/contracts';
+import type { TranscriptSegment } from '../shared/types';
+import type { RecordingConsentMetadata } from '../lib/recordingConsent';
 
 export const REMOTE_TRANSCRIPTION_PROVIDER = {
   id: 'remote-pipeline',
@@ -30,6 +32,53 @@ const DEFAULT_UPLOAD_POLICY = {
 let uploadPolicyPromise: Promise<typeof DEFAULT_UPLOAD_POLICY> | null = null;
 const mediaApiOptions = MEDIA_API_BASE_URL ? { baseUrl: MEDIA_API_BASE_URL } : {};
 type TranscriptionProgressAuthMode = 'session' | 'progress';
+type LiveTranscriptionControllerOptions = Parameters<
+  typeof createBrowserTranscriptionController
+>[0];
+
+export interface MediaServiceMeetingTarget {
+  id?: string;
+  workspaceId?: string;
+  title?: string;
+  attendees?: Array<string | { name?: string; email?: string }>;
+  tags?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface PersistRecordingAudioOptions {
+  workspaceId?: string;
+  meetingId?: string;
+  onProgress?: (percent: number) => void;
+}
+
+export interface PersistRecordingAudioResult {
+  storageMode: 'indexeddb' | 'remote' | string;
+  partCount?: number;
+  durationMs?: number;
+  audioQuality?: unknown;
+}
+
+export interface StartTranscriptionJobInput {
+  recordingId?: string;
+  blob?: Blob | null;
+  meeting?: MediaServiceMeetingTarget | null;
+  rawSegments?: TranscriptSegment[];
+  recordingConsent?: RecordingConsentMetadata | null;
+}
+
+export interface TranscriptionProgressPayload {
+  status?: string;
+  progress?: number;
+  message?: string;
+  [key: string]: unknown;
+}
+
+export interface RagAnswerResponse {
+  answer?: string;
+  [key: string]: unknown;
+}
+
+export type RagAnswerResult = RagAnswerResponse | string;
 
 export function buildTranscriptionProgressRequest(
   recordingId: string,
@@ -59,7 +108,7 @@ async function getUploadPolicy() {
       method: 'GET',
       retries: 0,
     })
-      .then((policy: any) => ({
+      .then((policy: unknown) => ({
         ...DEFAULT_UPLOAD_POLICY,
         ...(policy && typeof policy === 'object' ? policy : {}),
       }))
@@ -68,18 +117,19 @@ async function getUploadPolicy() {
   return uploadPolicyPromise;
 }
 
-function isRetryableChunkUploadError(error: any) {
+function isRetryableChunkUploadError(error: unknown) {
   // Never retry when browser is clearly offline
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return false;
   }
 
-  const status = Number(error?.status || 0);
+  const errorDetails = error as { status?: unknown; message?: unknown } | null | undefined;
+  const status = Number(errorDetails?.status || 0);
   if ([429, 502, 503, 504].includes(status)) {
     return true;
   }
 
-  const message = String(error?.message || '').toLowerCase();
+  const message = String(errorDetails?.message || '').toLowerCase();
   return (
     message.includes('backend jest chwilowo niedostepny') ||
     message.includes('failed to fetch') ||
@@ -126,7 +176,7 @@ async function uploadChunkWithRetry({
         }
       );
       return;
-    } catch (error: any) {
+    } catch (error: unknown) {
       attempt += 1;
       const canRetry = isRetryableChunkUploadError(error) && attempt < maxAttempts;
       if (!canRetry) {
@@ -138,7 +188,9 @@ async function uploadChunkWithRetry({
           Math.min(attempt - 1, CHUNK_UPLOAD_RETRY_DELAYS_MS.length - 1)
         ];
       console.warn(
-        `[upload] Chunk ${index + 1}/${total} retry ${attempt}/${maxAttempts - 1} after error: ${error?.message || 'unknown error'}`
+        `[upload] Chunk ${index + 1}/${total} retry ${attempt}/${maxAttempts - 1} after error: ${
+          (error as { message?: unknown } | null)?.message || 'unknown error'
+        }`
       );
       await sleep(delayMs);
     }
@@ -177,26 +229,75 @@ export function mapRemoteTranscriptionResult(response: MediaTranscriptionRespons
   };
 }
 
-function createLocalMediaService() {
+type RemoteTranscriptionResultBase = ReturnType<typeof mapRemoteTranscriptionResult>;
+
+export type MediaTranscriptionJobResult = Partial<
+  Omit<RemoteTranscriptionResultBase, 'diarization' | 'pipelineStatus' | 'reviewSummary'>
+> & {
+  diarization?: unknown;
+  verifiedSegments?: TranscriptSegment[];
+  providerId?: string;
+  providerLabel?: string;
+  pipelineStatus?: string;
+  reviewSummary?: unknown;
+};
+
+export interface MediaService {
+  mode: 'local' | 'remote';
+  supportsLiveTranscription: () => boolean;
+  createLiveController: (options: LiveTranscriptionControllerOptions) => unknown;
+  persistRecordingAudio: (
+    recordingId: string,
+    blob: Blob,
+    options?: PersistRecordingAudioOptions
+  ) => Promise<PersistRecordingAudioResult>;
+  getRecordingAudioBlob: (recordingId: string) => Promise<Blob | null | undefined>;
+  startTranscriptionJob: (
+    input: StartTranscriptionJobInput
+  ) => Promise<MediaTranscriptionJobResult>;
+  getTranscriptionJobStatus: (recordingId: string) => Promise<MediaTranscriptionJobResult | null>;
+  retryTranscriptionJob?: (recordingId: string) => Promise<MediaTranscriptionJobResult | null>;
+  normalizeRecordingAudio: (recordingId: string) => Promise<void>;
+  transcribeLiveChunk?: (blob: Blob) => Promise<string>;
+  getVoiceCoaching: (
+    recordingId: string,
+    speakerId: string,
+    segments: TranscriptSegment[]
+  ) => Promise<string>;
+  rediarize: (recordingId: string) => Promise<unknown>;
+  subscribeToTranscriptionProgress: (
+    recordingId: string,
+    onProgress: (payload: TranscriptionProgressPayload) => void
+  ) => (() => void) | undefined;
+  extractVoiceProfileFromSpeaker: (
+    recordingId: string,
+    speakerId: string,
+    speakerName?: string
+  ) => Promise<unknown>;
+  askRAG: (workspaceId: string, question: string) => Promise<RagAnswerResult>;
+  deleteRecording: (recordingId: string) => Promise<void>;
+}
+
+function createLocalMediaService(): MediaService {
   return {
     mode: 'local',
     supportsLiveTranscription() {
       return Boolean(getSpeechRecognitionClass());
     },
-    createLiveController(options) {
+    createLiveController(options: LiveTranscriptionControllerOptions) {
       return createBrowserTranscriptionController(options);
     },
-    async persistRecordingAudio(recordingId, blob) {
+    async persistRecordingAudio(recordingId: string, blob: Blob) {
       await saveAudioBlob(recordingId, blob);
       return {
         storageMode: 'indexeddb',
         audioQuality: null,
       };
     },
-    getRecordingAudioBlob(recordingId) {
+    getRecordingAudioBlob(recordingId: string) {
       return getAudioBlob(recordingId);
     },
-    async startTranscriptionJob({ rawSegments }) {
+    async startTranscriptionJob({ rawSegments }: StartTranscriptionJobInput) {
       const diarization = diarizeSegments(rawSegments || []);
       const verifiedSegments = verifyRecognizedSegments(diarization.segments);
 
@@ -229,12 +330,16 @@ function createLocalMediaService() {
     async normalizeRecordingAudio() {
       throw new Error('Normalizacja głośności niedostępna w trybie lokalnym.');
     },
-    async getVoiceCoaching(recordingId, speakerId, segments) {
+    async getVoiceCoaching(
+      _recordingId: string,
+      _speakerId: string,
+      _segments: TranscriptSegment[]
+    ) {
       throw new Error(
         'Trener Wymowy AI korzystający z analizy akustycznej dostępny jest tylko przy użyciu pełnego trybu serwerowego. Skonfiguruj bazę by odblokować supermoce OpenAI.'
       );
     },
-    async rediarize(recordingId) {
+    async rediarize(_recordingId: string) {
       throw new Error('Diarizacja zaawansowana dostępna tylko w trybie serwerowym.');
     },
     subscribeToTranscriptionProgress() {
@@ -245,7 +350,7 @@ function createLocalMediaService() {
         'Generowanie profili głosowych bazujących na nagraniach z transkrypcji dostępne tylko w trybie serwerowym.'
       );
     },
-    async askRAG(workspaceId, question) {
+    async askRAG(_workspaceId: string, question: string) {
       if (!question) return 'Zadaj konkretne pytanie.';
       return 'Funkcja przeszukiwania baz danych dostępna tylko przez zdalne API.';
     },
@@ -255,19 +360,23 @@ function createLocalMediaService() {
   };
 }
 
-function createRemoteMediaService() {
+function createRemoteMediaService(): MediaService {
   return {
     mode: 'remote',
     supportsLiveTranscription() {
       // Browser SpeechRecognition works independently of where audio is stored
       return Boolean(getSpeechRecognitionClass());
     },
-    createLiveController(options) {
+    createLiveController(options: LiveTranscriptionControllerOptions) {
       // Use browser SpeechRecognition for immediate live captioning;
       // the server does high-quality Whisper transcription post-recording.
       return createBrowserTranscriptionController(options);
     },
-    async persistRecordingAudio(recordingId, blob, options: any = {}) {
+    async persistRecordingAudio(
+      recordingId: string,
+      blob: Blob,
+      options: PersistRecordingAudioOptions = {}
+    ) {
       const { workspaceId = '', meetingId = '', onProgress } = options;
       const resolvedWorkspaceId = String(workspaceId || '').trim();
       if (!resolvedWorkspaceId) {
@@ -309,8 +418,8 @@ function createRemoteMediaService() {
             if (Number.isFinite(nextIndex)) {
               startIndex = Math.max(0, Math.min(total, Math.floor(nextIndex)));
             }
-          } catch (error: any) {
-            if (Number(error?.status) === 404) {
+          } catch (error: unknown) {
+            if (Number((error as { status?: unknown } | null)?.status) === 404) {
               chunkStatusEndpointSupported = 'no';
             }
             // If status lookup fails, fallback to uploading from the beginning.
@@ -399,14 +508,19 @@ function createRemoteMediaService() {
             : null,
       };
     },
-    async getRecordingAudioBlob(recordingId) {
+    async getRecordingAudioBlob(recordingId: string) {
       const response = await apiRequest(`/media/recordings/${recordingId}/audio`, {
         method: 'GET',
         parseAs: 'raw',
       });
       return response.blob();
     },
-    async startTranscriptionJob({ recordingId, blob, meeting, recordingConsent }) {
+    async startTranscriptionJob({
+      recordingId,
+      blob,
+      meeting,
+      recordingConsent,
+    }: StartTranscriptionJobInput) {
       const participants = (meeting?.attendees || [])
         .map((a) => (typeof a === 'string' ? a : a.name || a.email || ''))
         .filter(Boolean);
@@ -425,7 +539,7 @@ function createRemoteMediaService() {
 
       return mapRemoteTranscriptionResult(response);
     },
-    async getTranscriptionJobStatus(recordingId) {
+    async getTranscriptionJobStatus(recordingId: string) {
       const response = await apiRequest(`/media/recordings/${recordingId}/transcribe`, {
         method: 'GET',
         retries: TRANSCRIPTION_STATUS_RETRIES,
@@ -433,17 +547,17 @@ function createRemoteMediaService() {
 
       return mapRemoteTranscriptionResult(response);
     },
-    async retryTranscriptionJob(recordingId) {
+    async retryTranscriptionJob(recordingId: string) {
       const response = await apiRequest(`/media/recordings/${recordingId}/retry-transcribe`, {
         method: 'POST',
       });
 
       return mapRemoteTranscriptionResult(response);
     },
-    async normalizeRecordingAudio(recordingId) {
+    async normalizeRecordingAudio(recordingId: string) {
       await apiRequest(`/media/recordings/${recordingId}/normalize`, { method: 'POST' });
     },
-    async transcribeLiveChunk(blob) {
+    async transcribeLiveChunk(blob: Blob) {
       const response = await apiRequest('/transcribe/live', {
         method: 'POST',
         body: blob,
@@ -451,17 +565,20 @@ function createRemoteMediaService() {
       });
       return typeof response === 'object' ? response?.text || '' : '';
     },
-    async getVoiceCoaching(recordingId, speakerId, segments) {
+    async getVoiceCoaching(recordingId: string, speakerId: string, segments: TranscriptSegment[]) {
       const response = await apiRequest(`/media/recordings/${recordingId}/voice-coaching`, {
         method: 'POST',
         body: { speakerId, segments },
       });
       return typeof response === 'object' ? response?.coaching || '' : '';
     },
-    async rediarize(recordingId) {
+    async rediarize(recordingId: string) {
       return apiRequest(`/media/recordings/${recordingId}/rediarize`, { method: 'POST' });
     },
-    subscribeToTranscriptionProgress(recordingId, onProgress) {
+    subscribeToTranscriptionProgress(
+      recordingId: string,
+      onProgress: (payload: TranscriptionProgressPayload) => void
+    ) {
       const token = resolvePersistedSession()?.token || '';
       const request = buildTranscriptionProgressRequest(recordingId, token);
       let closed = false;
@@ -522,8 +639,8 @@ function createRemoteMediaService() {
               boundary = buffer.search(/\r?\n\r?\n/);
             }
           }
-        } catch (error: any) {
-          if (closed || error?.name === 'AbortError') return;
+        } catch (error: unknown) {
+          if (closed || (error as { name?: unknown } | null)?.name === 'AbortError') return;
           errorCount += 1;
           if (errorCount > PROGRESS_MAX_RECONNECT_ERRORS) return;
           setTimeout(
@@ -543,13 +660,17 @@ function createRemoteMediaService() {
         abortController?.abort();
       };
     },
-    async extractVoiceProfileFromSpeaker(recordingId, speakerId, speakerName) {
+    async extractVoiceProfileFromSpeaker(
+      recordingId: string,
+      speakerId: string,
+      speakerName?: string
+    ) {
       return apiRequest(`/media/recordings/${recordingId}/voice-profiles/from-speaker`, {
         method: 'POST',
         body: { speakerId, speakerName },
       });
     },
-    async askRAG(workspaceId, question) {
+    async askRAG(workspaceId: string, question: string) {
       return apiRequest(`/workspaces/${workspaceId}/rag/ask`, {
         method: 'POST',
         body: { question },
@@ -561,7 +682,7 @@ function createRemoteMediaService() {
   };
 }
 
-export function createMediaService() {
+export function createMediaService(): MediaService {
   return MEDIA_PIPELINE_PROVIDER === 'remote'
     ? createRemoteMediaService()
     : createLocalMediaService();
