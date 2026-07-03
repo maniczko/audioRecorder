@@ -92,7 +92,7 @@ describe('GitHub workflows validation', () => {
       );
       expect(setupPnpmStep?.uses, `${jobName} pnpm action`).toBe('pnpm/action-setup@v6');
       expect(resolveStoreStep?.run, `${jobName} pnpm store path`).toContain('pnpm store path');
-      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v5');
+      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v6');
       expect(cacheStep?.with?.path, `${jobName} cache path`).toBe('${{ env.PNPM_STORE_PATH }}');
       expect(cacheStep?.with?.key, `${jobName} cache key`).toContain("hashFiles('pnpm-lock.yaml')");
       expect(installStep?.run, `${jobName} install retry loop`).toContain('for attempt in 1 2 3');
@@ -106,7 +106,7 @@ describe('GitHub workflows validation', () => {
     const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
-    expect(content).toContain('uses: actions/cache@v5');
+    expect(content).toContain('uses: actions/cache@v6');
     expect(content).not.toContain('uses: actions/cache@v4');
   });
 
@@ -136,6 +136,7 @@ describe('GitHub workflows validation', () => {
     expect(parsed?.on?.schedule).toBeTruthy();
     expect(parsed?.permissions?.checks).toBe('read');
     expect(parsed?.permissions?.actions).toBe('read');
+    expect(parsed?.permissions?.['pull-requests']).toBe('write');
     expect(content).toContain('codex:checks-failed');
     expect(content).toContain('sync_pr_checks');
     expect(content).toContain('reconcile_open_prs');
@@ -263,7 +264,7 @@ describe('GitHub workflows validation', () => {
 
     expect(content).not.toContain('pnpm install --no-frozen-lockfile');
     expect(resolveStoreStep?.run).toContain('pnpm store path');
-    expect(cacheStep?.uses).toBe('actions/cache@v5');
+    expect(cacheStep?.uses).toBe('actions/cache@v6');
     expect(cacheStep?.with?.path).toBe('${{ env.PNPM_STORE_PATH }}');
     expect(cacheStep?.with?.key).toContain("hashFiles('pnpm-lock.yaml')");
     expect(installStep?.run).toContain('for attempt in 1 2 3');
