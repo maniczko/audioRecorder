@@ -18,6 +18,7 @@ export type AudioProdSmokeOptions = {
   token?: string;
   workspaceId: string;
   reportPath: string;
+  cleanup?: boolean;
   fetchImpl?: typeof fetch;
   now?: () => number;
   sleepMs?: (ms: number) => Promise<void>;
@@ -30,6 +31,16 @@ type JsonObject = Record<string, unknown>;
 const TERMINAL_PIPELINE_STATUSES = new Set(['done', 'failed']);
 const TERMINAL_TRANSCRIPT_OUTCOMES = new Set(['normal', 'empty', 'failed', 'failed_permanent']);
 const SMOKE_TRANSPORT_DETAILS = Symbol('smokeTransportDetails');
+const SMOKE_RECORDING_PREFIX = 'smoke_';
+const SMOKE_FIXTURE_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'tests',
+  'fixtures',
+  'audio',
+  'smoke-short.wav.base64'
+);
 
 function defaultReportPath() {
   return path.join(process.cwd(), 'reports', `audio-prod-smoke-${Date.now()}.json`);
@@ -43,26 +54,18 @@ export function optionsFromEnv(env = process.env): AudioProdSmokeOptions {
     token: String(env.VOICELOG_SMOKE_TOKEN || ''),
     workspaceId: String(env.VOICELOG_SMOKE_WORKSPACE_ID || ''),
     reportPath: String(env.VOICELOG_SMOKE_REPORT || defaultReportPath()),
+    cleanup: String(env.VOICELOG_SMOKE_CLEANUP || '').toLowerCase() === 'true',
   };
 }
 
-function tinyWavFixture() {
-  const sampleRate = 8000;
-  const samples = 800;
-  const dataSize = samples * 2;
-  const buffer = Buffer.alloc(44 + dataSize);
-  buffer.write('RIFF', 0);
-  buffer.writeUInt32LE(36 + dataSize, 4);
-  buffer.write('WAVEfmt ', 8);
-  buffer.writeUInt32LE(16, 16);
-  buffer.writeUInt16LE(1, 20);
-  buffer.writeUInt16LE(1, 22);
-  buffer.writeUInt32LE(sampleRate, 24);
-  buffer.writeUInt32LE(sampleRate * 2, 28);
-  buffer.writeUInt16LE(2, 32);
-  buffer.writeUInt16LE(16, 34);
-  buffer.write('data', 36);
-  buffer.writeUInt32LE(dataSize, 40);
+export async function loadSmokeAudioFixture(fixturePath = SMOKE_FIXTURE_PATH) {
+  const encoded = await fs.readFile(fixturePath, 'utf8');
+  const buffer = Buffer.from(encoded.replace(/\s+/g, ''), 'base64');
+
+  if (buffer.length < 44 || buffer.toString('ascii', 0, 4) !== 'RIFF') {
+    throw new Error(`Audio smoke fixture is invalid: ${fixturePath}`);
+  }
+
   return buffer;
 }
 
@@ -194,15 +197,25 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
     startedAt: string;
     finishedAt?: string;
     recordingId?: string;
+    smokeData: {
+      prefix: string;
+      cleanupRequested: boolean;
+      identifiable: boolean;
+    };
     steps: SmokeStep[];
   } = {
     baseUrl,
     startedAt: new Date(now()).toISOString(),
+    smokeData: {
+      prefix: SMOKE_RECORDING_PREFIX,
+      cleanupRequested: Boolean(input.cleanup),
+      identifiable: true,
+    },
     steps: [],
   };
 
   let token = input.token || '';
-  let recordingId = `smoke_${now()}`;
+  let recordingId = `${SMOKE_RECORDING_PREFIX}${now()}`;
   let lastTranscriptionStatus: JsonObject = {};
 
   report.steps.push(
@@ -291,13 +304,14 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
 
   report.steps.push(
     await step('upload short audio fixture', async () => {
+      const audioFixture = await loadSmokeAudioFixture();
       const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
         method: 'PUT',
         headers: {
           ...authHeaders(token, workspaceId),
           'Content-Type': 'audio/wav',
         },
-        body: tinyWavFixture(),
+        body: audioFixture,
       });
       const body = await readJson(res);
       recordingId = String(body.id || body.recordingId || recordingId);
@@ -421,6 +435,34 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
       };
     })
   );
+
+  if (input.cleanup) {
+    report.steps.push(
+      await step('cleanup smoke recording', async () => {
+        const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
+          method: 'DELETE',
+          headers: authHeaders(token, workspaceId),
+        });
+        const body = await readJson(res);
+        return {
+          ok: res.ok || res.status === 404,
+          status: res.status,
+          requestId: headerValue(res.headers, 'x-request-id'),
+          details: sanitizeDetails(body),
+        };
+      })
+    );
+  } else {
+    report.steps.push({
+      name: 'smoke data marked as test data',
+      ok: recordingId.startsWith(SMOKE_RECORDING_PREFIX),
+      details: {
+        recordingId,
+        prefix: SMOKE_RECORDING_PREFIX,
+        cleanupRequested: false,
+      },
+    });
+  }
 
   report.finishedAt = new Date(now()).toISOString();
   await writeReport(input.reportPath, report);

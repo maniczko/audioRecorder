@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -273,6 +274,57 @@ describe('GitHub workflows validation', () => {
     expect(debugStep?.env?.SMOKE_TEST_URL).toBe(
       'https://audiorecorder-production.up.railway.app/health'
     );
+  });
+
+  it('wires seeded audio smoke into backend production smoke with secrets-only credentials', () => {
+    const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+    const parsed = parse(content) as {
+      on?: {
+        workflow_dispatch?: {
+          inputs?: Record<string, unknown>;
+        };
+      };
+      jobs?: {
+        'verify-backend-production'?: {
+          env?: Record<string, unknown>;
+          steps?: Array<{
+            name?: string;
+            if?: string;
+            run?: string;
+            uses?: string;
+            with?: Record<string, unknown>;
+          }>;
+        };
+      };
+    } | null;
+
+    const job = parsed?.jobs?.['verify-backend-production'];
+    const steps = job?.steps ?? [];
+    const validateStep = steps.find((step) => step.name === 'Validate audio smoke secrets');
+    const audioSmokeStep = steps.find(
+      (step) => step.name === 'Seeded audio upload and transcription smoke'
+    );
+    const artifactStep = steps.find((step) => step.name === 'Upload audio smoke report');
+    const expression = (value: string) => ['$', '{{ ', value, ' }}'].join('');
+
+    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('run_audio_smoke');
+    expect(job?.env?.VOICELOG_SMOKE_BASE_URL).toContain('secrets.VOICELOG_SMOKE_BASE_URL');
+    expect(job?.env?.VOICELOG_SMOKE_TOKEN).toBe(expression('secrets.VOICELOG_SMOKE_TOKEN'));
+    expect(job?.env?.VOICELOG_SMOKE_EMAIL).toBe(expression('secrets.VOICELOG_SMOKE_EMAIL'));
+    expect(job?.env?.VOICELOG_SMOKE_PASSWORD).toBe(expression('secrets.VOICELOG_SMOKE_PASSWORD'));
+    expect(job?.env?.VOICELOG_SMOKE_WORKSPACE_ID).toBe(
+      expression('secrets.VOICELOG_SMOKE_WORKSPACE_ID')
+    );
+    expect(job?.env?.VOICELOG_SMOKE_CLEANUP).toBe('true');
+    expect(validateStep?.run).toContain('VOICELOG_SMOKE_WORKSPACE_ID');
+    expect(validateStep?.run).toContain('VOICELOG_SMOKE_TOKEN or VOICELOG_SMOKE_EMAIL');
+    expect(audioSmokeStep?.run).toContain('pnpm run release:audio-prod-smoke');
+    expect(audioSmokeStep?.if).toContain('inputs.run_audio_smoke == true');
+    expect(audioSmokeStep?.if).toContain("env.VOICELOG_SMOKE_WORKSPACE_ID != ''");
+    expect(artifactStep?.uses).toBe('actions/upload-artifact@v4');
+    expect(artifactStep?.with?.path).toBe('reports/audio-prod-smoke-*.json');
+    expect(content).not.toContain('echo "$VOICELOG_SMOKE_PASSWORD"');
   });
 
   it('deploys Railway after CI and deploys Vercel only after Railway verification', () => {
