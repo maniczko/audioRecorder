@@ -1,4 +1,4 @@
-import { expect, test, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type TestInfo } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { seedLoggedInUser, seedMeeting, seedQueueItem, seedTask } from './helpers/seed.js';
@@ -750,6 +750,62 @@ async function assertVisibleFocus(page) {
   expect(focusedBox?.height || 0).toBeGreaterThan(0);
 }
 
+async function assertLocatorClearsFixedPlayer(page, target: Locator) {
+  await expect(target).toBeAttached();
+  await target.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await expect(target).toBeVisible();
+
+  const [targetBox, playerBox] = await Promise.all([
+    target.boundingBox(),
+    page.locator('.ff-player-bar').boundingBox(),
+  ]);
+
+  expect(targetBox).toBeTruthy();
+  expect(playerBox).toBeTruthy();
+  expect((targetBox?.y || 0) + (targetBox?.height || 0)).toBeLessThanOrEqual(
+    (playerBox?.y || 0) - 8
+  );
+}
+
+async function assertElementClearsFixedPlayer(page, selector: string) {
+  await assertLocatorClearsFixedPlayer(
+    page,
+    page.locator(selector).filter({ visible: true }).last()
+  );
+}
+
+async function assertTranscriptValueClearsFixedPlayer(page, value: string) {
+  await page.waitForFunction((expectedValue) => {
+    return Array.from(document.querySelectorAll('textarea,input')).some((element) =>
+      (element as HTMLInputElement | HTMLTextAreaElement).value?.includes(String(expectedValue))
+    );
+  }, value);
+
+  const metrics = await page.evaluate((expectedValue) => {
+    const target = Array.from(document.querySelectorAll('textarea,input')).find((element) =>
+      (element as HTMLInputElement | HTMLTextAreaElement).value?.includes(String(expectedValue))
+    );
+    const player = document.querySelector('.ff-player-bar');
+    if (!target || !player) return null;
+    target.scrollIntoView({ block: 'center', inline: 'nearest' });
+    const targetBox = target.getBoundingClientRect();
+    const playerBox = player.getBoundingClientRect();
+    return {
+      targetBottom: targetBox.bottom,
+      targetHeight: targetBox.height,
+      targetWidth: targetBox.width,
+      playerTop: playerBox.top,
+    };
+  }, value);
+
+  expect(metrics).toBeTruthy();
+  expect(metrics?.targetWidth || 0).toBeGreaterThan(0);
+  expect(metrics?.targetHeight || 0).toBeGreaterThan(0);
+  expect(metrics?.targetBottom || 0).toBeLessThanOrEqual((metrics?.playerTop || 0) - 8);
+}
+
 async function assertNoInternalDebugText(page) {
   const bodyText = await page.locator('body').innerText();
   expect(bodyText).not.toMatch(/\b(undefined|null|NaN)\b/i);
@@ -899,6 +955,37 @@ test.describe('Release visual baselines', () => {
       await expect(page.locator('.profile-shell, .profile-layout, main').first()).toBeVisible();
       await assertNoGlobalOverflow(page);
       await screenshotPage(page, `profile-${viewport.name}.png`);
+    });
+  }
+
+  for (const viewport of [releaseViewports[1], releaseViewports[5]]) {
+    test(`@reference studio compact player keeps content reachable ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await seedReleaseData(page);
+      await page.goto('/');
+      await waitForReleaseWorkspace(page);
+
+      const player = page.locator('.ff-player-bar');
+      await expect(player).toBeVisible();
+      const playerBox = await player.boundingBox();
+      expect(playerBox).toBeTruthy();
+      expect(playerBox?.height || 0).toBeLessThanOrEqual(viewport.width <= 768 ? 116 : 100);
+
+      await assertElementClearsFixedPlayer(page, '.summary-card');
+      await page.locator('.ff-studio-right-col').evaluate((element) => {
+        element.scrollIntoView({ block: 'start', inline: 'nearest' });
+      });
+      await assertTranscriptValueClearsFixedPlayer(
+        page,
+        'Ustalamy priorytety release i zadania po spotkaniu.'
+      );
+      await assertNoGlobalOverflow(page);
+      await page.screenshot({
+        path: `test-results/playwright/studio-compact-player-${viewport.name}.png`,
+        fullPage: true,
+      });
     });
   }
 
