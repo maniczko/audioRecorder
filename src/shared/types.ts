@@ -137,13 +137,7 @@ export interface TranscriptionQualityMetrics {
 export interface TranscriptionStatusPayload {
   recordingId: string;
   pipelineStatus:
-    | 'uploading'
-    | 'queued'
-    | 'processing'
-    | 'diarization'
-    | 'review'
-    | 'done'
-    | 'failed';
+    'uploading' | 'queued' | 'processing' | 'diarization' | 'review' | 'done' | 'failed';
   enhancementsPending?: boolean;
   postprocessStage?: 'queued' | 'running' | 'done' | 'failed' | '';
   transcriptOutcome?: 'normal' | 'empty';

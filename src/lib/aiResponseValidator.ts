@@ -82,9 +82,7 @@ export function validateAndNormalizeRisks(risks: unknown): MeetingRisk[] {
     .map((item) => ({
       risk: item.risk,
       severity: (['high', 'medium', 'low'].includes(item.severity) ? item.severity : 'medium') as
-        | 'high'
-        | 'medium'
-        | 'low',
+        'high' | 'medium' | 'low',
     }));
 }
 
