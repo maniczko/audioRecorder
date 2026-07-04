@@ -16,8 +16,18 @@ import { streamSSE } from 'hono/streaming';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
 import type { MediaAsset } from '../lib/types.ts';
+import {
+  aiAnalyzeRequestSchema,
+  chunkFinalizeRequestSchema,
+  liveTranscriptionHeadersSchema,
+  transcriptionRetryRequestSchema,
+  transcriptionStartRequestSchema,
+  voiceCoachingRequestSchema,
+  voiceProfileFromSpeakerRequestSchema,
+} from '../lib/apiRequestSchemas.ts';
 import { getMemoryPressure } from '../lib/serverUtils.ts';
 import { createProgressToken } from '../lib/progressTokens.ts';
+import { validateJsonBody, validatePayload } from '../lib/requestValidation.ts';
 import { DISK_SPACE_BLOCK_UPLOAD_BYTES } from '../lib/diskSpace.ts';
 import {
   MAX_RAW_UPLOAD_BYTES,
@@ -1316,7 +1326,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     applyRateLimit('transcription-start', 5),
     async (c) => {
       const recordingId = c.req.param('recordingId');
-      const body = await c.req.json().catch(() => ({}));
+      const bodyValidation = await validateJsonBody(c, transcriptionStartRequestSchema);
+      if (bodyValidation.ok === false) return bodyValidation.response;
+      const body = bodyValidation.data;
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
@@ -1411,7 +1423,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     applyRateLimit('transcription-retry', 5),
     async (c) => {
       const recordingId = c.req.param('recordingId');
-      const body = await c.req.json().catch(() => ({}));
+      const bodyValidation = await validateJsonBody(c, transcriptionRetryRequestSchema);
+      if (bodyValidation.ok === false) return bodyValidation.response;
+      const body = bodyValidation.data;
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
@@ -1721,7 +1735,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   router.post('/recordings/:recordingId/voice-profiles/from-speaker/preflight', async (c) => {
     const requestId = c.get('reqId') || crypto.randomUUID();
     const recordingId = c.req.param('recordingId');
-    const body = await c.req.json().catch(() => ({}));
+    const bodyValidation = await validateJsonBody(c, voiceProfileFromSpeakerRequestSchema);
+    if (bodyValidation.ok === false) return bodyValidation.response;
+    const body = bodyValidation.data;
     const speakerId = String(body?.speakerId ?? '').trim();
     const speakerName = String(body?.speakerName ?? '').trim();
     if (!speakerId) {
@@ -1877,7 +1893,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const session = c.get('session') as any;
     const requestId = c.get('reqId') || crypto.randomUUID();
     const recordingId = c.req.param('recordingId');
-    const body = await c.req.json().catch(() => ({}));
+    const bodyValidation = await validateJsonBody(c, voiceProfileFromSpeakerRequestSchema);
+    if (bodyValidation.ok === false) return bodyValidation.response;
+    const body = bodyValidation.data;
     const speakerId = String(body?.speakerId ?? '').trim();
     const speakerName = String(body?.speakerName ?? '').trim();
     if (!speakerId) {
@@ -2014,9 +2032,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     async (c) => {
       try {
         const recordingId = c.req.param('recordingId');
-        const body = await c.req.json().catch(() => ({}));
-        if (body.speakerId === undefined || body.speakerId === null)
-          return c.json({ message: 'Brakuje speakerId.' }, 400);
+        const bodyValidation = await validateJsonBody(c, voiceCoachingRequestSchema);
+        if (bodyValidation.ok === false) return bodyValidation.response;
+        const body = bodyValidation.data;
         const asset = await transcriptionService.getMediaAsset(recordingId);
         if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
         await ensureWorkspaceAccess(c, asset.workspace_id);
@@ -2303,7 +2321,9 @@ Important:
   );
 
   router.post('/analyze', authMiddleware, applyRateLimit('analyze', 10), async (c) => {
-    const body = await c.req.json().catch(() => ({}));
+    const bodyValidation = await validateJsonBody(c, aiAnalyzeRequestSchema);
+    if (bodyValidation.ok === false) return bodyValidation.response;
+    const body = bodyValidation.data;
     const workspaceId = String(body.workspaceId || c.req.header('X-Workspace-Id') || '').trim();
     if (!workspaceId) {
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
@@ -2455,11 +2475,13 @@ Important:
     async (c) => {
       const recordingId = c.req.param('recordingId');
       const session = c.get('session') as any;
-      const body = await c.req.json().catch(() => ({}));
+      const bodyValidation = await validateJsonBody(c, chunkFinalizeRequestSchema);
+      if (bodyValidation.ok === false) return bodyValidation.response;
+      const body = bodyValidation.data;
       const workspaceId = body.workspaceId || c.req.header('X-Workspace-Id') || '';
       const meetingId = body.meetingId || c.req.header('X-Meeting-Id') || '';
       const contentType = body.contentType || 'application/octet-stream';
-      const total = parseInt(body.total || '0', 10);
+      const total = body.total;
 
       if (!workspaceId) return c.json({ message: 'Brakuje workspaceId.' }, 400);
       if (!total || total <= 0) return c.json({ message: 'Brakuje total w ciele żądania.' }, 400);
@@ -2757,6 +2779,13 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
     await ensureWorkspaceAccess(c, workspaceId);
 
     const contentType = c.req.header('content-type') || 'audio/webm';
+    const headerValidation = validatePayload(
+      c,
+      liveTranscriptionHeadersSchema,
+      { contentType },
+      'headers'
+    );
+    if (headerValidation.ok === false) return headerValidation.response;
     const bufferArray = await c.req.arrayBuffer();
     if (bufferArray.byteLength > 5 * 1024 * 1024)
       return c.json({ message: 'Payload too large' }, 413);

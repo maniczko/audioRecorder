@@ -114,7 +114,7 @@ describe('AI Routes', () => {
       expect(json.mode).toBe('no-key');
     });
 
-    test('returns no-key mode when personName is missing', async () => {
+    test('returns 422 when personName is missing', async () => {
       const res = await app.request('/ai/person-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
@@ -124,9 +124,12 @@ describe('AI Routes', () => {
         }),
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.mode).toBe('no-key');
+      expect(res.status).toBe(422);
+      await expect(res.json()).resolves.toMatchObject({
+        code: 'validation_failed',
+        stage: 'validation',
+        details: expect.arrayContaining([expect.objectContaining({ path: 'personName' })]),
+      });
     });
 
     test('returns no-key mode when allSegments has less than 5 items', async () => {
@@ -629,6 +632,31 @@ describe('AI Routes', () => {
       expect(res.status).toBe(401);
     });
 
+    test('returns safe 422 validation error before calling Anthropic for invalid search payload', async () => {
+      vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+      global.fetch = vi.fn();
+
+      const res = await app.request('/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid-session' },
+        body: JSON.stringify({
+          query: '',
+          items: [{ id: 'item-1' }],
+        }),
+      });
+
+      expect(res.status).toBe(422);
+      await expect(res.json()).resolves.toMatchObject({
+        code: 'validation_failed',
+        stage: 'validation',
+        details: expect.arrayContaining([
+          expect.objectContaining({ path: 'query' }),
+          expect.objectContaining({ path: 'items.0.title' }),
+        ]),
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     test('checks membership when search request includes meeting workspace context', async () => {
       const res = await app.request('/ai/search', {
         method: 'POST',
@@ -679,7 +707,7 @@ describe('AI Routes', () => {
       expect(json.matches).toEqual([]);
     });
 
-    test('returns no-key mode when query is empty or too short', async () => {
+    test('returns 422 when query is empty or too short', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
       const res = await app.request('/ai/search', {
@@ -691,13 +719,15 @@ describe('AI Routes', () => {
         }),
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.mode).toBe('no-key');
-      expect(json.matches).toEqual([]);
+      expect(res.status).toBe(422);
+      await expect(res.json()).resolves.toMatchObject({
+        code: 'validation_failed',
+        stage: 'validation',
+        details: expect.arrayContaining([expect.objectContaining({ path: 'query' })]),
+      });
     });
 
-    test('returns no-key mode when items are empty', async () => {
+    test('returns 422 when items are empty', async () => {
       vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
 
       const res = await app.request('/ai/search', {
@@ -709,10 +739,12 @@ describe('AI Routes', () => {
         }),
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json.mode).toBe('no-key');
-      expect(json.matches).toEqual([]);
+      expect(res.status).toBe(422);
+      await expect(res.json()).resolves.toMatchObject({
+        code: 'validation_failed',
+        stage: 'validation',
+        details: expect.arrayContaining([expect.objectContaining({ path: 'items' })]),
+      });
     });
 
     test('returns empty matches when Anthropic API fails', async () => {

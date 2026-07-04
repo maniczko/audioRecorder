@@ -391,6 +391,22 @@ describe('Media Routes', () => {
     );
   });
 
+  it('POST /media/recordings/:recordingId/transcribe - validates body before asset lookup', async () => {
+    const res = await app.request('/media/recordings/rec_invalid_mode/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1', processingMode: 'turbo' }),
+    });
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'validation_failed',
+      stage: 'validation',
+      details: expect.arrayContaining([expect.objectContaining({ path: 'processingMode' })]),
+    });
+    expect(mockTranscriptionService.getMediaAsset).not.toHaveBeenCalled();
+  });
+
   // ---------------------------------------------------------------
   // Issue #1234 - active transcription requests should be idempotent
   // Date: 2026-06-28
@@ -1534,6 +1550,28 @@ describe('Media Routes', () => {
     );
   });
 
+  it('POST /media/recordings/:recordingId/voice-profiles/from-speaker validates speaker payload before asset lookup', async () => {
+    const res = await app.request(
+      '/media/recordings/rec_voice_invalid/voice-profiles/from-speaker',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speakerId: '', speakerName: '' }),
+      }
+    );
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'validation_failed',
+      stage: 'validation',
+      details: expect.arrayContaining([
+        expect.objectContaining({ path: 'speakerId' }),
+        expect.objectContaining({ path: 'speakerName' }),
+      ]),
+    });
+    expect(mockTranscriptionService.getMediaAsset).not.toHaveBeenCalled();
+  });
+
   it('POST /media/recordings/:recordingId/rediarize returns no_changes when diarization fails', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_rediarize_fail',
@@ -1570,6 +1608,27 @@ describe('Media Routes', () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ mode: 'no-key' });
+  });
+
+  it('POST /media/analyze validates meeting payload before AI analysis', async () => {
+    mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn();
+
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1', meeting: 'not-an-object', segments: 'raw text' }),
+    });
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'validation_failed',
+      stage: 'validation',
+      details: expect.arrayContaining([
+        expect.objectContaining({ path: 'meeting' }),
+        expect.objectContaining({ path: 'segments' }),
+      ]),
+    });
+    expect(mockTranscriptionService.analyzeMeetingWithOpenAI).not.toHaveBeenCalled();
   });
 
   it('POST /media/analyze writes a sanitized AI audit event without raw transcript text', async () => {
