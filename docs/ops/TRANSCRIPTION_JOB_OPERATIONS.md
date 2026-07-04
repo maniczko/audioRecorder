@@ -28,12 +28,20 @@ curl -sS "$VOICELOG_API_URL/api/admin/transcription-jobs?workspaceId=ws_123&stat
 Supported filters:
 
 - `workspaceId`
-- `status`: `queued`, `running`, `retryable_failed`, `failed`, `completed`, `cancelled`
+- `status`: `queued`, `running`, `retryable_failed`, `failed`, `dead_letter`, `completed`, `cancelled`
 - `recordingId`
+- `errorCode`
 - `olderThanMinutes`
 - `limit`, capped at 100
 
 The response includes job metadata, timing, lock state, and the last safe error fields. It does not include transcript text, audio paths, or raw audio content.
+
+To review jobs parked after retry exhaustion or a non-retryable provider/storage failure:
+
+```bash
+curl -sS "$VOICELOG_API_URL/api/admin/transcription-jobs?status=dead_letter&errorCode=TRANSCRIPTION_PROVIDER_TIMEOUT&limit=25" \
+  -H "Authorization: Bearer $VOICELOG_ADMIN_TOKEN"
+```
 
 ## Inspect Diagnostics
 
@@ -77,6 +85,40 @@ curl -sS -X POST "$VOICELOG_API_URL/api/admin/transcription-jobs/tj_123/mark-fai
 
 This marks the durable job as `failed`, clears any lease, records `OPERATOR_MARK_FAILED`, and syncs the media asset to `failed`.
 
+## Replay A Dead-Letter Job
+
+```bash
+curl -sS -X POST "$VOICELOG_API_URL/api/admin/transcription-jobs/tj_123/replay" \
+  -H "Authorization: Bearer $VOICELOG_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"reason":"provider incident resolved; replaying from dead-letter queue"}'
+```
+
+Replay is only available for jobs with `status=dead_letter`. It creates a fresh queued transcription job for the same recording, workspace, and meeting while preserving the original dead-letter record and its diagnostics for audit and trend analysis.
+
+Use replay after confirming:
+
+- the recording still exists and belongs to the expected workspace;
+- the failure cause is resolved or safe to retry;
+- the operator reason contains only operational context, not transcript text or secrets.
+
+## Dead-Letter Metrics
+
+The JSON admin metrics endpoint includes `transcriptionJobs.deadLetter`:
+
+```bash
+curl -sS "$VOICELOG_API_URL/api/admin/metrics" \
+  -H "Authorization: Bearer $VOICELOG_ADMIN_TOKEN"
+```
+
+Prometheus output also exposes:
+
+- `voicelog_transcription_dead_letter_jobs`
+- `voicelog_transcription_dead_letter_oldest_age_minutes`
+- `voicelog_transcription_dead_letter_jobs_by_error_code{error_code="..."}`
+
+Alert on a rising count or an oldest age that exceeds the team's recovery objective. Use the `errorCode` filter above to group follow-up work before replaying jobs.
+
 ## Audit And Safety
 
 Every mutating action writes a best-effort audit event:
@@ -84,5 +126,6 @@ Every mutating action writes a best-effort audit event:
 - `operator.transcription_job.retry`
 - `operator.transcription_job.cancel`
 - `operator.transcription_job.mark_failed`
+- `operator.transcription_job.replay`
 
 The audit metadata includes job id, recording id, meeting id, resulting status, and reason. Do not put secrets, transcript text, file paths, or raw provider payloads in the `reason`.

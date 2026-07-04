@@ -117,14 +117,31 @@ export function registerAppRoutes(
   app.get('/metrics', middlewares.applyRateLimit('admin-sensitive', 20), async (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
-    const metrics = await MetricsService.getPrometheusMetrics();
+    const deadLetterMetrics =
+      typeof services.db?.getTranscriptionDeadLetterMetrics === 'function'
+        ? await services.db.getTranscriptionDeadLetterMetrics()
+        : null;
+    const metrics = [
+      await MetricsService.getPrometheusMetrics(),
+      deadLetterMetrics
+        ? MetricsService.formatTranscriptionDeadLetterMetrics(deadLetterMetrics)
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
     return c.text(metrics);
   });
 
-  app.get('/api/admin/metrics', middlewares.applyRateLimit('admin-sensitive', 20), (c) => {
+  app.get('/api/admin/metrics', middlewares.applyRateLimit('admin-sensitive', 20), async (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
     const summary = MetricsService.getJsonSummary();
+    if (typeof services.db?.getTranscriptionDeadLetterMetrics === 'function') {
+      summary.transcriptionJobs = {
+        ...(summary.transcriptionJobs || {}),
+        deadLetter: await services.db.getTranscriptionDeadLetterMetrics(),
+      };
+    }
     return c.json(summary);
   });
 
@@ -160,6 +177,7 @@ export function registerAppRoutes(
         workspaceId: cleanQueryValue(c.req.query('workspaceId')),
         status: cleanQueryValue(c.req.query('status'), 60),
         recordingId: cleanQueryValue(c.req.query('recordingId')),
+        errorCode: cleanQueryValue(c.req.query('errorCode'), 120),
         olderThanMinutes: parsePositiveInt(c.req.query('olderThanMinutes')),
         limit: parsePositiveInt(c.req.query('limit'), 50),
       };
@@ -238,6 +256,17 @@ export function registerAppRoutes(
         c,
         'markTranscriptionJobFailedForOperations',
         'operator.transcription_job.mark_failed'
+      )
+  );
+
+  app.post(
+    '/api/admin/transcription-jobs/:jobId/replay',
+    middlewares.applyRateLimit('admin-sensitive', 10),
+    (c) =>
+      runTranscriptionJobAction(
+        c,
+        'replayDeadLetterTranscriptionJobForOperations',
+        'operator.transcription_job.replay'
       )
   );
 

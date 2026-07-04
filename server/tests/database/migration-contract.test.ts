@@ -65,6 +65,18 @@ describe('Database migration contracts', () => {
     expect(migration).not.toContain('serial');
   });
 
+  test('Issue #1246 - dead-letter migration preserves transcription job history', () => {
+    const migration = readMigration('20260704_transcription_jobs_dead_letter.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    expect(migration).toContain('dead_letter');
+    expect(migration).toContain('transcription_jobs_v2');
+    expect(migration).toContain('insert into transcription_jobs_v2');
+    expect(migration).toContain('drop table transcription_jobs');
+    expect(migration).toContain("where status in ('queued', 'running', 'retryable_failed')");
+  });
+
   test('Regression: Issue #1333 - voice profile metadata migration includes operational columns', () => {
     const migration = readMigration('20260701_voice_profile_operational_metadata.sql')
       .replace(/\s+/g, ' ')

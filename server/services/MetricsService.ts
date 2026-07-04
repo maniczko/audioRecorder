@@ -29,6 +29,25 @@ if (!globalObj.__pipelineStageDuration) {
 const stageStats: Record<string, number[]> = {};
 const capabilityModeCounts: Record<string, number> = {};
 
+interface DeadLetterMetrics {
+  count: number;
+  oldestAgeMinutes: number;
+  byErrorCode: Record<string, number>;
+}
+
+function safeMetricNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function safeLabelValue(value: unknown) {
+  return String(value || 'UNKNOWN')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '_')
+    .slice(0, 120);
+}
+
 export const MetricsService = {
   observeStageDuration(stage: string, durationMs: number) {
     if (!stageStats[stage]) {
@@ -50,6 +69,31 @@ export const MetricsService = {
 
   async getPrometheusMetrics() {
     return await client.register.metrics();
+  },
+
+  formatTranscriptionDeadLetterMetrics(metrics: DeadLetterMetrics) {
+    const lines = [
+      '# HELP voicelog_transcription_dead_letter_jobs Number of transcription jobs parked in the dead-letter queue.',
+      '# TYPE voicelog_transcription_dead_letter_jobs gauge',
+      `voicelog_transcription_dead_letter_jobs ${safeMetricNumber(metrics?.count)}`,
+      '# HELP voicelog_transcription_dead_letter_oldest_age_minutes Age in minutes of the oldest transcription dead-letter job.',
+      '# TYPE voicelog_transcription_dead_letter_oldest_age_minutes gauge',
+      `voicelog_transcription_dead_letter_oldest_age_minutes ${safeMetricNumber(
+        metrics?.oldestAgeMinutes
+      )}`,
+      '# HELP voicelog_transcription_dead_letter_jobs_by_error_code Number of dead-letter transcription jobs grouped by safe error code.',
+      '# TYPE voicelog_transcription_dead_letter_jobs_by_error_code gauge',
+    ];
+
+    for (const [errorCode, count] of Object.entries(metrics?.byErrorCode || {})) {
+      lines.push(
+        `voicelog_transcription_dead_letter_jobs_by_error_code{error_code="${safeLabelValue(
+          errorCode
+        )}"} ${safeMetricNumber(count)}`
+      );
+    }
+
+    return `${lines.join('\n')}\n`;
   },
 
   getJsonSummary() {
