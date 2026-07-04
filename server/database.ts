@@ -3007,6 +3007,10 @@ export class Database {
     result: TranscriptionResult = {}
   ): Promise<MediaAsset | null> {
     const existing = await this.getMediaAsset(recordingId);
+    const existingJob = await this.getTranscriptionJobByRecordingId(recordingId);
+    if (existingJob && String(existingJob.status) === 'cancelled') {
+      return existing;
+    }
     const existingDiarization = this._safeJsonParse(existing?.diarization_json, {});
     const defaultPipelineMetadata = this._buildPipelineMetadata();
     const pipelineMetadata = {
@@ -3055,7 +3059,7 @@ export class Database {
         recordingId,
       ]
     );
-    const job = await this.getTranscriptionJobByRecordingId(recordingId);
+    const job = existingJob || (await this.getTranscriptionJobByRecordingId(recordingId));
     if (job && job.status !== 'completed') {
       const timestamp = this.nowIso();
       await this._execute(
@@ -3536,6 +3540,138 @@ export class Database {
       [this.nowIso(), jobId, workerId]
     );
     return this._get('SELECT * FROM transcription_jobs WHERE id = ?', [jobId]);
+  }
+
+  async getTranscriptionJobById(jobId: string): Promise<any | null> {
+    const safeJobId = String(jobId || '').trim();
+    if (!safeJobId) return null;
+    return this._get('SELECT * FROM transcription_jobs WHERE id = ?', [safeJobId]);
+  }
+
+  async listTranscriptionJobsForOperations(
+    options: {
+      workspaceId?: string;
+      status?: string;
+      recordingId?: string;
+      olderThanMinutes?: number;
+      limit?: number;
+      now?: string;
+    } = {}
+  ): Promise<any[]> {
+    const where: string[] = [];
+    const params: unknown[] = [];
+    const workspaceId = String(options.workspaceId || '').trim();
+    const status = String(options.status || '').trim();
+    const recordingId = String(options.recordingId || '').trim();
+
+    if (workspaceId) {
+      where.push('workspace_id = ?');
+      params.push(workspaceId);
+    }
+    if (status) {
+      where.push('status = ?');
+      params.push(status);
+    }
+    if (recordingId) {
+      where.push('recording_id = ?');
+      params.push(recordingId);
+    }
+    const olderThanMinutes = Number(options.olderThanMinutes || 0);
+    if (Number.isFinite(olderThanMinutes) && olderThanMinutes > 0) {
+      const baseMs = Date.parse(String(options.now || this.nowIso()));
+      const cutoff = new Date(
+        (Number.isFinite(baseMs) ? baseMs : Date.now()) - olderThanMinutes * 60_000
+      ).toISOString();
+      where.push('updated_at <= ?');
+      params.push(cutoff);
+    }
+
+    const limitInput = Number(options.limit ?? 50);
+    const limit = Math.min(
+      100,
+      Math.max(1, Number.isFinite(limitInput) ? Math.floor(limitInput) : 50)
+    );
+    const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    return this._query(
+      `SELECT * FROM transcription_jobs
+       ${clause}
+       ORDER BY updated_at DESC, created_at DESC
+       LIMIT ?`,
+      [...params, limit]
+    );
+  }
+
+  async retryTranscriptionJobForOperations(
+    jobId: string,
+    _options: { reason?: string } = {}
+  ): Promise<any | null> {
+    const job = await this.getTranscriptionJobById(jobId);
+    if (!job) return null;
+    const now = this.nowIso();
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = 'queued',
+           attempt_count = 0,
+           locked_by = '',
+           locked_until = '',
+           next_run_at = ?,
+           last_error_code = '',
+           last_error_message = '',
+           completed_at = NULL,
+           updated_at = ?
+       WHERE id = ?`,
+      [now, now, job.id]
+    );
+    await this._syncMediaAssetTranscriptionStatus(job.recording_id, 'queued');
+    return this.getTranscriptionJobById(job.id);
+  }
+
+  async cancelTranscriptionJobForOperations(
+    jobId: string,
+    options: { reason?: string } = {}
+  ): Promise<any | null> {
+    const job = await this.getTranscriptionJobById(jobId);
+    if (!job) return null;
+    const now = this.nowIso();
+    const reason = this._clean(options.reason || 'Operator cancelled transcription job.');
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = 'cancelled',
+           locked_by = '',
+           locked_until = '',
+           last_error_code = 'OPERATOR_CANCELLED',
+           last_error_message = ?,
+           completed_at = ?,
+           updated_at = ?
+       WHERE id = ?`,
+      [reason, now, now, job.id]
+    );
+    await this._syncMediaAssetTranscriptionStatus(job.recording_id, 'cancelled');
+    return this.getTranscriptionJobById(job.id);
+  }
+
+  async markTranscriptionJobFailedForOperations(
+    jobId: string,
+    options: { reason?: string } = {}
+  ): Promise<any | null> {
+    const job = await this.getTranscriptionJobById(jobId);
+    if (!job) return null;
+    const now = this.nowIso();
+    const reason = this._clean(options.reason || 'Operator marked transcription job as failed.');
+    await this._execute(
+      `UPDATE transcription_jobs
+       SET status = 'failed',
+           locked_by = '',
+           locked_until = '',
+           last_error_code = 'OPERATOR_MARK_FAILED',
+           last_error_message = ?,
+           completed_at = ?,
+           updated_at = ?
+       WHERE id = ?`,
+      [reason, now, now, job.id]
+    );
+    await this._syncMediaAssetTranscriptionStatus(job.recording_id, 'failed');
+    return this.getTranscriptionJobById(job.id);
   }
 
   async updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole) {

@@ -26,6 +26,7 @@ Root stays intentionally small:
 
 - `adr/` - architecture decision records
 - `ops/` - deployment, runtime, monitoring, APM, disk, and Node setup notes
+  - `ops/TRANSCRIPTION_JOB_OPERATIONS.md` - operator workflow for durable transcription jobs
 - `automation/` - automation workflows, task runners, and historical automation notes
 - `testing/` - coverage, QA, push, and route test reports
 - `archive/audits/` - historical audits and one-off reports

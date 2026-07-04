@@ -454,4 +454,139 @@ describe('transcription_jobs durable queue', () => {
       await db.shutdown();
     }
   });
+
+  test('operator listing filters jobs by workspace, status, recording, and age', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_ops_old', 'ws_ops');
+      await insertAsset(db, 'rec_ops_other', 'ws_other');
+      const oldJob = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_old',
+        workspaceId: 'ws_ops',
+      });
+      await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_other',
+        workspaceId: 'ws_other',
+      });
+      await db._execute(
+        `UPDATE transcription_jobs
+         SET status = 'failed', updated_at = ?, last_error_code = 'STT_FAILED'
+         WHERE id = ?`,
+        ['2026-07-03T09:00:00.000Z', oldJob.id]
+      );
+
+      const jobs = await db.listTranscriptionJobsForOperations({
+        workspaceId: 'ws_ops',
+        status: 'failed',
+        recordingId: 'rec_ops_old',
+        olderThanMinutes: 30,
+        now: '2026-07-03T10:00:00.000Z',
+      });
+
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]).toMatchObject({
+        id: oldJob.id,
+        workspace_id: 'ws_ops',
+        recording_id: 'rec_ops_old',
+        status: 'failed',
+        last_error_code: 'STT_FAILED',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('operator actions retry, cancel, and mark failed while syncing media status', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_ops_retry', 'ws_ops');
+      await insertAsset(db, 'rec_ops_cancel', 'ws_ops');
+      await insertAsset(db, 'rec_ops_fail', 'ws_ops');
+
+      const retryJob = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_retry',
+        workspaceId: 'ws_ops',
+      });
+      const cancelJob = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_cancel',
+        workspaceId: 'ws_ops',
+      });
+      const failJob = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_fail',
+        workspaceId: 'ws_ops',
+      });
+      await db._execute(
+        "UPDATE transcription_jobs SET status = 'failed', attempt_count = 3, last_error_message = 'old' WHERE id = ?",
+        [retryJob.id]
+      );
+
+      const retried = await db.retryTranscriptionJobForOperations(retryJob.id, {
+        reason: 'operator retry',
+      });
+      const cancelled = await db.cancelTranscriptionJobForOperations(cancelJob.id, {
+        reason: 'operator cancel',
+      });
+      const failed = await db.markTranscriptionJobFailedForOperations(failJob.id, {
+        reason: 'operator failed',
+      });
+
+      expect(retried).toMatchObject({
+        id: retryJob.id,
+        status: 'queued',
+        attempt_count: 0,
+        last_error_message: '',
+      });
+      expect(cancelled).toMatchObject({
+        id: cancelJob.id,
+        status: 'cancelled',
+        last_error_code: 'OPERATOR_CANCELLED',
+      });
+      expect(failed).toMatchObject({
+        id: failJob.id,
+        status: 'failed',
+        last_error_code: 'OPERATOR_MARK_FAILED',
+        last_error_message: 'operator failed',
+      });
+      await expect(db.getMediaAsset('rec_ops_retry')).resolves.toMatchObject({
+        transcription_status: 'queued',
+      });
+      await expect(db.getMediaAsset('rec_ops_cancel')).resolves.toMatchObject({
+        transcription_status: 'failed',
+      });
+      await expect(db.getMediaAsset('rec_ops_fail')).resolves.toMatchObject({
+        transcription_status: 'failed',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('cancelled running jobs are not overwritten by a late worker completion', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_ops_running', 'ws_ops');
+      const job = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_ops_running',
+        workspaceId: 'ws_ops',
+      });
+      await db.acquireTranscriptionJobLease({
+        workerId: 'worker-running',
+        recordingId: 'rec_ops_running',
+      });
+
+      await db.cancelTranscriptionJobForOperations(job.id, { reason: 'operator cancel' });
+      await db.saveTranscriptionResult('rec_ops_running', {
+        pipelineStatus: 'completed',
+        segments: [{ text: 'late result' }],
+      });
+
+      const currentJob = await db.getTranscriptionJobById(job.id);
+      const asset = await db.getMediaAsset('rec_ops_running');
+      expect(currentJob).toMatchObject({ status: 'cancelled' });
+      expect(asset).toMatchObject({ transcription_status: 'failed' });
+      expect(asset?.transcript_json).toBe('[]');
+    } finally {
+      await db.shutdown();
+    }
+  });
 });
