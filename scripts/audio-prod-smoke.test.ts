@@ -4,7 +4,12 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { runAudioProdSmoke, runAudioProdSmokeCli } from '../server/scripts/audio-prod-smoke.ts';
+import {
+  loadSmokeAudioFixture,
+  optionsFromEnv,
+  runAudioProdSmoke,
+  runAudioProdSmokeCli,
+} from '../server/scripts/audio-prod-smoke.ts';
 
 function jsonResponse(body: unknown, status = 200, requestId = 'req-test') {
   return new Response(JSON.stringify(body), {
@@ -52,6 +57,9 @@ describe('audio production smoke', () => {
           'Content-Type': 'audio/wav',
           'X-Workspace-Id': 'workspace_1',
         });
+        const body = init.body as Buffer;
+        expect(Buffer.isBuffer(body)).toBe(true);
+        expect(body.toString('ascii', 0, 4)).toBe('RIFF');
         return jsonResponse({ id: 'smoke_1780000000000', recordingId: 'smoke_1780000000000' }, 201);
       }
 
@@ -95,6 +103,10 @@ describe('audio production smoke', () => {
         );
       }
 
+      if (pathName === '/media/recordings/smoke_1780000000000' && init?.method === 'DELETE') {
+        return jsonResponse({ deleted: true });
+      }
+
       throw new Error(`Unexpected smoke request: ${init?.method || 'GET'} ${pathName}`);
     });
 
@@ -107,6 +119,7 @@ describe('audio production smoke', () => {
       now: () => 1780000000000,
       sleepMs: async () => {},
       maxPollAttempts: 1,
+      cleanup: true,
     });
 
     expect(report.steps.every((step) => step.ok)).toBe(true);
@@ -132,6 +145,100 @@ describe('audio production smoke', () => {
     expect(persisted.steps.map((step: any) => step.name)).toContain(
       'transcript persisted or empty transcript reported'
     );
+    expect(persisted.steps.map((step: any) => step.name)).toContain('cleanup smoke recording');
+    expect(persisted.smokeData).toMatchObject({
+      prefix: 'smoke_',
+      cleanupRequested: true,
+      identifiable: true,
+    });
+  });
+
+  it('loads the deterministic seeded short WAV fixture', async () => {
+    const fixture = await loadSmokeAudioFixture();
+
+    expect(fixture.toString('ascii', 0, 4)).toBe('RIFF');
+    expect(fixture.toString('ascii', 8, 12)).toBe('WAVE');
+    expect(fixture.byteLength).toBeGreaterThan(44);
+  });
+
+  it('marks smoke recordings as identifiable test data when cleanup is disabled', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-prod-smoke-test-data-'));
+    const reportPath = path.join(tempDir, 'report.json');
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const pathName = new URL(url).pathname;
+
+      if (pathName === '/health') {
+        return jsonResponse({
+          ok: true,
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method === 'PUT') {
+        return jsonResponse({ recordingId: 'smoke_1780000000000' }, 201);
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/transcribe') {
+        return jsonResponse({
+          recordingId: 'smoke_1780000000000',
+          pipelineStatus: init?.method === 'POST' ? 'queued' : 'done',
+          transcriptOutcome: 'empty',
+          emptyReason: 'fixture silence',
+          segments: [],
+        });
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/audio') {
+        return binaryResponse(new Uint8Array([1, 2, 3, 4]));
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/retry-transcribe') {
+        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'done' }, 409);
+      }
+
+      throw new Error(`Unexpected smoke request: ${init?.method || 'GET'} ${pathName}`);
+    });
+
+    const report = await runAudioProdSmoke({
+      baseUrl: 'https://api.example.com',
+      token: 'smoke-token',
+      workspaceId: 'workspace_1',
+      reportPath,
+      fetchImpl: fetchMock as any,
+      now: () => 1780000000000,
+      sleepMs: async () => {},
+      maxPollAttempts: 1,
+    });
+
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({
+        name: 'smoke data marked as test data',
+        ok: true,
+      })
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'https://api.example.com/media/recordings/smoke_1780000000000',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('reads cleanup and staging smoke credentials from environment', () => {
+    const options = optionsFromEnv({
+      VOICELOG_SMOKE_BASE_URL: 'https://staging.example.com/',
+      VOICELOG_SMOKE_TOKEN: 'secret-token',
+      VOICELOG_SMOKE_WORKSPACE_ID: 'workspace_smoke',
+      VOICELOG_SMOKE_CLEANUP: 'true',
+      VOICELOG_SMOKE_REPORT: 'reports/custom.json',
+    } as any);
+
+    expect(options).toMatchObject({
+      baseUrl: 'https://staging.example.com',
+      token: 'secret-token',
+      workspaceId: 'workspace_smoke',
+      cleanup: true,
+      reportPath: 'reports/custom.json',
+    });
   });
 
   it('stops before upload when auth or workspace evidence is missing', async () => {
