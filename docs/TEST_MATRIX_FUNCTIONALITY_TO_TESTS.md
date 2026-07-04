@@ -85,6 +85,21 @@ Uwaga: docs/API.md nie obejmuje pelnego zestawu endpointow (m.in. auth register/
 
 ## 4. Kryteria akceptacyjne
 
+### Egzekwowalny gate CI
+
+Krytyczne sciezki audio i przetwarzania maja maszynowo czytelny kontrakt w
+`docs/critical-path-coverage.matrix.json`. CI uruchamia go przez
+`pnpm run audit:repo-hygiene`, czyli w istniejacym jobie GitHub Actions
+`Quality Gates`.
+
+Validator `scripts/validate-critical-path-coverage.mjs` blokuje PR, gdy:
+
+- krytyczny obszar nie ma wlasciciela, priorytetu albo minimalnej liczby wymiarow pokrycia,
+- wymagany plik testowy z matrixa nie istnieje,
+- wymagany plik testowy zawiera `describe.skip`, `it.skip` albo `test.skip`.
+
+Testy validatora sa w `scripts/validate-critical-path-coverage.test.ts`.
+
 ### P0 (blokery)
 
 - HP = OK
