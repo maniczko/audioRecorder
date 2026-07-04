@@ -111,6 +111,7 @@ describe('Media Routes', () => {
     sentryMocks.capturePipelineException.mockClear();
     tracingMocks.withAudioSpan.mockClear();
     tracingMocks.appendTraceContext.mockClear();
+    vi.unstubAllEnvs();
     // Reset fs state to default after each test
     setFsState();
   });
@@ -921,6 +922,89 @@ describe('Media Routes', () => {
     );
   });
 
+  it('POST /media/recordings/:recordingId/transcribe - returns stt_quota_exceeded with Retry-After', async () => {
+    vi.stubEnv('VOICELOG_STT_USER_QUOTA_PER_HOUR', '1');
+    mockTranscriptionService.getMediaAsset.mockImplementation(async (recordingId: string) => ({
+      id: recordingId,
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'uploaded',
+      transcript_json: '[]',
+    }));
+
+    const first = await app.request('/media/recordings/rec_quota_first/transcribe', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+    const second = await app.request('/media/recordings/rec_quota_second/transcribe', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(first.status).toBe(202);
+    expect(second.status).toBe(429);
+    expect(second.headers.get('Retry-After')).toMatch(/^\d+$/);
+    await expect(second.json()).resolves.toMatchObject({
+      code: 'stt_quota_exceeded',
+      providerFamily: 'stt',
+      endpoint: 'recording-transcribe',
+      retryAfter: expect.any(Number),
+    });
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledTimes(1);
+  });
+
+  it('GET /media/quota/usage exposes workspace counters to operators without raw content', async () => {
+    vi.stubEnv('VOICELOG_STT_USER_QUOTA_PER_HOUR', '3');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_quota_usage',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'uploaded',
+      transcript_json: '[]',
+    });
+
+    await app.request('/media/recordings/rec_quota_usage/transcribe', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    const res = await app.request('/media/quota/usage?workspaceId=ws_1', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload.workspaceId).toBe('ws_1');
+    expect(payload.counters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'stt:workspace:ws_1:day',
+          count: 1,
+          resetAt: expect.any(String),
+        }),
+      ])
+    );
+    expect(JSON.stringify(payload)).not.toContain('fake.webm');
+    expect(JSON.stringify(payload)).not.toContain('transcript');
+  });
+
   it('POST /media/recordings/:recordingId/sketchnote - uses Gemini 3 Pro Image preview', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_sketchnote',
@@ -972,6 +1056,58 @@ describe('Media Routes', () => {
     expect(String((global.fetch as any).mock.calls[0][1].headers['x-goog-api-key'])).toBe(
       'test-key'
     );
+
+    global.fetch = originalFetch;
+    process.env.GEMINI_API_KEY = originalGeminiKey;
+  });
+
+  it('POST /media/recordings/:recordingId/sketchnote - returns image_quota_exceeded before Gemini call', async () => {
+    vi.stubEnv('VOICELOG_IMAGE_USER_QUOTA_PER_HOUR', '1');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_sketchnote',
+      workspace_id: 'ws_1',
+      diarization_json: JSON.stringify({
+        summary: 'Spotkanie o wdrozeniu nowego procesu.',
+      }),
+    });
+    mockWorkspaceService.getMembership.mockResolvedValue({ member_role: 'owner' });
+
+    const originalFetch = global.fetch;
+    const originalGeminiKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = 'test-key';
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [{ inlineData: { mimeType: 'image/png', data: 'dGVzdA==' } }],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    ) as any;
+
+    const first = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+    const second = await app.request('/media/recordings/rec_sketchnote/sketchnote', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(429);
+    expect(second.headers.get('Retry-After')).toMatch(/^\d+$/);
+    await expect(second.json()).resolves.toMatchObject({
+      code: 'image_quota_exceeded',
+      providerFamily: 'image',
+      endpoint: 'sketchnote',
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
 
     global.fetch = originalFetch;
     process.env.GEMINI_API_KEY = originalGeminiKey;
