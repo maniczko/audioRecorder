@@ -1228,6 +1228,42 @@ describe('Media Routes', () => {
     expect(oversize.headers.get('Vary')).toContain('Origin');
   });
 
+  it('PUT /media/recordings/:recordingId/audio - accepts upload at raw size policy boundary', async () => {
+    mockTranscriptionService.upsertMediaAssetFromPath.mockResolvedValue({
+      id: 'rec_boundary_ok',
+      workspace_id: 'ws_1',
+      size_bytes: 128,
+      storage_mode: 'single',
+      source_size_bytes: 128,
+      normalized_size_bytes: 128,
+    });
+
+    const res = await app.request('/media/recordings/rec_boundary_ok/audio', {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer fake_token',
+        'Content-Type': 'audio/webm',
+        'Content-Length': String(MAX_RAW_UPLOAD_BYTES),
+        'X-Workspace-Id': 'ws_1',
+      },
+      body: Buffer.from('boundary-audio'),
+    });
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      id: 'rec_boundary_ok',
+      workspaceId: 'ws_1',
+      sizeBytes: 128,
+    });
+    expect(mockTranscriptionService.upsertMediaAssetFromPath).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordingId: 'rec_boundary_ok',
+        workspaceId: 'ws_1',
+        contentType: 'audio/webm',
+      })
+    );
+  });
+
   it('GET /media/recordings/:recordingId/audio - returns 404 for missing assets and files', async () => {
     mockTranscriptionService.getMediaAsset.mockResolvedValueOnce(null);
     const missingAsset = await app.request('/media/recordings/rec_missing/audio', {

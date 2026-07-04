@@ -746,6 +746,31 @@ describe('Media Routes - Additional Coverage', () => {
           resumable: false,
         });
       });
+
+      it('returns the first missing chunk as nextIndex so clients can resume safely', async () => {
+        const recordingId = 'rec_chunkstat_sparse_resume';
+        await uploadChunk(recordingId, 0, 4, Buffer.from('first'));
+        await uploadChunk(recordingId, 2, 4, Buffer.from('third'));
+
+        const res = await app.request(
+          `/media/recordings/${recordingId}/audio/chunk-status?total=4`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer fake_token',
+              'X-Workspace-Id': 'ws_1',
+            },
+          }
+        );
+
+        expect(res.status).toBe(200);
+        await expect(res.json()).resolves.toEqual({
+          nextIndex: 1,
+          uploaded: 1,
+          total: 4,
+          resumable: true,
+        });
+      });
     });
 
     describe('PUT /media/recordings/:recordingId/audio/chunk', () => {
@@ -799,6 +824,9 @@ describe('Media Routes - Additional Coverage', () => {
         });
 
         expect(res.status).toBe(413);
+        await expect(res.json()).resolves.toMatchObject({
+          message: expect.stringContaining('max 6MB'),
+        });
       });
 
       it('returns 200 and saves chunk when valid', async () => {
@@ -1098,6 +1126,22 @@ describe('Media Routes - Additional Coverage', () => {
         expect(res.status).toBe(400);
         const data = await res.json();
         expect(data.message).toBeTruthy(); // Error varies by Node.js stream implementation
+        expect(listAssembledFiles(recordingId)).toEqual([]);
+      });
+
+      it('keeps partial chunks retryable and removes assembled temp files when a middle chunk is missing', async () => {
+        const recordingId = 'rec_finalize_missing_middle';
+        await uploadChunk(recordingId, 0, 3, Buffer.from('first'));
+        await uploadChunk(recordingId, 2, 3, Buffer.from('third'));
+
+        const res = await finalizeUpload(recordingId, 3);
+
+        expect(res.status).toBe(400);
+        await expect(res.json()).resolves.toMatchObject({
+          message: expect.stringContaining('1 z 3'),
+        });
+        expect(existsSync(chunkPathFor(recordingId, 0))).toBe(true);
+        expect(existsSync(chunkPathFor(recordingId, 2))).toBe(true);
         expect(listAssembledFiles(recordingId)).toEqual([]);
       });
 
