@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_audio_smoke:
+        description: 'Run the seeded audio upload/transcription smoke after the health smoke'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: backend-production-smoke-${{ github.ref }}
@@ -19,6 +25,13 @@ jobs:
     permissions:
       contents: read
       issues: write
+    env:
+      VOICELOG_SMOKE_BASE_URL: ${{ secrets.VOICELOG_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
+      VOICELOG_SMOKE_TOKEN: ${{ secrets.VOICELOG_SMOKE_TOKEN }}
+      VOICELOG_SMOKE_EMAIL: ${{ secrets.VOICELOG_SMOKE_EMAIL }}
+      VOICELOG_SMOKE_PASSWORD: ${{ secrets.VOICELOG_SMOKE_PASSWORD }}
+      VOICELOG_SMOKE_WORKSPACE_ID: ${{ secrets.VOICELOG_SMOKE_WORKSPACE_ID }}
+      VOICELOG_SMOKE_CLEANUP: 'true'
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
@@ -76,6 +89,41 @@ jobs:
           REQUIRE_EXACT_GIT_SHA: 'true'
           SMOKE_MAX_RETRIES: '30'
           SMOKE_WAIT_MS: '10000'
+
+      - name: Validate audio smoke secrets
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_audio_smoke == true }}
+        shell: bash
+        run: |
+          missing=()
+          [[ -n "$VOICELOG_SMOKE_WORKSPACE_ID" ]] || missing+=("VOICELOG_SMOKE_WORKSPACE_ID")
+          if [[ -z "$VOICELOG_SMOKE_TOKEN" && ( -z "$VOICELOG_SMOKE_EMAIL" || -z "$VOICELOG_SMOKE_PASSWORD" ) ]]; then
+            missing+=("VOICELOG_SMOKE_TOKEN or VOICELOG_SMOKE_EMAIL/VOICELOG_SMOKE_PASSWORD")
+          fi
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "## Missing audio smoke secrets" >> "$GITHUB_STEP_SUMMARY"
+            for secret in "${missing[@]}"; do
+              echo "- ${secret}" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Missing required audio smoke secret: ${secret}"
+            done
+            exit 1
+          fi
+
+      - name: Seeded audio upload and transcription smoke
+        id: audio-smoke
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_audio_smoke == true) || (github.event_name == 'workflow_run' && env.VOICELOG_SMOKE_WORKSPACE_ID != '' && (env.VOICELOG_SMOKE_TOKEN != '' || (env.VOICELOG_SMOKE_EMAIL != '' && env.VOICELOG_SMOKE_PASSWORD != ''))) }}
+        shell: bash
+        run: |
+          echo "Running seeded audio smoke against ${VOICELOG_SMOKE_BASE_URL}"
+          pnpm run release:audio-prod-smoke
+
+      - name: Upload audio smoke report
+        if: always() && steps.audio-smoke.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-audio-smoke-report
+          path: reports/audio-prod-smoke-*.json
+          if-no-files-found: ignore
 
       - name: Debug - Log Railway deployment status
         if: failure() && steps.smoke.outcome == 'failure'

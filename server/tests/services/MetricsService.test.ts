@@ -125,4 +125,18 @@ describe('MetricsService', () => {
       })
     );
   });
+
+  test('formats dead-letter queue metrics for Prometheus output', () => {
+    const output = MetricsService.formatTranscriptionDeadLetterMetrics({
+      count: 2,
+      oldestAgeMinutes: 45,
+      byErrorCode: { STT_VENDOR_DOWN: 2 },
+    });
+
+    expect(output).toContain('voicelog_transcription_dead_letter_jobs 2');
+    expect(output).toContain('voicelog_transcription_dead_letter_oldest_age_minutes 45');
+    expect(output).toContain(
+      'voicelog_transcription_dead_letter_jobs_by_error_code{error_code="STT_VENDOR_DOWN"} 2'
+    );
+  });
 });

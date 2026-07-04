@@ -18,6 +18,9 @@ Alternatively provide `VOICELOG_SMOKE_EMAIL` and `VOICELOG_SMOKE_PASSWORD` inste
 The smoke writes a JSON report to `reports/audio-prod-smoke-<timestamp>.json` unless
 `VOICELOG_SMOKE_REPORT` is set.
 
+The uploaded audio comes from the deterministic seeded fixture
+`tests/fixtures/audio/smoke-short.wav.base64`, decoded as a tiny WAV file at runtime.
+
 Local example:
 
 ```bash
@@ -37,6 +40,7 @@ pnpm run release:audio-prod-smoke
 | `VOICELOG_SMOKE_EMAIL`        | One auth method | Login email when no token is provided.                                       |
 | `VOICELOG_SMOKE_PASSWORD`     | One auth method | Login password when no token is provided.                                    |
 | `VOICELOG_SMOKE_REPORT`       | No              | Explicit JSON report path.                                                   |
+| `VOICELOG_SMOKE_CLEANUP`      | No              | Set to `true` to delete the smoke recording after validation.                |
 
 ## Checks
 
@@ -49,6 +53,7 @@ pnpm run release:audio-prod-smoke
 - Transcript persistence is verified by checking that transcript segments exist, or that an empty/failed transcript outcome is explicitly reported.
 - Audio download works through `GET /media/recordings/:id/audio`.
 - Retry-transcribe route responds for completed/processing states through `POST /media/recordings/:id/retry-transcribe`.
+- Smoke data is either removed when `VOICELOG_SMOKE_CLEANUP=true`, or left with the identifiable `smoke_` recording prefix and summarized in the report.
 
 ## Report Contract
 

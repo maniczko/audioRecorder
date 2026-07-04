@@ -233,7 +233,7 @@ describe('Media Routes - Additional Coverage', () => {
       expect(data.coaching).toEqual({ tips: ['Speak louder', 'Slow down'] });
     });
 
-    it('returns 400 when speakerId is missing', async () => {
+    it('returns 422 when speakerId is missing', async () => {
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_voice',
         workspace_id: 'ws_1',
@@ -249,9 +249,12 @@ describe('Media Routes - Additional Coverage', () => {
         body: JSON.stringify({}),
       });
 
-      expect(res.status).toBe(400);
-      const data = await res.json();
-      expect(data.message).toContain('Brakuje speakerId');
+      expect(res.status).toBe(422);
+      await expect(res.json()).resolves.toMatchObject({
+        code: 'validation_failed',
+        stage: 'validation',
+        details: expect.arrayContaining([expect.objectContaining({ path: 'speakerId' })]),
+      });
     });
 
     it('returns 404 when asset does not exist', async () => {
@@ -1024,6 +1027,28 @@ describe('Media Routes - Additional Coverage', () => {
         expect(res.status).toBe(401);
       });
 
+      it('validates finalize payload before asset lookup or chunk assembly', async () => {
+        const res = await app.request('/media/recordings/rec_invalid_finalize/audio/finalize', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer fake_token',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ workspaceId: 'ws_1', total: 0, contentType: 'text/plain' }),
+        });
+
+        expect(res.status).toBe(422);
+        await expect(res.json()).resolves.toMatchObject({
+          code: 'validation_failed',
+          stage: 'validation',
+          details: expect.arrayContaining([
+            expect.objectContaining({ path: 'total' }),
+            expect.objectContaining({ path: 'contentType' }),
+          ]),
+        });
+        expect(mockTranscriptionService.getMediaAsset).not.toHaveBeenCalled();
+      });
+
       it('returns 400 when workspaceId is missing', async () => {
         const res = await app.request('/media/recordings/rec1/audio/finalize', {
           method: 'POST',
@@ -1037,7 +1062,7 @@ describe('Media Routes - Additional Coverage', () => {
         expect(res.status).toBe(400);
       });
 
-      it('returns 400 when total is missing or invalid', async () => {
+      it('returns 422 when total is missing or invalid', async () => {
         const res = await app.request('/media/recordings/rec1/audio/finalize', {
           method: 'POST',
           headers: {
@@ -1048,7 +1073,12 @@ describe('Media Routes - Additional Coverage', () => {
           body: JSON.stringify({ workspaceId: 'ws_1' }),
         });
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(422);
+        await expect(res.json()).resolves.toMatchObject({
+          code: 'validation_failed',
+          stage: 'validation',
+          details: expect.arrayContaining([expect.objectContaining({ path: 'total' })]),
+        });
       });
 
       it('returns 400 when chunk assembly fails (missing chunks)', async () => {
@@ -1610,15 +1640,14 @@ describe('Media Routes - Additional Coverage', () => {
         }
       );
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       const data = await res.json();
-      expect(data.message).toContain('speakerId');
-      expect(data.code).toBe('missing_speaker_id');
+      expect(data.message).toBe('Nieprawidlowy payload zadania.');
+      expect(data.code).toBe('validation_failed');
       expect(data.stage).toBe('validation');
-      expect(data.retryable).toBe(false);
-      expect(data.userAction).toBe('select_speaker');
-      expect(data.recordingId).toBe('rec_vp_missing_speaker');
-      expect(data.requestId).toEqual(expect.any(String));
+      expect(data.details).toEqual(
+        expect.arrayContaining([expect.objectContaining({ path: 'speakerId' })])
+      );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();
     });
 
@@ -1644,16 +1673,13 @@ describe('Media Routes - Additional Coverage', () => {
         }
       );
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       const data = await res.json();
       expect(data).toEqual(
         expect.objectContaining({
-          code: 'missing_speaker_name',
+          code: 'validation_failed',
           stage: 'validation',
-          retryable: false,
-          userAction: 'select_speaker',
-          recordingId: 'rec_vp_missing_name',
-          speakerId: '0',
+          details: expect.arrayContaining([expect.objectContaining({ path: 'speakerName' })]),
         })
       );
       expect(mockTranscriptionService.createVoiceProfileFromSpeaker).not.toHaveBeenCalled();

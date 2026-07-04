@@ -39,6 +39,73 @@ function requireOpsAccess(c: any, services: AppServices) {
   return null;
 }
 
+function cleanQueryValue(value: unknown, maxLength = 160) {
+  return String(value || '')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function parsePositiveInt(value: unknown, fallback?: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+}
+
+function safeJobReason(value: unknown) {
+  return cleanQueryValue(value, 500);
+}
+
+function serializeTranscriptionJob(job: any) {
+  if (!job) return null;
+  return {
+    id: String(job.id || ''),
+    recordingId: String(job.recording_id || ''),
+    workspaceId: String(job.workspace_id || ''),
+    meetingId: String(job.meeting_id || ''),
+    status: String(job.status || ''),
+    attemptCount: Number(job.attempt_count || 0),
+    maxAttempts: Number(job.max_attempts || 0),
+    nextRunAt: String(job.next_run_at || ''),
+    createdAt: String(job.created_at || ''),
+    updatedAt: String(job.updated_at || ''),
+    completedAt: String(job.completed_at || ''),
+    diagnostics: {
+      lockedBy: String(job.locked_by || ''),
+      lockedUntil: String(job.locked_until || ''),
+      lastErrorCode: String(job.last_error_code || ''),
+      lastErrorMessage: String(job.last_error_message || ''),
+    },
+  };
+}
+
+async function writeTranscriptionJobOperatorAudit(
+  services: AppServices,
+  action: string,
+  job: any,
+  reason: string,
+  requestId: string
+) {
+  const auditTarget =
+    typeof services.db?.writeAuditLogBestEffort === 'function' ? services.db : null;
+  if (!auditTarget || !job?.workspace_id || !job?.id) return;
+
+  await auditTarget.writeAuditLogBestEffort({
+    workspaceId: String(job.workspace_id),
+    actorUserId: 'ops-token',
+    action,
+    entityType: 'transcription_job',
+    entityId: String(job.id),
+    metadata: {
+      recordingId: String(job.recording_id || ''),
+      meetingId: String(job.meeting_id || ''),
+      status: String(job.status || ''),
+      reason,
+      requestId,
+      source: 'api',
+    },
+  });
+}
+
 export function registerAppRoutes(
   app: Hono<any>,
   services: AppServices,
@@ -50,14 +117,31 @@ export function registerAppRoutes(
   app.get('/metrics', middlewares.applyRateLimit('admin-sensitive', 20), async (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
-    const metrics = await MetricsService.getPrometheusMetrics();
+    const deadLetterMetrics =
+      typeof services.db?.getTranscriptionDeadLetterMetrics === 'function'
+        ? await services.db.getTranscriptionDeadLetterMetrics()
+        : null;
+    const metrics = [
+      await MetricsService.getPrometheusMetrics(),
+      deadLetterMetrics
+        ? MetricsService.formatTranscriptionDeadLetterMetrics(deadLetterMetrics)
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
     return c.text(metrics);
   });
 
-  app.get('/api/admin/metrics', middlewares.applyRateLimit('admin-sensitive', 20), (c) => {
+  app.get('/api/admin/metrics', middlewares.applyRateLimit('admin-sensitive', 20), async (c) => {
     const denied = requireOpsAccess(c, services);
     if (denied) return denied;
     const summary = MetricsService.getJsonSummary();
+    if (typeof services.db?.getTranscriptionDeadLetterMetrics === 'function') {
+      summary.transcriptionJobs = {
+        ...(summary.transcriptionJobs || {}),
+        deadLetter: await services.db.getTranscriptionDeadLetterMetrics(),
+      };
+    }
     return c.json(summary);
   });
 
@@ -78,6 +162,113 @@ export function registerAppRoutes(
     v8.writeHeapSnapshot(filepath);
     return c.json({ message: 'Heap snapshot created', fileName: filename });
   });
+
+  app.get(
+    '/api/admin/transcription-jobs',
+    middlewares.applyRateLimit('admin-sensitive', 20),
+    async (c) => {
+      const denied = requireOpsAccess(c, services);
+      if (denied) return denied;
+      if (typeof services.db?.listTranscriptionJobsForOperations !== 'function') {
+        return c.json({ message: 'Transcription job operations are unavailable.' }, 501);
+      }
+
+      const filters = {
+        workspaceId: cleanQueryValue(c.req.query('workspaceId')),
+        status: cleanQueryValue(c.req.query('status'), 60),
+        recordingId: cleanQueryValue(c.req.query('recordingId')),
+        errorCode: cleanQueryValue(c.req.query('errorCode'), 120),
+        olderThanMinutes: parsePositiveInt(c.req.query('olderThanMinutes')),
+        limit: parsePositiveInt(c.req.query('limit'), 50),
+      };
+      const jobs = await services.db.listTranscriptionJobsForOperations(filters);
+      return c.json(
+        { jobs: jobs.map(serializeTranscriptionJob), count: jobs.length, filters },
+        200
+      );
+    }
+  );
+
+  app.get(
+    '/api/admin/transcription-jobs/:jobId',
+    middlewares.applyRateLimit('admin-sensitive', 20),
+    async (c) => {
+      const denied = requireOpsAccess(c, services);
+      if (denied) return denied;
+      if (typeof services.db?.getTranscriptionJobById !== 'function') {
+        return c.json({ message: 'Transcription job operations are unavailable.' }, 501);
+      }
+
+      const job = await services.db.getTranscriptionJobById(c.req.param('jobId'));
+      if (!job) return c.json({ message: 'Nie znaleziono zadania transkrypcji.' }, 404);
+      return c.json({ job: serializeTranscriptionJob(job) }, 200);
+    }
+  );
+
+  const runTranscriptionJobAction = async (c: any, methodName: string, auditAction: string) => {
+    const denied = requireOpsAccess(c, services);
+    if (denied) return denied;
+    if (typeof services.db?.[methodName] !== 'function') {
+      return c.json({ message: 'Transcription job operations are unavailable.' }, 501);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const reason = safeJobReason(body?.reason);
+    const job = await services.db[methodName](c.req.param('jobId'), { reason });
+    if (!job) return c.json({ message: 'Nie znaleziono zadania transkrypcji.' }, 404);
+    await writeTranscriptionJobOperatorAudit(
+      services,
+      auditAction,
+      job,
+      reason,
+      c.get('reqId') || ''
+    );
+    return c.json({ job: serializeTranscriptionJob(job) }, 200);
+  };
+
+  app.post(
+    '/api/admin/transcription-jobs/:jobId/retry',
+    middlewares.applyRateLimit('admin-sensitive', 10),
+    (c) =>
+      runTranscriptionJobAction(
+        c,
+        'retryTranscriptionJobForOperations',
+        'operator.transcription_job.retry'
+      )
+  );
+
+  app.post(
+    '/api/admin/transcription-jobs/:jobId/cancel',
+    middlewares.applyRateLimit('admin-sensitive', 10),
+    (c) =>
+      runTranscriptionJobAction(
+        c,
+        'cancelTranscriptionJobForOperations',
+        'operator.transcription_job.cancel'
+      )
+  );
+
+  app.post(
+    '/api/admin/transcription-jobs/:jobId/mark-failed',
+    middlewares.applyRateLimit('admin-sensitive', 10),
+    (c) =>
+      runTranscriptionJobAction(
+        c,
+        'markTranscriptionJobFailedForOperations',
+        'operator.transcription_job.mark_failed'
+      )
+  );
+
+  app.post(
+    '/api/admin/transcription-jobs/:jobId/replay',
+    middlewares.applyRateLimit('admin-sensitive', 10),
+    (c) =>
+      runTranscriptionJobAction(
+        c,
+        'replayDeadLetterTranscriptionJobForOperations',
+        'operator.transcription_job.replay'
+      )
+  );
 
   app.route('/auth', createAuthRoutes(services, middlewares));
   app.route('/', createWorkspacesRoutes(services, middlewares));
