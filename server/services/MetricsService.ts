@@ -28,6 +28,25 @@ if (!globalObj.__pipelineStageDuration) {
 // Custom store for easy JSON API reading in the React dashboard frontend
 const stageStats: Record<string, number[]> = {};
 const capabilityModeCounts: Record<string, number> = {};
+const aiAnalysisCounts: Record<string, number> = {};
+const aiFallbackCounts: Record<string, number> = {};
+
+type AiAnalysisMetric = {
+  workspaceId?: string;
+  endpoint?: string;
+  source?: string;
+};
+
+type AiFallbackMetric = {
+  workspaceId?: string;
+  endpoint?: string;
+  reason?: string;
+  mode?: string;
+};
+
+function safeMetricLabel(value: unknown, fallback = 'unknown') {
+  return String(value || fallback).replace(/[^a-zA-Z0-9_-]/g, '_') || fallback;
+}
 
 interface DeadLetterMetrics {
   count: number;
@@ -61,10 +80,27 @@ export const MetricsService = {
   },
 
   observeCapabilityMode(capability: string, mode: string) {
-    const safeCapability = String(capability || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeMode = String(mode || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeCapability = safeMetricLabel(capability);
+    const safeMode = safeMetricLabel(mode);
     const key = `${safeCapability}:${safeMode}`;
     capabilityModeCounts[key] = (capabilityModeCounts[key] || 0) + 1;
+  },
+
+  observeAiAnalysis(metric: AiAnalysisMetric) {
+    const workspaceId = safeMetricLabel(metric.workspaceId, 'workspace_unknown');
+    const endpoint = safeMetricLabel(metric.endpoint, 'endpoint_unknown');
+    const source = safeMetricLabel(metric.source, 'unknown');
+    const key = `${workspaceId}:${endpoint}:${source}`;
+    aiAnalysisCounts[key] = (aiAnalysisCounts[key] || 0) + 1;
+  },
+
+  observeAiFallback(metric: AiFallbackMetric) {
+    const workspaceId = safeMetricLabel(metric.workspaceId, 'workspace_unknown');
+    const endpoint = safeMetricLabel(metric.endpoint, 'endpoint_unknown');
+    const reason = safeMetricLabel(metric.reason, 'unknown');
+    const mode = safeMetricLabel(metric.mode, 'fallback');
+    const key = `${workspaceId}:${endpoint}:${reason}:${mode}`;
+    aiFallbackCounts[key] = (aiFallbackCounts[key] || 0) + 1;
   },
 
   async getPrometheusMetrics() {
@@ -100,6 +136,31 @@ export const MetricsService = {
     const result: Record<string, any> = {};
     if (Object.keys(capabilityModeCounts).length > 0) {
       result.capabilityModes = { ...capabilityModeCounts };
+    }
+    if (Object.keys(aiFallbackCounts).length > 0) {
+      const total = Object.values(aiFallbackCounts).reduce((sum, count) => sum + count, 0);
+      const analysisTotal = Object.values(aiAnalysisCounts).reduce((sum, count) => sum + count, 0);
+      const byWorkspace: Record<string, number> = {};
+      const byEndpoint: Record<string, number> = {};
+      const byReason: Record<string, number> = {};
+
+      for (const [key, count] of Object.entries(aiFallbackCounts)) {
+        const [workspaceId, endpoint, reason] = key.split(':');
+        byWorkspace[workspaceId] = (byWorkspace[workspaceId] || 0) + count;
+        byEndpoint[endpoint] = (byEndpoint[endpoint] || 0) + count;
+        byReason[reason] = (byReason[reason] || 0) + count;
+      }
+
+      result.aiFallbacks = {
+        total,
+        analysisTotal,
+        fallbackRate: analysisTotal > 0 ? total / analysisTotal : 1,
+        counts: { ...aiFallbackCounts },
+        analysisCounts: { ...aiAnalysisCounts },
+        byWorkspace,
+        byEndpoint,
+        byReason,
+      };
     }
     for (const [stage, times] of Object.entries(stageStats)) {
       if (times.length === 0) continue;

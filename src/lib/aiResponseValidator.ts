@@ -1,6 +1,10 @@
 import type { MeetingRisk, MeetingParticipantInsight } from '../shared/types';
 
 export interface AiAnalysisResponse {
+  mode?: string;
+  analysisSource?: string;
+  fallbackReason?: string;
+  generatedBy?: string;
   summary?: string;
   decisions?: string[];
   actionItems?: string[];

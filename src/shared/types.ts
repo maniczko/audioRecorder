@@ -335,6 +335,9 @@ export interface MeetingParticipantInsight {
 
 export interface MeetingAnalysis {
   mode?: string;
+  analysisSource?: 'provider' | 'fallback' | string;
+  fallbackReason?: string;
+  generatedBy?: string;
   speakerCount?: number;
   speakerLabels?: Record<string, string>;
   summary: string;

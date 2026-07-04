@@ -47,6 +47,8 @@ import {
 } from '../lib/mediaStoragePipeline.ts';
 import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
 import { withAudioSpan } from '../tracing.ts';
+import { logger } from '../logger.ts';
+import { MetricsService } from '../services/MetricsService.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -60,6 +62,30 @@ const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
 
 const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
 const ACTIVE_TRANSCRIPTION_STATUSES = new Set(['processing', 'diarization']);
+
+function normalizeAnalysisPayload(result: any) {
+  if (result && typeof result === 'object') {
+    const mode = String(result.mode || '').trim();
+    const fallbackReason = String(result.fallbackReason || '').trim();
+    const analysisSource =
+      result.analysisSource ||
+      (fallbackReason || /fallback|no-key|disabled/i.test(mode) ? 'fallback' : 'provider');
+    return {
+      ...result,
+      analysisSource,
+      ...(analysisSource === 'fallback'
+        ? { fallbackReason: fallbackReason || (mode === 'no-key' ? 'no-key' : 'provider-error') }
+        : {}),
+    };
+  }
+
+  return {
+    mode: 'no-key',
+    analysisSource: 'fallback',
+    fallbackReason: 'no-key',
+    generatedBy: 'server',
+  };
+}
 
 function getIdempotencyKey(c: any): string | undefined {
   const key = String(c.req.header(IDEMPOTENCY_KEY_HEADER) || '').trim();
@@ -2331,7 +2357,7 @@ Important:
     await ensureWorkspaceAccess(c, workspaceId);
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
-    const payload = result || { mode: 'no-key' };
+    const payload = normalizeAnalysisPayload(result);
     const meeting = body?.meeting && typeof body.meeting === 'object' ? body.meeting : {};
     const recordingId = String(
       body.recordingId ||
@@ -2344,6 +2370,11 @@ Important:
         meeting.id ||
         workspaceId
     ).trim();
+    MetricsService.observeAiAnalysis({
+      workspaceId,
+      endpoint: 'media.analyze',
+      source: String((payload as any)?.analysisSource || 'provider'),
+    });
     await writeAuditEvent(c, {
       workspaceId,
       action: 'recording.ai.analyzed',
@@ -2352,9 +2383,36 @@ Important:
       metadata: {
         meetingId: String(body.meetingId || meeting.id || ''),
         mode: String((payload as any)?.mode || 'analysis'),
+        analysisSource: String((payload as any)?.analysisSource || 'provider'),
+        fallbackReason: String((payload as any)?.fallbackReason || ''),
         source: 'api',
       },
     });
+    if ((payload as any)?.analysisSource === 'fallback') {
+      const reason = String((payload as any)?.fallbackReason || 'provider-error');
+      const mode = String((payload as any)?.mode || 'fallback');
+      MetricsService.observeAiFallback({
+        workspaceId,
+        endpoint: 'media.analyze',
+        reason,
+        mode,
+      });
+      logger.warn(
+        '[AI] Meeting analysis fallback used',
+        {
+          workspaceId,
+          recordingId,
+          meetingId: String(body.meetingId || meeting.id || ''),
+          fallbackReason: reason,
+          mode,
+        },
+        {
+          sentryLevel:
+            reason === 'no-key' || reason === 'disabled-feature-flag' ? 'info' : 'warning',
+          fingerprint: ['ai-analysis-fallback', reason],
+        }
+      );
+    }
     return c.json(payload, 200);
   });
 

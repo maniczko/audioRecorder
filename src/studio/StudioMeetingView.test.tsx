@@ -1978,6 +1978,27 @@ describe('StudioMeetingView', () => {
     expect(screen.getByRole('button', { name: /^Zapisz$/i })).toBeInTheDocument();
   });
 
+  test('shows degraded AI status when meeting analysis was fallback-generated', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        studioAnalysis={{
+          mode: 'no-key',
+          analysisSource: 'fallback',
+          fallbackReason: 'no-key',
+          summary: 'Lokalne podsumowanie testowe.',
+          decisions: [],
+          actionItems: [],
+        }}
+      />
+    );
+
+    expect(screen.getByRole('status', { name: /status analizy ai/i })).toHaveTextContent(
+      /Analiza lokalna/i
+    );
+    expect(screen.getByText(/brak skonfigurowanego klucza/i)).toBeInTheDocument();
+  });
+
   test('renders toolbar buttons', () => {
     renderWithContext(<StudioMeetingView {...defaultProps} />);
     expect(screen.getByText(/Eksport/i)).toBeInTheDocument();

@@ -147,6 +147,9 @@ function buildFallbackAnalysis({
 
   return {
     mode: API_KEY ? 'fallback-after-api-error' : 'local-fallback',
+    analysisSource: 'fallback',
+    fallbackReason: API_KEY ? 'provider-error' : 'no-key',
+    generatedBy: 'browser',
     speakerLabels: speakerNames,
     speakerCount:
       diarization?.speakerCount || new Set(transcript.map((segment) => segment.speakerId)).size,
@@ -362,8 +365,23 @@ export async function analyzeMeeting({
       if (result && result.summary) {
         return buildEnrichedAnalysis(result, fallback, segments, speakerNames, meeting);
       }
+      if (result?.analysisSource === 'fallback' || result?.fallbackReason || result?.mode) {
+        return {
+          ...fallback,
+          mode: result.mode || fallback.mode,
+          analysisSource: result.analysisSource || 'fallback',
+          fallbackReason: result.fallbackReason || fallback.fallbackReason || 'provider-error',
+          generatedBy: result.generatedBy || 'server',
+        };
+      }
     } catch (error) {
       console.error('Server meeting analysis failed, falling back.', error);
+      return {
+        ...fallback,
+        mode: 'fallback-after-api-error',
+        analysisSource: 'fallback',
+        fallbackReason: 'provider-error',
+      };
     }
     return fallback;
   }
@@ -461,13 +479,23 @@ async function analyzeMeetingViaAnthropic({
 
     if (!parsed || !validateAnalysisResponse(parsed)) {
       console.warn('Invalid AI response, using fallback');
-      return fallback;
+      return {
+        ...fallback,
+        mode: 'fallback-after-api-error',
+        analysisSource: 'fallback',
+        fallbackReason: 'invalid-model-output',
+      };
     }
 
     return buildAnthropicAnalysis(parsed, fallback, segments, speakerNames, meeting);
   } catch (error) {
     console.error('AI meeting analysis failed, falling back to local summary.', error);
-    return fallback;
+    return {
+      ...fallback,
+      mode: 'fallback-after-api-error',
+      analysisSource: 'fallback',
+      fallbackReason: 'provider-error',
+    };
   }
 }
 
@@ -575,6 +603,8 @@ function buildAnthropicAnalysis(
 
   return {
     mode: 'anthropic',
+    analysisSource: 'provider',
+    generatedBy: 'anthropic',
     speakerLabels: parsed.speakerLabels || speakerNames,
     speakerCount: parsed.speakerCount || fallback.speakerCount,
     summary: parsed.summary || fallback.summary,

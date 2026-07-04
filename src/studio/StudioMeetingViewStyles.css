@@ -439,6 +439,36 @@
   line-height: 1.65;
 }
 
+.analysis-source-status {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(117, 214, 196, 0.18);
+  background: rgba(117, 214, 196, 0.08);
+  color: var(--text-main, #f8fffc);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.analysis-source-status span {
+  font-weight: 700;
+}
+
+.analysis-source-status small {
+  color: var(--text-muted, #7c7c8c);
+  font-size: 0.74rem;
+}
+
+.analysis-source-status.fallback {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.1);
+}
+
 .analysis-shell-metrics {
   display: flex;
   align-items: center;
