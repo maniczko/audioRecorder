@@ -13,8 +13,16 @@ export type AiQuotaExceeded = {
   retryAfter: number;
 };
 
+export type AiQuotaSnapshot = {
+  key: string;
+  count: number;
+  resetAt: number;
+  updatedAt?: string;
+};
+
 export interface AiQuotaStore {
   increment(checks: AiQuotaCheck[]): Promise<AiQuotaExceeded | null>;
+  snapshot?(options?: { prefix?: string; contains?: string }): Promise<AiQuotaSnapshot[]>;
   reset?(): Promise<void> | void;
 }
 
@@ -73,6 +81,18 @@ export class MemoryAiQuotaStore implements AiQuotaStore {
 
   reset() {
     this.counters.clear();
+  }
+
+  async snapshot(options: { prefix?: string; contains?: string } = {}) {
+    return [...this.counters.entries()]
+      .filter(([key]) => !options.prefix || key.startsWith(options.prefix))
+      .filter(([key]) => !options.contains || key.includes(options.contains))
+      .map(([key, entry]) => ({
+        key,
+        count: entry.count,
+        resetAt: entry.resetAt,
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
   }
 }
 
@@ -192,6 +212,161 @@ export class DbAiQuotaStore implements AiQuotaStore {
     await this.ensureSchema();
     await this.db._execute('DELETE FROM ai_quota_counters');
   }
+
+  async snapshot(options: { prefix?: string; contains?: string } = {}) {
+    if (this.fallbackMode) {
+      return this.fallbackStore.snapshot(options);
+    }
+    await this.ensureSchema();
+    if (typeof this.db._all !== 'function') {
+      return [];
+    }
+    const rows = await this.db._all(
+      'SELECT key, count, reset_at, updated_at FROM ai_quota_counters ORDER BY key'
+    );
+    return (Array.isArray(rows) ? rows : [])
+      .map((row: any) => ({
+        key: String(row.key || ''),
+        count: Number(row.count || 0),
+        resetAt: Number(row.reset_at || 0),
+        updatedAt: row.updated_at ? String(row.updated_at) : undefined,
+      }))
+      .filter((entry) => entry.key)
+      .filter((entry) => !options.prefix || entry.key.startsWith(options.prefix))
+      .filter((entry) => !options.contains || entry.key.includes(options.contains));
+  }
+}
+
+export type ProviderQuotaKind = 'ai' | 'stt' | 'live-transcription' | 'image' | 'embedding';
+
+export type ProviderQuotaInput = {
+  kind: ProviderQuotaKind;
+  endpoint: string;
+  userId: string;
+  workspaceId?: string;
+  ip?: string;
+  now?: number;
+  env?: NodeJS.ProcessEnv;
+};
+
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+const providerQuotaDefaults: Record<
+  ProviderQuotaKind,
+  { userPerHour: number; workspacePerDay: number; ipPerMinute: number }
+> = {
+  ai: { userPerHour: 20, workspacePerDay: 200, ipPerMinute: 30 },
+  stt: { userPerHour: 20, workspacePerDay: 300, ipPerMinute: 20 },
+  'live-transcription': { userPerHour: 120, workspacePerDay: 1200, ipPerMinute: 60 },
+  image: { userPerHour: 8, workspacePerDay: 60, ipPerMinute: 5 },
+  embedding: { userPerHour: 40, workspacePerDay: 400, ipPerMinute: 20 },
+};
+
+export function readPositiveIntEnv(name: string, fallback: number, env = process.env) {
+  const value = Number(env[name]);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
+}
+
+function envSegment(value: string) {
+  return value
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+export function buildProviderQuotaChecks(input: ProviderQuotaInput): AiQuotaCheck[] {
+  const env = input.env || process.env;
+  const now = input.now || Date.now();
+  const defaults = providerQuotaDefaults[input.kind];
+  const kindEnv = envSegment(input.kind);
+  const endpointEnv = envSegment(`${input.kind}_${input.endpoint}`);
+  const kindKey = input.kind;
+  const endpoint = input.endpoint.replace(/[^a-zA-Z0-9_-]+/g, '-');
+  const userId = String(input.userId || '').trim();
+  const workspaceId = String(input.workspaceId || '').trim();
+  const ip = String(input.ip || 'local').trim() || 'local';
+  const userPerHour = readPositiveIntEnv(
+    `VOICELOG_${kindEnv}_USER_QUOTA_PER_HOUR`,
+    readPositiveIntEnv('VOICELOG_PROVIDER_USER_QUOTA_PER_HOUR', defaults.userPerHour, env),
+    env
+  );
+  const workspacePerDay = readPositiveIntEnv(
+    `VOICELOG_${kindEnv}_WORKSPACE_QUOTA_PER_DAY`,
+    readPositiveIntEnv('VOICELOG_PROVIDER_WORKSPACE_QUOTA_PER_DAY', defaults.workspacePerDay, env),
+    env
+  );
+  const ipPerMinute = readPositiveIntEnv(
+    `VOICELOG_${kindEnv}_IP_QUOTA_PER_MINUTE`,
+    readPositiveIntEnv('VOICELOG_PROVIDER_IP_QUOTA_PER_MINUTE', defaults.ipPerMinute, env),
+    env
+  );
+  const endpointUserPerHour = readPositiveIntEnv(
+    `VOICELOG_${endpointEnv}_USER_QUOTA_PER_HOUR`,
+    userPerHour,
+    env
+  );
+  const endpointWorkspacePerDay = readPositiveIntEnv(
+    `VOICELOG_${endpointEnv}_WORKSPACE_QUOTA_PER_DAY`,
+    workspacePerDay,
+    env
+  );
+  const endpointIpPerMinute = readPositiveIntEnv(
+    `VOICELOG_${endpointEnv}_IP_QUOTA_PER_MINUTE`,
+    ipPerMinute,
+    env
+  );
+
+  return [
+    { key: `${kindKey}:user:${userId}:hour`, limit: userPerHour, windowMs: HOUR_MS, now },
+    {
+      key: `${kindKey}:user:${userId}:endpoint:${endpoint}:hour`,
+      limit: endpointUserPerHour,
+      windowMs: HOUR_MS,
+      now,
+    },
+    { key: `${kindKey}:ip:${ip}:minute`, limit: ipPerMinute, windowMs: MINUTE_MS, now },
+    {
+      key: `${kindKey}:ip:${ip}:endpoint:${endpoint}:minute`,
+      limit: endpointIpPerMinute,
+      windowMs: MINUTE_MS,
+      now,
+    },
+    ...(workspaceId
+      ? [
+          {
+            key: `${kindKey}:workspace:${workspaceId}:day`,
+            limit: workspacePerDay,
+            windowMs: DAY_MS,
+            now,
+          },
+          {
+            key: `${kindKey}:workspace:${workspaceId}:endpoint:${endpoint}:day`,
+            limit: endpointWorkspacePerDay,
+            windowMs: DAY_MS,
+            now,
+          },
+        ]
+      : []),
+  ];
+}
+
+export function buildProviderQuotaExceededBody(input: {
+  kind: ProviderQuotaKind;
+  endpoint: string;
+  exceeded: AiQuotaExceeded;
+}) {
+  const code = `${input.kind.replace(/-/g, '_')}_quota_exceeded`;
+  return {
+    code,
+    message: 'Przekroczono limit uzycia dostawcy. Sprobuj ponownie pozniej.',
+    retryAfter: input.exceeded.retryAfter,
+    limit: input.exceeded.limit,
+    quotaKey: input.exceeded.key,
+    providerFamily: input.kind,
+    endpoint: input.endpoint,
+  };
 }
 
 export function createAiQuotaStore({

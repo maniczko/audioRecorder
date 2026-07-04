@@ -28,6 +28,12 @@ import {
 import { getMemoryPressure } from '../lib/serverUtils.ts';
 import { createProgressToken } from '../lib/progressTokens.ts';
 import { validateJsonBody, validatePayload } from '../lib/requestValidation.ts';
+import {
+  buildProviderQuotaChecks,
+  buildProviderQuotaExceededBody,
+  createAiQuotaStore,
+  type ProviderQuotaKind,
+} from '../lib/aiQuotaStore.ts';
 import { DISK_SPACE_BLOCK_UPLOAD_BYTES } from '../lib/diskSpace.ts';
 import {
   MAX_RAW_UPLOAD_BYTES,
@@ -62,6 +68,16 @@ const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
 
 const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
 const ACTIVE_TRANSCRIPTION_STATUSES = new Set(['processing', 'diarization']);
+
+function getClientIp(c: any) {
+  return (
+    String(c.req.header('x-forwarded-for') || '')
+      .split(',')[0]
+      .trim() ||
+    String(c.req.header('x-real-ip') || '').trim() ||
+    'local'
+  );
+}
 
 function normalizeAnalysisPayload(result: any) {
   if (result && typeof result === 'object') {
@@ -671,6 +687,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
   const { transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
+  const quotaStore = createAiQuotaStore({ db: services.db });
   const startTranscriptionPipeline =
     typeof transcriptionService.startTranscriptionPipeline === 'function'
       ? transcriptionService.startTranscriptionPipeline.bind(transcriptionService)
@@ -680,6 +697,65 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           return transcriptionService.getMediaAsset(recordingId);
         };
   const uploadDir = config.uploadDir || process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+
+  async function enforceProviderQuota(
+    c: any,
+    input: {
+      kind: ProviderQuotaKind;
+      endpoint: string;
+      workspaceId?: string;
+    }
+  ) {
+    const session = c.get('session') as any;
+    const userId = String(session?.user_id || session?.userId || '').trim();
+    if (!userId) {
+      return c.json({ message: 'Brak uzytkownika w sesji.' }, 401);
+    }
+
+    const exceeded = await quotaStore.increment(
+      buildProviderQuotaChecks({
+        kind: input.kind,
+        endpoint: input.endpoint,
+        userId,
+        workspaceId: input.workspaceId,
+        ip: getClientIp(c),
+      })
+    );
+    if (!exceeded) return null;
+
+    c.header('Retry-After', String(exceeded.retryAfter));
+    logger.warn('[provider quota] quota exceeded', {
+      requestId: c.get('reqId') || 'unknown',
+      userId,
+      workspaceId: input.workspaceId || undefined,
+      providerFamily: input.kind,
+      endpoint: input.endpoint,
+      quotaKey: exceeded.key,
+      limit: exceeded.limit,
+      retryAfter: exceeded.retryAfter,
+    });
+    return c.json(
+      buildProviderQuotaExceededBody({
+        kind: input.kind,
+        endpoint: input.endpoint,
+        exceeded,
+      }),
+      429
+    );
+  }
+
+  async function assertOperatorAccess(c: any, workspaceId: string) {
+    const session = c.get('session') as any;
+    const userId = String(session?.user_id || session?.userId || '').trim();
+    const membership =
+      typeof services.workspaceService?.getMembership === 'function'
+        ? await services.workspaceService.getMembership(workspaceId, userId)
+        : null;
+    const role = String(
+      membership?.member_role || membership?.role || session?.role || ''
+    ).toLowerCase();
+    return ['owner', 'admin', 'operator'].includes(role);
+  }
 
   async function writeAuditEvent(
     c: any,
@@ -861,6 +937,41 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
   }
 
   router.get('/upload-policy', (c) => c.json(createUploadPolicy(), 200));
+
+  router.get('/quota/usage', authMiddleware, async (c) => {
+    const session = c.get('session') as any;
+    const workspaceId = String(
+      c.req.query('workspaceId') ||
+        c.req.header('X-Workspace-Id') ||
+        session?.workspace_id ||
+        session?.workspaceId ||
+        ''
+    ).trim();
+    if (!workspaceId) {
+      return c.json({ message: 'Brakuje workspaceId.' }, 400);
+    }
+
+    const allowed = await assertOperatorAccess(c, workspaceId);
+    if (!allowed) {
+      return c.json({ message: 'Tylko owner, admin lub operator moze przegladac limity.' }, 403);
+    }
+
+    const entries = quotaStore.snapshot
+      ? await quotaStore.snapshot({ contains: `:workspace:${workspaceId}:` })
+      : [];
+    return c.json(
+      {
+        workspaceId,
+        counters: entries.map((entry) => ({
+          key: entry.key,
+          count: entry.count,
+          resetAt: new Date(entry.resetAt).toISOString(),
+          updatedAt: entry.updatedAt,
+        })),
+      },
+      200
+    );
+  });
 
   // --- Media & Processing ---
   router.use('/recordings', authMiddleware);
@@ -1370,6 +1481,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         );
       }
 
+      const quotaResponse = await enforceProviderQuota(c, {
+        kind: 'stt',
+        endpoint: 'recording-transcribe',
+        workspaceId: body.workspaceId || asset.workspace_id,
+      });
+      if (quotaResponse) return quotaResponse;
+
       // Guard against OOM - reject when memory is already tight
       const memPressure = getMemoryPressure();
       if (!memPressure.ok) {
@@ -1522,6 +1640,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           202
         );
       }
+
+      const quotaResponse = await enforceProviderQuota(c, {
+        kind: 'stt',
+        endpoint: 'retry-transcribe',
+        workspaceId: asset.workspace_id,
+      });
+      if (quotaResponse) return quotaResponse;
       // If the local file is gone (e.g. after Railway redeploy), try the same
       // reconstructed remote candidates as the audio download endpoint.
       if (
@@ -2020,6 +2145,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       );
     }
 
+    const quotaResponse = await enforceProviderQuota(c, {
+      kind: 'embedding',
+      endpoint: 'voice-profile',
+      workspaceId: asset.workspace_id,
+    });
+    if (quotaResponse) return quotaResponse;
+
     try {
       const options = overrideSegments.length > 0 ? { transcriptSegments: overrideSegments } : {};
       const profile = await transcriptionService.createVoiceProfileFromSpeaker(
@@ -2064,6 +2196,12 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         const asset = await transcriptionService.getMediaAsset(recordingId);
         if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
         await ensureWorkspaceAccess(c, asset.workspace_id);
+        const quotaResponse = await enforceProviderQuota(c, {
+          kind: 'ai',
+          endpoint: 'voice-coaching',
+          workspaceId: asset.workspace_id,
+        });
+        if (quotaResponse) return quotaResponse;
         const coaching = await transcriptionService.generateVoiceCoaching(
           asset,
           String(body.speakerId),
@@ -2200,6 +2338,13 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!process.env.GEMINI_API_KEY) {
         return c.json({ message: 'Brak klucza GEMINI_API_KEY w konfiguracji środowiska.' }, 400);
       }
+
+      const quotaResponse = await enforceProviderQuota(c, {
+        kind: 'image',
+        endpoint: 'sketchnote',
+        workspaceId: asset.workspace_id,
+      });
+      if (quotaResponse) return quotaResponse;
 
       try {
         const { logger } = await import('../logger.ts');
@@ -2355,6 +2500,13 @@ Important:
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
     }
     await ensureWorkspaceAccess(c, workspaceId);
+
+    const quotaResponse = await enforceProviderQuota(c, {
+      kind: 'ai',
+      endpoint: 'media-analyze',
+      workspaceId,
+    });
+    if (quotaResponse) return quotaResponse;
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
     const payload = normalizeAnalysisPayload(result);
@@ -2813,6 +2965,7 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
   const router = new Hono<{ Variables: { session: any; user: any } }>();
   const { transcriptionService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
+  const quotaStore = createAiQuotaStore({ db: services.db });
   const liveTranscribeTimeoutMs = () => {
     if (config?.transcribeLiveTimeoutMs && config.transcribeLiveTimeoutMs > 0) {
       return Number(config.transcribeLiveTimeoutMs);
@@ -2835,6 +2988,31 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
     }
     await ensureWorkspaceAccess(c, workspaceId);
+
+    const sessionUserId = String(session?.user_id || session?.userId || '').trim();
+    if (!sessionUserId) {
+      return c.json({ message: 'Brak uzytkownika w sesji.' }, 401);
+    }
+    const exceeded = await quotaStore.increment(
+      buildProviderQuotaChecks({
+        kind: 'live-transcription',
+        endpoint: 'live',
+        userId: sessionUserId,
+        workspaceId,
+        ip: getClientIp(c),
+      })
+    );
+    if (exceeded) {
+      c.header('Retry-After', String(exceeded.retryAfter));
+      return c.json(
+        buildProviderQuotaExceededBody({
+          kind: 'live-transcription',
+          endpoint: 'live',
+          exceeded,
+        }),
+        429
+      );
+    }
 
     const contentType = c.req.header('content-type') || 'audio/webm';
     const headerValidation = validatePayload(

@@ -25,6 +25,7 @@ describe('Transcribe Routes', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
@@ -103,6 +104,39 @@ describe('Transcribe Routes', () => {
     const firstArg = mockTranscriptionService.transcribeLiveChunk.mock.calls[0][0];
     expect(firstArg).toEqual(expect.stringContaining('live_'));
     expect(path.extname(firstArg)).toBe('.wav');
+  });
+
+  it('returns live_transcription_quota_exceeded with Retry-After before provider call', async () => {
+    vi.stubEnv('VOICELOG_LIVE_TRANSCRIPTION_USER_QUOTA_PER_HOUR', '1');
+
+    const first = await app.request('/transcribe/live', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws1',
+      },
+      body: Buffer.alloc(2000, 1),
+    });
+    const second = await app.request('/transcribe/live', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'audio/webm',
+        'X-Workspace-Id': 'ws1',
+      },
+      body: Buffer.alloc(2000, 1),
+    });
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(429);
+    expect(second.headers.get('Retry-After')).toMatch(/^\d+$/);
+    await expect(second.json()).resolves.toMatchObject({
+      code: 'live_transcription_quota_exceeded',
+      providerFamily: 'live-transcription',
+      endpoint: 'live',
+    });
+    expect(mockTranscriptionService.transcribeLiveChunk).toHaveBeenCalledTimes(1);
   });
 
   it('responds quickly within the configured transcribe timeout budget', async () => {
