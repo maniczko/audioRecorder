@@ -5,7 +5,13 @@ function buildApp(dbOverrides: Record<string, unknown> = {}) {
   const db = {
     listTranscriptionJobsForOperations: vi.fn().mockResolvedValue([]),
     getTranscriptionJobById: vi.fn(),
+    getTranscriptionDeadLetterMetrics: vi.fn().mockResolvedValue({
+      count: 0,
+      oldestAgeMinutes: 0,
+      byErrorCode: {},
+    }),
     retryTranscriptionJobForOperations: vi.fn(),
+    replayDeadLetterTranscriptionJobForOperations: vi.fn(),
     cancelTranscriptionJobForOperations: vi.fn(),
     markTranscriptionJobFailedForOperations: vi.fn(),
     writeAuditLogBestEffort: vi.fn().mockResolvedValue(undefined),
@@ -77,6 +83,7 @@ describe('Admin transcription job operations', () => {
       workspaceId: 'ws1',
       status: 'failed',
       recordingId: 'rec_1',
+      errorCode: '',
       olderThanMinutes: 30,
       limit: 10,
     });
@@ -94,6 +101,25 @@ describe('Admin transcription job operations', () => {
     });
     expect(JSON.stringify(body)).not.toContain('secret');
     expect(JSON.stringify(body)).not.toContain('/tmp/private.webm');
+  });
+
+  it('filters dead-letter jobs by error code', async () => {
+    const { app, db } = buildApp();
+
+    const res = await app.request(
+      '/api/admin/transcription-jobs?workspaceId=ws1&status=dead_letter&errorCode=STT_VENDOR_DOWN',
+      { headers: authHeaders }
+    );
+
+    expect(res.status).toBe(200);
+    expect(db.listTranscriptionJobsForOperations).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      status: 'dead_letter',
+      recordingId: '',
+      errorCode: 'STT_VENDOR_DOWN',
+      olderThanMinutes: undefined,
+      limit: 50,
+    });
   });
 
   it('returns job diagnostics by id without raw transcript data', async () => {
@@ -136,6 +162,11 @@ describe('Admin transcription job operations', () => {
 
   it.each([
     ['retry', 'retryTranscriptionJobForOperations', 'operator.transcription_job.retry'],
+    [
+      'replay',
+      'replayDeadLetterTranscriptionJobForOperations',
+      'operator.transcription_job.replay',
+    ],
     ['cancel', 'cancelTranscriptionJobForOperations', 'operator.transcription_job.cancel'],
     [
       'mark-failed',
@@ -148,7 +179,12 @@ describe('Admin transcription job operations', () => {
       recording_id: 'rec_action',
       workspace_id: 'ws1',
       meeting_id: 'meeting_action',
-      status: action === 'retry' ? 'queued' : action === 'cancel' ? 'cancelled' : 'failed',
+      status:
+        action === 'retry' || action === 'replay'
+          ? 'queued'
+          : action === 'cancel'
+            ? 'cancelled'
+            : 'failed',
       attempt_count: 0,
       max_attempts: 3,
       locked_by: '',
@@ -189,5 +225,26 @@ describe('Admin transcription job operations', () => {
         }),
       })
     );
+  });
+
+  it('adds dead-letter metrics to admin JSON metrics', async () => {
+    const { app, db } = buildApp({
+      getTranscriptionDeadLetterMetrics: vi.fn().mockResolvedValue({
+        count: 2,
+        oldestAgeMinutes: 45,
+        byErrorCode: { STT_VENDOR_DOWN: 2 },
+      }),
+    });
+
+    const res = await app.request('/api/admin/metrics', { headers: authHeaders });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.transcriptionJobs.deadLetter).toEqual({
+      count: 2,
+      oldestAgeMinutes: 45,
+      byErrorCode: { STT_VENDOR_DOWN: 2 },
+    });
+    expect(db.getTranscriptionDeadLetterMetrics).toHaveBeenCalled();
   });
 });

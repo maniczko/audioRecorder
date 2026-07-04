@@ -589,4 +589,151 @@ describe('transcription_jobs durable queue', () => {
       await db.shutdown();
     }
   });
+
+  test('exhausted and non-retryable failures move jobs to dead letter', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_dead_exhausted', 'ws_dead');
+      await insertAsset(db, 'rec_dead_non_retryable', 'ws_dead');
+      const exhausted = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_dead_exhausted',
+        workspaceId: 'ws_dead',
+        maxAttempts: 1,
+      });
+      const nonRetryable = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_dead_non_retryable',
+        workspaceId: 'ws_dead',
+        maxAttempts: 3,
+      });
+      await db.acquireTranscriptionJobLease({
+        workerId: 'worker-dead',
+        recordingId: 'rec_dead_exhausted',
+      });
+      await db.acquireTranscriptionJobLease({
+        workerId: 'worker-dead',
+        recordingId: 'rec_dead_non_retryable',
+      });
+
+      const exhaustedJob = await db.failTranscriptionJob(
+        exhausted.id,
+        'worker-dead',
+        { code: 'STT_EXHAUSTED', message: 'provider failed repeatedly' },
+        { now: '2026-07-04T10:00:00.000Z' }
+      );
+      const nonRetryableJob = await db.failTranscriptionJob(
+        nonRetryable.id,
+        'worker-dead',
+        { code: 'AUDIO_INVALID', message: 'invalid audio', retryable: false },
+        { now: '2026-07-04T10:00:00.000Z' }
+      );
+
+      expect(exhaustedJob).toMatchObject({
+        status: 'dead_letter',
+        last_error_code: 'STT_EXHAUSTED',
+        completed_at: '2026-07-04T10:00:00.000Z',
+      });
+      expect(nonRetryableJob).toMatchObject({
+        status: 'dead_letter',
+        last_error_code: 'AUDIO_INVALID',
+        completed_at: '2026-07-04T10:00:00.000Z',
+      });
+      await expect(db.getMediaAsset('rec_dead_exhausted')).resolves.toMatchObject({
+        transcription_status: 'failed',
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('operator can filter dead-letter jobs by error code and replay without corrupting transcript data', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_dead_replay', 'ws_dead');
+      await db.saveTranscriptionResult('rec_dead_replay', {
+        pipelineStatus: 'failed',
+        segments: [{ text: 'existing transcript remains' }],
+      });
+      const deadJob = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_dead_replay',
+        workspaceId: 'ws_dead',
+        maxAttempts: 1,
+      });
+      await db._execute(
+        `UPDATE transcription_jobs
+         SET status = 'dead_letter',
+             attempt_count = 1,
+             last_error_code = 'STT_VENDOR_DOWN',
+             last_error_message = 'vendor unavailable',
+             updated_at = '2026-07-04T09:00:00.000Z',
+             completed_at = '2026-07-04T09:00:00.000Z'
+         WHERE id = ?`,
+        [deadJob.id]
+      );
+
+      const filtered = await db.listTranscriptionJobsForOperations({
+        workspaceId: 'ws_dead',
+        status: 'dead_letter',
+        errorCode: 'STT_VENDOR_DOWN',
+        olderThanMinutes: 30,
+        now: '2026-07-04T10:00:00.000Z',
+      });
+      const replayed = await db.replayDeadLetterTranscriptionJobForOperations(deadJob.id, {
+        reason: 'provider recovered',
+      });
+      const rows = await db._query('SELECT * FROM transcription_jobs WHERE recording_id = ?', [
+        'rec_dead_replay',
+      ]);
+      const asset = await db.getMediaAsset('rec_dead_replay');
+
+      expect(filtered).toHaveLength(1);
+      expect(replayed).toMatchObject({
+        recording_id: 'rec_dead_replay',
+        workspace_id: 'ws_dead',
+        status: 'queued',
+        attempt_count: 0,
+      });
+      expect(replayed.id).not.toBe(deadJob.id);
+      expect(rows).toHaveLength(2);
+      expect(rows).toEqual(expect.arrayContaining([expect.objectContaining({ id: deadJob.id })]));
+      expect(asset?.transcript_json).toContain('existing transcript remains');
+    } finally {
+      await db.shutdown();
+    }
+  });
+
+  test('dead-letter metrics report count, age, and error buckets', async () => {
+    const db = await createDb();
+    try {
+      await insertAsset(db, 'rec_dead_metrics_a', 'ws_dead');
+      await insertAsset(db, 'rec_dead_metrics_b', 'ws_dead');
+      const first = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_dead_metrics_a',
+        workspaceId: 'ws_dead',
+      });
+      const second = await db.enqueueTranscriptionJob({
+        recordingId: 'rec_dead_metrics_b',
+        workspaceId: 'ws_dead',
+      });
+      await db._execute(
+        "UPDATE transcription_jobs SET status = 'dead_letter', last_error_code = 'STT_A', updated_at = '2026-07-04T09:00:00.000Z' WHERE id = ?",
+        [first.id]
+      );
+      await db._execute(
+        "UPDATE transcription_jobs SET status = 'dead_letter', last_error_code = 'STT_B', updated_at = '2026-07-04T09:30:00.000Z' WHERE id = ?",
+        [second.id]
+      );
+
+      const metrics = await db.getTranscriptionDeadLetterMetrics({
+        now: '2026-07-04T10:00:00.000Z',
+      });
+
+      expect(metrics).toEqual({
+        count: 2,
+        oldestAgeMinutes: 60,
+        byErrorCode: { STT_A: 1, STT_B: 1 },
+      });
+    } finally {
+      await db.shutdown();
+    }
+  });
 });
