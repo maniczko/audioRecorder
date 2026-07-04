@@ -1,6 +1,8 @@
 name: Production Data Maintenance
 
 on:
+  schedule:
+    - cron: '17 4 * * 1'
   workflow_dispatch:
     inputs:
       apply:
@@ -15,6 +17,30 @@ on:
         description: 'Optional workspace id override. Empty uses PRODUCTION_SMOKE_WORKSPACE_ID.'
         required: false
         default: ''
+      run_restore_verification:
+        description: 'Run staging/sandbox backup restore verification.'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      restore_workspace_id:
+        description: 'Optional restored staging workspace id. Empty uses RESTORE_VERIFY_WORKSPACE_ID.'
+        required: false
+        default: ''
+      restore_environment:
+        description: 'Restore verification target environment.'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - 'staging'
+          - 'sandbox'
+      expected_recording_ids:
+        description: 'Comma-separated restored recording ids to verify.'
+        required: false
+        default: ''
 
 concurrency:
   group: production-data-maintenance
@@ -22,6 +48,7 @@ concurrency:
 
 jobs:
   repair-workspace-consistency:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -84,4 +111,61 @@ jobs:
           path: |
             reports/supabase-workspace-repair/
             reports/supabase-workspace-consistency/
+          if-no-files-found: ignore
+
+  backup-restore-verification:
+    if: ${{ github.event_name == 'schedule' || inputs.run_restore_verification == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      WORKSPACE_ID: ${{ inputs.restore_workspace_id || secrets.RESTORE_VERIFY_WORKSPACE_ID }}
+      RESTORE_VERIFY_ENVIRONMENT: ${{ inputs.restore_environment || 'staging' }}
+      RESTORE_VERIFY_EXPECTED_RECORDING_IDS: ${{ inputs.expected_recording_ids || secrets.RESTORE_VERIFY_EXPECTED_RECORDING_IDS }}
+      SUPABASE_STORAGE_BUCKET: ${{ secrets.RESTORE_VERIFY_STORAGE_BUCKET || 'recordings' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate restore verification secrets
+        shell: bash
+        run: |
+          missing=()
+          for secret in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY WORKSPACE_ID; do
+            [[ -n "${!secret}" ]] || missing+=("${secret}")
+          done
+
+          if [ "${RESTORE_VERIFY_ENVIRONMENT}" = "production" ]; then
+            missing+=("RESTORE_VERIFY_ENVIRONMENT must be staging or sandbox")
+          fi
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "## Missing backup restore verification secrets" >> "$GITHUB_STEP_SUMMARY"
+            for secret in "${missing[@]}"; do
+              echo "- ${secret}" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Missing required restore verification setting: ${secret}"
+            done
+            exit 1
+          fi
+
+      - name: Verify restored staging workspace
+        run: pnpm run verify:backup-restore
+
+      - name: Upload restore verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-restore-verification-report
+          path: reports/backup-restore-verification/
           if-no-files-found: ignore

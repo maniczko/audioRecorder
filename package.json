@@ -181,6 +181,7 @@
     "release:prod-gate:strict": "node scripts/release-prod-gate-strict.mjs",
     "verify:supabase:workspace": "node scripts/verify-supabase-workspace-consistency.mjs --strict --write-report",
     "repair:supabase:workspace": "node scripts/repair-supabase-workspace-consistency.mjs --write-report",
+    "verify:backup-restore": "node scripts/verify-backup-restore.mjs --write-report",
     "sentry:release-health": "node scripts/sentry-release-health.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

@@ -240,6 +240,52 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('steps.scope.outputs.require_exact_git_sha');
   });
 
+  it('keeps backup restore verification staging-safe in production data maintenance', () => {
+    const workflowPath = path.join(workflowDir, 'production-data-maintenance.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+    const parsed = parse(content) as {
+      on?: {
+        workflow_dispatch?: { inputs?: Record<string, unknown> };
+        schedule?: unknown[];
+      };
+      jobs?: {
+        'repair-workspace-consistency'?: {
+          if?: string;
+        };
+        'backup-restore-verification'?: {
+          if?: string;
+          env?: Record<string, unknown>;
+          steps?: Array<{
+            name?: string;
+            run?: string;
+            uses?: string;
+            with?: Record<string, unknown>;
+          }>;
+        };
+      };
+    } | null;
+    const repairJob = parsed?.jobs?.['repair-workspace-consistency'];
+    const job = parsed?.jobs?.['backup-restore-verification'];
+    const steps = job?.steps ?? [];
+
+    expect(parsed?.on?.schedule).toBeTruthy();
+    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('run_restore_verification');
+    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('restore_workspace_id');
+    expect(repairJob?.if).toBe("${{ github.event_name == 'workflow_dispatch' }}");
+    expect(job?.if).toContain("github.event_name == 'schedule'");
+    expect(job?.if).toContain("inputs.run_restore_verification == 'true'");
+    expect(job?.env?.SUPABASE_URL).toBe('${{ secrets.STAGING_SUPABASE_URL }}');
+    expect(job?.env?.SUPABASE_SERVICE_ROLE_KEY).toBe(
+      '${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}'
+    );
+    expect(job?.env?.RESTORE_VERIFY_ENVIRONMENT).toContain('staging');
+    expect(content).toContain('RESTORE_VERIFY_ENVIRONMENT must be staging or sandbox');
+    expect(steps.some((step) => step.run === 'pnpm run verify:backup-restore')).toBe(true);
+    expect(steps.some((step) => step.with?.path === 'reports/backup-restore-verification/')).toBe(
+      true
+    );
+  });
+
   it('keeps backend smoke dependency setup resilient and debugs only smoke failures', () => {
     const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
     const content = readFileSync(workflowPath, 'utf8');
