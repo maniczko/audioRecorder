@@ -1,0 +1,103 @@
+{
+  "$schema": "../scripts/critical-path-coverage.schema.json",
+  "version": 1,
+  "description": "Critical audio and processing path coverage gate for production readiness.",
+  "minimumDimensionsPerArea": 3,
+  "areas": [
+    {
+      "id": "browser-recorder",
+      "priority": "P0",
+      "owner": "frontend-audio",
+      "description": "Browser microphone access, recorder lifecycle, permission failure, cleanup, and recovery.",
+      "dimensions": ["happy", "error", "edge", "recovery"],
+      "requiredTests": ["src/hooks/useAudioHardware.test.ts", "src/hooks/useRecorder.test.tsx"]
+    },
+    {
+      "id": "local-queue",
+      "priority": "P0",
+      "owner": "frontend-audio",
+      "description": "Local persisted recording queue, status normalization, progress, selection, and retry metadata.",
+      "dimensions": ["happy", "error", "retry", "edge"],
+      "requiredTests": [
+        "src/lib/recordingQueue.test.ts",
+        "src/store/recorderStore.test.ts",
+        "src/store/recorderQueueProcessor.test.ts"
+      ]
+    },
+    {
+      "id": "upload-finalize",
+      "priority": "P0",
+      "owner": "backend-media",
+      "description": "Raw upload, chunk upload, chunk status, finalize, idempotency, storage boundaries, and cleanup.",
+      "dimensions": ["happy", "error", "auth", "retry", "edge"],
+      "requiredTests": [
+        "server/tests/routes/media.test.ts",
+        "server/tests/routes/media.additional.test.ts",
+        "server/tests/contract/media-idempotency-openapi.test.ts"
+      ]
+    },
+    {
+      "id": "transcription-jobs",
+      "priority": "P0",
+      "owner": "backend-media",
+      "description": "Transcription job lifecycle, status reads, admin retry/replay/cancel, and dead-letter visibility.",
+      "dimensions": ["happy", "error", "auth", "retry", "edge"],
+      "requiredTests": [
+        "server/tests/routes/media.test.ts",
+        "server/tests/routes/transcribe.test.ts",
+        "server/tests/routes/adminTranscriptionJobs.test.ts"
+      ]
+    },
+    {
+      "id": "status-polling-progress",
+      "priority": "P0",
+      "owner": "frontend-audio",
+      "description": "Client polling, progress token handling, queue transitions, and final attachment visibility.",
+      "dimensions": ["happy", "error", "auth", "edge"],
+      "requiredTests": [
+        "src/store/recorderQueueProcessor.test.ts",
+        "src/hooks/useRecordingPipeline.test.ts",
+        "src/hooks/useRecordingPipeline.test.tsx",
+        "server/tests/routes/media.test.ts"
+      ]
+    },
+    {
+      "id": "retry-failure-handling",
+      "priority": "P0",
+      "owner": "audio-platform",
+      "description": "Transient upload/STT failures, retryable statuses, fallback mode, and terminal failure states.",
+      "dimensions": ["error", "retry", "fallback", "edge"],
+      "requiredTests": [
+        "src/store/recorderQueueProcessor.test.ts",
+        "server/tests/routes/media.additional.test.ts",
+        "server/tests/routes/transcribe.test.ts"
+      ]
+    },
+    {
+      "id": "ai-fallback",
+      "priority": "P1",
+      "owner": "ai-platform",
+      "description": "AI provider fallback, quota/rate controls, response validation, and browser-side fallback behavior.",
+      "dimensions": ["happy", "error", "auth", "fallback"],
+      "requiredTests": [
+        "server/tests/routes/ai.test.ts",
+        "server/tests/lib/aiQuotaStore.test.ts",
+        "src/lib/aiTaskSuggestions.browserFallback.test.ts",
+        "src/lib/aiResponseValidator.test.ts"
+      ]
+    },
+    {
+      "id": "deletion-export-retention",
+      "priority": "P1",
+      "owner": "data-governance",
+      "description": "Deletion, export, retention policy, periodic cleanup, and media storage policy boundaries.",
+      "dimensions": ["happy", "error", "auth", "edge"],
+      "requiredTests": [
+        "src/lib/export.test.tsx",
+        "server/tests/lib/retentionPolicy.test.ts",
+        "server/tests/lib/periodicCleanup.test.ts",
+        "server/tests/lib/mediaStoragePolicy.test.ts"
+      ]
+    }
+  ]
+}
