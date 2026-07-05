@@ -2741,6 +2741,85 @@
   margin-bottom: 8px;
 }
 
+.analysis-evidence {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 8px;
+  border: 1px solid rgba(20, 184, 166, 0.16);
+  border-radius: 10px;
+  background: rgba(20, 184, 166, 0.06);
+  color: var(--text-muted, #64748b);
+  overflow-wrap: anywhere;
+}
+
+.analysis-evidence.needs-review {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.analysis-evidence summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  padding: 7px 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent, #0f766e);
+}
+
+.analysis-evidence summary::-webkit-details-marker {
+  display: none;
+}
+
+.analysis-evidence summary:focus-visible,
+.analysis-evidence-jump:focus-visible {
+  outline: 2px solid rgba(20, 184, 166, 0.44);
+  outline-offset: 2px;
+}
+
+.analysis-evidence summary small {
+  color: var(--text-muted, #64748b);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.analysis-evidence-body {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.analysis-evidence-quote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid rgba(20, 184, 166, 0.38);
+  color: var(--text-main, #12231f);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.analysis-evidence-note {
+  margin: 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.82rem;
+}
+
+.analysis-evidence-jump {
+  justify-self: start;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(20, 184, 166, 0.26);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--accent, #0f766e);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .summary-pill-card {
   display: grid;
   gap: 6px;

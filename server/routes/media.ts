@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
+import { normalizeSourceLinkedAnalysis } from '../../src/shared/sourceLinkedAnalysis.ts';
 import type { MediaAsset } from '../lib/types.ts';
 import {
   aiAnalyzeRequestSchema,
@@ -79,15 +80,16 @@ function getClientIp(c: any) {
   );
 }
 
-function normalizeAnalysisPayload(result: any) {
+function normalizeAnalysisPayload(result: any, segments: any[] = []) {
   if (result && typeof result === 'object') {
+    const resultWithEvidence = normalizeSourceLinkedAnalysis(result, segments);
     const mode = String(result.mode || '').trim();
     const fallbackReason = String(result.fallbackReason || '').trim();
     const analysisSource =
       result.analysisSource ||
       (fallbackReason || /fallback|no-key|disabled/i.test(mode) ? 'fallback' : 'provider');
     return {
-      ...result,
+      ...resultWithEvidence,
       analysisSource,
       ...(analysisSource === 'fallback'
         ? { fallbackReason: fallbackReason || (mode === 'no-key' ? 'no-key' : 'provider-error') }
@@ -2509,7 +2511,10 @@ Important:
     if (quotaResponse) return quotaResponse;
 
     const result = await transcriptionService.analyzeMeetingWithOpenAI({ ...body, workspaceId });
-    const payload = normalizeAnalysisPayload(result);
+    const payload = normalizeAnalysisPayload(
+      result,
+      Array.isArray(body?.segments) ? body.segments : []
+    );
     const meeting = body?.meeting && typeof body.meeting === 'object' ? body.meeting : {};
     const recordingId = String(
       body.recordingId ||

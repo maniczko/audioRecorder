@@ -44,8 +44,8 @@
     {
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
-      "expectedActionCount": 84,
-      "fingerprint": "96a804118346c443",
+      "expectedActionCount": 85,
+      "fingerprint": "d50216f49d894bf7",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [
@@ -55,6 +55,7 @@
         "Regression: rediarize shows progress feedback while speaker detection is running",
         "Regression: does not hydrate display recording audio when it is marked unavailable",
         "Regression: playback controls remain visible for display recording audio without selected recording",
+        "Regression: Issue #1252 - shows source evidence and unsupported analysis claims",
         "offers verified voice profiles as assignable transcript speaker names",
         "fireEvent.click(screen.getByRole('button', { name: /Zadania/i }))"
       ],

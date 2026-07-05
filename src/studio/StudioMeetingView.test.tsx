@@ -175,6 +175,82 @@ describe('StudioMeetingView', () => {
     expect(screen.getByText(/Test Meeting/i)).toBeInTheDocument();
   });
 
+  test('Regression: Issue #1252 - shows source evidence and unsupported analysis claims', () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-source-linked',
+          duration: 60,
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '0',
+              speakerName: 'Anna',
+              timestamp: 32,
+              endTimestamp: 40,
+              text: 'We can ship release today. Anna sends notes after the call.',
+            },
+          ],
+        }}
+        selectedRecording={{
+          id: 'rec-source-linked',
+          duration: 60,
+          transcript: [
+            {
+              id: 'seg-1',
+              speakerId: '0',
+              speakerName: 'Anna',
+              timestamp: 32,
+              endTimestamp: 40,
+              text: 'We can ship release today. Anna sends notes after the call.',
+            },
+          ],
+        }}
+        studioAnalysis={{
+          summary: 'Source linked summary',
+          decisions: ['Ship release', 'Approve unsupported budget'],
+          actionItems: ['Anna sends notes'],
+          tasks: [
+            {
+              title: 'Anna sends notes',
+              sourceQuote: 'Anna sends notes after the call.',
+              sourceSegmentId: 'seg-1',
+              sourceTimestamp: 32,
+            },
+          ],
+          sourceEvidence: {
+            decisions: [
+              { sourceQuote: 'We can ship release today.', segmentId: 'seg-1', timestamp: 32 },
+              { unsupported: true, reviewReason: 'missing-source-evidence' },
+            ],
+            tasks: [
+              {
+                sourceQuote: 'Anna sends notes after the call.',
+                segmentId: 'seg-1',
+                timestamp: 32,
+              },
+            ],
+          },
+          unsupportedClaims: [
+            {
+              area: 'decisions',
+              index: 1,
+              text: 'Approve unsupported budget',
+              reason: 'missing-source-evidence',
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByText('We can ship release today.')).toBeInTheDocument();
+    expect(screen.getByText('Anna sends notes after the call.')).toBeInTheDocument();
+    expect(screen.getByText(/Do weryfikacji/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brak jednoznacznego cytatu/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Pokaż w transkrypcji/i })).toHaveLength(2);
+  });
+
   test('Regression: normalizes verified speaker names from remote profiles', () => {
     expect(
       getVerifiedSpeakerNames([

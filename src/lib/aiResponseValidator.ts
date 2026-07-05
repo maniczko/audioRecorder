@@ -1,4 +1,13 @@
-import type { MeetingRisk, MeetingParticipantInsight } from '../shared/types';
+import type {
+  AnalysisSourceEvidence,
+  AnalysisUnsupportedClaim,
+  MeetingRisk,
+  MeetingParticipantInsight,
+} from '../shared/types';
+import type { SourceLinkedArea, SourceLinkedClaim } from '../shared/sourceLinkedAnalysis';
+
+export { normalizeSourceLinkedAnalysis } from '../shared/sourceLinkedAnalysis';
+export type { SourceLinkedArea, SourceLinkedClaim } from '../shared/sourceLinkedAnalysis';
 
 export interface AiAnalysisResponse {
   mode?: string;
@@ -6,9 +15,19 @@ export interface AiAnalysisResponse {
   fallbackReason?: string;
   generatedBy?: string;
   summary?: string;
-  decisions?: string[];
-  actionItems?: string[];
-  tasks?: Array<{ title: string; owner?: string; priority?: string }>;
+  decisions?: Array<string | SourceLinkedClaim>;
+  actionItems?: Array<string | SourceLinkedClaim>;
+  tasks?: Array<{
+    title: string;
+    owner?: string;
+    priority?: string;
+    sourceQuote?: string;
+    segmentId?: string;
+    sourceSegmentId?: string;
+    timestamp?: number;
+    sourceTimestamp?: number;
+    unsupported?: boolean;
+  }>;
   followUps?: string[];
   answersToNeeds?: Array<{ need: string; answer: string }>;
   risks?: Array<{ risk: string; severity: string }>;
@@ -21,6 +40,8 @@ export interface AiAnalysisResponse {
   energyLevel?: string;
   speakerCount?: number;
   speakerLabels?: Record<string, string>;
+  sourceEvidence?: Partial<Record<SourceLinkedArea, AnalysisSourceEvidence[]>>;
+  unsupportedClaims?: AnalysisUnsupportedClaim[];
   [key: string]: unknown;
 }
 
