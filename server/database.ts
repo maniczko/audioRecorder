@@ -39,6 +39,12 @@ const DEFAULT_RETENTION_DAYS = 365;
 const DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS = 2500;
 const WORKSPACE_RETENTION_HOLD_RECORDING_ID = '__workspace__';
 
+type QueryExecutor = {
+  _query(sql: string, params?: any[]): Promise<any[]>;
+  _get(sql: string, params?: any[]): Promise<any | null>;
+  _execute(sql: string, params?: any[]): Promise<void>;
+};
+
 function _resolvePositiveTimeoutMs(value: unknown, fallback: number): number {
   const numeric = Number(value);
   if (Number.isFinite(numeric) && numeric > 0) {
@@ -448,11 +454,58 @@ export class Database {
     });
   }
 
+  _toPostgresSql(sql: string): string {
+    let i = 0;
+    return sql.replace(/\?/g, () => `$${++i}`);
+  }
+
+  _createPostgresExecutor(client: { query: (sql: string, params?: any[]) => Promise<any> }) {
+    return {
+      _query: async (sql: string, params: any[] = []) => {
+        const res = await client.query(this._toPostgresSql(sql), params);
+        return res.rows;
+      },
+      _get: async (sql: string, params: any[] = []) => {
+        const res = await client.query(this._toPostgresSql(sql), params);
+        return res.rows[0] || null;
+      },
+      _execute: async (sql: string, params: any[] = []) => {
+        await client.query(this._toPostgresSql(sql), params);
+      },
+    };
+  }
+
+  async _withTransaction<T>(operation: (tx: QueryExecutor) => Promise<T>): Promise<T> {
+    if (this.type === 'postgres') {
+      const client = await this.pool.connect();
+      const tx = this._createPostgresExecutor(client);
+      try {
+        await tx._execute('BEGIN');
+        const result = await operation(tx);
+        await tx._execute('COMMIT');
+        return result;
+      } catch (error) {
+        await tx._execute('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    await this._execute('BEGIN');
+    try {
+      const result = await operation(this);
+      await this._execute('COMMIT');
+      return result;
+    } catch (error) {
+      await this._execute('ROLLBACK');
+      throw error;
+    }
+  }
+
   async _query(sql: string, params: any[] = []) {
     if (this.type === 'postgres') {
-      let i = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
-      const res = await this.pool.query(pgSql, params);
+      const res = await this.pool.query(this._toPostgresSql(sql), params);
       return res.rows;
     } else {
       return this._sendToWorker('query', sql, params);
@@ -461,9 +514,7 @@ export class Database {
 
   async _get(sql: string, params: any[] = []) {
     if (this.type === 'postgres') {
-      let i = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
-      const res = await this.pool.query(pgSql, params);
+      const res = await this.pool.query(this._toPostgresSql(sql), params);
       return res.rows[0] || null;
     } else {
       const result = await this._sendToWorker('get', sql, params);
@@ -473,9 +524,7 @@ export class Database {
 
   async _execute(sql: string, params: any[] = []) {
     if (this.type === 'postgres') {
-      let i = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
-      await this.pool.query(pgSql, params);
+      await this.pool.query(this._toPostgresSql(sql), params);
     } else {
       await this._sendToWorker('execute', sql, params);
     }
@@ -1223,9 +1272,9 @@ export class Database {
     return Promise.all(rows.map((row) => this._buildWorkspaceFromRow(row, userId)));
   }
 
-  async ensureWorkspaceState(workspaceId: string): Promise<void> {
+  async ensureWorkspaceState(workspaceId: string, executor: QueryExecutor = this): Promise<void> {
     try {
-      await this._execute(
+      await executor._execute(
         "ALTER TABLE workspace_state ADD COLUMN manual_people_json TEXT NOT NULL DEFAULT '[]'"
       );
     } catch (error) {
@@ -1236,7 +1285,7 @@ export class Database {
       }
     }
     try {
-      await this._execute(
+      await executor._execute(
         `ALTER TABLE workspace_state ADD COLUMN retention_days INTEGER NOT NULL DEFAULT ${DEFAULT_RETENTION_DAYS}`
       );
     } catch (error) {
@@ -1247,14 +1296,14 @@ export class Database {
       }
     }
 
-    const existing = await this._get(
+    const existing = await executor._get(
       'SELECT workspace_id FROM workspace_state WHERE workspace_id = ?',
       [workspaceId]
     );
     if (existing) return;
 
     const timestamp = this.nowIso();
-    await this._execute(
+    await executor._execute(
       `
         INSERT INTO workspace_state (
           workspace_id,
@@ -1660,9 +1709,8 @@ export class Database {
     let workspaceId = '';
     let memberRole = 'member';
 
-    await this._execute('BEGIN');
-    try {
-      await this._execute(
+    await this._withTransaction(async (tx) => {
+      await tx._execute(
         `
           INSERT INTO users (
             id, email, password_hash, name, provider, google_sub, google_email,
@@ -1684,20 +1732,20 @@ export class Database {
 
       if (workspaceMode === 'join') {
         if (!inviteCode) throw errorWithStatus('Podaj kod workspace, aby dolaczyc.', 400);
-        const workspace = await this._get('SELECT * FROM workspaces WHERE invite_code = ?', [
+        const workspace = await tx._get('SELECT * FROM workspaces WHERE invite_code = ?', [
           inviteCode,
         ]);
         if (!workspace) throw errorWithStatus('Nie znaleziono workspace o takim kodzie.', 404);
 
         workspaceId = workspace.id;
-        await this._execute(
+        await tx._execute(
           "INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'member', ?)",
           [workspaceId, userId, timestamp]
         );
       } else {
         workspaceId = this._generateId('workspace');
         memberRole = 'owner';
-        await this._execute(
+        await tx._execute(
           'INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
           [
             workspaceId,
@@ -1708,19 +1756,15 @@ export class Database {
             timestamp,
           ]
         );
-        await this._execute(
+        await tx._execute(
           "INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)",
           [workspaceId, userId, timestamp]
         );
-        await this.ensureWorkspaceState(workspaceId);
+        await this.ensureWorkspaceState(workspaceId, tx);
       }
 
-      if (workspaceMode === 'join') await this.ensureWorkspaceState(workspaceId);
-      await this._execute('COMMIT');
-    } catch (error) {
-      await this._execute('ROLLBACK');
-      throw error;
-    }
+      if (workspaceMode === 'join') await this.ensureWorkspaceState(workspaceId, tx);
+    });
 
     const session = await this.createSession(userId, workspaceId);
     const payload: any = await this.buildSessionPayload(userId, workspaceId);
@@ -1824,8 +1868,7 @@ export class Database {
     ]);
     let workspaceId = '';
 
-    await this._execute('BEGIN');
-    try {
+    await this._withTransaction(async (tx) => {
       if (row) {
         const currentProfile = this._safeJsonParse(row.profile_json, {});
         const nextProfile = {
@@ -1833,7 +1876,7 @@ export class Database {
           avatarUrl: this._clean(profile.picture) || currentProfile.avatarUrl || '',
           googleEmail: email,
         };
-        await this._execute(
+        await tx._execute(
           "UPDATE users SET email = ?, name = ?, provider = 'google', google_sub = ?, google_email = ?, profile_json = ?, updated_at = ? WHERE id = ?",
           [
             email,
@@ -1849,7 +1892,7 @@ export class Database {
       } else {
         const userId = this._generateId('user');
         workspaceId = this._generateId('workspace');
-        await this._execute(
+        await tx._execute(
           `
           INSERT INTO users (
             id, email, password_hash, name, provider, google_sub, google_email,
@@ -1872,7 +1915,7 @@ export class Database {
             timestamp,
           ]
         );
-        await this._execute(
+        await tx._execute(
           'INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
           [
             workspaceId,
@@ -1883,18 +1926,14 @@ export class Database {
             timestamp,
           ]
         );
-        await this._execute(
+        await tx._execute(
           "INSERT INTO workspace_members (workspace_id, user_id, member_role, joined_at) VALUES (?, ?, 'owner', ?)",
           [workspaceId, userId, timestamp]
         );
-        await this.ensureWorkspaceState(workspaceId);
-        row = await this._get('SELECT * FROM users WHERE id = ?', [userId]);
+        await this.ensureWorkspaceState(workspaceId, tx);
+        row = await tx._get('SELECT * FROM users WHERE id = ?', [userId]);
       }
-      await this._execute('COMMIT');
-    } catch (error) {
-      await this._execute('ROLLBACK');
-      throw error;
-    }
+    });
 
     const actualUserId =
       row?.id || (await this._get('SELECT id FROM users WHERE email = ?', [email]))?.id;
