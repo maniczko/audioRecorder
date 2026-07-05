@@ -35,7 +35,7 @@ HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 na swój prawdziwy token:
 
 ```bash
-HF_TOKEN=hf_AbCdEfGhIjKlMnOpQrStUvWxYz123456
+HF_TOKEN=hf_your_huggingface_token_here
 ```
 
 ---
