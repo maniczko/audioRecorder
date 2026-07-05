@@ -26,6 +26,7 @@ import useWorkspaceBackup from './hooks/useWorkspaceBackup';
 import { Input } from './ui/Input';
 import TagInput from './shared/TagInput';
 import { ErrorLogSection } from './components/ErrorLogSection';
+import { getWorkspacePermissions } from './lib/permissions';
 
 const MAX_VOICE_PROFILE_SAMPLES = 5;
 const APPEARANCE_OPTIONS = [
@@ -1354,8 +1355,10 @@ function ChangelogSection() {
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
+  operator: 'Operator',
   member: 'Członek',
   viewer: 'Obserwator',
+  auditor: 'Audytor',
 };
 
 function MemberAvatar({ name }: { name: string }) {
@@ -1382,7 +1385,7 @@ function TeamSection({
   updateWorkspaceMemberRole?: (userId: string, role: string) => Promise<void>;
   removeWorkspaceMember?: (userId: string) => Promise<void>;
 }) {
-  const isOwner = workspaceRole === 'owner';
+  const permissions = getWorkspacePermissions(workspaceRole);
   const [roleLoading, setRoleLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
   const [copyDone, setCopyDone] = useState(false);
@@ -1542,7 +1545,7 @@ function TeamSection({
                       <div
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
                       >
-                        {isOwner && !isSelf ? (
+                        {permissions.canManageWorkspaceRoles && !isSelf ? (
                           <select
                             className="member-role-select"
                             value={memberRole}
@@ -1550,8 +1553,10 @@ function TeamSection({
                             onChange={(e) => handleRoleChange(member.id, e.target.value)}
                           >
                             <option value="admin">Admin</option>
+                            <option value="operator">Operator</option>
                             <option value="member">Członek</option>
                             <option value="viewer">Obserwator</option>
+                            <option value="auditor">Audytor</option>
                           </select>
                         ) : (
                           <span className={`status-chip member-role-chip-${memberRole}`}>
@@ -1559,7 +1564,7 @@ function TeamSection({
                           </span>
                         )}
 
-                        {isOwner && !isSelf && (
+                        {permissions.canRemoveWorkspaceMembers && !isSelf && (
                           <button
                             type="button"
                             className="danger-button small"

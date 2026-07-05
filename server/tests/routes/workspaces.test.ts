@@ -363,6 +363,67 @@ describe('Workspace Routes', () => {
     expect(mockWorkspaceService.listAuditLogs).not.toHaveBeenCalled();
   });
 
+  it('allows auditors to read audit logs without allowing full workspace export', async () => {
+    mockWorkspaceService.listAuditLogs.mockResolvedValue({
+      events: [{ id: 'audit_1', action: 'recording.audio.downloaded', workspaceId: 'ws1' }],
+      nextCursor: null,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('auditor')
+    );
+
+    const auditRes = await app.request('/workspaces/ws1/audit-logs', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+    const exportRes = await app.request('/workspaces/ws1/export', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(auditRes.status).toBe(200);
+    expect(exportRes.status).toBe(403);
+    expect(mockWorkspaceService.listAuditLogs).toHaveBeenCalledWith('ws1', {
+      recordingId: '',
+      limit: 100,
+      cursor: '',
+    });
+    expect(mockWorkspaceService.exportWorkspaceData).not.toHaveBeenCalled();
+  });
+
+  it('blocks viewers from mutating workspace state', async () => {
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('viewer')
+    );
+
+    const putRes = await app.request('/state/workspaces/ws1', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meetings: [] }),
+    });
+    const patchRes = await app.request('/state/workspaces/ws1', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meetings: [] }),
+    });
+
+    expect(putRes.status).toBe(403);
+    expect(patchRes.status).toBe(403);
+    expect(mockWorkspaceService.saveWorkspaceState).not.toHaveBeenCalled();
+  });
+
   it('blocks retention and export controls for non-admin workspace members', async () => {
     app = createApp(
       {

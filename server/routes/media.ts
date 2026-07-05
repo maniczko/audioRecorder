@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
+import { workspaceMembershipCan } from '../../src/lib/permissions.ts';
 import { normalizeSourceLinkedAnalysis } from '../../src/shared/sourceLinkedAnalysis.ts';
 import type { MediaAsset } from '../lib/types.ts';
 import {
@@ -746,17 +747,9 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     );
   }
 
-  async function assertOperatorAccess(c: any, workspaceId: string) {
-    const session = c.get('session') as any;
-    const userId = String(session?.user_id || session?.userId || '').trim();
-    const membership =
-      typeof services.workspaceService?.getMembership === 'function'
-        ? await services.workspaceService.getMembership(workspaceId, userId)
-        : null;
-    const role = String(
-      membership?.member_role || membership?.role || session?.role || ''
-    ).toLowerCase();
-    return ['owner', 'admin', 'operator'].includes(role);
+  async function assertWorkspacePermission(c: any, workspaceId: string, permission: string) {
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    return workspaceMembershipCan(membership, permission);
   }
 
   async function writeAuditEvent(
@@ -953,7 +946,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
     }
 
-    const allowed = await assertOperatorAccess(c, workspaceId);
+    const allowed = await assertWorkspacePermission(c, workspaceId, 'quota:read');
     if (!allowed) {
       return c.json({ message: 'Tylko owner, admin lub operator moze przegladac limity.' }, 403);
     }
@@ -986,7 +979,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const workspaceId = c.req.header('X-Workspace-Id') || '';
     const meetingId = c.req.header('X-Meeting-Id') || '';
     if (!workspaceId) return c.json({ message: 'Brakuje X-Workspace-Id.' }, 400);
-    await ensureWorkspaceAccess(c, workspaceId);
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!workspaceMembershipCan(membership, 'recordings:upload')) {
+      return c.json({ message: 'Nie masz uprawnien do wgrywania nagran.' }, 403);
+    }
 
     const existingAsset =
       typeof transcriptionService.getMediaAsset === 'function'
@@ -1225,7 +1221,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     const recordingId = c.req.param('recordingId');
     const asset = await transcriptionService.getMediaAsset(recordingId);
     if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-    await ensureWorkspaceAccess(c, asset.workspace_id);
+    const membership = await ensureWorkspaceAccess(c, asset.workspace_id);
+    if (!workspaceMembershipCan(membership, 'recordings:download')) {
+      return c.json({ message: 'Nie masz uprawnien do pobierania nagran.' }, 403);
+    }
 
     const manifest =
       asset.storage_mode === 'segmented' && asset.media_manifest_json
@@ -1262,7 +1261,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         console.warn('[media] Audio 404 - no media_assets row', { recordingId });
         return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       }
-      await ensureWorkspaceAccess(c, asset.workspace_id);
+      const membership = await ensureWorkspaceAccess(c, asset.workspace_id);
+      if (!workspaceMembershipCan(membership, 'recordings:download')) {
+        return c.json({ message: 'Nie masz uprawnien do pobierania nagran.' }, 403);
+      }
 
       const ALLOWED = new Set([
         'audio/webm',
@@ -1445,7 +1447,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     }
 
     // Ensure the user has rights to delete from this workspace
-    await ensureWorkspaceAccess(c, asset.workspace_id);
+    const membership = await ensureWorkspaceAccess(c, asset.workspace_id);
+    if (!workspaceMembershipCan(membership, 'recordings:delete')) {
+      return c.json({ message: 'Nie masz uprawnien do usuwania nagran.' }, 403);
+    }
 
     try {
       // Note: transcriptionService is Database instance here
@@ -1470,7 +1475,11 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const body = bodyValidation.data;
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-      await ensureWorkspaceAccess(c, body.workspaceId || asset.workspace_id);
+      const workspaceId = body.workspaceId || asset.workspace_id;
+      const membership = await ensureWorkspaceAccess(c, workspaceId);
+      if (!workspaceMembershipCan(membership, 'recordings:process')) {
+        return c.json({ message: 'Nie masz uprawnien do przetwarzania nagran.' }, 403);
+      }
 
       const runtimeActive =
         typeof transcriptionService.isTranscriptionJobActive === 'function'
@@ -1486,7 +1495,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const quotaResponse = await enforceProviderQuota(c, {
         kind: 'stt',
         endpoint: 'recording-transcribe',
-        workspaceId: body.workspaceId || asset.workspace_id,
+        workspaceId,
       });
       if (quotaResponse) return quotaResponse;
 
@@ -2501,7 +2510,10 @@ Important:
     if (!workspaceId) {
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
     }
-    await ensureWorkspaceAccess(c, workspaceId);
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!workspaceMembershipCan(membership, 'ai:analyze')) {
+      return c.json({ message: 'Nie masz uprawnien do analizy AI.' }, 403);
+    }
 
     const quotaResponse = await enforceProviderQuota(c, {
       kind: 'ai',
