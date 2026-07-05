@@ -6,7 +6,7 @@ import type {
   AiSearchResponse,
   AiSuggestTasksRequest,
 } from '../../src/shared/contracts.ts';
-import { workspaceMembershipCan } from '../../src/lib/permissions.ts';
+import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { AppMiddlewares } from './middleware.ts';
 import type { AppServices } from './middleware.ts';
 import { config } from '../config.ts';

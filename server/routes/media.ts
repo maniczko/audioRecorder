@@ -15,7 +15,7 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { normalizeTranscriptionStatusPayload } from '../../src/shared/contracts.ts';
-import { workspaceMembershipCan } from '../../src/lib/permissions.ts';
+import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import { normalizeSourceLinkedAnalysis } from '../../src/shared/sourceLinkedAnalysis.ts';
 import type { MediaAsset } from '../lib/types.ts';
 import {

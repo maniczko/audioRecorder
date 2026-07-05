@@ -126,7 +126,7 @@
       "screen": "Profile",
       "file": "src/ProfileTab.tsx",
       "expectedActionCount": 37,
-      "fingerprint": "f2f33d285234a017",
+      "fingerprint": "ba710d1f973bc005",
       "contractStatus": "covered",
       "testFiles": ["src/ProfileTab.test.tsx", "src/ProfileTab.auth.integration.test.tsx"],
       "testEvidence": ["Zapisz profil", "Zmień hasło", "Ustawienia wyciszone", "Voice Profiles Management"],

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Hono } from 'hono';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
-import { workspaceMembershipCan } from '../../src/lib/permissions.ts';
+import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 import {
