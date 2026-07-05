@@ -22,6 +22,14 @@ const voiceProfileMetadataColumns = [
   'created_by',
 ] as const;
 
+const productionSchemaAuditIndexes = [
+  'idx_media_assets_workspace_created_at',
+  'idx_transcription_jobs_workspace_status_updated_at',
+  'idx_transcription_jobs_error_code_updated_at',
+  'idx_audit_logs_workspace_entity_created_at',
+  'idx_workspace_state_retention_days',
+] as const;
+
 function readMigration(fileName: string) {
   return fs.readFileSync(path.join(migrationsDir, fileName), 'utf8');
 }
@@ -97,5 +105,23 @@ describe('Database migration contracts', () => {
     for (const column of voiceProfileMetadataColumns) {
       expect(initialSchema).toContain(column);
     }
+  });
+
+  test('Issue #1253 - production schema audit migration adds critical operations indexes', () => {
+    const migration = readMigration('20260704_z_production_schema_audit_indexes.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    for (const indexName of productionSchemaAuditIndexes) {
+      expect(migration).toContain(`create index if not exists ${indexName}`);
+    }
+
+    expect(migration).toContain('on media_assets(workspace_id, created_at desc)');
+    expect(migration).toContain('on transcription_jobs(workspace_id, status, updated_at desc)');
+    expect(migration).toContain('on transcription_jobs(last_error_code, updated_at desc)');
+    expect(migration).toContain(
+      'on audit_logs(workspace_id, entity_type, entity_id, created_at desc)'
+    );
+    expect(migration).toContain('on workspace_state(retention_days)');
   });
 });
