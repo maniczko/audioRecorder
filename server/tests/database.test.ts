@@ -395,6 +395,90 @@ describe('Database (Async Worker SQLite)', () => {
     expect(JSON.stringify(firstPage)).not.toContain('rec_other');
   });
 
+  test('Issue #1258 - exportAuditLogs filters events and strips raw content metadata', async () => {
+    await db._execute(
+      `INSERT INTO audit_logs (
+        id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+      ) VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?),
+        (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        'audit_export_match',
+        'ws_audit_export',
+        'user_export',
+        'recording.audio.downloaded',
+        'recording',
+        'rec_export',
+        JSON.stringify({
+          requestId: 'req_export',
+          source: 'api',
+          transcriptText: 'RAW TRANSCRIPT SECRET',
+          audioPath: '/tmp/raw-audio.webm',
+          prompt: 'RAW PROMPT SECRET',
+        }),
+        '2026-07-03T10:00:00.000Z',
+        'audit_export_wrong_actor',
+        'ws_audit_export',
+        'user_other',
+        'recording.audio.downloaded',
+        'recording',
+        'rec_export',
+        JSON.stringify({ requestId: 'req_other_actor' }),
+        '2026-07-03T11:00:00.000Z',
+        'audit_export_wrong_recording',
+        'ws_audit_export',
+        'user_export',
+        'recording.deleted',
+        'recording',
+        'rec_other_export',
+        JSON.stringify({ requestId: 'req_other_recording' }),
+        '2026-07-03T12:00:00.000Z',
+      ]
+    );
+
+    const report = await db.exportAuditLogs('ws_audit_export', {
+      generatedBy: 'operator_1',
+      from: '2026-07-03T00:00:00.000Z',
+      to: '2026-07-04T00:00:00.000Z',
+      eventType: 'recording.audio.downloaded',
+      actorUserId: 'user_export',
+      recordingId: 'rec_export',
+      nowIso: '2026-07-05T12:00:00.000Z',
+    });
+
+    expect(report).toMatchObject({
+      schemaVersion: 'audit-export-v1',
+      generatedAt: '2026-07-05T12:00:00.000Z',
+      generatedBy: 'operator_1',
+      filters: {
+        workspaceId: 'ws_audit_export',
+        from: '2026-07-03T00:00:00.000Z',
+        to: '2026-07-04T00:00:00.000Z',
+        eventType: 'recording.audio.downloaded',
+        actorUserId: 'user_export',
+        recordingId: 'rec_export',
+      },
+      eventCount: 1,
+    });
+    expect(report.events).toEqual([
+      expect.objectContaining({
+        id: 'audit_export_match',
+        workspaceId: 'ws_audit_export',
+        actorUserId: 'user_export',
+        eventType: 'recording.audio.downloaded',
+        recordingId: 'rec_export',
+        metadata: { requestId: 'req_export', source: 'api' },
+        createdAt: '2026-07-03T10:00:00.000Z',
+      }),
+    ]);
+    expect(JSON.stringify(report)).not.toContain('RAW TRANSCRIPT SECRET');
+    expect(JSON.stringify(report)).not.toContain('/tmp/raw-audio.webm');
+    expect(JSON.stringify(report)).not.toContain('RAW PROMPT SECRET');
+    expect(JSON.stringify(report)).not.toContain('audit_export_wrong_actor');
+    expect(JSON.stringify(report)).not.toContain('audit_export_wrong_recording');
+  });
+
   test('Issue #1230 - deleteMediaAsset succeeds when audit storage is unavailable', async () => {
     const storageModule = await import('../lib/supabaseStorage.ts');
     const deleteAudioFromStorageSpy = vi

@@ -51,6 +51,7 @@ describe('Workspace Routes', () => {
       cleanupExpiredRecordingsByRetention: vi.fn(),
       exportWorkspaceData: vi.fn(),
       listAuditLogs: vi.fn(),
+      exportAuditLogs: vi.fn(),
       updateWorkspaceMemberRole: vi.fn(),
       getMembership: vi.fn(),
     };
@@ -395,6 +396,131 @@ describe('Workspace Routes', () => {
       cursor: '',
     });
     expect(mockWorkspaceService.exportWorkspaceData).not.toHaveBeenCalled();
+  });
+
+  it('GET /workspaces/:workspaceId/audit-logs/export returns deterministic JSON report', async () => {
+    mockWorkspaceService.exportAuditLogs.mockResolvedValue({
+      schemaVersion: 'audit-export-v1',
+      generatedAt: '2026-07-05T12:00:00.000Z',
+      generatedBy: 'u1',
+      filters: {
+        workspaceId: 'ws1',
+        from: '2026-07-01T00:00:00.000Z',
+        to: '2026-07-05T00:00:00.000Z',
+        eventType: 'recording.audio.downloaded',
+        actorUserId: 'u1',
+        recordingId: 'rec1',
+      },
+      eventCount: 1,
+      events: [
+        {
+          id: 'audit_export_1',
+          workspaceId: 'ws1',
+          actorUserId: 'u1',
+          action: 'recording.audio.downloaded',
+          eventType: 'recording.audio.downloaded',
+          entityType: 'recording',
+          entityId: 'rec1',
+          recordingId: 'rec1',
+          metadata: { requestId: 'req_1' },
+          createdAt: '2026-07-03T10:00:00.000Z',
+        },
+      ],
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('operator')
+    );
+
+    const res = await app.request(
+      '/workspaces/ws1/audit-logs/export?from=2026-07-01T00:00:00.000Z&to=2026-07-05T00:00:00.000Z&eventType=recording.audio.downloaded&actorUserId=u1&recordingId=rec1',
+      {
+        method: 'GET',
+        headers: { Authorization: 'Bearer token' },
+      }
+    );
+
+    expect(res.status).toBe(200);
+    const payload = await res.json();
+    expect(payload).toMatchObject({
+      schemaVersion: 'audit-export-v1',
+      generatedBy: 'u1',
+      eventCount: 1,
+      events: [{ id: 'audit_export_1', recordingId: 'rec1' }],
+    });
+    expect(mockWorkspaceService.exportAuditLogs).toHaveBeenCalledWith('ws1', {
+      actorUserId: 'u1',
+      generatedBy: 'u1',
+      from: '2026-07-01T00:00:00.000Z',
+      to: '2026-07-05T00:00:00.000Z',
+      eventType: 'recording.audio.downloaded',
+      recordingId: 'rec1',
+      targetActorUserId: 'u1',
+    });
+  });
+
+  it('GET /workspaces/:workspaceId/audit-logs/export supports CSV and blocks members', async () => {
+    mockWorkspaceService.exportAuditLogs.mockResolvedValue({
+      schemaVersion: 'audit-export-v1',
+      generatedAt: '2026-07-05T12:00:00.000Z',
+      generatedBy: 'u1',
+      filters: { workspaceId: 'ws1' },
+      eventCount: 1,
+      events: [
+        {
+          id: 'audit_export_1',
+          workspaceId: 'ws1',
+          actorUserId: 'u1',
+          action: 'recording.deleted',
+          eventType: 'recording.deleted',
+          entityType: 'recording',
+          entityId: 'rec1',
+          recordingId: 'rec1',
+          metadata: { source: 'api' },
+          createdAt: '2026-07-03T10:00:00.000Z',
+        },
+      ],
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('auditor')
+    );
+
+    const csvRes = await app.request('/workspaces/ws1/audit-logs/export?format=csv', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(csvRes.status).toBe(200);
+    expect(csvRes.headers.get('content-type')).toContain('text/csv');
+    expect(await csvRes.text()).toContain('id,createdAt,workspaceId,actorUserId,eventType');
+
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('member')
+    );
+
+    const forbiddenRes = await app.request('/workspaces/ws1/audit-logs/export', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+
+    expect(forbiddenRes.status).toBe(403);
   });
 
   it('blocks viewers from mutating workspace state', async () => {

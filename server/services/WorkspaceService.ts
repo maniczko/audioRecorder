@@ -63,6 +63,10 @@ export default class WorkspaceService {
     return await this.db.listAuditLogs(workspaceId, options);
   }
 
+  async exportAuditLogs(workspaceId: string, options: any = {}) {
+    return await this.db.exportAuditLogs(workspaceId, options);
+  }
+
   async updateWorkspaceMemberRole(workspaceId: string, targetUserId: string, memberRole: string) {
     return await this.db.updateWorkspaceMemberRole(workspaceId, targetUserId, memberRole);
   }
