@@ -448,6 +448,62 @@ function getLatestRecording(selectedMeeting) {
 }
 
 const PENDING_IMPORT_STALE_MS = 5 * 60 * 1000;
+const REMOTE_RECORDING_MISSING_MESSAGE =
+  'Nagranie nie jest juz dostepne na serwerze. Odswiez dane albo zaimportuj plik ponownie.';
+
+function normalizePipelineMessage(value: unknown) {
+  const message = String(value || '').trim();
+  if (!message) return '';
+  const separatorIndex = message.indexOf(':');
+  if (separatorIndex > -1 && message.toLowerCase().includes('w kolejce')) {
+    return message.slice(separatorIndex + 1).trim();
+  }
+  return message;
+}
+
+function getPendingImportDisplayState(
+  item: PendingImportQueueItem,
+  activeQueueItem: PendingImportQueueItem | null | undefined,
+  recordingMessage: string
+) {
+  const itemStatus = String(item?.status || '').toLowerCase();
+  const activeStatus = String(activeQueueItem?.status || '').toLowerCase();
+  const isSameActiveRecording =
+    Boolean(activeQueueItem?.recordingId) && activeQueueItem?.recordingId === item?.recordingId;
+  const messages = [
+    item?.errorMessage,
+    item?.lastErrorMessage,
+    isSameActiveRecording ? activeQueueItem?.errorMessage : '',
+    isSameActiveRecording ? activeQueueItem?.lastErrorMessage : '',
+    isSameActiveRecording ? recordingMessage : '',
+  ];
+  const normalizedMessages = messages.map(normalizePipelineMessage).filter(Boolean);
+  const combinedMessage = normalizedMessages.join(' ').toLowerCase();
+  const isRemoteMissing =
+    combinedMessage.includes('nagranie nie jest juz dostepne') ||
+    String(item?.errorCode || activeQueueItem?.errorCode || '').toLowerCase() ===
+      'audio_unavailable';
+  const isPermanent =
+    itemStatus === 'failed_permanent' || activeStatus === 'failed_permanent' || isRemoteMissing;
+
+  if (!isPermanent) {
+    return {
+      status: item?.status || 'queued',
+      errorMessage: item?.errorMessage || item?.lastErrorMessage || '',
+      isPermanent: false,
+    };
+  }
+
+  const remoteMissingMessage = normalizedMessages.find((message) =>
+    message.toLowerCase().includes('nagranie nie jest juz dostepne')
+  );
+
+  return {
+    status: 'failed_permanent',
+    errorMessage: remoteMissingMessage || REMOTE_RECORDING_MISSING_MESSAGE,
+    isPermanent: true,
+  };
+}
 
 function getQueueItemLastActivityMs(item: PendingImportQueueItem) {
   const candidates = [item.updatedAt, item.processingStartedAt, item.createdAt]
@@ -1576,6 +1632,15 @@ export default function RecordingsTab(props) {
       ),
     [filteredRecordingQueue]
   );
+  const activeQueueItemShownInPendingList = React.useMemo(
+    () =>
+      Boolean(
+        activeQueueItem?.recordingId &&
+        pendingImports.some((item) => item?.recordingId === activeQueueItem.recordingId)
+      ),
+    [activeQueueItem?.recordingId, pendingImports]
+  );
+  const showStandalonePipelineStatus = showPipelineStatus && !pendingImports.length;
   const activeDiagnostics = React.useMemo(
     () => formatPipelineDiagnostics(activeQueueItem),
     [activeQueueItem]
@@ -1734,7 +1799,7 @@ export default function RecordingsTab(props) {
 
   return (
     <div className="recordings-tab-container recordings-tab-shell">
-      {showPipelineStatus ? (
+      {showStandalonePipelineStatus && !activeQueueItemShownInPendingList ? (
         <section className="panel recordings-status-panel">
           <div className="panel-header compact recordings-panel-header-flat">
             <div>
@@ -1820,25 +1885,38 @@ export default function RecordingsTab(props) {
           <div className="panel-body recordings-pending-list">
             {pendingImports.map((item) => {
               const isActive = activeQueueItem?.recordingId === item.recordingId;
+              const pendingDisplay = getPendingImportDisplayState(
+                item,
+                isActive ? activeQueueItem : null,
+                recordingMessage
+              );
+              const displayStatus = pendingDisplay.status;
               const progressPercent = isActive
                 ? pipelineProgressPercent
-                : item.status === 'queued'
+                : displayStatus === 'queued'
                   ? 8
                   : 0;
-              const progressMessage = isActive
-                ? recordingMessage
-                : item.status === 'failed'
-                  ? item.errorMessage
+              const progressMessage = pendingDisplay.isPermanent
+                ? pendingDisplay.errorMessage
+                : isActive
+                  ? recordingMessage
+                  : displayStatus === 'failed'
+                    ? item.errorMessage
+                    : isStalePendingImport(item)
+                      ? 'Status nie zmienil sie od kilku minut. Odswiez albo ponow przetwarzanie.'
+                      : 'Oczekiwanie na rozpoczecie przetwarzania...';
+              const stageLabel = pendingDisplay.isPermanent
+                ? 'Wymaga ponownego importu'
+                : isActive
+                  ? pipelineStageLabel
                   : isStalePendingImport(item)
-                    ? 'Status nie zmienil sie od kilku minut. Odswiez albo ponow przetwarzanie.'
-                    : 'Oczekiwanie na rozpoczecie przetwarzania...';
-              const stageLabel = isActive
-                ? pipelineStageLabel
-                : isStalePendingImport(item)
-                  ? 'Wymaga sprawdzenia statusu'
-                  : 'Plik dodany do kolejki';
+                    ? 'Wymaga sprawdzenia statusu'
+                    : 'Plik dodany do kolejki';
               const diagnostics = formatPipelineDiagnostics(item);
-              const retryLabel = getPendingImportRetryLabel(item);
+              const retryLabel = getPendingImportRetryLabel({
+                ...item,
+                status: displayStatus,
+              });
 
               return (
                 <div key={item.recordingId} className="pending-import-card recordings-pending-card">
@@ -1851,11 +1929,11 @@ export default function RecordingsTab(props) {
                     </div>
                   </div>
                   <RecordingPipelineStatus
-                    status={item.status}
+                    status={displayStatus}
                     progressMessage={progressMessage}
                     progressPercent={progressPercent}
                     stageLabel={stageLabel}
-                    errorMessage={item.errorMessage}
+                    errorMessage={pendingDisplay.errorMessage}
                     processingStartedAt={item.processingStartedAt}
                     onRetry={
                       retryLabel && retryRecordingQueueItem
@@ -1863,7 +1941,7 @@ export default function RecordingsTab(props) {
                         : undefined
                     }
                     retryLabel={retryLabel || undefined}
-                    allowInProgressRetry={Boolean(retryLabel && item.status !== 'failed')}
+                    allowInProgressRetry={Boolean(retryLabel && displayStatus !== 'failed')}
                     className="recordings-tab-pending-status"
                   />
                   {diagnostics ? (

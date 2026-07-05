@@ -4607,11 +4607,10 @@ export default function StudioMeetingView({
             <div className="ff-player-status-wrap">
               <RecordingPipelineStatus
                 status={
-                  analysisStatus === 'error' ||
-                  analysisStatus === 'failed' ||
-                  activeQueueItem?.status === 'failed'
+                  activeQueueItem?.status ||
+                  (analysisStatus === 'error' || analysisStatus === 'failed'
                     ? 'failed'
-                    : activeQueueItem?.status || 'processing'
+                    : 'processing')
                 }
                 errorMessage={
                   activeQueueItem?.errorMessage ||

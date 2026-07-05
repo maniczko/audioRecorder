@@ -662,6 +662,66 @@ describe('RecordingsTab', () => {
     expect(defaultProps.retryRecordingQueueItem).not.toHaveBeenCalled();
   });
 
+  test('Regression: remote missing audio snapshot is shown as permanent before hydration catches up', () => {
+    const retryRecordingQueueItem = vi.fn();
+    const { container } = render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          retryRecordingQueueItem={retryRecordingQueueItem}
+          analysisStatus="failed"
+          recordingMessage="Blad w kolejce: Nagranie nie jest juz dostepne na serwerze. Odswiez dane albo zaimportuj plik ponownie."
+          activeQueueItem={{
+            id: 'rec_remote_missing_snapshot',
+            recordingId: 'rec_remote_missing_snapshot',
+            meetingId: 'meeting_remote_missing_snapshot',
+            workspaceId: 'ws1',
+            meetingTitle: 'Import: Remote missing snapshot',
+            status: 'failed',
+            uploaded: true,
+            errorMessage: 'Brakuje lokalnego audio.',
+          }}
+          userMeetings={mockMeetings}
+          recordingQueue={[
+            {
+              id: 'rec_remote_missing_snapshot',
+              recordingId: 'rec_remote_missing_snapshot',
+              meetingId: 'meeting_remote_missing_snapshot',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import: Remote missing snapshot',
+              meetingSnapshot: {
+                id: 'meeting_remote_missing_snapshot',
+                workspaceId: 'ws1',
+                title: 'Import: Remote missing snapshot',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'failed',
+              uploaded: true,
+              attempts: 1,
+              retryCount: 1,
+              backoffUntil: 0,
+              lastErrorMessage: 'Brakuje lokalnego audio.',
+              errorMessage: 'Brakuje lokalnego audio.',
+              createdAt: '2026-04-06T08:00:00.000Z',
+              updatedAt: '2026-04-06T08:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(
+      screen.getByText(
+        'Nagranie nie jest juz dostepne na serwerze. Odswiez dane albo zaimportuj plik ponownie.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Brakuje lokalnego audio.')).not.toBeInTheDocument();
+    expect(container.querySelector('.pipeline-retry-btn')).toBeNull();
+    expect(retryRecordingQueueItem).not.toHaveBeenCalled();
+  });
+
   // -----------------------------------------------------------------
   // Issue #0 - deleted queued imports returned after success toast
   // Date: 2026-05-21
