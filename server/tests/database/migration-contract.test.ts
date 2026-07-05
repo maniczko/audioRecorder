@@ -148,4 +148,17 @@ describe('Database migration contracts', () => {
     }
     expect(migration).toContain('where released_at is null');
   });
+
+  test('Issue #1262 - workspace feature flag migration preserves fresh and upgraded databases', () => {
+    const migration = readMigration('20260705_workspace_feature_flags.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+    const initialSchema = readMigration('001_initial_schema.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    expect(migration).toContain('alter table workspace_state');
+    expect(migration).toContain('add column feature_flags_json text not null default');
+    expect(initialSchema).toContain('feature_flags_json text not null default');
+  });
 });

@@ -2,20 +2,27 @@ import { AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   fetchProductionCapabilities,
+  fetchWorkspaceCapabilities,
   type CapabilityFlag,
   type ProductionCapabilities,
 } from '../../services/capabilitiesService';
+import { useWorkspaceSelectors } from '../../store/workspaceStore';
 
 function reasonLabel(capability: CapabilityFlag) {
   return capability.reason || `${capability.label}: ${capability.status}`;
 }
 
 export default function ProductionReadinessBanner() {
+  const { currentWorkspaceId } = useWorkspaceSelectors();
   const [capabilities, setCapabilities] = useState<ProductionCapabilities | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    fetchProductionCapabilities()
+    const capabilityRequest = currentWorkspaceId
+      ? fetchWorkspaceCapabilities(currentWorkspaceId)
+      : fetchProductionCapabilities();
+
+    capabilityRequest
       .then((payload) => {
         if (mounted) setCapabilities(payload);
       })
@@ -27,7 +34,7 @@ export default function ProductionReadinessBanner() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [currentWorkspaceId]);
 
   if (!capabilities || capabilities.ok || capabilities.degradedCapabilities.length === 0) {
     return null;

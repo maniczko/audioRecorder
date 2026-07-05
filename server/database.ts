@@ -10,7 +10,11 @@ import { config } from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
 import { isCreatedAtExpiredByRetention } from './lib/retentionPolicy.ts';
 import { requireVoiceProfileEmbedding } from './lib/voiceProfileEmbedding.ts';
-import type { SessionPayload, WorkspaceStatePayload } from '../src/shared/contracts.ts';
+import {
+  normalizeWorkspaceFeatureFlags,
+  type SessionPayload,
+  type WorkspaceStatePayload,
+} from '../src/shared/contracts.ts';
 import {
   STORAGE_CONTENT_TYPE,
   buildManifestStoragePath,
@@ -1246,6 +1250,17 @@ export class Database {
         throw error;
       }
     }
+    try {
+      await this._execute(
+        "ALTER TABLE workspace_state ADD COLUMN feature_flags_json TEXT NOT NULL DEFAULT '{}'"
+      );
+    } catch (error) {
+      if (
+        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
+      ) {
+        throw error;
+      }
+    }
 
     const existing = await this._get(
       'SELECT workspace_id FROM workspace_state WHERE workspace_id = ?',
@@ -1266,9 +1281,10 @@ export class Database {
           calendar_meta_json,
           vocabulary_json,
           retention_days,
+          feature_flags_json,
           updated_at
         )
-        VALUES (?, '[]', '[]', '[]', '{}', '{}', '{}', '[]', ?, ?)
+        VALUES (?, '[]', '[]', '[]', '{}', '{}', '{}', '[]', ?, '{}', ?)
       `,
       [workspaceId, DEFAULT_RETENTION_DAYS, timestamp]
     );
@@ -1444,6 +1460,7 @@ export class Database {
       calendarMeta,
       vocabulary: this._safeJsonParse(row.vocabulary_json, []),
       retentionDays: _normalizeRetentionDays(row.retention_days),
+      featureFlags: normalizeWorkspaceFeatureFlags(this._safeJsonParse(row.feature_flags_json, {})),
       updatedAt: row.updated_at,
     };
   }
@@ -1459,6 +1476,7 @@ export class Database {
       calendarMeta: {},
       vocabulary: [],
       retentionDays: DEFAULT_RETENTION_DAYS,
+      featureFlags: normalizeWorkspaceFeatureFlags(),
     }
   ): Promise<WorkspaceState> {
     await this.ensureWorkspaceState(workspaceId);
@@ -1503,6 +1521,7 @@ export class Database {
             calendar_meta_json = ?,
             vocabulary_json = ?,
             retention_days = ?,
+            feature_flags_json = ?,
             updated_at = ?
         WHERE workspace_id = ?
       `,
@@ -1521,6 +1540,11 @@ export class Database {
         JSON.stringify(calendarMeta),
         JSON.stringify(Array.isArray(payload.vocabulary) ? payload.vocabulary : []),
         _normalizeRetentionDays((payload as any).retentionDays, currentRow?.retention_days),
+        JSON.stringify(
+          normalizeWorkspaceFeatureFlags(
+            (payload as any).featureFlags || this._safeJsonParse(currentRow?.feature_flags_json, {})
+          )
+        ),
         timestamp,
         workspaceId,
       ]
@@ -1531,6 +1555,44 @@ export class Database {
       workspaceId,
     ]);
     return this.getWorkspaceState(workspaceId);
+  }
+
+  async updateWorkspaceFeatureFlags(
+    workspaceId: string,
+    featureFlags: unknown,
+    options: { actorUserId?: string; requestId?: string; source?: string } = {}
+  ): Promise<any> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+    await this.ensureWorkspaceState(safeWorkspaceId);
+    const current = await this.getWorkspaceState(safeWorkspaceId);
+    const nextFeatureFlags = normalizeWorkspaceFeatureFlags({
+      ...current.featureFlags,
+      ...(featureFlags && typeof featureFlags === 'object' ? featureFlags : {}),
+    });
+    const timestamp = this.nowIso();
+    await this._execute(
+      'UPDATE workspace_state SET feature_flags_json = ?, updated_at = ? WHERE workspace_id = ?',
+      [JSON.stringify(nextFeatureFlags), timestamp, safeWorkspaceId]
+    );
+    await this._execute('UPDATE workspaces SET updated_at = ? WHERE id = ?', [
+      timestamp,
+      safeWorkspaceId,
+    ]);
+    await this.writeAuditLogBestEffort({
+      workspaceId: safeWorkspaceId,
+      actorUserId: String(options.actorUserId || ''),
+      action: 'workspace.feature_flags.updated',
+      entityType: 'workspace',
+      entityId: safeWorkspaceId,
+      metadata: {
+        previousFeatureFlags: current.featureFlags,
+        featureFlags: nextFeatureFlags,
+        source: String(options.source || 'api'),
+        requestId: String(options.requestId || ''),
+      },
+    });
+    return { featureFlags: nextFeatureFlags, state: await this.getWorkspaceState(safeWorkspaceId) };
   }
 
   async tombstoneWorkspaceRecording(workspaceId: string, recordingId: string): Promise<void> {

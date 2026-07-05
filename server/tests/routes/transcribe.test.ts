@@ -17,7 +17,15 @@ describe('Transcribe Routes', () => {
 
     app = createApp({
       authService: testAuthService as any,
-      workspaceService: { getMembership: vi.fn().mockResolvedValue({ role: 'owner' }) } as any,
+      workspaceService: {
+        getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+        getWorkspaceState: vi.fn().mockResolvedValue({
+          featureFlags: {
+            sttProvider: 'auto',
+            liveTranscription: true,
+          },
+        }),
+      } as any,
       transcriptionService: mockTranscriptionService,
       config: { allowedOrigins: '*', trustProxy: false, uploadDir: process.cwd() },
     });
@@ -77,6 +85,12 @@ describe('Transcribe Routes', () => {
 
     const testWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          liveTranscription: true,
+        },
+      }),
     };
 
     app = createApp({
@@ -146,6 +160,12 @@ describe('Transcribe Routes', () => {
 
     const testWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          liveTranscription: true,
+        },
+      }),
     };
 
     app = createApp({
@@ -191,6 +211,12 @@ describe('Transcribe Routes', () => {
 
     const testWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ role: 'owner' }),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          liveTranscription: true,
+        },
+      }),
     };
 
     app = createApp({

@@ -841,6 +841,24 @@ export default class TranscriptionService extends EventEmitter {
             ]);
             await markProcessingPromise;
 
+            const featureFlags = wsState?.featureFlags || {};
+            if (featureFlags.sttProvider === 'disabled') {
+              const disabledError: any = new Error(
+                'Transkrypcja STT jest wylaczona dla tego workspace.'
+              );
+              disabledError.code = 'workspace_stt_disabled';
+              disabledError.retryable = false;
+              throw disabledError;
+            }
+            if (featureFlags.sttProvider === 'local-whisper') {
+              const unsupportedError: any = new Error(
+                'Provider local-whisper nie jest jeszcze podpiety do pipeline STT.'
+              );
+              unsupportedError.code = 'workspace_stt_provider_unsupported';
+              unsupportedError.retryable = false;
+              throw unsupportedError;
+            }
+
             const segmentedManifest =
               asset.storage_mode === 'segmented'
                 ? parseMediaManifest(asset.media_manifest_json)
@@ -879,6 +897,13 @@ export default class TranscriptionService extends EventEmitter {
                 ...(options.vocabulary ? [options.vocabulary] : []),
                 ...(wsState.vocabulary || []),
               ].join(', '),
+              sttPreferredProvider:
+                featureFlags.sttProvider && featureFlags.sttProvider !== 'auto'
+                  ? featureFlags.sttProvider
+                  : options.sttPreferredProvider,
+              skipEarlyPyannote: processingMode !== 'full' || featureFlags.diarization === false,
+              skipSemanticDiarization: featureFlags.diarization === false,
+              skipVoiceProfileMatch: processingMode !== 'full' || featureFlags.embeddings === false,
               voiceProfiles,
               onProgress: (payload: any) => {
                 this.emit(`progress-${recordingId}`, payload);
@@ -908,9 +933,12 @@ export default class TranscriptionService extends EventEmitter {
                     )
                   : this.pipeline.transcribeRecording(asset, {
                       ...sharedOptions,
-                      skipEarlyPyannote: processingMode !== 'full',
+                      skipEarlyPyannote:
+                        processingMode !== 'full' || featureFlags.diarization === false,
+                      skipSemanticDiarization: featureFlags.diarization === false,
                       skipChunkVAD: processingMode !== 'full' || !config.VOICELOG_ENABLE_CHUNK_VAD,
-                      skipVoiceProfileMatch: processingMode !== 'full',
+                      skipVoiceProfileMatch:
+                        processingMode !== 'full' || featureFlags.embeddings === false,
                     })
             );
             addPipelineBreadcrumb('STT pipeline completed.', {

@@ -106,6 +106,14 @@ function normalizeAnalysisPayload(result: any, segments: any[] = []) {
   };
 }
 
+async function getWorkspaceFeatureFlags(workspaceService: any, workspaceId: string) {
+  if (typeof workspaceService?.getWorkspaceState !== 'function') {
+    return {};
+  }
+  const state = await workspaceService.getWorkspaceState(workspaceId);
+  return state?.featureFlags || {};
+}
+
 function getIdempotencyKey(c: any): string | undefined {
   const key = String(c.req.header(IDEMPOTENCY_KEY_HEADER) || '').trim();
   return key ? key.slice(0, 160) : undefined;
@@ -688,7 +696,7 @@ async function cleanupOldChunks(
 
 export function createMediaRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any; reqId: string } }>();
-  const { transcriptionService, config } = services;
+  const { transcriptionService, workspaceService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
   const quotaStore = createAiQuotaStore({ db: services.db });
   const startTranscriptionPipeline =
@@ -1480,6 +1488,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       if (!workspaceMembershipCan(membership, 'recordings:process')) {
         return c.json({ message: 'Nie masz uprawnien do przetwarzania nagran.' }, 403);
       }
+      const featureFlags = await getWorkspaceFeatureFlags(workspaceService, workspaceId);
+      if (featureFlags.sttProvider === 'disabled') {
+        return c.json(
+          {
+            message: 'Transkrypcja STT jest wylaczona dla tego workspace.',
+            code: 'workspace_stt_disabled',
+            recordingId,
+          },
+          403
+        );
+      }
 
       const runtimeActive =
         typeof transcriptionService.isTranscriptionJobActive === 'function'
@@ -1584,6 +1603,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
+      const featureFlags = await getWorkspaceFeatureFlags(workspaceService, asset.workspace_id);
+      if (featureFlags.sttProvider === 'disabled') {
+        return c.json(
+          {
+            message: 'Transkrypcja STT jest wylaczona dla tego workspace.',
+            code: 'workspace_stt_disabled',
+            recordingId,
+          },
+          403
+        );
+      }
 
       if (
         asset.transcription_status === 'completed' &&
@@ -2156,6 +2186,21 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       );
     }
 
+    const featureFlags = await getWorkspaceFeatureFlags(workspaceService, asset.workspace_id);
+    if (featureFlags.embeddings === false) {
+      return c.json(
+        {
+          code: 'workspace_embeddings_disabled',
+          message: 'Embeddingi sa wylaczone dla tego workspace.',
+          stage: 'embedding',
+          recordingId,
+          speakerId,
+          speakerName,
+        },
+        403
+      );
+    }
+
     const quotaResponse = await enforceProviderQuota(c, {
       kind: 'embedding',
       endpoint: 'voice-profile',
@@ -2326,6 +2371,17 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         body?.summary || diarization?.reviewSummary?.summary || diarization?.summary;
       if (!summaryText)
         return c.json({ message: 'Brak podsumowania do wygenerowania sketchnotki.' }, 400);
+
+      const featureFlags = await getWorkspaceFeatureFlags(workspaceService, asset.workspace_id);
+      if (featureFlags.imageGeneration === false) {
+        return c.json(
+          {
+            message: 'Generowanie obrazow jest wylaczone dla tego workspace.',
+            code: 'workspace_image_generation_disabled',
+          },
+          403
+        );
+      }
 
       const asList = (value: any) =>
         (Array.isArray(value) ? value : [])
@@ -2513,6 +2569,19 @@ Important:
     const membership = await ensureWorkspaceAccess(c, workspaceId);
     if (!workspaceMembershipCan(membership, 'ai:analyze')) {
       return c.json({ message: 'Nie masz uprawnien do analizy AI.' }, 403);
+    }
+
+    const featureFlags = await getWorkspaceFeatureFlags(workspaceService, workspaceId);
+    if (featureFlags.meetingAnalysis === false) {
+      return c.json(
+        {
+          mode: 'disabled-feature-flag',
+          analysisSource: 'fallback',
+          fallbackReason: 'disabled-feature-flag',
+          generatedBy: 'server',
+        },
+        200
+      );
     }
 
     const quotaResponse = await enforceProviderQuota(c, {
@@ -2980,7 +3049,7 @@ Important:
 
 export function createTranscribeRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
-  const { transcriptionService, config } = services;
+  const { transcriptionService, workspaceService, config } = services;
   const { authMiddleware, applyRateLimit, ensureWorkspaceAccess } = middlewares;
   const quotaStore = createAiQuotaStore({ db: services.db });
   const liveTranscribeTimeoutMs = () => {
@@ -3005,6 +3074,16 @@ export function createTranscribeRoutes(services: AppServices, middlewares: AppMi
       return c.json({ message: 'Brakuje workspaceId.' }, 400);
     }
     await ensureWorkspaceAccess(c, workspaceId);
+    const featureFlags = await getWorkspaceFeatureFlags(workspaceService, workspaceId);
+    if (featureFlags.liveTranscription === false) {
+      return c.json(
+        {
+          message: 'Transkrypcja live jest wylaczona dla tego workspace.',
+          code: 'workspace_live_transcription_disabled',
+        },
+        403
+      );
+    }
 
     const sessionUserId = String(session?.user_id || session?.userId || '').trim();
     if (!sessionUserId) {

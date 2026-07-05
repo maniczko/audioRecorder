@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS workspace_state (
   calendar_meta_json TEXT NOT NULL DEFAULT '{}',
   vocabulary_json TEXT NOT NULL DEFAULT '[]',
   retention_days INTEGER NOT NULL DEFAULT 365,
+  feature_flags_json TEXT NOT NULL DEFAULT '{}',
   updated_at TEXT NOT NULL
 );
 

@@ -86,6 +86,18 @@ describe('Media Routes', () => {
     };
     mockWorkspaceService = {
       getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          diarization: true,
+          meetingAnalysis: true,
+          embeddings: true,
+          imageGeneration: true,
+          liveTranscription: true,
+          retentionFeatures: true,
+          experimentalUi: false,
+        },
+      }),
     };
 
     const mockAuthService = {
@@ -390,6 +402,43 @@ describe('Media Routes', () => {
       'rec_1',
       expect.objectContaining({ processingMode: 'fast' })
     );
+  });
+
+  it('Issue #1262 - blocks STT start before provider quota when workspace STT is disabled', async () => {
+    mockWorkspaceService.getWorkspaceState.mockResolvedValueOnce({
+      featureFlags: {
+        sttProvider: 'disabled',
+        diarization: true,
+        meetingAnalysis: true,
+        embeddings: true,
+        imageGeneration: true,
+        liveTranscription: true,
+        retentionFeatures: true,
+        experimentalUi: false,
+      },
+    });
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_stt_disabled',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'failed',
+    });
+
+    const res = await app.request('/media/recordings/rec_stt_disabled/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'workspace_stt_disabled',
+      recordingId: 'rec_stt_disabled',
+    });
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.ensureTranscriptionJob).not.toHaveBeenCalled();
   });
 
   it('POST /media/recordings/:recordingId/transcribe - validates body before asset lookup', async () => {
@@ -1786,6 +1835,38 @@ describe('Media Routes', () => {
         fallbackReason: 'no-key',
       })
     );
+  });
+
+  it('Issue #1262 - returns local fallback when meeting analysis is disabled', async () => {
+    mockWorkspaceService.getWorkspaceState.mockResolvedValueOnce({
+      featureFlags: {
+        sttProvider: 'auto',
+        diarization: true,
+        meetingAnalysis: false,
+        embeddings: true,
+        imageGeneration: true,
+        liveTranscription: true,
+        retentionFeatures: true,
+        experimentalUi: false,
+      },
+    });
+    mockTranscriptionService.analyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+      summary: 'Should not run',
+    });
+
+    const res = await app.request('/media/analyze', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1', meeting: {}, segments: [] }),
+    });
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      mode: 'disabled-feature-flag',
+      analysisSource: 'fallback',
+      fallbackReason: 'disabled-feature-flag',
+    });
+    expect(mockTranscriptionService.analyzeMeetingWithOpenAI).not.toHaveBeenCalled();
   });
 
   it('POST /media/analyze records fallback metrics and sanitized warning context', async () => {
