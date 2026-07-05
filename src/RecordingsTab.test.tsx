@@ -722,6 +722,50 @@ describe('RecordingsTab', () => {
     expect(retryRecordingQueueItem).not.toHaveBeenCalled();
   });
 
+  test('Regression: workspace-header queue failure hides technical error and retry', () => {
+    const retryRecordingQueueItem = vi.fn();
+    const { container } = render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          retryRecordingQueueItem={retryRecordingQueueItem}
+          userMeetings={mockMeetings}
+          recordingQueue={[
+            {
+              id: 'rec_missing_workspace_header',
+              recordingId: 'rec_missing_workspace_header',
+              meetingId: 'meeting_missing_workspace_header',
+              workspaceId: '',
+              meetingTitle: 'Missing workspace header',
+              meetingSnapshot: {
+                id: 'meeting_missing_workspace_header',
+                workspaceId: '',
+                title: 'Missing workspace header',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 0,
+              status: 'failed',
+              uploaded: true,
+              attempts: 0,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: 'Brakuje X-Workspace-Id.',
+              createdAt: '2026-04-06T08:00:00.000Z',
+              updatedAt: '2026-04-06T08:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getByText(RECORDING_WORKSPACE_REQUIRED_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByText('Brakuje X-Workspace-Id.')).not.toBeInTheDocument();
+    expect(container.querySelector('.pipeline-retry-btn')).toBeNull();
+    expect(retryRecordingQueueItem).not.toHaveBeenCalled();
+  });
+
   // -----------------------------------------------------------------
   // Issue #0 - deleted queued imports returned after success toast
   // Date: 2026-05-21

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import {
   RECORDING_WORKSPACE_REQUIRED_MESSAGE,
+  isWorkspaceMissingErrorMessage,
   type RecordingQueueItem,
   type RecordingQueueMeetingLike,
 } from './lib/recordingQueue';
@@ -479,12 +480,16 @@ function getPendingImportDisplayState(
   ];
   const normalizedMessages = messages.map(normalizePipelineMessage).filter(Boolean);
   const combinedMessage = normalizedMessages.join(' ').toLowerCase();
+  const isWorkspaceMissing = normalizedMessages.some(isWorkspaceMissingErrorMessage);
   const isRemoteMissing =
     combinedMessage.includes('nagranie nie jest juz dostepne') ||
     String(item?.errorCode || activeQueueItem?.errorCode || '').toLowerCase() ===
       'audio_unavailable';
   const isPermanent =
-    itemStatus === 'failed_permanent' || activeStatus === 'failed_permanent' || isRemoteMissing;
+    itemStatus === 'failed_permanent' ||
+    activeStatus === 'failed_permanent' ||
+    isRemoteMissing ||
+    isWorkspaceMissing;
 
   if (!isPermanent) {
     return {
@@ -500,7 +505,10 @@ function getPendingImportDisplayState(
 
   return {
     status: 'failed_permanent',
-    errorMessage: remoteMissingMessage || REMOTE_RECORDING_MISSING_MESSAGE,
+    errorMessage:
+      (isWorkspaceMissing ? RECORDING_WORKSPACE_REQUIRED_MESSAGE : '') ||
+      remoteMissingMessage ||
+      REMOTE_RECORDING_MISSING_MESSAGE,
     isPermanent: true,
   };
 }
