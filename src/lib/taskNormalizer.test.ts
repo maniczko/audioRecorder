@@ -152,9 +152,31 @@ describe('taskNormalizer', () => {
         expect(result?.sourceQuote).toBe('quoted text');
       });
 
-      it('falls back to title for sourceQuote', () => {
+      it('does not fall back to title for sourceQuote', () => {
         const result = normalizeTask({ title: 'My task' }, 0);
-        expect(result?.sourceQuote).toBe('My task');
+        expect(result?.sourceQuote).toBe('');
+      });
+
+      it('preserves source segment metadata and unsupported flag', () => {
+        const result = normalizeTask(
+          {
+            title: 'My task',
+            sourceQuote: 'Original transcript quote',
+            sourceSegmentId: 'seg-7',
+            sourceTimestamp: 42,
+            sourceUnsupported: true,
+          },
+          0
+        );
+
+        expect(result).toEqual(
+          expect.objectContaining({
+            sourceQuote: 'Original transcript quote',
+            sourceSegmentId: 'seg-7',
+            sourceTimestamp: 42,
+            sourceUnsupported: true,
+          })
+        );
       });
     });
   });

@@ -433,6 +433,60 @@ describe('Media Routes - Additional Coverage', () => {
       );
     });
 
+    it('returns source-linked evidence for auditable AI claims', async () => {
+      const mockAnalyzeMeetingWithOpenAI = vi.fn().mockResolvedValue({
+        summary: 'Test meeting',
+        decisions: [{ text: 'Ship release', sourceQuote: 'ship release today' }],
+        actionItems: [{ text: 'Anna sends notes', sourceQuote: 'Anna sends notes' }],
+        tasks: [{ title: 'Anna sends notes', sourceQuote: 'Anna sends notes' }],
+      });
+
+      const testApp = createApp({
+        authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
+        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        transcriptionService: {
+          ...mockTranscriptionService,
+          analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
+        },
+        config: { allowedOrigins: 'http://localhost:3000', trustProxy: false, uploadDir: '/tmp' },
+      });
+
+      const res = await testApp.request('/media/analyze', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer fake_token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workspaceId: 'ws_1',
+          meeting: { title: 'Test' },
+          segments: [
+            {
+              id: 'seg-1',
+              timestamp: 32,
+              speakerName: 'Anna',
+              text: 'We can ship release today. Anna sends notes after the call.',
+            },
+          ],
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.decisions).toEqual(['Ship release']);
+      expect(data.actionItems).toEqual(['Anna sends notes']);
+      expect(data.sourceEvidence.decisions[0]).toEqual(
+        expect.objectContaining({ segmentId: 'seg-1', timestamp: 32 })
+      );
+      expect(data.sourceEvidence.actionItems[0]).toEqual(
+        expect.objectContaining({ segmentId: 'seg-1', timestamp: 32 })
+      );
+      expect(data.sourceEvidence.tasks[0]).toEqual(
+        expect.objectContaining({ segmentId: 'seg-1', timestamp: 32 })
+      );
+      expect(data.unsupportedClaims).toEqual([]);
+    });
+
     it('returns no-key mode when analysis returns null', async () => {
       const mockAnalyzeMeetingWithOpenAI = vi.fn().mockResolvedValue(null);
 

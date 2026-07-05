@@ -687,6 +687,7 @@ function normalizeAnalysisTask(task) {
   if (!task) return null;
   const title = String(task.title || task.text || task.sourceQuote || '').trim();
   if (!title) return null;
+  const sourceTimestamp = Number(task.sourceTimestamp ?? task.timestamp);
   return {
     title,
     description: String(task.description || task.sourceQuote || '').trim(),
@@ -696,7 +697,37 @@ function normalizeAnalysisTask(task) {
     tags: safeArray(task.tags)
       .map((tag) => String(tag).trim())
       .filter(Boolean),
-    sourceQuote: String(task.sourceQuote || task.text || title).trim(),
+    sourceQuote: String(task.sourceQuote || task.quote || '').trim(),
+    sourceSegmentId: String(task.sourceSegmentId || task.segmentId || '').trim(),
+    sourceTimestamp: Number.isFinite(sourceTimestamp) ? sourceTimestamp : undefined,
+    sourceUnsupported: Boolean(task.sourceUnsupported || task.unsupported),
+  };
+}
+
+type AnalysisEvidenceArea = 'decisions' | 'actionItems' | 'tasks' | 'risks' | 'blockers';
+
+function getAnalysisEvidence(analysis, area: AnalysisEvidenceArea, index: number, fallback = '') {
+  const evidence = analysis?.sourceEvidence?.[area]?.[index] || {};
+  const unsupportedClaim = safeArray(analysis?.unsupportedClaims).find(
+    (claim) => claim?.area === area && Number(claim?.index) === index
+  );
+  const timestamp = Number(evidence.timestamp ?? evidence.sourceTimestamp);
+  const sourceQuote = String(evidence.sourceQuote || evidence.quote || fallback || '').trim();
+  const segmentId = String(evidence.segmentId || evidence.sourceSegmentId || '').trim();
+  const unsupported = Boolean(evidence.unsupported || unsupportedClaim);
+
+  if (!sourceQuote && !segmentId && !Number.isFinite(timestamp) && !unsupported) {
+    return null;
+  }
+
+  return {
+    sourceQuote,
+    segmentId,
+    timestamp: Number.isFinite(timestamp) ? timestamp : undefined,
+    unsupported,
+    reviewReason: String(
+      evidence.reviewReason || unsupportedClaim?.reason || 'missing-source-evidence'
+    ).trim(),
   };
 }
 
@@ -1357,9 +1388,18 @@ export default function StudioMeetingView({
     }
 
     return safeArray(studioAnalysis?.actionItems)
-      .map((item) => normalizeAnalysisTask({ title: item, sourceQuote: item }))
+      .map((item, index) => {
+        const evidence = getAnalysisEvidence(studioAnalysis, 'actionItems', index);
+        return normalizeAnalysisTask({
+          title: item,
+          sourceQuote: evidence?.sourceQuote || '',
+          sourceSegmentId: evidence?.segmentId || '',
+          sourceTimestamp: evidence?.timestamp,
+          sourceUnsupported: evidence?.unsupported,
+        });
+      })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-  }, [studioAnalysis?.actionItems, studioAnalysis?.tasks]);
+  }, [studioAnalysis]);
 
   const followUps = useMemo(
     () => safeArray(studioAnalysis?.followUps).slice(0, 4),
@@ -1475,10 +1515,8 @@ export default function StudioMeetingView({
 
     return bullets.slice(0, 5);
   }, [autoTaskDrafts, blockers, followUps, risks, studioAnalysis?.decisions]);
-  const actionItems = useMemo(
-    () => autoTaskDrafts.map((task) => task.title).slice(0, 4),
-    [autoTaskDrafts]
-  );
+  const actionItemDrafts = useMemo(() => autoTaskDrafts.slice(0, 4), [autoTaskDrafts]);
+  const actionItems = useMemo(() => actionItemDrafts.map((task) => task.title), [actionItemDrafts]);
   const riskAndBlockerItems = useMemo(() => {
     const riskItems = risks.map((item) => item.risk).filter(Boolean);
     const tensionItems = tensions
@@ -1492,6 +1530,71 @@ export default function StudioMeetingView({
 
     return [...riskItems, ...blockers, ...tensionItems].filter(Boolean);
   }, [blockers, risks, tensions]);
+  function scrollToEvidence(evidence) {
+    if (!evidence) return;
+    const segmentId = String(evidence.segmentId || '').trim();
+    const timestamp = Number(evidence.timestamp);
+    let index = -1;
+
+    if (segmentId) {
+      index = filteredTranscript.findIndex((segment) => String(segment.id) === segmentId);
+    }
+
+    if (index === -1 && Number.isFinite(timestamp)) {
+      index = filteredTranscript.findIndex((segment) => {
+        const start = Number(segment.timestamp);
+        const end = Number(segment.endTimestamp ?? start + 30);
+        return Number.isFinite(start) && timestamp >= start && timestamp <= end;
+      });
+    }
+
+    if (index !== -1 && virtuosoRef.current) {
+      virtuosoRef.current.scrollToIndex({ index, align: 'center', behavior: 'smooth' });
+    }
+
+    if (Number.isFinite(timestamp)) {
+      setCurrentTime(timestamp);
+      if (audioRef.current) {
+        audioRef.current.currentTime = timestamp;
+      }
+    }
+  }
+  function renderAnalysisEvidence(area: AnalysisEvidenceArea, index: number, fallback = '') {
+    const evidence = getAnalysisEvidence(studioAnalysis, area, index, fallback);
+    if (!evidence) return null;
+
+    const timestampLabel =
+      evidence.timestamp !== undefined ? formatDuration(Math.floor(evidence.timestamp)) : '';
+    const badgeLabel = evidence.unsupported ? 'Do weryfikacji' : 'Źródło';
+
+    return (
+      <details className={`analysis-evidence${evidence.unsupported ? ' needs-review' : ''}`}>
+        <summary>
+          <span>{badgeLabel}</span>
+          {timestampLabel ? <small>{timestampLabel}</small> : null}
+        </summary>
+        <div className="analysis-evidence-body">
+          {evidence.sourceQuote ? (
+            <blockquote className="analysis-evidence-quote">{evidence.sourceQuote}</blockquote>
+          ) : (
+            <p className="analysis-evidence-note">Brak jednoznacznego cytatu źródłowego.</p>
+          )}
+          {evidence.unsupported ? (
+            <p className="analysis-evidence-note">Wymaga ręcznego sprawdzenia.</p>
+          ) : null}
+          {evidence.segmentId || evidence.timestamp !== undefined ? (
+            <button
+              type="button"
+              className="analysis-evidence-jump"
+              onClick={() => scrollToEvidence(evidence)}
+            >
+              Pokaż w transkrypcji
+            </button>
+          ) : null}
+        </div>
+      </details>
+    );
+  }
 
   const [sketchnoteZoomed, setSketchnoteZoomed] = useState(false);
   const [sketchnoteExpanded, setSketchnoteExpanded] = useState(false);
@@ -1555,7 +1658,6 @@ export default function StudioMeetingView({
     if (!q) return transcript;
     return transcript.filter((s) => s.text?.toLowerCase().includes(q));
   }, [transcript, transcriptSearch]);
-
   // All unique speaker IDs in the current recording's transcript
   const uniqueSpeakers = useMemo(() => {
     const seen = new Map();
@@ -3017,7 +3119,10 @@ export default function StudioMeetingView({
                         ) : safeArray(studioAnalysis.decisions).length ? (
                           <ul className="analysis-list summary-list-tight">
                             {studioAnalysis.decisions.map((item, i) => (
-                              <li key={i}>{item}</li>
+                              <li key={i}>
+                                <span>{item}</span>
+                                {renderAnalysisEvidence('decisions', i)}
+                              </li>
                             ))}
                           </ul>
                         ) : (
@@ -3044,8 +3149,12 @@ export default function StudioMeetingView({
                           />
                         ) : actionItems.length ? (
                           <ul className="analysis-list summary-list-tight summary-list-pretty">
-                            {actionItems.map((item, i) => (
-                              <li key={i}>{item}</li>
+                            {actionItemDrafts.map((task, i) => (
+                              <li key={i}>
+                                <span>{task.title}</span>
+                                {renderAnalysisEvidence('tasks', i, task.sourceQuote || '') ||
+                                  renderAnalysisEvidence('actionItems', i, task.sourceQuote || '')}
+                              </li>
                             ))}
                           </ul>
                         ) : (
@@ -3099,12 +3208,14 @@ export default function StudioMeetingView({
                           <div className="summary-stack">
                             {risks.map((item, i) => (
                               <article key={`risk-${i}`} className="summary-pill-card danger">
-                                {item.risk}
+                                <span>{item.risk}</span>
+                                {renderAnalysisEvidence('risks', i)}
                               </article>
                             ))}
                             {blockers.map((item, i) => (
                               <article key={`blocker-${i}`} className="summary-pill-card warning">
-                                {item}
+                                <span>{item}</span>
+                                {renderAnalysisEvidence('blockers', i)}
                               </article>
                             ))}
                             {tensions.map((item, i) => (

@@ -23,6 +23,7 @@ import {
   materializeAssetToLocal,
   parseAssetMediaManifest,
 } from './lib/mediaStoragePipeline.ts';
+import { normalizeSourceLinkedAnalysis } from '../src/shared/sourceLinkedAnalysis.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -354,8 +355,8 @@ export async function analyzeMeetingWithOpenAI({
         speakers: ['Adam'],
       },
     ],
-    decisions: ['...'],
-    actionItems: ['...'],
+    decisions: [{ text: '...', sourceQuote: '...', timestamp: 123 }],
+    actionItems: [{ text: '...', sourceQuote: '...', timestamp: 123 }],
     tasks: [
       {
         title: '...',
@@ -429,6 +430,7 @@ export async function analyzeMeetingWithOpenAI({
   const prompt = [
     'Jesteś analitykiem spotkań biznesowych klasy premium. Analizuj transkrypt i zwróć JSON.',
     'Return valid JSON only — no prose outside the JSON object.',
+    'For each decision, action item, and task include sourceQuote or timestamp from the transcript. If no evidence exists, set unsupported=true and reviewReason="missing-source-evidence".',
     '',
     'ZADANIE SUMMARY (KRYTYCZNE): Napisz ROZBUDOWANE i SZCZEGÓŁOWE podsumowanie spotkania (minimum 10-15 zdań, 200-400 słów). Podsumowanie MUSI zawierać: (1) kontekst i cel spotkania, (2) wszystkie główne tematy omówione w szczegółach z konkretnymi przykładami, (3) najważniejsze argumenty i kontrargumenty każdej strony, (4) podjęte decyzje i ustalenia z przypisanymi osobami, (5) otwarte kwestie i next steps. NIE pisz krótkiego streszczenia — podsumowanie ma czytać się jak profesjonalny, wyczerpujący raport ze spotkania. Każdy temat rozwiń w minimum 2-3 zdaniach. Im dłuższe spotkanie, tym proporcjonalnie dłuższe podsumowanie.',
     '',
@@ -510,7 +512,7 @@ export async function analyzeMeetingWithOpenAI({
     });
 
     return {
-      ...JSON.parse(content),
+      ...normalizeSourceLinkedAnalysis(JSON.parse(content), segments),
       mode: 'openai',
       analysisSource: 'provider',
       generatedBy: 'openai',

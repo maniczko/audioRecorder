@@ -12,6 +12,7 @@ import {
   parseAiResponse,
   safeParseAiResponse,
   validateAndNormalizeRisks,
+  normalizeSourceLinkedAnalysis,
   type AiAnalysisResponse,
 } from './aiResponseValidator';
 import { buildFallbackRichFields } from './fallbackAnalysis';
@@ -409,27 +410,50 @@ function buildEnrichedAnalysis(
   speakerNames: Record<string, string>,
   meeting?: any
 ): MeetingAnalysis {
+  const resultWithEvidence = normalizeSourceLinkedAnalysis(
+    result as Record<string, unknown>,
+    segments
+  ) as AiAnalysisResponse;
   const speakerStats = analyzeSpeakingStyle(segments, speakerNames);
   const richFallback = buildFallbackRichFields({ transcript: segments, speakerNames });
+  const tasks = normalizeTasks(
+    safeArray(resultWithEvidence.tasks as TaskInput[]),
+    resultWithEvidence.speakerLabels || speakerNames
+  );
 
   return {
-    ...result,
-    feedback: normalizeMeetingFeedback(result.feedback, {
-      summary: result.summary || fallback.summary,
-      decisions: safeArray(result.decisions).length ? result.decisions : fallback.decisions,
-      actionItems: safeArray(result.actionItems).length ? result.actionItems : fallback.actionItems,
-      tasks: safeArray(result.tasks).length ? (result.tasks as any) : fallback.tasks,
-      followUps: safeArray(result.followUps).length ? result.followUps : fallback.followUps,
-      answersToNeeds: safeArray(result.answersToNeeds).length
-        ? result.answersToNeeds
+    ...resultWithEvidence,
+    tasks: tasks.length ? tasks : fallback.tasks,
+    feedback: normalizeMeetingFeedback(resultWithEvidence.feedback, {
+      summary: resultWithEvidence.summary || fallback.summary,
+      decisions: safeArray(resultWithEvidence.decisions).length
+        ? (resultWithEvidence.decisions as string[])
+        : fallback.decisions,
+      actionItems: safeArray(resultWithEvidence.actionItems).length
+        ? (resultWithEvidence.actionItems as string[])
+        : fallback.actionItems,
+      tasks: tasks.length ? tasks : fallback.tasks,
+      followUps: safeArray(resultWithEvidence.followUps).length
+        ? resultWithEvidence.followUps
+        : fallback.followUps,
+      answersToNeeds: safeArray(resultWithEvidence.answersToNeeds).length
+        ? resultWithEvidence.answersToNeeds
         : fallback.answersToNeeds,
-      risks: safeArray(result.risks).length ? (result.risks as any) : richFallback.risks,
-      blockers: safeArray(result.blockers).length ? result.blockers : richFallback.blockers,
-      participantInsights: safeArray(result.participantInsights).length
-        ? result.participantInsights
+      risks: safeArray(resultWithEvidence.risks).length
+        ? (resultWithEvidence.risks as any)
+        : richFallback.risks,
+      blockers: safeArray(resultWithEvidence.blockers).length
+        ? resultWithEvidence.blockers
+        : richFallback.blockers,
+      participantInsights: safeArray(resultWithEvidence.participantInsights).length
+        ? resultWithEvidence.participantInsights
         : richFallback.participantInsights,
-      tensions: safeArray(result.tensions).length ? result.tensions : richFallback.tensions,
-      keyQuotes: safeArray(result.keyQuotes).length ? result.keyQuotes : richFallback.keyQuotes,
+      tensions: safeArray(resultWithEvidence.tensions).length
+        ? resultWithEvidence.tensions
+        : richFallback.tensions,
+      keyQuotes: safeArray(resultWithEvidence.keyQuotes).length
+        ? resultWithEvidence.keyQuotes
+        : richFallback.keyQuotes,
       speakerStats,
       transcriptLength: segments.length,
       meetingTitle: meeting?.title,
@@ -572,30 +596,34 @@ function buildAnthropicAnalysis(
 ): MeetingAnalysis {
   const richFallback = buildFallbackRichFields({ transcript: segments, speakerNames });
   const speakerStats = analyzeSpeakingStyle(segments, speakerNames);
+  const parsedWithEvidence = normalizeSourceLinkedAnalysis(
+    parsed as Record<string, unknown>,
+    segments
+  ) as AiAnalysisResponse;
 
-  const normalizedRisks = validateAndNormalizeRisks(parsed.risks);
+  const normalizedRisks = validateAndNormalizeRisks(parsedWithEvidence.risks);
 
   const tasks = normalizeTasks(
-    safeArray(parsed.tasks as TaskInput[]),
-    parsed.speakerLabels || speakerNames
+    safeArray(parsedWithEvidence.tasks as TaskInput[]),
+    parsedWithEvidence.speakerLabels || speakerNames
   );
 
-  const feedback = normalizeMeetingFeedback(parsed.feedback, {
-    summary: parsed.summary || fallback.summary,
-    decisions: dedupeList(parsed.decisions || []).slice(0, 5),
-    actionItems: dedupeList(parsed.actionItems || []).slice(0, 6),
+  const feedback = normalizeMeetingFeedback(parsedWithEvidence.feedback, {
+    summary: parsedWithEvidence.summary || fallback.summary,
+    decisions: dedupeList(parsedWithEvidence.decisions || []).slice(0, 5),
+    actionItems: dedupeList(parsedWithEvidence.actionItems || []).slice(0, 6),
     tasks,
-    followUps: dedupeList(parsed.followUps || []).slice(0, 5),
-    answersToNeeds: safeArray(parsed.answersToNeeds).length
-      ? parsed.answersToNeeds
+    followUps: dedupeList(parsedWithEvidence.followUps || []).slice(0, 5),
+    answersToNeeds: safeArray(parsedWithEvidence.answersToNeeds).length
+      ? parsedWithEvidence.answersToNeeds
       : (fallback.answersToNeeds ?? []),
     risks: normalizedRisks,
-    blockers: dedupeList(parsed.blockers || []).slice(0, 3),
-    participantInsights: safeArray(parsed.participantInsights).length
-      ? parsed.participantInsights
+    blockers: dedupeList(parsedWithEvidence.blockers || []).slice(0, 3),
+    participantInsights: safeArray(parsedWithEvidence.participantInsights).length
+      ? parsedWithEvidence.participantInsights
       : (richFallback.participantInsights ?? []),
-    tensions: safeArray(parsed.tensions).slice(0, 3),
-    keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
+    tensions: safeArray(parsedWithEvidence.tensions).slice(0, 3),
+    keyQuotes: safeArray(parsedWithEvidence.keyQuotes).slice(0, 4),
     speakerStats,
     transcriptLength: segments.length,
     meetingTitle: meeting?.title,
@@ -605,29 +633,31 @@ function buildAnthropicAnalysis(
     mode: 'anthropic',
     analysisSource: 'provider',
     generatedBy: 'anthropic',
-    speakerLabels: parsed.speakerLabels || speakerNames,
-    speakerCount: parsed.speakerCount || fallback.speakerCount,
-    summary: parsed.summary || fallback.summary,
-    decisions: dedupeList(parsed.decisions || []).slice(0, 5),
-    actionItems: dedupeList(parsed.actionItems || []).slice(0, 6),
+    speakerLabels: parsedWithEvidence.speakerLabels || speakerNames,
+    speakerCount: parsedWithEvidence.speakerCount || fallback.speakerCount,
+    summary: parsedWithEvidence.summary || fallback.summary,
+    decisions: dedupeList(parsedWithEvidence.decisions || []).slice(0, 5),
+    actionItems: dedupeList(parsedWithEvidence.actionItems || []).slice(0, 6),
     tasks,
-    followUps: dedupeList(parsed.followUps || []).slice(0, 5),
-    answersToNeeds: safeArray(parsed.answersToNeeds).length
-      ? safeArray(parsed.answersToNeeds)
+    followUps: dedupeList(parsedWithEvidence.followUps || []).slice(0, 5),
+    answersToNeeds: safeArray(parsedWithEvidence.answersToNeeds).length
+      ? safeArray(parsedWithEvidence.answersToNeeds)
       : (fallback.answersToNeeds ?? []),
-    suggestedTags: dedupeList(parsed.suggestedTags || [])
+    suggestedTags: dedupeList(parsedWithEvidence.suggestedTags || [])
       .slice(0, 6)
       .map((t) => String(t).toLowerCase().trim()),
-    meetingType: parsed.meetingType || 'other',
-    energyLevel: parsed.energyLevel || 'medium',
+    meetingType: parsedWithEvidence.meetingType || 'other',
+    energyLevel: parsedWithEvidence.energyLevel || 'medium',
     risks: normalizedRisks,
-    blockers: dedupeList(parsed.blockers || []).slice(0, 3),
-    participantInsights: safeArray(parsed.participantInsights).length
-      ? safeArray(parsed.participantInsights)
+    blockers: dedupeList(parsedWithEvidence.blockers || []).slice(0, 3),
+    participantInsights: safeArray(parsedWithEvidence.participantInsights).length
+      ? safeArray(parsedWithEvidence.participantInsights)
       : richFallback.participantInsights,
-    tensions: safeArray(parsed.tensions).slice(0, 3),
-    keyQuotes: safeArray(parsed.keyQuotes).slice(0, 4),
-    suggestedAgenda: dedupeList((parsed.suggestedAgenda as string[]) || []).slice(0, 5),
+    tensions: safeArray(parsedWithEvidence.tensions).slice(0, 3),
+    keyQuotes: safeArray(parsedWithEvidence.keyQuotes).slice(0, 4),
+    suggestedAgenda: dedupeList((parsedWithEvidence.suggestedAgenda as string[]) || []).slice(0, 5),
+    sourceEvidence: parsedWithEvidence.sourceEvidence,
+    unsupportedClaims: parsedWithEvidence.unsupportedClaims,
     feedback,
   };
 }

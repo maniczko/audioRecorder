@@ -6,6 +6,9 @@ export interface TaskInput {
   owner?: string;
   assignee?: string;
   sourceQuote?: string;
+  sourceSegmentId?: string;
+  sourceTimestamp?: number;
+  sourceUnsupported?: boolean;
   quote?: string;
   priority?: string;
   tags?: string[];
@@ -58,7 +61,12 @@ export function normalizeTask(
     description: undefined,
     owner: resolvedOwner,
     dueDate: undefined,
-    sourceQuote: String(task.sourceQuote || task.quote || title).trim(),
+    sourceQuote: String(task.sourceQuote || task.quote || '').trim(),
+    sourceSegmentId: String(task.sourceSegmentId || '').trim(),
+    sourceTimestamp: Number.isFinite(Number(task.sourceTimestamp))
+      ? Number(task.sourceTimestamp)
+      : undefined,
+    sourceUnsupported: Boolean(task.sourceUnsupported),
     priority: (resolvedPriority as 'high' | 'medium' | 'low') || 'medium',
     tags: Array.isArray(task.tags) ? task.tags : [],
   };

@@ -5,6 +5,7 @@ import {
   validateAndNormalizeRisks,
   parseAiResponse,
   safeParseAiResponse,
+  normalizeSourceLinkedAnalysis,
 } from './aiResponseValidator';
 
 describe('aiResponseValidator', () => {
@@ -203,6 +204,95 @@ describe('aiResponseValidator', () => {
       const result = safeParseAiResponse('no json');
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith('Failed to parse AI response:', expect.any(Error));
+    });
+  });
+
+  describe('normalizeSourceLinkedAnalysis', () => {
+    it('normalizes source-linked decisions and action items to display text plus evidence', () => {
+      const result = normalizeSourceLinkedAnalysis({
+        decisions: [
+          { text: 'Ship the release', sourceQuote: 'we ship the release', timestamp: 12 },
+        ],
+        actionItems: [
+          { text: 'Anna sends notes', sourceQuote: 'Anna will send notes', segmentId: 'seg-1' },
+        ],
+      });
+
+      expect(result.decisions).toEqual(['Ship the release']);
+      expect(result.actionItems).toEqual(['Anna sends notes']);
+      expect(result.sourceEvidence.decisions?.[0]).toEqual(
+        expect.objectContaining({ sourceQuote: 'we ship the release', timestamp: 12 })
+      );
+      expect(result.sourceEvidence.actionItems?.[0]).toEqual(
+        expect.objectContaining({ sourceQuote: 'Anna will send notes', segmentId: 'seg-1' })
+      );
+      expect(result.unsupportedClaims).toEqual([]);
+    });
+
+    it('marks claims without source evidence as unsupported', () => {
+      const result = normalizeSourceLinkedAnalysis({
+        decisions: [{ text: 'Approve budget' }],
+        actionItems: [{ text: 'Prepare rollout plan' }],
+      });
+
+      expect(result.decisions).toEqual(['Approve budget']);
+      expect(result.actionItems).toEqual(['Prepare rollout plan']);
+      expect(result.sourceEvidence.decisions?.[0]).toEqual(
+        expect.objectContaining({ unsupported: true, reviewReason: 'missing-source-evidence' })
+      );
+      expect(result.unsupportedClaims).toEqual([
+        expect.objectContaining({ area: 'decisions', index: 0, text: 'Approve budget' }),
+        expect.objectContaining({ area: 'actionItems', index: 0, text: 'Prepare rollout plan' }),
+      ]);
+    });
+
+    it('enriches source quotes with transcript segment id and timestamp', () => {
+      const result = normalizeSourceLinkedAnalysis(
+        {
+          tasks: [
+            { title: 'Send the customer proposal', sourceQuote: 'send the customer proposal' },
+          ],
+        },
+        [
+          {
+            id: 'seg-42',
+            timestamp: 91,
+            speakerName: 'Marta',
+            text: 'Marta will send the customer proposal by Friday.',
+          },
+        ]
+      );
+
+      expect(result.tasks?.[0]).toEqual(
+        expect.objectContaining({
+          title: 'Send the customer proposal',
+          sourceQuote: 'send the customer proposal',
+          sourceSegmentId: 'seg-42',
+          sourceTimestamp: 91,
+          sourceUnsupported: false,
+        })
+      );
+      expect(result.sourceEvidence.tasks?.[0]).toEqual(
+        expect.objectContaining({ segmentId: 'seg-42', timestamp: 91, speaker: 'Marta' })
+      );
+    });
+
+    it('flags tasks without sourceQuote, segment id, or timestamp for review', () => {
+      const result = normalizeSourceLinkedAnalysis({
+        tasks: ['Follow up with legal'],
+      });
+
+      expect(result.tasks?.[0]).toEqual(
+        expect.objectContaining({
+          title: 'Follow up with legal',
+          sourceQuote: '',
+          sourceSegmentId: '',
+          sourceUnsupported: true,
+        })
+      );
+      expect(result.unsupportedClaims).toEqual([
+        expect.objectContaining({ area: 'tasks', index: 0, text: 'Follow up with legal' }),
+      ]);
     });
   });
 });

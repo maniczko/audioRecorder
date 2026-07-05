@@ -254,6 +254,9 @@ export interface MeetingTask {
   priority?: 'high' | 'medium' | 'low';
   tags?: string[];
   sourceQuote?: string;
+  sourceSegmentId?: string;
+  sourceTimestamp?: number;
+  sourceUnsupported?: boolean;
 }
 
 export interface MeetingNeedAnswer {
@@ -333,6 +336,22 @@ export interface MeetingParticipantInsight {
   keyMoment?: string;
 }
 
+export interface AnalysisSourceEvidence {
+  sourceQuote?: string;
+  segmentId?: string;
+  timestamp?: number;
+  speaker?: string;
+  unsupported?: boolean;
+  reviewReason?: string;
+}
+
+export interface AnalysisUnsupportedClaim {
+  area: 'summary' | 'decisions' | 'actionItems' | 'tasks' | 'risks' | 'blockers' | 'keyQuotes';
+  index: number;
+  text: string;
+  reason: string;
+}
+
 export interface MeetingAnalysis {
   mode?: string;
   analysisSource?: 'provider' | 'fallback' | string;
@@ -355,6 +374,8 @@ export interface MeetingAnalysis {
   tensions: MeetingTension[];
   keyQuotes: MeetingQuote[];
   suggestedAgenda: string[];
+  sourceEvidence?: Partial<Record<AnalysisUnsupportedClaim['area'], AnalysisSourceEvidence[]>>;
+  unsupportedClaims?: AnalysisUnsupportedClaim[];
   feedback?: MeetingFeedback;
 }
 
