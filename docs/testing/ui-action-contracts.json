@@ -65,7 +65,7 @@
       "screen": "Recordings",
       "file": "src/RecordingsTab.tsx",
       "expectedActionCount": 25,
-      "fingerprint": "144ae9cb287de2b7",
+      "fingerprint": "3ec63336b70d1bc8",
       "contractStatus": "covered",
       "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
       "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
