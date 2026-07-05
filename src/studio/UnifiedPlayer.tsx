@@ -4,6 +4,7 @@ import { formatDuration } from '../lib/storage';
 import { getSpeakerColor } from '../lib/speakerColors';
 import { labelSpeaker } from '../lib/recording';
 import { useHotkeys } from '../hooks/useHotkeys';
+import { getRecordingQueueStatusView, getRecordingStartView } from '../lib/recordingQueueUx';
 import './UnifiedPlayerStyles.css';
 
 export default function UnifiedPlayer({
@@ -42,7 +43,35 @@ export default function UnifiedPlayer({
     setPlayError(null);
   }, [selectedRecordingAudioUrl]);
 
-  const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
+  const queueView = getRecordingQueueStatusView({
+    status: activeQueueItem?.status || analysisStatus,
+    errorMessage: activeQueueItem?.errorMessage,
+    errorCode: activeQueueItem?.errorCode,
+    retryable: activeQueueItem?.retryable,
+    queuedPosition: activeQueueItem?.queuedPosition,
+    processingAgeMs: activeQueueItem?.processingAgeMs,
+    backoffUntil: activeQueueItem?.backoffUntil,
+    isOffline: typeof navigator !== 'undefined' && navigator.onLine === false,
+  });
+  const startView = getRecordingStartView({
+    canRecord,
+    recordPermission,
+    speechRecognitionSupported,
+  });
+  const isQueued =
+    !isRecording &&
+    !selectedRecordingAudioUrl &&
+    [
+      'uploading',
+      'queued',
+      'processing',
+      'diarization',
+      'failed',
+      'failed_permanent',
+      'offline',
+      'backend_unavailable',
+      'storage_quota',
+    ].includes(queueView.status);
 
   const mode: 'recording' | 'playback' | 'queue' | 'idle' = isRecording
     ? 'recording'
@@ -161,6 +190,11 @@ export default function UnifiedPlayer({
           : activeQueueItem?.backoffUntil > Date.now()
             ? `Ponowienie za chwilę… (próba ${activeQueueItem.retryCount}/3)`
             : 'Nagranie w kolejce…';
+
+  const queueStatusLabel =
+    activeQueueItem?.backoffUntil > Date.now()
+      ? `${queueView.summary} (próba ${activeQueueItem.retryCount}/3)`
+      : queueView.summary || queueLabel;
 
   const fillPct = audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 
@@ -307,7 +341,15 @@ export default function UnifiedPlayer({
               <span className="uplayer-time-total">{formatDuration(audioDuration)}</span>
             </>
           ) : mode === 'queue' ? (
-            <span className="uplayer-queue-label">{queueLabel}</span>
+            <span
+              className="uplayer-queue-label"
+              role={queueView.role}
+              aria-live={queueView.live}
+              aria-busy={queueView.busy ? 'true' : 'false'}
+              title={queueView.description}
+            >
+              {queueStatusLabel}
+            </span>
           ) : (
             <div className="uplayer-idle-actions">
               <button
@@ -318,7 +360,7 @@ export default function UnifiedPlayer({
               >
                 Ad hoc
               </button>
-              <span className="uplayer-hint">
+              <span className="uplayer-hint" aria-label={startView.summary}>
                 {!canRecord
                   ? 'Brak uprawnień do nagrywania.'
                   : recordPermission === 'denied'

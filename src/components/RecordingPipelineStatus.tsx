@@ -2,10 +2,13 @@ import React from 'react';
 import './RecordingPipelineStatus.css';
 import { ProgressBar } from './ProgressBar';
 import { ProcessingTimer } from './ProcessingTimer';
+import { getRecordingQueueStatusView } from '../lib/recordingQueueUx';
 
 interface RecordingPipelineStatusProps {
   status: string;
   errorMessage?: string;
+  errorCode?: string;
+  retryable?: boolean;
   progressMessage?: string;
   progressPercent?: number;
   stageLabel?: string;
@@ -15,24 +18,36 @@ interface RecordingPipelineStatusProps {
   className?: string;
   /** ISO timestamp when processing started - shows elapsed time during processing */
   processingStartedAt?: string;
+  queuedPosition?: number | null;
+  processingAgeMs?: number | null;
+  backoffUntil?: number | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  no_audio: 'Brak audio',
-  empty: 'Brak mowy',
-  uploading: 'Wysyłanie...',
-  queued: 'W kolejce',
-  processing: 'Przetwarzanie...',
-  diarization: 'Rozpoznawanie mówców...',
-  review: 'Oczekuje na weryfikację',
-  done: 'Transkrypcja gotowa',
-  failed: 'Błąd przetwarzania',
-  failed_permanent: 'Wymaga ponownego importu',
-};
+function RetryIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
 
 export function RecordingPipelineStatus({
   status,
   errorMessage,
+  errorCode,
+  retryable,
   progressMessage,
   progressPercent = 0,
   stageLabel = '',
@@ -41,25 +56,51 @@ export function RecordingPipelineStatus({
   allowInProgressRetry = false,
   className = '',
   processingStartedAt,
+  queuedPosition,
+  processingAgeMs,
+  backoffUntil,
 }: RecordingPipelineStatusProps) {
-  const isFailed = status === 'failed' || status === 'failed_permanent';
-  const isEmpty = status === 'empty' || status === 'no_audio';
-  const inProgress = ['uploading', 'queued', 'processing', 'diarization'].includes(status);
-  const isDone = status === 'done' || status === 'review';
+  const statusView = getRecordingQueueStatusView({
+    status,
+    errorMessage,
+    errorCode,
+    retryable,
+    queuedPosition,
+    processingAgeMs,
+    backoffUntil,
+    isOffline: typeof navigator !== 'undefined' && navigator.onLine === false,
+  });
+  const normalizedStatus = statusView.status;
+  const isFailed = statusView.role === 'alert' && statusView.tone === 'danger';
+  const isEmpty = normalizedStatus === 'empty' || normalizedStatus === 'no_audio';
+  const inProgress = ['uploading', 'queued', 'processing', 'diarization'].includes(
+    normalizedStatus
+  );
+  const isDone = normalizedStatus === 'done' || normalizedStatus === 'review';
   const retryHandler =
-    status === 'failed' || (allowInProgressRetry && inProgress) ? onRetry : undefined;
-
-  const label = STATUS_LABELS[status] || STATUS_LABELS.queued;
+    (statusView.retryable && normalizedStatus === 'failed') || (allowInProgressRetry && inProgress)
+      ? onRetry
+      : undefined;
+  const progressText = progressMessage || statusView.summary;
+  const detailMessage = errorMessage || statusView.description;
 
   return (
-    <div className={`pipeline-status-wrapper ${className}`}>
+    <div
+      className={`pipeline-status-wrapper ${className}`}
+      role={statusView.role}
+      aria-live={statusView.live}
+      aria-atomic="true"
+      aria-busy={statusView.busy ? 'true' : 'false'}
+      aria-label={`${statusView.label}. ${statusView.summary}`}
+    >
       <span
         className={`status-chip status-chip-sm ${inProgress ? 'processing' : ''} ${
           isDone ? 'done' : ''
         } ${isFailed ? 'failed' : ''} ${isEmpty ? 'empty' : ''}`}
+        title={statusView.description}
       >
-        {inProgress && <span className="status-spinner" />}
-        {label}
+        {inProgress && <span className="status-spinner" aria-hidden="true" />}
+        {statusView.label}
       </span>
 
       {progressMessage && inProgress && (
@@ -67,7 +108,7 @@ export function RecordingPipelineStatus({
           <span className="pipeline-progress-text">
             {stageLabel
               ? `${stageLabel} (${Math.max(0, Math.min(100, Math.round(progressPercent)))}%)`
-              : progressMessage}
+              : progressText}
           </span>
           <div
             className="pipeline-progress-meter"
@@ -79,8 +120,8 @@ export function RecordingPipelineStatus({
           >
             <ProgressBar value={progressPercent} animated={false} />
           </div>
-          {stageLabel && progressMessage && stageLabel !== progressMessage ? (
-            <span className="pipeline-progress-subtext">{progressMessage}</span>
+          {stageLabel && progressText && stageLabel !== progressText ? (
+            <span className="pipeline-progress-subtext">{progressText}</span>
           ) : null}
           {processingStartedAt && (
             <ProcessingTimer
@@ -100,20 +141,7 @@ export function RecordingPipelineStatus({
             retryHandler();
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
+          <RetryIcon />
           {retryLabel}
         </button>
       ) : null}
@@ -131,13 +159,14 @@ export function RecordingPipelineStatus({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
-          <span className="pipeline-error-text" title={errorMessage}>
-            {errorMessage || 'Wystąpił nieoczekiwany błąd.'}
+          <span className="pipeline-error-text" title={detailMessage}>
+            {detailMessage}
           </span>
           {retryHandler && (
             <button
@@ -148,20 +177,7 @@ export function RecordingPipelineStatus({
                 retryHandler();
               }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
+              <RetryIcon />
               {retryLabel}
             </button>
           )}

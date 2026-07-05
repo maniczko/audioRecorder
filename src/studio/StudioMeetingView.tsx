@@ -1331,12 +1331,18 @@ export default function StudioMeetingView({
 
   const analysisStatus = (Array.isArray(selectedMeetingQueue) ? selectedMeetingQueue : []).find(
     (item) =>
-      item && ['queued', 'uploading', 'processing', 'diarization', 'failed'].includes(item.status)
+      item &&
+      ['queued', 'uploading', 'processing', 'diarization', 'failed', 'failed_permanent'].includes(
+        item.status
+      )
   )?.status;
   const retryableSelectedQueueItem = (
     Array.isArray(selectedMeetingQueue) ? selectedMeetingQueue : []
   ).find((item) => item && item.status === 'failed');
-  const isQueued = ['queued', 'uploading', 'processing'].includes(analysisStatus) && !isRecording;
+  const isQueued =
+    ['queued', 'uploading', 'processing', 'diarization', 'failed_permanent'].includes(
+      analysisStatus
+    ) && !isRecording;
   const selectedTranscript = Array.isArray(selectedRecording?.transcript)
     ? selectedRecording.transcript
     : [];
@@ -2328,6 +2334,11 @@ export default function StudioMeetingView({
           {recordingMessage && (
             <div
               className={`ff-status-banner ff-status-banner-spaced${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+              role={analysisStatus === 'error' || analysisStatus === 'failed' ? 'alert' : 'status'}
+              aria-live={
+                analysisStatus === 'error' || analysisStatus === 'failed' ? 'assertive' : 'polite'
+              }
+              aria-atomic="true"
             >
               <div style={{ flex: 1 }}>
                 <span>{recordingMessage}</span>
@@ -2762,6 +2773,11 @@ export default function StudioMeetingView({
           {recordingMessage ? (
             <div
               className={`ff-status-banner${analysisStatus === 'error' ? ' ff-status-error' : ''}`}
+              role={analysisStatus === 'error' || analysisStatus === 'failed' ? 'alert' : 'status'}
+              aria-live={
+                analysisStatus === 'error' || analysisStatus === 'failed' ? 'assertive' : 'polite'
+              }
+              aria-atomic="true"
             >
               <div style={{ flex: 1 }}>
                 <span>{recordingMessage}</span>
@@ -2810,7 +2826,13 @@ export default function StudioMeetingView({
 
           {/* ── Brief panels ── */}
           {isEmptyTranscript ? (
-            <div className="ff-status-banner ff-status-warn" data-testid="empty-transcript-banner">
+            <div
+              className="ff-status-banner ff-status-warn"
+              data-testid="empty-transcript-banner"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <div className="ff-status-detail-stack">
                 <span>
                   {selectedRecording?.userMessage ||
@@ -4585,11 +4607,10 @@ export default function StudioMeetingView({
             <div className="ff-player-status-wrap">
               <RecordingPipelineStatus
                 status={
-                  analysisStatus === 'error' ||
-                  analysisStatus === 'failed' ||
-                  activeQueueItem?.status === 'failed'
+                  activeQueueItem?.status ||
+                  (analysisStatus === 'error' || analysisStatus === 'failed'
                     ? 'failed'
-                    : activeQueueItem?.status || 'processing'
+                    : 'processing')
                 }
                 errorMessage={
                   activeQueueItem?.errorMessage ||
@@ -4597,6 +4618,11 @@ export default function StudioMeetingView({
                     ? 'Błąd analizy nagrania'
                     : undefined)
                 }
+                errorCode={activeQueueItem?.errorCode}
+                retryable={activeQueueItem?.retryable}
+                queuedPosition={activeQueueItem?.queuedPosition}
+                processingAgeMs={activeQueueItem?.processingAgeMs}
+                backoffUntil={activeQueueItem?.backoffUntil}
                 onRetry={
                   activeQueueItem
                     ? () => retryRecordingQueueItem(activeQueueItem.recordingId)
@@ -4605,6 +4631,7 @@ export default function StudioMeetingView({
                 progressMessage={queueLabel}
                 progressPercent={pipelineProgressPercent}
                 stageLabel={pipelineStageLabel}
+                processingStartedAt={activeQueueItem?.processingStartedAt}
               />
             </div>
           ) : playerState === 'loading-audio' ? (
