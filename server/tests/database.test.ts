@@ -854,6 +854,68 @@ describe('Database (Async Worker SQLite)', () => {
     });
   });
 
+  test('Issue #1262 - workspace feature flag updates are persisted and audited', async () => {
+    const workspaceId = 'ws_feature_flags';
+    const now = new Date().toISOString();
+    await db._execute(
+      `INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [workspaceId, 'Feature Flags', 'owner_flags', 'FLAGS42', now, now]
+    );
+    await db.ensureWorkspaceState(workspaceId);
+
+    const result = await db.updateWorkspaceFeatureFlags(
+      workspaceId,
+      {
+        sttProvider: 'groq',
+        meetingAnalysis: false,
+        embeddings: 'off',
+      },
+      {
+        actorUserId: 'admin_flags',
+        requestId: 'req_flags',
+        source: 'test',
+      }
+    );
+
+    expect(result.featureFlags).toMatchObject({
+      sttProvider: 'groq',
+      meetingAnalysis: false,
+      embeddings: false,
+      diarization: true,
+    });
+    await expect(db.getWorkspaceState(workspaceId)).resolves.toMatchObject({
+      featureFlags: {
+        sttProvider: 'groq',
+        meetingAnalysis: false,
+        embeddings: false,
+      },
+    });
+
+    const auditRow = await db._get(
+      'SELECT * FROM audit_logs WHERE workspace_id = ? AND action = ?',
+      [workspaceId, 'workspace.feature_flags.updated']
+    );
+    expect(auditRow).toMatchObject({
+      actor_user_id: 'admin_flags',
+      entity_type: 'workspace',
+      entity_id: workspaceId,
+    });
+    expect(JSON.parse(auditRow.metadata_json)).toMatchObject({
+      requestId: 'req_flags',
+      source: 'test',
+      featureFlags: {
+        sttProvider: 'groq',
+        meetingAnalysis: false,
+        embeddings: false,
+      },
+      previousFeatureFlags: {
+        sttProvider: 'auto',
+        meetingAnalysis: true,
+      },
+    });
+  });
+
   test('Issue #1261 - workspace-level retention hold skips all expired workspace recordings', async () => {
     await db.ensureWorkspaceState('ws_retention_workspace_hold');
     await db.saveWorkspaceState('ws_retention_workspace_hold', {

@@ -388,5 +388,19 @@ export interface WorkspaceState {
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];
   retentionDays: number;
+  featureFlags: WorkspaceFeatureFlags;
   updatedAt?: string;
+}
+
+export type WorkspaceSttProvider = 'auto' | 'openai' | 'groq' | 'local-whisper' | 'disabled';
+
+export interface WorkspaceFeatureFlags {
+  sttProvider: WorkspaceSttProvider;
+  diarization: boolean;
+  meetingAnalysis: boolean;
+  embeddings: boolean;
+  imageGeneration: boolean;
+  liveTranscription: boolean;
+  retentionFeatures: boolean;
+  experimentalUi: boolean;
 }

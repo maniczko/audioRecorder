@@ -186,6 +186,61 @@ describe('http/capabilities.ts', () => {
     restore();
   });
 
+  test('Issue #1262 - applies workspace provider and disabled capability flags', () => {
+    const restore = withCleanCapabilityEnv();
+    process.env.OPENAI_API_KEY = 'sk-test-secret';
+    process.env.GROQ_API_KEY = 'gsk-test-secret';
+    process.env.HF_TOKEN = 'hf-test-secret';
+    process.env.ANTHROPIC_API_KEY = 'anthropic-secret';
+    process.env.VOICELOG_ENABLE_MEETING_ANALYSIS = 'true';
+
+    const payload = resolveProductionCapabilities({
+      workspaceFeatureFlags: {
+        sttProvider: 'groq',
+        meetingAnalysis: false,
+        embeddings: false,
+        retentionFeatures: false,
+      },
+      storageReadiness: {
+        configured: true,
+        ready: true,
+        bucket: 'recordings',
+        status: 'ready',
+      },
+    });
+
+    expect(payload.workspaceFeatureFlags).toMatchObject({
+      sttProvider: 'groq',
+      meetingAnalysis: false,
+      embeddings: false,
+      retentionFeatures: false,
+    });
+    expect(payload.capabilities.stt).toMatchObject({
+      enabled: true,
+      status: 'available',
+      provider: 'groq',
+    });
+    expect(payload.capabilities.meetingAnalysis).toMatchObject({
+      enabled: false,
+      status: 'unavailable',
+      provider: 'none',
+      reason: 'Disabled by workspace feature flags.',
+    });
+    expect(payload.capabilities.embeddings).toMatchObject({
+      enabled: false,
+      status: 'unavailable',
+      provider: 'none',
+    });
+    expect(payload.capabilities.retentionFeatures).toMatchObject({
+      enabled: false,
+      status: 'unavailable',
+      provider: 'none',
+    });
+    expect(JSON.stringify(payload)).not.toContain('sk-test-secret');
+    expect(JSON.stringify(payload)).not.toContain('gsk-test-secret');
+    restore();
+  });
+
   test('reports local whisper as a configured offline STT fallback', () => {
     const restore = withCleanCapabilityEnv();
     process.env.USE_LOCAL_WHISPER = 'true';
@@ -200,6 +255,26 @@ describe('http/capabilities.ts', () => {
       fallbackMode: true,
     });
     expect(payload.telemetry.fallbackModeCapabilities).toContain('stt');
+    restore();
+  });
+
+  test('Issue #1262 - does not silently remap forced local whisper to a cloud provider', () => {
+    const restore = withCleanCapabilityEnv();
+    process.env.OPENAI_API_KEY = 'sk-test-secret';
+    process.env.USE_LOCAL_WHISPER = 'true';
+    process.env.WHISPER_CPP_PATH = 'C:/tools/whisper/main.exe';
+
+    const payload = resolveProductionCapabilities({
+      workspaceFeatureFlags: { sttProvider: 'local-whisper' },
+    });
+
+    expect(payload.capabilities.stt).toMatchObject({
+      enabled: false,
+      status: 'unavailable',
+      provider: 'none',
+      reason: 'Workspace local-whisper provider is not wired into the STT pipeline yet.',
+    });
+    expect(JSON.stringify(payload)).not.toContain('sk-test-secret');
     restore();
   });
 

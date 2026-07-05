@@ -182,6 +182,19 @@ export interface TranscriptionResult {
   reviewSummary?: string | null;
 }
 
+export type WorkspaceSttProvider = 'auto' | 'openai' | 'groq' | 'local-whisper' | 'disabled';
+
+export interface WorkspaceFeatureFlags {
+  sttProvider: WorkspaceSttProvider;
+  diarization: boolean;
+  meetingAnalysis: boolean;
+  embeddings: boolean;
+  imageGeneration: boolean;
+  liveTranscription: boolean;
+  retentionFeatures: boolean;
+  experimentalUi: boolean;
+}
+
 export interface WorkspaceState {
   meetings: any[];
   manualTasks: any[];
@@ -191,5 +204,6 @@ export interface WorkspaceState {
   calendarMeta: any;
   vocabulary: string[];
   retentionDays: number;
+  featureFlags: WorkspaceFeatureFlags;
   updatedAt: string;
 }

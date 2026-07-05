@@ -6,6 +6,7 @@ import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
 import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
+import { resolveProductionCapabilities } from '../http/capabilities.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 import {
   createVoiceProfileEmbeddingFailure,
@@ -204,6 +205,45 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       ),
     ].join('\n');
   }
+
+  router.get('/workspaces/:workspaceId/feature-flags', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    await ensureWorkspaceAccess(c, workspaceId);
+    const state = await workspaceService.getWorkspaceState(workspaceId);
+    return c.json({ workspaceId, featureFlags: state.featureFlags }, 200);
+  });
+
+  router.put('/workspaces/:workspaceId/feature-flags', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zmieniac feature flagi.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.updateWorkspaceFeatureFlags(
+        workspaceId,
+        body.featureFlags || body,
+        String(session?.user_id || ''),
+        String(c.get('reqId') || '')
+      ),
+      200
+    );
+  });
+
+  router.get('/workspaces/:workspaceId/capabilities', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    await ensureWorkspaceAccess(c, workspaceId);
+    const state = await workspaceService.getWorkspaceState(workspaceId);
+    return c.json(
+      resolveProductionCapabilities({
+        workspaceFeatureFlags: state.featureFlags,
+      }),
+      200
+    );
+  });
 
   router.put('/workspaces/:workspaceId/retention', async (c) => {
     const workspaceId = c.req.param('workspaceId');

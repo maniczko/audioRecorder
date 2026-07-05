@@ -46,7 +46,20 @@ describe('Workspace Routes', () => {
       getSession: vi.fn(),
     };
     mockWorkspaceService = {
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          diarization: true,
+          meetingAnalysis: true,
+          embeddings: true,
+          imageGeneration: true,
+          liveTranscription: true,
+          retentionFeatures: true,
+          experimentalUi: false,
+        },
+      }),
       saveWorkspaceState: vi.fn(),
+      updateWorkspaceFeatureFlags: vi.fn(),
       updateRetentionPolicy: vi.fn(),
       cleanupExpiredRecordingsByRetention: vi.fn(),
       setRecordingRetentionHold: vi.fn(),
@@ -227,6 +240,84 @@ describe('Workspace Routes', () => {
     expect(mockWorkspaceService.updateRetentionPolicy).toHaveBeenCalledWith(
       'ws1',
       45,
+      'u1',
+      expect.any(String)
+    );
+  });
+
+  it('Issue #1262 - exposes workspace capabilities and protects feature flag updates', async () => {
+    mockWorkspaceService.getWorkspaceState.mockResolvedValue({
+      featureFlags: {
+        sttProvider: 'groq',
+        diarization: true,
+        meetingAnalysis: false,
+        embeddings: true,
+        imageGeneration: true,
+        liveTranscription: true,
+        retentionFeatures: true,
+        experimentalUi: false,
+      },
+    });
+    mockWorkspaceService.updateWorkspaceFeatureFlags.mockResolvedValue({
+      featureFlags: { sttProvider: 'disabled', meetingAnalysis: false },
+    });
+
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('member')
+    );
+
+    const capabilitiesRes = await app.request('/workspaces/ws1/capabilities', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token' },
+    });
+    const forbiddenUpdateRes = await app.request('/workspaces/ws1/feature-flags', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ featureFlags: { sttProvider: 'disabled' } }),
+    });
+
+    expect(capabilitiesRes.status).toBe(200);
+    expect(await capabilitiesRes.json()).toMatchObject({
+      workspaceFeatureFlags: {
+        sttProvider: 'groq',
+        meetingAnalysis: false,
+      },
+      capabilities: {
+        meetingAnalysis: {
+          enabled: false,
+          status: 'unavailable',
+        },
+      },
+    });
+    expect(forbiddenUpdateRes.status).toBe(403);
+    expect(mockWorkspaceService.updateWorkspaceFeatureFlags).not.toHaveBeenCalled();
+
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('admin')
+    );
+
+    const updateRes = await app.request('/workspaces/ws1/feature-flags', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ featureFlags: { sttProvider: 'disabled' } }),
+    });
+
+    expect(updateRes.status).toBe(200);
+    expect(mockWorkspaceService.updateWorkspaceFeatureFlags).toHaveBeenCalledWith(
+      'ws1',
+      { sttProvider: 'disabled' },
       'u1',
       expect.any(String)
     );

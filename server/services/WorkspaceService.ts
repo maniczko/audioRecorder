@@ -15,6 +15,19 @@ export default class WorkspaceService {
     return await this.db.saveWorkspaceState(workspaceId, payload);
   }
 
+  async updateWorkspaceFeatureFlags(
+    workspaceId: string,
+    featureFlags: unknown,
+    actorUserId = '',
+    requestId = ''
+  ) {
+    return await this.db.updateWorkspaceFeatureFlags(workspaceId, featureFlags, {
+      actorUserId,
+      requestId,
+      source: 'api',
+    });
+  }
+
   async updateRetentionPolicy(
     workspaceId: string,
     retentionDays: number,

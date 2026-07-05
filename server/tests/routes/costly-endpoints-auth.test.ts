@@ -37,6 +37,7 @@ describe('Costly endpoint auth contract', () => {
   let authService: { getSession: ReturnType<typeof vi.fn> };
   let workspaceService: {
     getMembership: ReturnType<typeof vi.fn>;
+    getWorkspaceState: ReturnType<typeof vi.fn>;
     upsertVoiceProfile: ReturnType<typeof vi.fn>;
   };
 
@@ -76,6 +77,18 @@ describe('Costly endpoint auth contract', () => {
     authService = { getSession: vi.fn().mockResolvedValue(null) };
     workspaceService = {
       getMembership: vi.fn(),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          diarization: true,
+          meetingAnalysis: true,
+          embeddings: true,
+          imageGeneration: true,
+          liveTranscription: true,
+          retentionFeatures: true,
+          experimentalUi: false,
+        },
+      }),
       upsertVoiceProfile: vi.fn(),
     };
 

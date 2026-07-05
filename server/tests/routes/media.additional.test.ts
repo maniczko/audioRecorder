@@ -9,10 +9,28 @@ import { SINGLE_OBJECT_MAX_BYTES } from '../../lib/mediaStoragePolicy.ts';
 describe('Media Routes - Additional Coverage', () => {
   let app: ReturnType<typeof createApp>;
   let mockTranscriptionService: Record<string, ReturnType<typeof vi.fn>>;
-  let mockWorkspaceService: { getMembership: ReturnType<typeof vi.fn> };
+  let mockWorkspaceService: ReturnType<typeof makeWorkspaceServiceMock>;
   let mockAuthService: { getSession: ReturnType<typeof vi.fn> };
   let testUploadDir: string;
   let actualFs: typeof import('node:fs');
+
+  function makeWorkspaceServiceMock(membership: unknown = { member_role: 'owner' }) {
+    return {
+      getMembership: vi.fn().mockResolvedValue(membership),
+      getWorkspaceState: vi.fn().mockResolvedValue({
+        featureFlags: {
+          sttProvider: 'auto',
+          diarization: true,
+          meetingAnalysis: true,
+          embeddings: true,
+          imageGeneration: true,
+          liveTranscription: true,
+          retentionFeatures: true,
+          experimentalUi: false,
+        },
+      }),
+    };
+  }
 
   beforeEach(async () => {
     actualFs = await vi.importActual<typeof import('node:fs')>('node:fs');
@@ -62,9 +80,7 @@ describe('Media Routes - Additional Coverage', () => {
       removeListener: vi.fn(),
       _execute: vi.fn(),
     };
-    mockWorkspaceService = {
-      getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }),
-    };
+    mockWorkspaceService = makeWorkspaceServiceMock();
 
     mockAuthService = {
       getSession: vi
@@ -408,7 +424,7 @@ describe('Media Routes - Additional Coverage', () => {
       // Create app with the mock
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        workspaceService: makeWorkspaceServiceMock(),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
@@ -443,7 +459,7 @@ describe('Media Routes - Additional Coverage', () => {
 
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        workspaceService: makeWorkspaceServiceMock(),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
@@ -492,7 +508,7 @@ describe('Media Routes - Additional Coverage', () => {
 
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        workspaceService: makeWorkspaceServiceMock(),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
@@ -520,7 +536,7 @@ describe('Media Routes - Additional Coverage', () => {
       });
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue(null) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        workspaceService: makeWorkspaceServiceMock(),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
@@ -544,7 +560,7 @@ describe('Media Routes - Additional Coverage', () => {
       });
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue({ member_role: 'owner' }) },
+        workspaceService: makeWorkspaceServiceMock(),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,
@@ -568,7 +584,7 @@ describe('Media Routes - Additional Coverage', () => {
       });
       const testApp = createApp({
         authService: { getSession: vi.fn().mockResolvedValue({ user_id: 'user_1' }) },
-        workspaceService: { getMembership: vi.fn().mockResolvedValue(null) },
+        workspaceService: makeWorkspaceServiceMock(null),
         transcriptionService: {
           ...mockTranscriptionService,
           analyzeMeetingWithOpenAI: mockAnalyzeMeetingWithOpenAI,

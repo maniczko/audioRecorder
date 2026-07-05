@@ -473,6 +473,9 @@ async function runTranscriptionAttempt(
                   contentType: transcribeContentType,
                   fields,
                   signal: options.signal,
+                  preferredProvider: options.sttPreferredProvider,
+                  apiKey: options.sttApiKey,
+                  baseUrl: options.sttBaseUrl,
                 })
             );
             const finalSttResult = await maybeRetryPoorQualityWithOpenAi({
@@ -550,7 +553,7 @@ async function runTranscriptionAttempt(
       }
 
       // Provider-level fallback: Groq primary failed → retry with OpenAI
-      if (!whisperPayload && _sttUseGroq && OPENAI_API_KEY) {
+      if (!whisperPayload && _sttUseGroq && OPENAI_API_KEY && !options.sttPreferredProvider) {
         const openaiModels =
           config.VOICELOG_STT_MODEL_FULL !== 'whisper-1'
             ? [...new Set([config.VOICELOG_STT_MODEL_FULL, config.VERIFICATION_MODEL, 'whisper-1'])]
@@ -690,7 +693,7 @@ async function runTranscriptionAttempt(
         }
       }
 
-      if (!diarization) {
+      if (!diarization && !options.skipSemanticDiarization) {
         if (DEBUG)
           console.log(
             '[pipeline] Pyannote unavailable — using GPT-4o-mini transcript diarization.'

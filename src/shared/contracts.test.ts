@@ -6,6 +6,7 @@ import {
   applyWorkspaceStateDelta,
   normalizeMediaTranscriptionResponse,
   normalizeTranscriptionStatusPayload,
+  normalizeWorkspaceFeatureFlags,
   normalizeWorkspaceState,
   serializeWorkspaceState,
 } from './contracts';
@@ -27,6 +28,16 @@ describe('shared contracts', () => {
       calendarMeta: {},
       vocabulary: ['crm'],
       retentionDays: 365,
+      featureFlags: {
+        sttProvider: 'auto',
+        diarization: true,
+        meetingAnalysis: true,
+        embeddings: true,
+        imageGeneration: true,
+        liveTranscription: true,
+        retentionFeatures: true,
+        experimentalUi: false,
+      },
       updatedAt: '2026-03-23T10:00:00.000Z',
     });
   });
@@ -117,9 +128,45 @@ describe('shared contracts', () => {
         calendarMeta: {},
         vocabulary: [],
         retentionDays: 365,
+        featureFlags: {
+          sttProvider: 'auto',
+          diarization: true,
+          meetingAnalysis: true,
+          embeddings: true,
+          imageGeneration: true,
+          liveTranscription: true,
+          retentionFeatures: true,
+          experimentalUi: false,
+        },
         updatedAt: '',
       })
     );
+  });
+
+  test('Issue #1262 - normalizes workspace feature flags with safe defaults', () => {
+    expect(
+      normalizeWorkspaceFeatureFlags({
+        sttProvider: 'GROQ',
+        diarization: 'false',
+        meetingAnalysis: false,
+        embeddings: 'off',
+        imageGeneration: true,
+        liveTranscription: 'yes',
+        retentionFeatures: true,
+        experimentalUi: 'true',
+      })
+    ).toEqual({
+      sttProvider: 'groq',
+      diarization: false,
+      meetingAnalysis: false,
+      embeddings: false,
+      imageGeneration: true,
+      liveTranscription: true,
+      retentionFeatures: true,
+      experimentalUi: true,
+    });
+
+    expect(normalizeWorkspaceFeatureFlags({ sttProvider: 'unknown' }).sttProvider).toBe('auto');
   });
 
   test('normalizes workspace retention days as a non-negative integer', () => {

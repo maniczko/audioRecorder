@@ -7,7 +7,9 @@ import type {
   TranscriptionDiagnostics,
   TranscriptionStatusPayload,
   VoiceProfileLabelingDiagnostics,
+  WorkspaceFeatureFlags,
   WorkspaceState,
+  WorkspaceSttProvider,
 } from './types.js';
 
 export interface WorkspaceStatePayload {
@@ -19,6 +21,7 @@ export interface WorkspaceStatePayload {
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];
   retentionDays?: number;
+  featureFlags?: Partial<WorkspaceFeatureFlags>;
 }
 
 export interface WorkspaceCollectionDelta {
@@ -35,6 +38,7 @@ export interface WorkspaceStateDeltaPayload {
   calendarMeta?: Record<string, unknown>;
   vocabulary?: string[];
   retentionDays?: number;
+  featureFlags?: Partial<WorkspaceFeatureFlags>;
 }
 
 export interface SessionPayload<TState = WorkspaceState> {
@@ -356,6 +360,67 @@ function normalizeRetentionDays(value: unknown, fallback = 365): number {
   return fallback;
 }
 
+const WORKSPACE_STT_PROVIDERS = ['auto', 'openai', 'groq', 'local-whisper', 'disabled'] as const;
+
+export const DEFAULT_WORKSPACE_FEATURE_FLAGS: WorkspaceFeatureFlags = {
+  sttProvider: 'auto',
+  diarization: true,
+  meetingAnalysis: true,
+  embeddings: true,
+  imageGeneration: true,
+  liveTranscription: true,
+  retentionFeatures: true,
+  experimentalUi: false,
+};
+
+function normalizeBooleanFlag(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+export function normalizeWorkspaceFeatureFlags(input: unknown = {}): WorkspaceFeatureFlags {
+  const source = asRecord(input);
+  const sttProvider = String(source.sttProvider || DEFAULT_WORKSPACE_FEATURE_FLAGS.sttProvider)
+    .trim()
+    .toLowerCase();
+
+  return {
+    sttProvider: WORKSPACE_STT_PROVIDERS.includes(sttProvider as WorkspaceSttProvider)
+      ? (sttProvider as WorkspaceSttProvider)
+      : DEFAULT_WORKSPACE_FEATURE_FLAGS.sttProvider,
+    diarization: normalizeBooleanFlag(
+      source.diarization,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.diarization
+    ),
+    meetingAnalysis: normalizeBooleanFlag(
+      source.meetingAnalysis,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.meetingAnalysis
+    ),
+    embeddings: normalizeBooleanFlag(source.embeddings, DEFAULT_WORKSPACE_FEATURE_FLAGS.embeddings),
+    imageGeneration: normalizeBooleanFlag(
+      source.imageGeneration,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.imageGeneration
+    ),
+    liveTranscription: normalizeBooleanFlag(
+      source.liveTranscription,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.liveTranscription
+    ),
+    retentionFeatures: normalizeBooleanFlag(
+      source.retentionFeatures,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.retentionFeatures
+    ),
+    experimentalUi: normalizeBooleanFlag(
+      source.experimentalUi,
+      DEFAULT_WORKSPACE_FEATURE_FLAGS.experimentalUi
+    ),
+  };
+}
+
 export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
   const source = asRecord(input);
   const calendarMeta = isRecord(source.calendarMeta) ? source.calendarMeta : {};
@@ -371,6 +436,7 @@ export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
     calendarMeta,
     vocabulary: Array.isArray(source.vocabulary) ? source.vocabulary : [],
     retentionDays: normalizeRetentionDays(source.retentionDays),
+    featureFlags: normalizeWorkspaceFeatureFlags(source.featureFlags),
     updatedAt: String(source.updatedAt || ''),
   };
 
@@ -502,6 +568,9 @@ export function buildWorkspaceStateDelta(
 
   if (prevState.retentionDays !== nextState.retentionDays) {
     delta.retentionDays = nextState.retentionDays;
+  }
+  if (stableJson(prevState.featureFlags) !== stableJson(nextState.featureFlags)) {
+    delta.featureFlags = nextState.featureFlags;
   }
 
   return delta;
@@ -673,6 +742,7 @@ export function applyWorkspaceStateDelta(
     vocabulary: Array.isArray(delta.vocabulary) ? delta.vocabulary : current.vocabulary,
     retentionDays:
       typeof delta.retentionDays === 'number' ? delta.retentionDays : current.retentionDays,
+    featureFlags: normalizeWorkspaceFeatureFlags(delta.featureFlags || current.featureFlags),
     updatedAt: current.updatedAt,
   });
 }
