@@ -37,6 +37,7 @@ const __dirname = path.dirname(__filename);
 const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administratorem.';
 const DEFAULT_RETENTION_DAYS = 365;
 const DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS = 2500;
+const WORKSPACE_RETENTION_HOLD_RECORDING_ID = '__workspace__';
 
 function _resolvePositiveTimeoutMs(value: unknown, fallback: number): number {
   const numeric = Number(value);
@@ -2448,6 +2449,243 @@ export class Database {
     }
   }
 
+  _mapRetentionHoldRow(row: any): any {
+    if (!row) return null;
+    const releasedAt = String(row.released_at || '').trim();
+    const rawRecordingId = String(row.recording_id || '');
+    const scope =
+      rawRecordingId === WORKSPACE_RETENTION_HOLD_RECORDING_ID ? 'workspace' : 'recording';
+    return {
+      id: String(row.id || ''),
+      workspaceId: String(row.workspace_id || ''),
+      scope,
+      recordingId: scope === 'workspace' ? '' : rawRecordingId,
+      reason: String(row.reason || ''),
+      createdByUserId: String(row.created_by_user_id || ''),
+      createdAt: String(row.created_at || ''),
+      releasedAt,
+      releasedByUserId: String(row.released_by_user_id || ''),
+      releaseReason: String(row.release_reason || ''),
+      active: !releasedAt,
+    };
+  }
+
+  async setRecordingRetentionHold({
+    workspaceId,
+    recordingId,
+    actorUserId = '',
+    reason = '',
+    requestId = '',
+    audit = true,
+  }: {
+    workspaceId: string;
+    recordingId: string;
+    actorUserId?: string;
+    reason?: string;
+    requestId?: string;
+    audit?: boolean;
+  }): Promise<any> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    const safeRecordingId = String(recordingId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+    if (!safeRecordingId) throw new Error('Brakuje recordingId.');
+
+    const timestamp = this.nowIso();
+    const safeReason = String(reason || '')
+      .trim()
+      .slice(0, 1000);
+    const existing = await this._get(
+      `SELECT * FROM recording_retention_holds
+       WHERE workspace_id = ? AND recording_id = ? AND released_at IS NULL`,
+      [safeWorkspaceId, safeRecordingId]
+    );
+
+    if (existing) {
+      await this._execute(
+        `UPDATE recording_retention_holds
+         SET reason = ?, created_by_user_id = ?, created_at = ?
+         WHERE id = ?`,
+        [safeReason, String(actorUserId || ''), timestamp, existing.id]
+      );
+    } else {
+      await this._execute(
+        `INSERT INTO recording_retention_holds (
+          id, workspace_id, recording_id, reason, created_by_user_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), safeWorkspaceId, safeRecordingId, safeReason, actorUserId, timestamp]
+      );
+    }
+
+    const row = await this._get(
+      `SELECT * FROM recording_retention_holds
+       WHERE workspace_id = ? AND recording_id = ? AND released_at IS NULL`,
+      [safeWorkspaceId, safeRecordingId]
+    );
+    const hold = this._mapRetentionHoldRow(row);
+    if (audit) {
+      await this.writeAuditLogBestEffort({
+        workspaceId: safeWorkspaceId,
+        actorUserId: String(actorUserId || ''),
+        action: existing ? 'recording.retention_hold.updated' : 'recording.retention_hold.created',
+        entityType: 'recording',
+        entityId: safeRecordingId,
+        metadata: {
+          reason: safeReason,
+          requestId: String(requestId || ''),
+        },
+      });
+    }
+    return hold;
+  }
+
+  async clearRecordingRetentionHold({
+    workspaceId,
+    recordingId,
+    actorUserId = '',
+    reason = '',
+    requestId = '',
+    audit = true,
+  }: {
+    workspaceId: string;
+    recordingId: string;
+    actorUserId?: string;
+    reason?: string;
+    requestId?: string;
+    audit?: boolean;
+  }): Promise<any> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    const safeRecordingId = String(recordingId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+    if (!safeRecordingId) throw new Error('Brakuje recordingId.');
+
+    const row = await this._get(
+      `SELECT * FROM recording_retention_holds
+       WHERE workspace_id = ? AND recording_id = ? AND released_at IS NULL`,
+      [safeWorkspaceId, safeRecordingId]
+    );
+    if (!row) {
+      return {
+        workspaceId: safeWorkspaceId,
+        recordingId: safeRecordingId,
+        reason: String(reason || '')
+          .trim()
+          .slice(0, 1000),
+        active: false,
+      };
+    }
+
+    const timestamp = this.nowIso();
+    const safeReason = String(reason || '')
+      .trim()
+      .slice(0, 1000);
+    await this._execute(
+      `UPDATE recording_retention_holds
+       SET released_at = ?, released_by_user_id = ?, release_reason = ?
+       WHERE id = ?`,
+      [timestamp, String(actorUserId || ''), safeReason, row.id]
+    );
+    const released = this._mapRetentionHoldRow({
+      ...row,
+      released_at: timestamp,
+      released_by_user_id: String(actorUserId || ''),
+      release_reason: safeReason,
+    });
+    if (audit) {
+      await this.writeAuditLogBestEffort({
+        workspaceId: safeWorkspaceId,
+        actorUserId: String(actorUserId || ''),
+        action: 'recording.retention_hold.released',
+        entityType: 'recording',
+        entityId: safeRecordingId,
+        metadata: {
+          reason: safeReason,
+          requestId: String(requestId || ''),
+        },
+      });
+    }
+    return released;
+  }
+
+  async listRecordingRetentionHolds(workspaceId: string): Promise<any[]> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+    const rows = await this._query(
+      `SELECT * FROM recording_retention_holds
+       WHERE workspace_id = ? AND released_at IS NULL
+       ORDER BY created_at DESC, id DESC`,
+      [safeWorkspaceId]
+    );
+    return rows.map((row: any) => this._mapRetentionHoldRow(row));
+  }
+
+  async setWorkspaceRetentionHold({
+    workspaceId,
+    actorUserId = '',
+    reason = '',
+    requestId = '',
+  }: {
+    workspaceId: string;
+    actorUserId?: string;
+    reason?: string;
+    requestId?: string;
+  }): Promise<any> {
+    const hold = await this.setRecordingRetentionHold({
+      workspaceId,
+      recordingId: WORKSPACE_RETENTION_HOLD_RECORDING_ID,
+      actorUserId,
+      reason,
+      requestId,
+      audit: false,
+    });
+    await this.writeAuditLogBestEffort({
+      workspaceId: hold.workspaceId,
+      actorUserId: String(actorUserId || ''),
+      action: 'workspace.retention_hold.created',
+      entityType: 'workspace',
+      entityId: hold.workspaceId,
+      metadata: {
+        reason: hold.reason,
+        requestId: String(requestId || ''),
+      },
+    });
+    return { ...hold, scope: 'workspace', recordingId: '' };
+  }
+
+  async clearWorkspaceRetentionHold({
+    workspaceId,
+    actorUserId = '',
+    reason = '',
+    requestId = '',
+  }: {
+    workspaceId: string;
+    actorUserId?: string;
+    reason?: string;
+    requestId?: string;
+  }): Promise<any> {
+    const hold = await this.clearRecordingRetentionHold({
+      workspaceId,
+      recordingId: WORKSPACE_RETENTION_HOLD_RECORDING_ID,
+      actorUserId,
+      reason,
+      requestId,
+      audit: false,
+    });
+    await this.writeAuditLogBestEffort({
+      workspaceId: hold.workspaceId,
+      actorUserId: String(actorUserId || ''),
+      action: 'workspace.retention_hold.released',
+      entityType: 'workspace',
+      entityId: hold.workspaceId,
+      metadata: {
+        reason: String(reason || '')
+          .trim()
+          .slice(0, 1000),
+        requestId: String(requestId || ''),
+      },
+    });
+    return { ...hold, scope: 'workspace', recordingId: '' };
+  }
+
   async listAuditLogs(
     workspaceId: string,
     options: { recordingId?: string; cursor?: string; limit?: number } = {}
@@ -2729,6 +2967,7 @@ export class Database {
     checked: number;
     deleted: number;
     deletedRecordingIds: string[];
+    heldRecordingIds: string[];
   }> {
     const workspaceFilter = String(workspaceId || '').trim();
     const rows = await this._query(
@@ -2736,20 +2975,33 @@ export class Database {
          media_assets.id,
          media_assets.workspace_id,
          media_assets.created_at,
-         workspace_state.retention_days
+         workspace_state.retention_days,
+         EXISTS (
+           SELECT 1
+           FROM recording_retention_holds
+           WHERE recording_retention_holds.workspace_id = media_assets.workspace_id
+             AND recording_retention_holds.released_at IS NULL
+             AND (
+               recording_retention_holds.recording_id = media_assets.id
+               OR recording_retention_holds.recording_id = ?
+             )
+         ) AS has_retention_hold
        FROM media_assets
        JOIN workspace_state ON workspace_state.workspace_id = media_assets.workspace_id
        WHERE workspace_state.retention_days > 0
          ${workspaceFilter ? 'AND media_assets.workspace_id = ?' : ''}`,
-      workspaceFilter ? [workspaceFilter] : []
+      workspaceFilter
+        ? [WORKSPACE_RETENTION_HOLD_RECORDING_ID, workspaceFilter]
+        : [WORKSPACE_RETENTION_HOLD_RECORDING_ID]
     );
     const nowMs = new Date(nowIso).getTime();
     if (!Number.isFinite(nowMs)) {
-      return { checked: rows.length, deleted: 0, deletedRecordingIds: [] };
+      return { checked: rows.length, deleted: 0, deletedRecordingIds: [], heldRecordingIds: [] };
     }
 
     let deleted = 0;
     const deletedRecordingIds: string[] = [];
+    const heldRecordingIds: string[] = [];
     for (const row of rows) {
       const retentionDays = _normalizeRetentionDays(row.retention_days, 0);
       if (retentionDays <= 0) continue;
@@ -2762,13 +3014,17 @@ export class Database {
       ) {
         continue;
       }
+      if (row.has_retention_hold) {
+        heldRecordingIds.push(row.id);
+        continue;
+      }
 
       await this.deleteMediaAsset(row.id, row.workspace_id, { actorUserId, source, requestId });
       deleted++;
       deletedRecordingIds.push(row.id);
     }
 
-    if (workspaceFilter || deleted > 0) {
+    if (workspaceFilter || deleted > 0 || heldRecordingIds.length > 0) {
       await this.writeAuditLogBestEffort({
         workspaceId: workspaceFilter || 'all',
         actorUserId,
@@ -2782,11 +3038,12 @@ export class Database {
           checked: rows.length,
           deleted,
           deletedRecordingIds,
+          heldRecordingIds,
         },
       });
     }
 
-    return { checked: rows.length, deleted, deletedRecordingIds };
+    return { checked: rows.length, deleted, deletedRecordingIds, heldRecordingIds };
   }
 
   async exportWorkspaceData(
@@ -2806,6 +3063,7 @@ export class Database {
       voiceProfiles,
       auditLogs,
       transcriptionJobs,
+      retentionHolds,
     ] = await Promise.all([
       this._get('SELECT * FROM workspaces WHERE id = ?', [safeWorkspaceId]),
       this._query(
@@ -2839,6 +3097,10 @@ export class Database {
       ]),
       this._query(
         `SELECT * FROM transcription_jobs WHERE workspace_id = ? ORDER BY created_at ASC`,
+        [safeWorkspaceId]
+      ),
+      this._query(
+        `SELECT * FROM recording_retention_holds WHERE workspace_id = ? ORDER BY created_at ASC`,
         [safeWorkspaceId]
       ),
     ]);
@@ -2906,6 +3168,7 @@ export class Database {
         };
       }),
       operational: {
+        retentionHolds: retentionHolds.map((hold: any) => this._mapRetentionHoldRow(hold)),
         auditLogs: auditLogs.map((entry: any) => ({
           id: String(entry.id || ''),
           actorUserId: String(entry.actor_user_id || ''),

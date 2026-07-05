@@ -12,6 +12,8 @@ const criticalSchemaAuditIndexes = [
   'idx_transcription_jobs_error_code_updated_at',
   'idx_audit_logs_workspace_entity_created_at',
   'idx_workspace_state_retention_days',
+  'idx_recording_retention_holds_workspace_recording',
+  'idx_recording_retention_holds_active',
 ] as const;
 
 async function initDbAt(dbPath: string, uploadDir: string) {

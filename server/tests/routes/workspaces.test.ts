@@ -49,6 +49,11 @@ describe('Workspace Routes', () => {
       saveWorkspaceState: vi.fn(),
       updateRetentionPolicy: vi.fn(),
       cleanupExpiredRecordingsByRetention: vi.fn(),
+      setRecordingRetentionHold: vi.fn(),
+      clearRecordingRetentionHold: vi.fn(),
+      listRecordingRetentionHolds: vi.fn(),
+      setWorkspaceRetentionHold: vi.fn(),
+      clearWorkspaceRetentionHold: vi.fn(),
       exportWorkspaceData: vi.fn(),
       listAuditLogs: vi.fn(),
       exportAuditLogs: vi.fn(),
@@ -255,6 +260,140 @@ describe('Workspace Routes', () => {
       nowIso: '2026-06-25T12:00:00.000Z',
       actorUserId: 'u1',
       source: 'api',
+      requestId: expect.any(String),
+    });
+  });
+
+  it('PUT /workspaces/:workspaceId/recordings/:recordingId/retention-hold creates an audited hold for admins', async () => {
+    mockWorkspaceService.setRecordingRetentionHold.mockResolvedValue({
+      workspaceId: 'ws1',
+      recordingId: 'rec1',
+      reason: 'legal discovery',
+      active: true,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('admin')
+    );
+
+    const res = await app.request('/workspaces/ws1/recordings/rec1/retention-hold', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'legal discovery' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ recordingId: 'rec1', active: true });
+    expect(mockWorkspaceService.setRecordingRetentionHold).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      recordingId: 'rec1',
+      actorUserId: 'u1',
+      reason: 'legal discovery',
+      requestId: expect.any(String),
+    });
+  });
+
+  it('PUT /workspaces/:workspaceId/retention-hold creates a workspace-scoped hold for admins', async () => {
+    mockWorkspaceService.setWorkspaceRetentionHold.mockResolvedValue({
+      workspaceId: 'ws1',
+      scope: 'workspace',
+      reason: 'regulator request',
+      active: true,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('admin')
+    );
+
+    const res = await app.request('/workspaces/ws1/retention-hold', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'regulator request' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ scope: 'workspace', active: true });
+    expect(mockWorkspaceService.setWorkspaceRetentionHold).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      actorUserId: 'u1',
+      reason: 'regulator request',
+      requestId: expect.any(String),
+    });
+  });
+
+  it('DELETE /workspaces/:workspaceId/recordings/:recordingId/retention-hold releases a hold for admins', async () => {
+    mockWorkspaceService.clearRecordingRetentionHold.mockResolvedValue({
+      workspaceId: 'ws1',
+      recordingId: 'rec1',
+      reason: 'case closed',
+      active: false,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('owner')
+    );
+
+    const res = await app.request('/workspaces/ws1/recordings/rec1/retention-hold', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'case closed' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ recordingId: 'rec1', active: false });
+    expect(mockWorkspaceService.clearRecordingRetentionHold).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      recordingId: 'rec1',
+      actorUserId: 'u1',
+      reason: 'case closed',
+      requestId: expect.any(String),
+    });
+  });
+
+  it('DELETE /workspaces/:workspaceId/retention-hold releases a workspace-scoped hold for admins', async () => {
+    mockWorkspaceService.clearWorkspaceRetentionHold.mockResolvedValue({
+      workspaceId: 'ws1',
+      scope: 'workspace',
+      reason: 'case closed',
+      active: false,
+    });
+    app = createApp(
+      {
+        authService: mockAuthService,
+        workspaceService: mockWorkspaceService,
+        transcriptionService: mockTranscriptionService,
+        config: { allowedOrigins: '*', trustProxy: false, uploadDir: '/tmp', OPENAI_API_KEY: '' },
+      },
+      buildMiddlewares('owner')
+    );
+
+    const res = await app.request('/workspaces/ws1/retention-hold', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'case closed' }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ scope: 'workspace', active: false });
+    expect(mockWorkspaceService.clearWorkspaceRetentionHold).toHaveBeenCalledWith({
+      workspaceId: 'ws1',
+      actorUserId: 'u1',
+      reason: 'case closed',
       requestId: expect.any(String),
     });
   });
@@ -566,14 +705,22 @@ describe('Workspace Routes', () => {
       headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
       body: JSON.stringify({ retentionDays: 45 }),
     });
+    const holdRes = await app.request('/workspaces/ws1/recordings/rec1/retention-hold', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'legal discovery' }),
+    });
     const exportRes = await app.request('/workspaces/ws1/export', {
       method: 'GET',
       headers: { Authorization: 'Bearer token' },
     });
 
     expect(retentionRes.status).toBe(403);
+    expect(holdRes.status).toBe(403);
     expect(exportRes.status).toBe(403);
     expect(mockWorkspaceService.updateRetentionPolicy).not.toHaveBeenCalled();
+    expect(mockWorkspaceService.setRecordingRetentionHold).not.toHaveBeenCalled();
+    expect(mockWorkspaceService.setWorkspaceRetentionHold).not.toHaveBeenCalled();
     expect(mockWorkspaceService.exportWorkspaceData).not.toHaveBeenCalled();
   });
 

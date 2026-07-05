@@ -250,6 +250,123 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     );
   });
 
+  router.put('/workspaces/:workspaceId/retention-hold', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zakladac hold retencji.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const reason = String(body.reason || '').trim();
+    if (!reason) {
+      return c.json({ message: 'Powod holda retencji jest wymagany.' }, 400);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.setWorkspaceRetentionHold({
+        workspaceId,
+        actorUserId: String(session?.user_id || ''),
+        reason,
+        requestId: String(c.get('reqId') || ''),
+      }),
+      200
+    );
+  });
+
+  router.delete('/workspaces/:workspaceId/retention-hold', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zdejmowac hold retencji.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const reason = String(body.reason || '').trim();
+    if (!reason) {
+      return c.json({ message: 'Powod zdjecia holda retencji jest wymagany.' }, 400);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.clearWorkspaceRetentionHold({
+        workspaceId,
+        actorUserId: String(session?.user_id || ''),
+        reason,
+        requestId: String(c.get('reqId') || ''),
+      }),
+      200
+    );
+  });
+
+  router.get('/workspaces/:workspaceId/retention-holds', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership) && !requireAuditReader(membership)) {
+      return c.json(
+        { message: 'Tylko owner, admin, operator lub auditor moze przegladac holdy.' },
+        403
+      );
+    }
+
+    return c.json({ holds: await workspaceService.listRecordingRetentionHolds(workspaceId) }, 200);
+  });
+
+  router.put('/workspaces/:workspaceId/recordings/:recordingId/retention-hold', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const recordingId = c.req.param('recordingId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zakladac hold retencji.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const reason = String(body.reason || '').trim();
+    if (!reason) {
+      return c.json({ message: 'Powod holda retencji jest wymagany.' }, 400);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.setRecordingRetentionHold({
+        workspaceId,
+        recordingId,
+        actorUserId: String(session?.user_id || ''),
+        reason,
+        requestId: String(c.get('reqId') || ''),
+      }),
+      200
+    );
+  });
+
+  router.delete('/workspaces/:workspaceId/recordings/:recordingId/retention-hold', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const recordingId = c.req.param('recordingId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireWorkspaceAdmin(membership)) {
+      return c.json({ message: 'Tylko owner lub admin moze zdejmowac hold retencji.' }, 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const reason = String(body.reason || '').trim();
+    if (!reason) {
+      return c.json({ message: 'Powod zdjecia holda retencji jest wymagany.' }, 400);
+    }
+
+    const session = c.get('session') as any;
+    return c.json(
+      await workspaceService.clearRecordingRetentionHold({
+        workspaceId,
+        recordingId,
+        actorUserId: String(session?.user_id || ''),
+        reason,
+        requestId: String(c.get('reqId') || ''),
+      }),
+      200
+    );
+  });
+
   router.get('/workspaces/:workspaceId/export', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
