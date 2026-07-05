@@ -57,6 +57,11 @@ for temporary migrations with `VOICELOG_ALLOW_PROGRESS_QUERY_TOKEN=true`.
 - `PUT /state/workspaces/:workspaceId`
 - `PATCH /state/workspaces/:workspaceId`
 - `PUT /workspaces/:workspaceId/members/:targetUserId/role`
+- `PUT /workspaces/:workspaceId/retention-hold`
+- `DELETE /workspaces/:workspaceId/retention-hold`
+- `GET /workspaces/:workspaceId/retention-holds`
+- `PUT /workspaces/:workspaceId/recordings/:recordingId/retention-hold`
+- `DELETE /workspaces/:workspaceId/recordings/:recordingId/retention-hold`
 - `POST /workspaces/:workspaceId/rag/ask`
 - `GET /voice-profiles`
 - `POST /voice-profiles`

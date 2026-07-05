@@ -30,6 +30,11 @@ const productionSchemaAuditIndexes = [
   'idx_workspace_state_retention_days',
 ] as const;
 
+const retentionHoldIndexes = [
+  'idx_recording_retention_holds_workspace_recording',
+  'idx_recording_retention_holds_active',
+] as const;
+
 function readMigration(fileName: string) {
   return fs.readFileSync(path.join(migrationsDir, fileName), 'utf8');
 }
@@ -123,5 +128,24 @@ describe('Database migration contracts', () => {
       'on audit_logs(workspace_id, entity_type, entity_id, created_at desc)'
     );
     expect(migration).toContain('on workspace_state(retention_days)');
+  });
+
+  test('Issue #1261 - retention hold migration preserves active hold lookup', () => {
+    const migration = readMigration('20260705_recording_retention_holds.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+    const initialSchema = readMigration('001_initial_schema.sql')
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    expect(migration).toContain('create table if not exists recording_retention_holds');
+    expect(initialSchema).toContain('create table if not exists recording_retention_holds');
+    for (const indexName of retentionHoldIndexes) {
+      expect(migration).toContain(
+        `create ${indexName.includes('active') ? 'unique ' : ''}index if not exists ${indexName}`
+      );
+      expect(initialSchema).toContain(indexName);
+    }
+    expect(migration).toContain('where released_at is null');
   });
 });

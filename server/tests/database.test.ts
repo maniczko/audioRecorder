@@ -711,6 +711,223 @@ describe('Database (Async Worker SQLite)', () => {
     }
   });
 
+  test('Issue #1261 - retention cleanup skips recordings under active legal hold', async () => {
+    const storageModule = await import('../lib/supabaseStorage.ts');
+    const deleteAudioFromStorageSpy = vi
+      .spyOn(storageModule, 'deleteAudioFromStorage')
+      .mockResolvedValue(undefined);
+    const previousFsState = { ...(global as any).__TEST_FS_STATE__ };
+    (global as any).__TEST_FS_STATE__ = {
+      existsSync: false,
+      statSyncSize: previousFsState.statSyncSize ?? 1234,
+    };
+
+    try {
+      await db.ensureWorkspaceState('ws_retention_hold');
+      await db.saveWorkspaceState('ws_retention_hold', {
+        meetings: [],
+        manualTasks: [],
+        manualPeople: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+        retentionDays: 1,
+      });
+
+      for (const recordingId of ['rec_hold_old', 'rec_hold_delete']) {
+        await db._execute(
+          `INSERT INTO media_assets (
+            id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+            size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+            normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            recordingId,
+            'ws_retention_hold',
+            'meeting_hold',
+            'user_hold',
+            `workspaces/ws_retention_hold/recordings/${recordingId}/audio.webm`,
+            'audio/webm',
+            10,
+            'single',
+            '{}',
+            10,
+            10,
+            'completed',
+            '[]',
+            '{}',
+            '2026-06-18T09:00:00.000Z',
+            '2026-06-18T09:00:00.000Z',
+          ]
+        );
+      }
+
+      await db.setRecordingRetentionHold({
+        workspaceId: 'ws_retention_hold',
+        recordingId: 'rec_hold_old',
+        actorUserId: 'admin_hold',
+        reason: 'legal discovery',
+        requestId: 'req_hold_create',
+      });
+
+      const result = await db.cleanupExpiredRecordingsByRetention({
+        workspaceId: 'ws_retention_hold',
+        nowIso: '2026-06-20T12:00:00.000Z',
+        actorUserId: 'system',
+        source: 'test-retention',
+        requestId: 'req_hold_cleanup',
+      });
+
+      expect(result).toMatchObject({
+        checked: 2,
+        deleted: 1,
+        deletedRecordingIds: ['rec_hold_delete'],
+        heldRecordingIds: ['rec_hold_old'],
+      });
+      await expect(db.getMediaAsset('rec_hold_old')).resolves.toMatchObject({ id: 'rec_hold_old' });
+      await expect(db.getMediaAsset('rec_hold_delete')).resolves.toBeNull();
+      expect(deleteAudioFromStorageSpy).not.toHaveBeenCalledWith(
+        'workspaces/ws_retention_hold/recordings/rec_hold_old/audio.webm'
+      );
+
+      const auditRows = await db._query(
+        'SELECT * FROM audit_logs WHERE workspace_id = ? ORDER BY created_at ASC',
+        ['ws_retention_hold']
+      );
+      expect(auditRows.map((row: any) => row.action)).toEqual(
+        expect.arrayContaining([
+          'recording.retention_hold.created',
+          'recording.deleted',
+          'retention.cleanup.completed',
+        ])
+      );
+      const cleanupAudit = auditRows.find(
+        (row: any) => row.action === 'retention.cleanup.completed'
+      );
+      expect(JSON.parse(cleanupAudit.metadata_json)).toMatchObject({
+        heldRecordingIds: ['rec_hold_old'],
+        requestId: 'req_hold_cleanup',
+      });
+    } finally {
+      (global as any).__TEST_FS_STATE__ = previousFsState;
+      deleteAudioFromStorageSpy.mockRestore();
+    }
+  });
+
+  test('Issue #1261 - retention hold can be released and is audited', async () => {
+    await db.ensureWorkspaceState('ws_retention_hold_release');
+    await db.setRecordingRetentionHold({
+      workspaceId: 'ws_retention_hold_release',
+      recordingId: 'rec_hold_release',
+      actorUserId: 'admin_hold',
+      reason: 'customer dispute',
+      requestId: 'req_hold_release_create',
+    });
+
+    await expect(db.listRecordingRetentionHolds('ws_retention_hold_release')).resolves.toEqual([
+      expect.objectContaining({
+        recordingId: 'rec_hold_release',
+        reason: 'customer dispute',
+        active: true,
+      }),
+    ]);
+
+    const released = await db.clearRecordingRetentionHold({
+      workspaceId: 'ws_retention_hold_release',
+      recordingId: 'rec_hold_release',
+      actorUserId: 'admin_hold',
+      reason: 'case closed',
+      requestId: 'req_hold_release_clear',
+    });
+
+    expect(released).toMatchObject({ recordingId: 'rec_hold_release', active: false });
+    await expect(db.listRecordingRetentionHolds('ws_retention_hold_release')).resolves.toEqual([]);
+    const releaseAudit = await db._get(
+      'SELECT * FROM audit_logs WHERE workspace_id = ? AND action = ?',
+      ['ws_retention_hold_release', 'recording.retention_hold.released']
+    );
+    expect(JSON.parse(releaseAudit.metadata_json)).toMatchObject({
+      reason: 'case closed',
+      requestId: 'req_hold_release_clear',
+    });
+  });
+
+  test('Issue #1261 - workspace-level retention hold skips all expired workspace recordings', async () => {
+    await db.ensureWorkspaceState('ws_retention_workspace_hold');
+    await db.saveWorkspaceState('ws_retention_workspace_hold', {
+      meetings: [],
+      manualTasks: [],
+      manualPeople: [],
+      taskState: {},
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+      retentionDays: 1,
+    });
+    for (const recordingId of ['rec_workspace_hold_a', 'rec_workspace_hold_b']) {
+      await db._execute(
+        `INSERT INTO media_assets (
+          id, workspace_id, meeting_id, created_by_user_id, file_path, content_type,
+          size_bytes, storage_mode, media_manifest_json, source_size_bytes,
+          normalized_size_bytes, transcription_status, transcript_json, diarization_json,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          recordingId,
+          'ws_retention_workspace_hold',
+          '',
+          'user_hold',
+          `workspaces/ws_retention_workspace_hold/recordings/${recordingId}/audio.webm`,
+          'audio/webm',
+          10,
+          'single',
+          '{}',
+          10,
+          10,
+          'completed',
+          '[]',
+          '{}',
+          '2026-06-18T09:00:00.000Z',
+          '2026-06-18T09:00:00.000Z',
+        ]
+      );
+    }
+
+    await db.setWorkspaceRetentionHold({
+      workspaceId: 'ws_retention_workspace_hold',
+      actorUserId: 'admin_hold',
+      reason: 'regulator request',
+      requestId: 'req_workspace_hold',
+    });
+
+    const result = await db.cleanupExpiredRecordingsByRetention({
+      workspaceId: 'ws_retention_workspace_hold',
+      nowIso: '2026-06-20T12:00:00.000Z',
+      actorUserId: 'system',
+      source: 'test-retention',
+      requestId: 'req_workspace_hold_cleanup',
+    });
+
+    expect(result).toMatchObject({
+      checked: 2,
+      deleted: 0,
+      heldRecordingIds: ['rec_workspace_hold_a', 'rec_workspace_hold_b'],
+    });
+    await expect(db.getMediaAsset('rec_workspace_hold_a')).resolves.toMatchObject({
+      id: 'rec_workspace_hold_a',
+    });
+    const holds = await db.listRecordingRetentionHolds('ws_retention_workspace_hold');
+    expect(holds).toEqual([
+      expect.objectContaining({
+        scope: 'workspace',
+        recordingId: '',
+        active: true,
+      }),
+    ]);
+  });
+
   test('Regression: #1229 - workspace export includes state, transcripts, AI metadata and audit logs', async () => {
     await db._execute(
       `INSERT INTO workspaces (id, name, owner_user_id, invite_code, created_at, updated_at)

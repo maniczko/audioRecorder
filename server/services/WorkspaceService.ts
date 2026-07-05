@@ -55,6 +55,26 @@ export default class WorkspaceService {
     return await this.db.cleanupExpiredRecordingsByRetention({ ...options, workspaceId });
   }
 
+  async setRecordingRetentionHold(options: any) {
+    return await this.db.setRecordingRetentionHold(options);
+  }
+
+  async clearRecordingRetentionHold(options: any) {
+    return await this.db.clearRecordingRetentionHold(options);
+  }
+
+  async listRecordingRetentionHolds(workspaceId: string) {
+    return await this.db.listRecordingRetentionHolds(workspaceId);
+  }
+
+  async setWorkspaceRetentionHold(options: any) {
+    return await this.db.setWorkspaceRetentionHold(options);
+  }
+
+  async clearWorkspaceRetentionHold(options: any) {
+    return await this.db.clearWorkspaceRetentionHold(options);
+  }
+
   async exportWorkspaceData(workspaceId: string, options: any = {}) {
     return await this.db.exportWorkspaceData(workspaceId, options);
   }
