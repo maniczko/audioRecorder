@@ -1149,6 +1149,7 @@ describe('Media Routes', () => {
     it('returns 429 when Gemini responds with 429 quota exceeded', async () => {
       const ctx = setupSketchnoteTest();
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       global.fetch = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({
@@ -2296,6 +2297,7 @@ describe('Media Routes', () => {
 
     it('zwraca 403, gdy użytkownik nie ma dostępu do workspace', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       mockWorkspaceService.getMembership.mockResolvedValue(null);
       mockTranscriptionService.getMediaAsset.mockResolvedValue({
         id: 'rec_forbidden',
@@ -2309,11 +2311,16 @@ describe('Media Routes', () => {
 
       expect(res.status).toBe(403);
       expect(mockTranscriptionService.deleteMediaAsset).not.toHaveBeenCalled();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
         '[ERROR] APP ERROR STACK',
+        expect.anything()
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[WARN] APP CLIENT ERROR',
         expect.objectContaining({
           message: 'Nie masz dostepu do tego workspace.',
           statusCode: 403,
+          route: '/media/recordings/rec_forbidden',
         })
       );
     });
