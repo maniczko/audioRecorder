@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.ts';
+import { logger } from '../logger.ts';
 
 function createServices(allowedOrigins: string) {
   return {
@@ -116,6 +117,35 @@ describe('app security CORS contract', () => {
     expect(error.status).toBe(503);
     expect(error.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.test');
     expectHardenedHeaders(error);
+  });
+
+  it('logs expected client auth failures below error level', async () => {
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    const app = createApp(createServices('https://app.example.test'));
+    app.get('/expected-auth-error', () => {
+      throw Object.assign(new Error('Niepoprawny email lub haslo.'), { statusCode: 401 });
+    });
+
+    const res = await app.request('/expected-auth-error', {
+      headers: { Origin: 'https://app.example.test' },
+    });
+
+    expect(res.status).toBe(401);
+    expect(errorSpy).not.toHaveBeenCalledWith(
+      'APP ERROR STACK',
+      expect.anything(),
+      expect.anything()
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      'APP CLIENT ERROR',
+      expect.objectContaining({
+        statusCode: 401,
+        route: '/expected-auth-error',
+        message: 'Niepoprawny email lub haslo.',
+      }),
+      { sentry: false }
+    );
   });
 
   function expectCredentialedCors(res: Response, origin = productionOrigin) {

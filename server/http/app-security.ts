@@ -87,6 +87,30 @@ function getRequestLogTarget(c: any) {
   return redactSensitiveRequestUrl(String(c.req?.path || ''));
 }
 
+function resolveAppErrorStatus(err: any) {
+  if (err.name === 'ContextError' || err instanceof z.ZodError || err?.statusCode === 422) {
+    return 422;
+  }
+  return Number(err?.statusCode || err?.status || 500) || 500;
+}
+
+function logHandledAppError(err: any, c: any, statusCode: number) {
+  if (statusCode >= 500) {
+    logger.error('APP ERROR STACK', err, { sentry: false });
+    return;
+  }
+
+  logger.warn(
+    'APP CLIENT ERROR',
+    {
+      statusCode,
+      route: getRequestLogTarget(c),
+      message: err?.message || 'Client request failed.',
+    },
+    { sentry: false }
+  );
+}
+
 export function applyAppCors(app: Hono<any>, _allowedOrigins: string) {
   app.use('*', async (c, next) => {
     const requestOrigin = c.req.header('origin') || '';
@@ -222,7 +246,8 @@ export function registerNotFoundHandler(app: Hono<any>, allowedOrigins = 'http:/
 export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http://localhost:3000') {
   app.onError((err: any, c) => {
     setSecurityHeaders(c);
-    logger.error('APP ERROR STACK', err, { sentry: false });
+    const statusCode = resolveAppErrorStatus(err);
+    logHandledAppError(err, c, statusCode);
 
     // Ensure CORS headers are always present on error responses.
     // app.onError creates a new response that may bypass the cors middleware's
@@ -235,7 +260,6 @@ export function registerAppErrorHandler(app: Hono<any>, allowedOrigins = 'http:/
     if (err.name === 'ContextError' || err instanceof z.ZodError || err?.statusCode === 422) {
       return c.json({ message: 'Invalid payload.', errors: err?.errors || err.message }, 422);
     }
-    const statusCode = err?.statusCode || err?.status || 500;
     if (statusCode === 429 && err?.retryAfter) {
       c.header('Retry-After', String(err.retryAfter));
     }
