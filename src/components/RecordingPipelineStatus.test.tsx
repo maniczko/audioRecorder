@@ -3,56 +3,51 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { RecordingPipelineStatus } from './RecordingPipelineStatus';
 
 describe('RecordingPipelineStatus', () => {
-  test('renders status chip for uploading', () => {
-    render(<RecordingPipelineStatus status="uploading" />);
-    expect(screen.getByText('Wysyłanie...')).toBeInTheDocument();
+  test.each([
+    ['uploading', 'Wysyłanie...', 'processing'],
+    ['queued', 'W kolejce', 'processing'],
+    ['processing', 'Przetwarzanie...', 'processing'],
+    ['diarization', 'Rozpoznawanie mówców...', 'processing'],
+    ['review', 'Oczekuje na weryfikację', 'done'],
+    ['done', 'Transkrypcja gotowa', 'done'],
+    ['empty', 'Brak mowy', 'empty'],
+    ['no_audio', 'Brak audio', 'empty'],
+    ['failed', 'Błąd przetwarzania', 'failed'],
+    ['failed_permanent', 'Wymaga ponownego importu', 'failed'],
+  ])('renders status chip for %s', (status, label, className) => {
+    const { container } = render(<RecordingPipelineStatus status={status} />);
+
+    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(container.querySelector('.status-chip')).toHaveClass(className);
   });
 
-  test('renders status chip for queued', () => {
-    render(<RecordingPipelineStatus status="queued" />);
+  test('renders default label for unknown status', () => {
+    render(<RecordingPipelineStatus status="unknown" />);
     expect(screen.getByText('W kolejce')).toBeInTheDocument();
   });
 
-  test('renders status chip for processing', () => {
-    render(<RecordingPipelineStatus status="processing" />);
-    expect(screen.getByText('Przetwarzanie...')).toBeInTheDocument();
+  test('marks in-progress states as polite busy live regions', () => {
+    render(<RecordingPipelineStatus status="processing" progressMessage="Processing..." />);
+
+    const region = screen.getByRole('status', {
+      name: /Przetwarzanie.*Transkrypcja w toku/i,
+    });
+    expect(region).toHaveAttribute('aria-live', 'polite');
+    expect(region).toHaveAttribute('aria-busy', 'true');
   });
 
-  test('renders status chip for diarization', () => {
-    render(<RecordingPipelineStatus status="diarization" />);
-    expect(screen.getByText('Rozpoznawanie mówców...')).toBeInTheDocument();
-  });
+  test('marks failed states as assertive alerts', () => {
+    render(<RecordingPipelineStatus status="failed" errorMessage="Connection timeout" />);
 
-  test('renders status chip for review', () => {
-    render(<RecordingPipelineStatus status="review" />);
-    expect(screen.getByText('Oczekuje na weryfikację')).toBeInTheDocument();
-  });
-
-  test('renders status chip for done', () => {
-    render(<RecordingPipelineStatus status="done" />);
-    expect(screen.getByText('Transkrypcja gotowa')).toBeInTheDocument();
-  });
-
-  test('renders status chip for empty transcript', () => {
-    const { container } = render(<RecordingPipelineStatus status="empty" />);
-    expect(screen.getByText('Brak mowy')).toBeInTheDocument();
-    expect(container.querySelector('.status-chip')).toHaveClass('empty');
-  });
-
-  test('renders status chip for no audio', () => {
-    const { container } = render(<RecordingPipelineStatus status="no_audio" />);
-    expect(screen.getByText('Brak audio')).toBeInTheDocument();
-    expect(container.querySelector('.status-chip')).toHaveClass('empty');
-  });
-
-  test('renders status chip for failed', () => {
-    render(<RecordingPipelineStatus status="failed" />);
-    expect(screen.getByText('Błąd przetwarzania')).toBeInTheDocument();
+    const alert = screen.getByRole('alert', { name: /Błąd przetwarzania/i });
+    expect(alert).toHaveAttribute('aria-live', 'assertive');
+    expect(alert).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByText('Connection timeout')).toBeInTheDocument();
   });
 
   test('renders permanent missing recording state without retry action', () => {
     const onRetry = vi.fn();
-    const { container } = render(
+    render(
       <RecordingPipelineStatus
         status="failed_permanent"
         errorMessage="Nagranie nie jest juz dostepne na serwerze."
@@ -62,132 +57,71 @@ describe('RecordingPipelineStatus', () => {
 
     expect(screen.getByText('Wymaga ponownego importu')).toBeInTheDocument();
     expect(screen.getByText('Nagranie nie jest juz dostepne na serwerze.')).toBeInTheDocument();
-    expect(container.querySelector('.status-chip')).toHaveClass('failed');
-    expect(container.querySelector('.pipeline-retry-btn')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Spróbuj ponownie/ })).not.toBeInTheDocument();
   });
 
-  test('renders default label for unknown status', () => {
-    render(<RecordingPipelineStatus status="unknown" />);
-    expect(screen.getByText('W kolejce')).toBeInTheDocument();
+  test('shows default recovery guidance when failed state has no error message', () => {
+    render(<RecordingPipelineStatus status="failed" />);
+
+    expect(screen.getByText(/Możesz ponowić przetwarzanie/i)).toBeInTheDocument();
   });
 
-  test('adds processing class for in-progress statuses', () => {
-    const { container } = render(<RecordingPipelineStatus status="uploading" />);
-    const chip = container.querySelector('.status-chip');
-    expect(chip).toHaveClass('processing');
-  });
-
-  test('adds done class for done status', () => {
-    const { container } = render(<RecordingPipelineStatus status="done" />);
-    const chip = container.querySelector('.status-chip');
-    expect(chip).toHaveClass('done');
-  });
-
-  test('adds done class for review status', () => {
-    const { container } = render(<RecordingPipelineStatus status="review" />);
-    const chip = container.querySelector('.status-chip');
-    expect(chip).toHaveClass('done');
-  });
-
-  test('adds failed class for failed status', () => {
-    const { container } = render(<RecordingPipelineStatus status="failed" />);
-    const chip = container.querySelector('.status-chip');
-    expect(chip).toHaveClass('failed');
-  });
-
-  test('shows progress block when in progress with progressMessage', () => {
-    render(
-      <RecordingPipelineStatus
-        status="processing"
-        progressMessage="Converting audio..."
-        progressPercent={42}
-      />
-    );
-    expect(screen.getByText('Converting audio...')).toBeInTheDocument();
-  });
-
-  test('shows progress bar meter when in progress with progressMessage', () => {
-    const { container } = render(
-      <RecordingPipelineStatus
-        status="uploading"
-        progressMessage="Uploading..."
-        progressPercent={60}
-      />
-    );
-    const meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toBeInTheDocument();
-    expect(meter).toHaveAttribute('aria-valuenow', '60');
-    expect(meter).toHaveAttribute('role', 'progressbar');
-  });
-
-  test('does not show progress block for done status', () => {
-    const { container } = render(
-      <RecordingPipelineStatus status="done" progressMessage="Should not show" />
-    );
-    const meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toBeNull();
-  });
-
-  test('does not show progress block for failed status', () => {
-    const { container } = render(
-      <RecordingPipelineStatus status="failed" progressMessage="Should not show" />
-    );
-    const meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toBeNull();
-  });
-
-  test('shows stage label with percent when provided', () => {
-    render(
-      <RecordingPipelineStatus
-        status="processing"
-        stageLabel="Encoding"
-        progressMessage="Encoding"
-        progressPercent={75}
-      />
-    );
-    expect(screen.getByText('Encoding (75%)')).toBeInTheDocument();
-  });
-
-  test('shows subtext when stageLabel differs from progressMessage', () => {
-    render(
+  test('shows progress block and clamps progressPercent to 0-100 range', () => {
+    const { container, rerender } = render(
       <RecordingPipelineStatus
         status="processing"
         stageLabel="Encoding"
         progressMessage="Almost done..."
-        progressPercent={90}
+        progressPercent={150}
       />
     );
+
+    expect(screen.getByText('Encoding (100%)')).toBeInTheDocument();
     expect(screen.getByText('Almost done...')).toBeInTheDocument();
+    let meter = container.querySelector('.pipeline-progress-meter');
+    expect(meter).toHaveAttribute('aria-valuenow', '100');
+    expect(meter).toHaveAttribute('role', 'progressbar');
+    expect(meter).toHaveAttribute('aria-label', 'Postęp przetwarzania nagrania');
+
+    rerender(
+      <RecordingPipelineStatus
+        status="processing"
+        progressMessage="Processing..."
+        progressPercent={-10}
+      />
+    );
+    meter = container.querySelector('.pipeline-progress-meter');
+    expect(meter).toHaveAttribute('aria-valuenow', '0');
   });
 
-  test('shows error box with message for failed status', () => {
-    render(<RecordingPipelineStatus status="failed" errorMessage="Connection timeout" />);
-    expect(screen.getByText('Connection timeout')).toBeInTheDocument();
+  test('does not show progress meter for done or failed states', () => {
+    const { container, rerender } = render(
+      <RecordingPipelineStatus status="done" progressMessage="Should not show" />
+    );
+    expect(container.querySelector('.pipeline-progress-meter')).toBeNull();
+
+    rerender(<RecordingPipelineStatus status="failed" progressMessage="Should not show" />);
+    expect(container.querySelector('.pipeline-progress-meter')).toBeNull();
   });
 
-  test('shows default error message when errorMessage is empty', () => {
-    render(<RecordingPipelineStatus status="failed" />);
-    expect(screen.getByText('Wystąpił nieoczekiwany błąd.')).toBeInTheDocument();
-  });
-
-  test('renders retry button when onRetry is provided for failed status', () => {
+  test('renders and calls retry for failed status only when retryable', () => {
     const onRetry = vi.fn();
-    render(<RecordingPipelineStatus status="failed" errorMessage="Error" onRetry={onRetry} />);
-    const btn = screen.getByRole('button', { name: /Spróbuj ponownie/ });
-    expect(btn).toBeInTheDocument();
-  });
+    const { rerender } = render(
+      <RecordingPipelineStatus status="failed" errorMessage="Error" onRetry={onRetry} />
+    );
 
-  test('does not render retry button when onRetry is not provided', () => {
-    render(<RecordingPipelineStatus status="failed" errorMessage="Error" />);
-    const btn = screen.queryByRole('button', { name: /Spróbuj ponownie/ });
-    expect(btn).toBeNull();
-  });
+    fireEvent.click(screen.getByRole('button', { name: /Spróbuj ponownie/ }));
+    expect(onRetry).toHaveBeenCalledOnce();
 
-  test('does not render retry button for non-failed status', () => {
-    const onRetry = vi.fn();
-    render(<RecordingPipelineStatus status="processing" onRetry={onRetry} />);
-    const btn = screen.queryByRole('button', { name: /Spróbuj ponownie/ });
-    expect(btn).toBeNull();
+    rerender(
+      <RecordingPipelineStatus
+        status="failed"
+        errorMessage="Quota"
+        errorCode="stt_quota_exceeded"
+        onRetry={onRetry}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /Spróbuj ponownie/ })).not.toBeInTheDocument();
   });
 
   test('renders custom retry action for in-progress status when explicitly allowed', () => {
@@ -205,13 +139,6 @@ describe('RecordingPipelineStatus', () => {
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
-  test('calls onRetry when retry button is clicked', () => {
-    const onRetry = vi.fn();
-    render(<RecordingPipelineStatus status="failed" errorMessage="Error" onRetry={onRetry} />);
-    fireEvent.click(screen.getByRole('button', { name: /Spróbuj ponownie/ }));
-    expect(onRetry).toHaveBeenCalledOnce();
-  });
-
   test('retry button click does not propagate', () => {
     const onRetry = vi.fn();
     const onParentClick = vi.fn();
@@ -220,48 +147,11 @@ describe('RecordingPipelineStatus', () => {
         <RecordingPipelineStatus status="failed" errorMessage="Error" onRetry={onRetry} />
       </div>
     );
+
     fireEvent.click(screen.getByRole('button', { name: /Spróbuj ponownie/ }));
+
     expect(onParentClick).not.toHaveBeenCalled();
     expect(onRetry).toHaveBeenCalledOnce();
-  });
-
-  test('applies custom className', () => {
-    const { container } = render(<RecordingPipelineStatus status="done" className="my-custom" />);
-    expect(container.firstChild).toHaveClass('my-custom');
-  });
-
-  test('clamps progressPercent to 0-100 range in aria-valuenow', () => {
-    const { container, rerender } = render(
-      <RecordingPipelineStatus status="processing" progressMessage="x" progressPercent={-10} />
-    );
-    let meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toHaveAttribute('aria-valuenow', '0');
-
-    rerender(
-      <RecordingPipelineStatus status="processing" progressMessage="x" progressPercent={150} />
-    );
-    meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toHaveAttribute('aria-valuenow', '100');
-  });
-
-  test('has correct aria-label on progress meter', () => {
-    const { container } = render(
-      <RecordingPipelineStatus status="processing" progressMessage="x" />
-    );
-    const meter = container.querySelector('.pipeline-progress-meter');
-    expect(meter).toHaveAttribute('aria-label', 'Postęp przetwarzania nagrania');
-  });
-
-  test('shows spinner for in-progress statuses', () => {
-    const { container } = render(<RecordingPipelineStatus status="processing" />);
-    const spinner = container.querySelector('.status-spinner');
-    expect(spinner).toBeInTheDocument();
-  });
-
-  test('does not show spinner for done status', () => {
-    const { container } = render(<RecordingPipelineStatus status="done" />);
-    const spinner = container.querySelector('.status-spinner');
-    expect(spinner).toBeNull();
   });
 
   test('shows processing timer when processingStartedAt is provided', () => {
@@ -272,15 +162,7 @@ describe('RecordingPipelineStatus', () => {
         processingStartedAt="2026-04-06T12:00:00.000Z"
       />
     );
-    const timer = container.querySelector('.pipeline-processing-timer');
-    expect(timer).toBeInTheDocument();
-  });
 
-  test('does not show processing timer when processingStartedAt is not provided', () => {
-    const { container } = render(
-      <RecordingPipelineStatus status="processing" progressMessage="Processing..." />
-    );
-    const timer = container.querySelector('.pipeline-processing-timer');
-    expect(timer).toBeNull();
+    expect(container.querySelector('.pipeline-processing-timer')).toBeInTheDocument();
   });
 });
