@@ -7,20 +7,36 @@ import { findForbiddenSecretLiterals, validateSecretHygiene } from './validate-s
 const repoRoot = process.cwd();
 const runbookPath = join(repoRoot, 'docs', 'SECURITY_KEY_MANAGEMENT_RUNBOOK.md');
 
+const secretLikeFixture = (...parts: string[]) => parts.join('');
+
 describe('secret hygiene validation', () => {
   it('blocks obvious production-looking secret literals', () => {
+    const openAiKey = secretLikeFixture(
+      'sk-',
+      'proj-',
+      'live_1234567890abcdefghijklmnopqrstuvwxyz'
+    );
+    const supabaseServiceRoleJwt = secretLikeFixture(
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+      '.',
+      'real',
+      '.',
+      'payload'
+    );
+    const githubPat = secretLikeFixture('github_', 'pat_', '1234567890abcdefghijklmnopqrstuvwxyz');
+
     const violations = findForbiddenSecretLiterals([
       {
         path: 'server/config.ts',
-        content: 'const leaked = "sk-proj-live_1234567890abcdefghijklmnopqrstuvwxyz";',
+        content: `const leaked = "${openAiKey}";`,
       },
       {
         path: 'docs/example.md',
-        content: 'SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real.payload',
+        content: `SUPABASE_SERVICE_ROLE_KEY=${supabaseServiceRoleJwt}`,
       },
       {
         path: 'scripts/example.mjs',
-        content: 'const token = "github_pat_1234567890abcdefghijklmnopqrstuvwxyz";',
+        content: `const token = "${githubPat}";`,
       },
     ]);
 
