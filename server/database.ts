@@ -2506,6 +2506,123 @@ export class Database {
     };
   }
 
+  sanitizeAuditExportMetadata(value: unknown): unknown {
+    const blockedKeyPattern = /transcript|audio|prompt|payload|file[_-]?path|storage[_-]?path|raw/i;
+    if (Array.isArray(value)) {
+      return value.map((item) => this.sanitizeAuditExportMetadata(item));
+    }
+    if (!value || typeof value !== 'object') {
+      return value;
+    }
+
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      if (blockedKeyPattern.test(key)) {
+        continue;
+      }
+      sanitized[key] = this.sanitizeAuditExportMetadata(nestedValue);
+    }
+    return sanitized;
+  }
+
+  async exportAuditLogs(
+    workspaceId: string,
+    options: {
+      generatedBy?: string;
+      actorUserId?: string;
+      targetActorUserId?: string;
+      eventType?: string;
+      recordingId?: string;
+      from?: string;
+      to?: string;
+      nowIso?: string;
+      limit?: number;
+    } = {}
+  ): Promise<any> {
+    const safeWorkspaceId = String(workspaceId || '').trim();
+    if (!safeWorkspaceId) throw new Error('Brakuje workspaceId.');
+
+    const generatedAt = String(options.nowIso || this.nowIso());
+    const generatedBy = String(options.generatedBy || '').trim();
+    const actorUserId = String(options.actorUserId || options.targetActorUserId || '').trim();
+    const eventType = String(options.eventType || '').trim();
+    const recordingId = String(options.recordingId || '').trim();
+    const from = String(options.from || '').trim();
+    const to = String(options.to || '').trim();
+    const limitInput = Number(options.limit ?? 5000);
+    const limit = Math.max(
+      1,
+      Math.min(5000, Math.floor(Number.isFinite(limitInput) ? limitInput : 5000))
+    );
+
+    const params: any[] = [safeWorkspaceId];
+    const filters = ['workspace_id = ?'];
+    if (from) {
+      filters.push('created_at >= ?');
+      params.push(from);
+    }
+    if (to) {
+      filters.push('created_at <= ?');
+      params.push(to);
+    }
+    if (eventType) {
+      filters.push('action = ?');
+      params.push(eventType);
+    }
+    if (actorUserId) {
+      filters.push('actor_user_id = ?');
+      params.push(actorUserId);
+    }
+    if (recordingId) {
+      filters.push('entity_type = ?', 'entity_id = ?');
+      params.push('recording', recordingId);
+    }
+
+    params.push(limit);
+    const rows = await this._query(
+      `SELECT id, workspace_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at
+       FROM audit_logs
+       WHERE ${filters.join(' AND ')}
+       ORDER BY created_at ASC, id ASC
+       LIMIT ?`,
+      params
+    );
+    const events = rows.map((entry: any) => {
+      const metadata = this.sanitizeAuditExportMetadata(
+        this._safeJsonParse(entry.metadata_json, {})
+      );
+      return {
+        id: String(entry.id || ''),
+        workspaceId: String(entry.workspace_id || ''),
+        actorUserId: String(entry.actor_user_id || ''),
+        action: String(entry.action || ''),
+        eventType: String(entry.action || ''),
+        entityType: String(entry.entity_type || ''),
+        entityId: String(entry.entity_id || ''),
+        recordingId:
+          String(entry.entity_type || '') === 'recording' ? String(entry.entity_id || '') : '',
+        metadata,
+        createdAt: String(entry.created_at || ''),
+      };
+    });
+
+    return {
+      schemaVersion: 'audit-export-v1',
+      generatedAt,
+      generatedBy,
+      filters: {
+        workspaceId: safeWorkspaceId,
+        from,
+        to,
+        eventType,
+        actorUserId,
+        recordingId,
+      },
+      eventCount: events.length,
+      events,
+    };
+  }
+
   async deleteMediaAsset(
     recordingId: string,
     workspaceId: string,

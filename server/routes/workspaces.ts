@@ -164,6 +164,47 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     return workspaceMembershipCan(membership, 'workspace:audit:read');
   }
 
+  function csvEscape(value: unknown) {
+    const text = String(value ?? '');
+    if (/[",\r\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  }
+
+  function auditExportToCsv(report: any) {
+    const columns = [
+      'id',
+      'createdAt',
+      'workspaceId',
+      'actorUserId',
+      'eventType',
+      'entityType',
+      'entityId',
+      'recordingId',
+      'metadataJson',
+    ];
+    const rows = Array.isArray(report?.events) ? report.events : [];
+    return [
+      columns.join(','),
+      ...rows.map((event: any) =>
+        [
+          event.id,
+          event.createdAt,
+          event.workspaceId,
+          event.actorUserId,
+          event.eventType,
+          event.entityType,
+          event.entityId,
+          event.recordingId,
+          JSON.stringify(event.metadata || {}),
+        ]
+          .map(csvEscape)
+          .join(',')
+      ),
+    ].join('\n');
+  }
+
   router.put('/workspaces/:workspaceId/retention', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
@@ -225,6 +266,39 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
       }),
       200
     );
+  });
+
+  router.get('/workspaces/:workspaceId/audit-logs/export', async (c) => {
+    const workspaceId = c.req.param('workspaceId');
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!requireAuditReader(membership)) {
+      return c.json(
+        { message: 'Tylko owner, admin, operator lub auditor moze eksportowac audyt.' },
+        403
+      );
+    }
+
+    const session = c.get('session') as any;
+    const format = String(c.req.query('format') || 'json')
+      .trim()
+      .toLowerCase();
+    const report = await workspaceService.exportAuditLogs(workspaceId, {
+      generatedBy: String(session?.user_id || ''),
+      actorUserId: String(c.req.query('actorUserId') || '').trim(),
+      targetActorUserId: String(c.req.query('actorUserId') || '').trim(),
+      eventType: String(c.req.query('eventType') || '').trim(),
+      recordingId: String(c.req.query('recordingId') || '').trim(),
+      from: String(c.req.query('from') || '').trim(),
+      to: String(c.req.query('to') || '').trim(),
+    });
+
+    if (format === 'csv') {
+      c.header('Content-Type', 'text/csv; charset=utf-8');
+      c.header('Content-Disposition', `attachment; filename="voicelog-audit-${workspaceId}.csv"`);
+      return c.body(auditExportToCsv(report), 200);
+    }
+
+    return c.json(report, 200);
   });
 
   router.get('/workspaces/:workspaceId/audit-logs', async (c) => {
