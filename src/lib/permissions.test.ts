@@ -3,88 +3,126 @@ import { getWorkspacePermissions, normalizeWorkspaceRole, WORKSPACE_ROLES } from
 describe('workspace permissions', () => {
   test('normalizes unknown roles to member', () => {
     expect(normalizeWorkspaceRole('viewer')).toBe('viewer');
+    expect(normalizeWorkspaceRole('operator')).toBe('operator');
+    expect(normalizeWorkspaceRole('auditor')).toBe('auditor');
     expect(normalizeWorkspaceRole('something-else')).toBe('member');
     expect(normalizeWorkspaceRole('')).toBe('member');
     expect(normalizeWorkspaceRole(null)).toBe('member');
     expect(normalizeWorkspaceRole(undefined)).toBe('member');
   });
 
-  test('WORKSPACE_ROLES contains all four roles', () => {
-    expect(WORKSPACE_ROLES).toEqual(['owner', 'admin', 'member', 'viewer']);
+  test('WORKSPACE_ROLES contains enterprise roles', () => {
+    expect(WORKSPACE_ROLES).toEqual(['owner', 'admin', 'operator', 'member', 'viewer', 'auditor']);
   });
 
   test('returns read-only permissions for viewer', () => {
-    expect(getWorkspacePermissions('viewer')).toEqual({
+    expect(getWorkspacePermissions('viewer')).toMatchObject({
       role: 'viewer',
       canEditWorkspace: false,
       canDeleteWorkspaceItems: false,
       canExportWorkspaceData: false,
       canManageWorkspaceRoles: false,
+      canRemoveWorkspaceMembers: false,
       canRecordAudio: false,
+      canReadAuditLogs: false,
+      canRunAiAnalysis: false,
     });
   });
 
   test('returns management permissions for owner', () => {
-    expect(getWorkspacePermissions('owner')).toEqual({
+    expect(getWorkspacePermissions('owner')).toMatchObject({
       role: 'owner',
       canEditWorkspace: true,
       canDeleteWorkspaceItems: true,
       canExportWorkspaceData: true,
       canManageWorkspaceRoles: true,
+      canRemoveWorkspaceMembers: true,
       canRecordAudio: true,
+      canReadAuditLogs: true,
+      canRunAiAnalysis: true,
     });
   });
 
-  test('returns admin permissions — edit and delete but NOT manage roles', () => {
-    const adminPerms = getWorkspacePermissions('admin');
-    expect(adminPerms).toEqual({
+  test('returns admin permissions for sensitive actions except member removal', () => {
+    expect(getWorkspacePermissions('admin')).toMatchObject({
       role: 'admin',
       canEditWorkspace: true,
       canDeleteWorkspaceItems: true,
       canExportWorkspaceData: true,
-      canManageWorkspaceRoles: false,
+      canManageWorkspaceRoles: true,
+      canRemoveWorkspaceMembers: false,
       canRecordAudio: true,
+      canReadAuditLogs: true,
+      canRunAiAnalysis: true,
     });
   });
 
-  test('returns member permissions — edit but NOT delete', () => {
-    const memberPerms = getWorkspacePermissions('member');
-    expect(memberPerms).toEqual({
+  test('returns operator permissions for production operations without admin powers', () => {
+    expect(getWorkspacePermissions('operator')).toMatchObject({
+      role: 'operator',
+      canEditWorkspace: true,
+      canDeleteWorkspaceItems: false,
+      canExportWorkspaceData: false,
+      canManageWorkspaceRoles: false,
+      canRemoveWorkspaceMembers: false,
+      canRecordAudio: true,
+      canReadAuditLogs: true,
+      canRunAiAnalysis: true,
+    });
+  });
+
+  test('returns member permissions for collaboration without sensitive admin actions', () => {
+    expect(getWorkspacePermissions('member')).toMatchObject({
       role: 'member',
       canEditWorkspace: true,
       canDeleteWorkspaceItems: false,
-      canExportWorkspaceData: true,
+      canExportWorkspaceData: false,
       canManageWorkspaceRoles: false,
+      canRemoveWorkspaceMembers: false,
       canRecordAudio: true,
+      canReadAuditLogs: false,
+      canRunAiAnalysis: true,
+    });
+  });
+
+  test('returns auditor permissions for audit review without content mutation', () => {
+    expect(getWorkspacePermissions('auditor')).toMatchObject({
+      role: 'auditor',
+      canEditWorkspace: false,
+      canDeleteWorkspaceItems: false,
+      canExportWorkspaceData: false,
+      canManageWorkspaceRoles: false,
+      canRemoveWorkspaceMembers: false,
+      canRecordAudio: false,
+      canReadAuditLogs: true,
+      canRunAiAnalysis: false,
     });
   });
 
   test('unknown role falls back to member permissions', () => {
-    const unknownPerms = getWorkspacePermissions('superadmin');
-    expect(unknownPerms).toEqual(getWorkspacePermissions('member'));
+    expect(getWorkspacePermissions('superadmin')).toEqual(getWorkspacePermissions('member'));
   });
 
-  test('each role has exactly 6 permission keys', () => {
+  test('each role exposes the same permission shape', () => {
     for (const role of WORKSPACE_ROLES) {
       const perms = getWorkspacePermissions(role);
-      expect(Object.keys(perms)).toHaveLength(6);
-      expect(perms).toHaveProperty('role');
-      expect(perms).toHaveProperty('canEditWorkspace');
-      expect(perms).toHaveProperty('canDeleteWorkspaceItems');
-      expect(perms).toHaveProperty('canExportWorkspaceData');
-      expect(perms).toHaveProperty('canManageWorkspaceRoles');
-      expect(perms).toHaveProperty('canRecordAudio');
+      expect(Object.keys(perms).sort()).toEqual([
+        'canDeleteWorkspaceItems',
+        'canEditWorkspace',
+        'canExportWorkspaceData',
+        'canManageWorkspaceRoles',
+        'canReadAuditLogs',
+        'canRecordAudio',
+        'canRemoveWorkspaceMembers',
+        'canRunAiAnalysis',
+        'role',
+      ]);
     }
   });
 
-  test('only owner can manage workspace roles', () => {
+  test('only owner can remove workspace members', () => {
     for (const role of WORKSPACE_ROLES) {
-      const perms = getWorkspacePermissions(role);
-      if (role === 'owner') {
-        expect(perms.canManageWorkspaceRoles).toBe(true);
-      } else {
-        expect(perms.canManageWorkspaceRoles).toBe(false);
-      }
+      expect(getWorkspacePermissions(role).canRemoveWorkspaceMembers).toBe(role === 'owner');
     }
   });
 });

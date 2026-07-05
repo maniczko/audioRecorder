@@ -4,6 +4,7 @@ import path from 'node:path';
 import { Hono } from 'hono';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
+import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 import {
@@ -116,7 +117,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.put('/state/workspaces/:workspaceId', async (c) => {
     const workspaceId = c.req.param('workspaceId');
-    await ensureWorkspaceAccess(c, workspaceId);
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!workspaceMembershipCan(membership, 'workspace:state:write')) {
+      return c.json({ message: 'Nie masz uprawnien do edycji state workspace.' }, 403);
+    }
     const body = await c.req.json().catch(() => ({}));
     return c.json(
       {
@@ -129,7 +133,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.patch('/state/workspaces/:workspaceId', async (c) => {
     const workspaceId = c.req.param('workspaceId');
-    await ensureWorkspaceAccess(c, workspaceId);
+    const membership = await ensureWorkspaceAccess(c, workspaceId);
+    if (!workspaceMembershipCan(membership, 'workspace:state:write')) {
+      return c.json({ message: 'Nie masz uprawnien do edycji state workspace.' }, 403);
+    }
     const delta = await c.req.json().catch(() => ({}));
     return withWorkspaceStatePatchLock(workspaceId, async () => {
       const currentState = normalizeWorkspaceState(
@@ -150,11 +157,11 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.use('/workspaces/*', authMiddleware);
 
   function requireWorkspaceAdmin(membership: any) {
-    return ['owner', 'admin'].includes(String(membership?.member_role || ''));
+    return workspaceMembershipCan(membership, 'workspace:retention:manage');
   }
 
   function requireAuditReader(membership: any) {
-    return ['owner', 'admin', 'operator'].includes(String(membership?.member_role || ''));
+    return workspaceMembershipCan(membership, 'workspace:audit:read');
   }
 
   router.put('/workspaces/:workspaceId/retention', async (c) => {
@@ -205,7 +212,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.get('/workspaces/:workspaceId/export', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
-    if (!requireWorkspaceAdmin(membership)) {
+    if (!workspaceMembershipCan(membership, 'workspace:export')) {
       return c.json({ message: 'Tylko owner lub admin moze eksportowac dane workspace.' }, 403);
     }
 
@@ -242,7 +249,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const workspaceId = c.req.param('workspaceId');
     const targetUserId = c.req.param('targetUserId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
-    if (!['owner', 'admin'].includes(membership.member_role)) {
+    if (!workspaceMembershipCan(membership, 'workspace:members:manage')) {
       return c.json({ message: 'Tylko owner lub admin moze zmieniac role.' }, 403);
     }
     const body = await c.req.json().catch(() => ({}));
@@ -257,7 +264,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
     const targetUserId = c.req.param('targetUserId');
     const membership = await ensureWorkspaceAccess(c, workspaceId);
     const session = c.get('session') as any;
-    if (membership.member_role !== 'owner') {
+    if (!workspaceMembershipCan(membership, 'workspace:members:remove')) {
       return c.json({ message: 'Tylko owner moze usuwac czlonkow.' }, 403);
     }
     if (session.user_id === targetUserId) {
@@ -337,6 +344,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.use('/voice-profiles/*', authMiddleware);
   router.get('/voice-profiles', async (c) => {
     const session = c.get('session') as any;
+    const membership = await ensureWorkspaceAccess(c, session.workspace_id);
+    if (!workspaceMembershipCan(membership, 'voice-profiles:read')) {
+      return c.json({ message: 'Nie masz uprawnien do przegladania profili glosowych.' }, 403);
+    }
     const profiles: VoiceProfileSummary[] = (
       await workspaceService.getWorkspaceVoiceProfiles(session.workspace_id)
     ).map((p: any) => ({
@@ -355,7 +366,10 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
 
   router.post('/voice-profiles', applyRateLimit('voice-profiles'), async (c) => {
     const session = c.get('session') as any;
-    await ensureWorkspaceAccess(c, session.workspace_id);
+    const membership = await ensureWorkspaceAccess(c, session.workspace_id);
+    if (!workspaceMembershipCan(membership, 'voice-profiles:create')) {
+      return c.json({ message: 'Nie masz uprawnien do tworzenia profili glosowych.' }, 403);
+    }
 
     const speakerName = String(c.req.header('X-Speaker-Name') || '').slice(0, 120);
     if (!speakerName.trim()) return c.json({ message: 'Brakuje naglowka X-Speaker-Name.' }, 400);
@@ -433,7 +447,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.patch('/voice-profiles/:id/threshold', async (c) => {
     const session = c.get('session') as any;
     const membership = await ensureWorkspaceAccess(c, session.workspace_id);
-    if (!requireWorkspaceAdmin(membership)) {
+    if (!workspaceMembershipCan(membership, 'voice-profiles:manage')) {
       return c.json({ message: 'Tylko owner lub admin moze zmieniac threshold.' }, 403);
     }
 
@@ -454,7 +468,7 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.delete('/voice-profiles/:id', async (c) => {
     const session = c.get('session') as any;
     const membership = await ensureWorkspaceAccess(c, session.workspace_id);
-    if (!requireWorkspaceAdmin(membership)) {
+    if (!workspaceMembershipCan(membership, 'voice-profiles:manage')) {
       return c.json({ message: 'Tylko owner lub admin moze usunac profil glosowy.' }, 403);
     }
 

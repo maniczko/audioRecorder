@@ -94,6 +94,27 @@ describe('Voice Profiles Routes', () => {
     expect(mockWorkspaceService.getWorkspaceVoiceProfiles).toHaveBeenCalledWith('w1');
   });
 
+  // -----------------------------------------------------------------
+  // Issue #1255 - enterprise RBAC for voice profile reads
+  // Date: 2026-07-04
+  // Bug: any workspace member could list voice profiles once authenticated.
+  // Fix: voice profile listing requires the explicit voice-profiles:read permission.
+  // -----------------------------------------------------------------
+  it('GET /voice-profiles - blocks auditor role without voice profile read permission', async () => {
+    mockWorkspaceService.getMembership.mockResolvedValueOnce({ member_role: 'auditor' });
+
+    const res = await app.request('/voice-profiles', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({
+      message: 'Nie masz uprawnien do przegladania profili glosowych.',
+    });
+    expect(mockWorkspaceService.getWorkspaceVoiceProfiles).not.toHaveBeenCalled();
+  });
+
   it('POST /voice-profiles - fails when X-Speaker-Name is missing', async () => {
     const res = await app.request('/voice-profiles', {
       method: 'POST',

@@ -770,4 +770,47 @@ describe('ProfileTab', () => {
       expect(screen.getByText('Developer @ Acme Inc')).toBeInTheDocument();
     });
   });
+
+  describe('Workspace RBAC actions', () => {
+    const workspaceMembers = [
+      { id: 'u1', name: 'Owner User', email: 'owner@example.com', workspaceMemberRole: 'owner' },
+      { id: 'u2', name: 'Member User', email: 'member@example.com', workspaceMemberRole: 'member' },
+    ];
+
+    it('allows admins to change roles without showing owner-only remove actions', async () => {
+      render(
+        <ProfileTab
+          {...baseProps}
+          workspaceRole="admin"
+          workspaceMembers={workspaceMembers}
+          currentUser={{ ...baseProps.currentUser, id: 'u1' }}
+          updateWorkspaceMemberRole={vi.fn()}
+          removeWorkspaceMember={vi.fn()}
+        />
+      );
+
+      await userEvent.click(screen.getByText(/Zesp/));
+
+      expect(screen.getByRole('combobox')).toHaveValue('member');
+      expect(screen.queryByTitle(/Member User z workspace/i)).not.toBeInTheDocument();
+    });
+
+    it('keeps member removal visible only for owners', async () => {
+      render(
+        <ProfileTab
+          {...baseProps}
+          workspaceRole="owner"
+          workspaceMembers={workspaceMembers}
+          currentUser={{ ...baseProps.currentUser, id: 'u1' }}
+          updateWorkspaceMemberRole={vi.fn()}
+          removeWorkspaceMember={vi.fn()}
+        />
+      );
+
+      await userEvent.click(screen.getByText(/Zesp/));
+
+      expect(screen.getByRole('combobox')).toHaveValue('member');
+      expect(screen.getByTitle(/Member User z workspace/i)).toBeInTheDocument();
+    });
+  });
 });

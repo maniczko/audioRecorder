@@ -9,7 +9,7 @@ export interface WorkspaceMembership {
   id: string;
   user_id: string;
   workspace_id: string;
-  member_role: 'owner' | 'admin' | 'member';
+  member_role: 'owner' | 'admin' | 'operator' | 'member' | 'viewer' | 'auditor';
 }
 
 export interface TranscriptSegment {

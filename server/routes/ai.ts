@@ -6,6 +6,7 @@ import type {
   AiSearchResponse,
   AiSuggestTasksRequest,
 } from '../../src/shared/contracts.ts';
+import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { AppMiddlewares } from './middleware.ts';
 import type { AppServices } from './middleware.ts';
 import { config } from '../config.ts';
@@ -255,7 +256,10 @@ export function createAiRoutes(services: AppServices, middlewares: AppMiddleware
       const { workspaceId, mustCheckMembership } = getWorkspaceContext(body, session);
 
       if (mustCheckMembership && workspaceId && typeof ensureWorkspaceAccess === 'function') {
-        await ensureWorkspaceAccess(c, workspaceId);
+        const membership = await ensureWorkspaceAccess(c, workspaceId);
+        if (!workspaceMembershipCan(membership, 'ai:analyze')) {
+          return c.json({ message: 'Nie masz uprawnien do akcji AI w tym workspace.' }, 403);
+        }
       }
 
       if (mustCheckMembership && !workspaceId) {
