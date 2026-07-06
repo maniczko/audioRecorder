@@ -104,6 +104,18 @@ vercel login
 vercel --prod
 ```
 
+#### API routing model
+
+VoiceLog uses one frontend/backend routing model for production:
+
+- `https://voicelog-audiorecorder.vercel.app` calls API paths on the same origin.
+- `vercel.json` rewrites those same-origin paths to the Railway backend.
+- Preview deployments do not silently inherit the production Railway URL. Set
+  `VITE_API_BASE_URL` explicitly in the preview environment when a preview should
+  talk to Railway or another backend.
+- A manually configured `VITE_API_BASE_URL` or `REACT_APP_API_BASE_URL` always
+  wins over runtime defaults.
+
 ### Heroku
 
 ```bash
