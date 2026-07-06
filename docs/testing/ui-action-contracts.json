@@ -45,7 +45,7 @@
       "screen": "Studio",
       "file": "src/studio/StudioMeetingView.tsx",
       "expectedActionCount": 85,
-      "fingerprint": "e7cad833c3864703",
+      "fingerprint": "39881f0c4d741c2c",
       "contractStatus": "covered",
       "testFiles": ["src/studio/StudioMeetingView.test.tsx"],
       "testEvidence": [

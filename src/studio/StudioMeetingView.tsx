@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock3,
+  Copy,
   FileText,
   Mic2,
   MoreVertical,
@@ -1272,6 +1273,7 @@ export default function StudioMeetingView({
   };
 
   const [transcriptSearch, setTranscriptSearch] = useState('');
+  const [copiedTranscriptSegmentId, setCopiedTranscriptSegmentId] = useState<string | null>(null);
   // Speaker picker dropdown — tracks which segment's dropdown is open
   const [speakerDropdownSegId, setSpeakerDropdownSegId] = useState<string | null>(null);
   // Rename flow (triggered from within the dropdown)
@@ -1664,6 +1666,36 @@ export default function StudioMeetingView({
     if (!q) return transcript;
     return transcript.filter((s) => s.text?.toLowerCase().includes(q));
   }, [transcript, transcriptSearch]);
+
+  const copyTranscriptSegment = useCallback(async (segment: any, speakerName: string) => {
+    const text = String(segment?.text ?? '').trim();
+    if (!text) return;
+    const timestamp = Number.isFinite(Number(segment?.timestamp))
+      ? formatDuration(Math.floor(Number(segment.timestamp)))
+      : '00:00';
+    const payload = `${speakerName} ${timestamp}\n${text}`;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payload);
+      }
+    } catch {
+      return;
+    }
+
+    const segmentId = String(segment?.id ?? timestamp);
+    setCopiedTranscriptSegmentId(segmentId);
+    window.setTimeout(() => {
+      setCopiedTranscriptSegmentId((current) => (current === segmentId ? null : current));
+    }, 1600);
+  }, []);
+
+  const focusTranscriptSegmentEditor = useCallback((button: HTMLButtonElement) => {
+    const segment = button.closest('.fireflies-segment');
+    const textarea = segment?.querySelector<HTMLTextAreaElement>('.fireflies-textarea');
+    textarea?.focus();
+  }, []);
+
   // All unique speaker IDs in the current recording's transcript
   const uniqueSpeakers = useMemo(() => {
     const seen = new Map();
@@ -2968,7 +3000,7 @@ export default function StudioMeetingView({
                 )}
 
                 {studioAnalysis?.summary || isEditingAnalysis ? (
-                  <div className="panel-body ff-summary-layout">
+                  <div className="panel-body ff-summary-layout ff-summary-sectioned">
                     <div className="summary-hero">
                       {/*
                          We render a single <ul className="summary-highlights"> for the blocks.
@@ -3028,7 +3060,7 @@ export default function StudioMeetingView({
                     </div>
 
                     <div
-                      className={`summary-grid${!isEditingAnalysis ? ' summary-grid-meta-only' : ''}`}
+                      className={`summary-grid summary-grid-sectioned${!isEditingAnalysis ? ' summary-grid-meta-only' : ''}`}
                     >
                       <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
@@ -3108,7 +3140,7 @@ export default function StudioMeetingView({
                         </div>
                       </section>
 
-                      <section className="summary-card">
+                      <section className="summary-card summary-card-priority">
                         <div className="summary-card-head">
                           <h3>Decyzje</h3>
                           {safeArray(studioAnalysis.decisions).length > 0 && (
@@ -3153,7 +3185,7 @@ export default function StudioMeetingView({
                           <p className="soft-copy">Brak wykrytych decyzji.</p>
                         )}
                       </section>
-                      <section className="summary-card">
+                      <section className="summary-card summary-card-priority">
                         <div className="summary-card-head">
                           <h3>Action items</h3>
                           {actionItems.length > 0 && <span>{actionItems.length}</span>}
@@ -4113,7 +4145,7 @@ export default function StudioMeetingView({
               </svg>
               <input
                 type="text"
-                placeholder="Szukaj lub zamień..."
+                placeholder="Szukaj w transkrypcji..."
                 value={transcriptSearch}
                 onChange={(e) => setTranscriptSearch(e.target.value)}
               />
@@ -4205,6 +4237,7 @@ export default function StudioMeetingView({
                     <div
                       key={seg.id}
                       className={`fireflies-segment${isActive ? ' active' : ''} fireflies-segment-spaced`}
+                      aria-current={isActive ? 'true' : undefined}
                     >
                       <div className="fireflies-avatar" style={{ background: color }}>
                         {letter}
@@ -4375,45 +4408,24 @@ export default function StudioMeetingView({
                           <button
                             type="button"
                             className="icon-button"
-                            aria-label="Copy"
-                            title="Kopiuj"
+                            aria-label={`Kopiuj segment ${formatDuration(Math.floor(seg.timestamp))}`}
+                            title="Kopiuj segment"
+                            onClick={() => copyTranscriptSegment(seg, name)}
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              viewBox="0 0 24 24"
-                            >
-                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                            </svg>
+                            {copiedTranscriptSegmentId === String(seg.id) ? (
+                              <CheckCircle2 size={14} aria-hidden="true" />
+                            ) : (
+                              <Copy size={14} aria-hidden="true" />
+                            )}
                           </button>
                           <button
                             type="button"
                             className="icon-button"
-                            aria-label="Create Soundbite"
-                            title="Soundbite"
+                            aria-label={`Edytuj segment ${formatDuration(Math.floor(seg.timestamp))}`}
+                            title="Edytuj segment"
+                            onClick={(event) => focusTranscriptSegmentEditor(event.currentTarget)}
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                              <line x1="12" x2="12" y1="19" y2="22" />
-                            </svg>
+                            <PenTool size={14} aria-hidden="true" />
                           </button>
                         </div>
                       </div>
