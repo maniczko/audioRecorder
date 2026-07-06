@@ -31,7 +31,7 @@ function readEnv(key: string, fallback = '') {
   return fallback;
 }
 
-const RAILWAY_API_BASE_URL = 'https://audiorecorder-production.up.railway.app';
+const RAILWAY_API_BASE_URL = 'https://voicelog-production.up.railway.app';
 
 function readMode(value, fallback = 'local') {
   const normalized = String(value || '')

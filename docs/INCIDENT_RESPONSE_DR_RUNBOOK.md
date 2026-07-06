@@ -61,8 +61,8 @@ pnpm run test:e2e:production-system
 Useful manual checks:
 
 ```powershell
-curl https://audiorecorder-production.up.railway.app/health
-curl https://audiorecorder-production.up.railway.app/api/capabilities
+curl https://voicelog-production.up.railway.app/health
+curl https://voicelog-production.up.railway.app/api/capabilities
 gh run list --repo maniczko/audioRecorder --limit 10
 gh pr checks <PR_NUMBER> --repo maniczko/audioRecorder --watch=false
 ```
@@ -91,7 +91,7 @@ Symptoms:
 Checks:
 
 ```powershell
-curl https://audiorecorder-production.up.railway.app/health
+curl https://voicelog-production.up.railway.app/health
 pnpm run release:prod-smoke
 pnpm run errors:railway
 gh run list --repo maniczko/audioRecorder --workflow backend-production-smoke.yml --limit 5
@@ -115,7 +115,7 @@ Symptoms:
 Checks:
 
 ```powershell
-curl https://audiorecorder-production.up.railway.app/api/capabilities
+curl https://voicelog-production.up.railway.app/api/capabilities
 pnpm run release:audio-prod-smoke
 pnpm run errors:railway
 ```
@@ -140,7 +140,7 @@ Symptoms:
 Checks:
 
 ```powershell
-curl https://audiorecorder-production.up.railway.app/health
+curl https://voicelog-production.up.railway.app/health
 pnpm run verify:supabase:workspace
 pnpm run release:audio-prod-smoke
 ```
@@ -164,7 +164,7 @@ Symptoms:
 Checks:
 
 ```powershell
-curl https://audiorecorder-production.up.railway.app/health
+curl https://voicelog-production.up.railway.app/health
 pnpm run release:prod-smoke
 pnpm run verify:supabase:workspace
 ```

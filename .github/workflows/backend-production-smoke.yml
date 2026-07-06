@@ -26,7 +26,7 @@ jobs:
       contents: read
       issues: write
     env:
-      VOICELOG_SMOKE_BASE_URL: ${{ secrets.VOICELOG_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
+      VOICELOG_SMOKE_BASE_URL: ${{ secrets.VOICELOG_SMOKE_BASE_URL || 'https://voicelog-production.up.railway.app' }}
       VOICELOG_SMOKE_TOKEN: ${{ secrets.VOICELOG_SMOKE_TOKEN }}
       VOICELOG_SMOKE_EMAIL: ${{ secrets.VOICELOG_SMOKE_EMAIL }}
       VOICELOG_SMOKE_PASSWORD: ${{ secrets.VOICELOG_SMOKE_PASSWORD }}
@@ -84,7 +84,7 @@ jobs:
           echo "Starting smoke test..."
           pnpm run test:smoke
         env:
-          SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
+          SMOKE_TEST_URL: https://voicelog-production.up.railway.app/health
           EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
           REQUIRE_EXACT_GIT_SHA: 'true'
           SMOKE_MAX_RETRIES: '30'
@@ -132,7 +132,7 @@ jobs:
           echo "Checking Railway deployment status..."
           curl -v "$SMOKE_TEST_URL" || echo "Railway not responding"
         env:
-          SMOKE_TEST_URL: https://audiorecorder-production.up.railway.app/health
+          SMOKE_TEST_URL: https://voicelog-production.up.railway.app/health
         continue-on-error: true
 
       - name: Create GitHub issue on production crash

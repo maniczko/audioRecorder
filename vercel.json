@@ -6,47 +6,47 @@
   "rewrites": [
     {
       "source": "/health",
-      "destination": "https://audiorecorder-production.up.railway.app/health"
+      "destination": "https://voicelog-production.up.railway.app/health"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/api/:path*"
+      "destination": "https://voicelog-production.up.railway.app/api/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/auth/:path*"
+      "destination": "https://voicelog-production.up.railway.app/auth/:path*"
     },
     {
       "source": "/users/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/users/:path*"
+      "destination": "https://voicelog-production.up.railway.app/users/:path*"
     },
     {
       "source": "/workspaces/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/workspaces/:path*"
+      "destination": "https://voicelog-production.up.railway.app/workspaces/:path*"
     },
     {
       "source": "/state/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/state/:path*"
+      "destination": "https://voicelog-production.up.railway.app/state/:path*"
     },
     {
       "source": "/voice-profiles",
-      "destination": "https://audiorecorder-production.up.railway.app/voice-profiles"
+      "destination": "https://voicelog-production.up.railway.app/voice-profiles"
     },
     {
       "source": "/voice-profiles/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/voice-profiles/:path*"
+      "destination": "https://voicelog-production.up.railway.app/voice-profiles/:path*"
     },
     {
       "source": "/media/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/media/:path*"
+      "destination": "https://voicelog-production.up.railway.app/media/:path*"
     },
     {
       "source": "/transcribe",
-      "destination": "https://audiorecorder-production.up.railway.app/transcribe"
+      "destination": "https://voicelog-production.up.railway.app/transcribe"
     },
     {
       "source": "/ai/:path*",
-      "destination": "https://audiorecorder-production.up.railway.app/ai/:path*"
+      "destination": "https://voicelog-production.up.railway.app/ai/:path*"
     }
   ],
   "headers": [

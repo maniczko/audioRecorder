@@ -786,6 +786,15 @@ describe('release readiness gates', () => {
     ]) {
       expect(rewriteSources).toContain(source);
     }
+
+    for (const rewrite of vercelConfig.rewrites || []) {
+      expect(String(rewrite.destination || '')).toContain(
+        'https://voicelog-production.up.railway.app'
+      );
+      expect(String(rewrite.destination || '')).not.toContain(
+        'https://audiorecorder-production.up.railway.app'
+      );
+    }
   });
 
   it('keeps the error monitor issue-driven instead of committing root TASK_QUEUE.md', () => {

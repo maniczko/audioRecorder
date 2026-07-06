@@ -116,7 +116,7 @@ describe('GitHub workflows validation', () => {
     const content = readFileSync(workflowPath, 'utf8');
 
     expect(existsSync(workflowPath)).toBe(true);
-    expect(content).toContain('uses: actions/checkout@v6');
+    expect(content).toContain('uses: actions/checkout@v7');
     expect(content).toContain('uses: github/codeql-action/init@v4');
     expect(content).toContain('uses: github/codeql-action/analyze@v4');
     expect(content).toContain('queries: +security-and-quality');
@@ -272,7 +272,7 @@ describe('GitHub workflows validation', () => {
     expect(installStep?.run).toContain('pnpm install --frozen-lockfile --ignore-scripts');
     expect(debugStep?.if).toBe("failure() && steps.smoke.outcome == 'failure'");
     expect(debugStep?.env?.SMOKE_TEST_URL).toBe(
-      'https://audiorecorder-production.up.railway.app/health'
+      'https://voicelog-production.up.railway.app/health'
     );
   });
 
@@ -402,7 +402,7 @@ describe('GitHub workflows validation', () => {
       'GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}'
     );
     expect(content).toContain(
-      'https://audiorecorder-production.up.railway.app/integrations/google/callback'
+      'https://voicelog-production.up.railway.app/integrations/google/callback'
     );
     expect(content).toContain('--skip-deploys');
     expect(content).toContain('--stdin');
@@ -411,11 +411,30 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('localhost');
   });
 
+  it('keeps production Railway health checks on the current backend domain', () => {
+    const checkedFiles = [
+      '.github/workflows/railway-build-metadata.yml',
+      '.github/workflows/backend-production-smoke.yml',
+      '.github/workflows/railway-sync-google-oauth.yml',
+      'scripts/fetch-railway-errors.js',
+      'scripts/monitor-external-services.js',
+      'src/services/config.ts',
+      'vercel.json',
+    ];
+
+    for (const fileName of checkedFiles) {
+      const content = readFileSync(path.resolve(fileName), 'utf8');
+
+      expect(content, fileName).toContain('https://voicelog-production.up.railway.app');
+      expect(content, fileName).not.toContain('https://audiorecorder-production.up.railway.app');
+    }
+  });
+
   it('checks out the error monitor workflow with the built-in GitHub token', () => {
     const workflowPath = path.join(workflowDir, 'error-monitor-and-task-creator.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
-    expect(content).toContain('actions/checkout@v6');
+    expect(content).toContain('actions/checkout@v7');
     expect(content).toContain('github.token');
     expect(content).not.toContain('secrets.GH_PAT');
     expect(content).not.toContain('secrets.GITHUB_TOKEN');
@@ -425,7 +444,7 @@ describe('GitHub workflows validation', () => {
     const workflowPath = path.join(workflowDir, 'task-queue-auto-assign.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
-    expect(content).toContain('actions/checkout@v6');
+    expect(content).toContain('actions/checkout@v7');
     expect(content).toContain("git push origin HEAD:${{ github.ref_name || 'main' }}");
     expect(content).not.toContain('secrets.GH_PAT');
     expect(content).not.toContain('secrets.GITHUB_TOKEN');

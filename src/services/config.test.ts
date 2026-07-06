@@ -31,14 +31,14 @@ describe('services/config resolveApiBaseUrl', () => {
   });
 
   it('uses configured API URL directly on Vercel preview runtime', async () => {
-    process.env.VITE_API_BASE_URL = 'https://audiorecorder-production.up.railway.app';
+    process.env.VITE_API_BASE_URL = 'https://voicelog-production.up.railway.app';
     delete process.env.REACT_APP_API_BASE_URL;
     setWindowOrigin('https://audiorecorder-preview.vercel.app');
 
     const config = await import('./config');
 
-    expect(config.API_BASE_URL).toBe('https://audiorecorder-production.up.railway.app');
-    expect(config.MEDIA_API_BASE_URL).toBe('https://audiorecorder-production.up.railway.app');
+    expect(config.API_BASE_URL).toBe('https://voicelog-production.up.railway.app');
+    expect(config.MEDIA_API_BASE_URL).toBe('https://voicelog-production.up.railway.app');
   });
 
   it('falls back to Railway directly on hosted Vercel when API URL is missing', async () => {
@@ -48,7 +48,7 @@ describe('services/config resolveApiBaseUrl', () => {
 
     const config = await import('./config');
 
-    expect(config.API_BASE_URL).toBe('https://audiorecorder-production.up.railway.app');
+    expect(config.API_BASE_URL).toBe('https://voicelog-production.up.railway.app');
   });
 
   it('allows overriding the direct media API base URL', async () => {
