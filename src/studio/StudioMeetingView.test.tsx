@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 
 const apiRequestMock = vi.hoisted(() => vi.fn());
 const remoteApiEnabledMock = vi.hoisted(() => vi.fn(() => false));
+const clipboardWriteTextMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 
 // Mock dependencies that we don't need to test for basic rendering
 vi.mock('./RecorderPanel', () => ({ default: () => <div data-testid="recorder-panel" /> }));
@@ -36,6 +37,11 @@ describe('StudioMeetingView', () => {
   beforeEach(() => {
     apiRequestMock.mockReset();
     remoteApiEnabledMock.mockReturnValue(false);
+    clipboardWriteTextMock.mockClear();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: clipboardWriteTextMock },
+    });
   });
 
   const sampleFeedback = {
@@ -1747,6 +1753,48 @@ describe('StudioMeetingView', () => {
       screen.getByDisplayValue('Transkrypcja z wybranego nagrania ma zostac widoczna.')
     ).toBeInTheDocument();
     expect(screen.queryByText(/Brak transkrypcji/i)).not.toBeInTheDocument();
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #1398 - Transcript segment workspace actions
+  // Date: 2026-07-06
+  // Bug: transcript segment actions were visible chrome without actionable copy
+  //      behavior, and the search placeholder did not name transcript search.
+  // Fix: copy/edit actions are keyboard-focusable and search copy is explicit.
+  // -----------------------------------------------------------------
+  test('Regression: Issue #1398 - segment actions copy text and focus editor', async () => {
+    renderWithContext(
+      <StudioMeetingView
+        {...defaultProps}
+        displayRecording={{
+          id: 'rec-transcript-actions',
+          transcript: [
+            {
+              id: 'seg-actions',
+              speakerId: '0',
+              text: 'Segment do szybkiego przegladu.',
+              timestamp: 0,
+              endTimestamp: 4,
+            },
+          ],
+          duration: 120,
+          pipelineStatus: 'done',
+        }}
+      />
+    );
+
+    expect(screen.getByPlaceholderText(/Szukaj w transkrypcji/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Kopiuj segment 00:00/i }));
+    await waitFor(() => {
+      expect(clipboardWriteTextMock).toHaveBeenCalledWith(
+        expect.stringContaining('Segment do szybkiego przegladu.')
+      );
+    });
+
+    const editor = screen.getByDisplayValue('Segment do szybkiego przegladu.');
+    fireEvent.click(screen.getByRole('button', { name: /Edytuj segment 00:00/i }));
+    expect(editor).toHaveFocus();
   });
 
   test('Regression: playback controls remain visible for display recording audio without selected recording', () => {

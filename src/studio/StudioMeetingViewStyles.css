@@ -4922,6 +4922,48 @@
   margin-bottom: 10px;
 }
 
+.transcript-list-fill .fireflies-segment {
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.transcript-list-fill .fireflies-segment.active {
+  border-color: rgba(28, 141, 122, 0.24);
+  background: rgba(28, 141, 122, 0.08);
+  box-shadow:
+    inset 3px 0 0 rgba(28, 141, 122, 0.78),
+    0 10px 26px rgba(28, 141, 122, 0.08);
+}
+
+.transcript-list-fill .fireflies-segment:focus-within {
+  border-color: rgba(28, 141, 122, 0.28);
+  background: rgba(28, 141, 122, 0.06);
+}
+
+.transcript-list-fill .fireflies-segment:focus-within .fireflies-actions,
+.transcript-list-fill .fireflies-actions:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.transcript-list-fill .fireflies-actions .icon-button:focus-visible,
+.transcript-list-fill .fireflies-time:focus-visible,
+.transcript-list-fill .ff-speaker-trigger:focus-visible {
+  outline: 2px solid rgba(28, 141, 122, 0.42);
+  outline-offset: 2px;
+}
+
+.transcript-list-fill .fireflies-actions .icon-button {
+  border: 1px solid rgba(28, 141, 122, 0.12);
+  background: rgba(255, 255, 252, 0.72);
+}
+
+.transcript-list-fill .fireflies-actions .icon-button:hover,
+.transcript-list-fill .fireflies-actions .icon-button:focus-visible {
+  background: rgba(28, 141, 122, 0.12);
+  color: #087062;
+}
+
 .ff-speaker-picker-inline {
   display: flex;
   align-items: center;
