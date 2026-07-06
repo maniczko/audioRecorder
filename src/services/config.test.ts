@@ -41,14 +41,21 @@ describe('services/config resolveApiBaseUrl', () => {
     expect(config.MEDIA_API_BASE_URL).toBe('https://voicelog-production.up.railway.app');
   });
 
-  it('falls back to Railway directly on hosted Vercel when API URL is missing', async () => {
+  it('does not silently point Vercel previews at production Railway when API URL is missing', async () => {
     vi.stubEnv('VITE_API_BASE_URL', '');
     vi.stubEnv('REACT_APP_API_BASE_URL', '');
+    vi.stubEnv('VITE_MEDIA_API_BASE_URL', '');
+    vi.stubEnv('REACT_APP_MEDIA_API_BASE_URL', '');
+    vi.stubEnv('VITE_DATA_PROVIDER', '');
+    vi.stubEnv('REACT_APP_DATA_PROVIDER', '');
     setWindowOrigin('https://audiorecorder-preview.vercel.app');
 
     const config = await import('./config');
 
-    expect(config.API_BASE_URL).toBe('https://voicelog-production.up.railway.app');
+    expect(config.API_BASE_URL).toBe('');
+    expect(config.MEDIA_API_BASE_URL).toBe('');
+    expect(config.APP_DATA_PROVIDER).toBe('local');
+    expect(config.remoteApiEnabled()).toBe(false);
   });
 
   it('allows overriding the direct media API base URL', async () => {
@@ -70,13 +77,19 @@ describe('services/config resolveApiBaseUrl', () => {
     expect(config.API_BASE_URL).toBe('http://127.0.0.1:4000');
   });
 
-  it('forces remote data provider on hosted HTTPS runtime so new accounts use Supabase-backed API', async () => {
+  it('uses same-origin API routing on the stable production Vercel domain', async () => {
     vi.stubEnv('VITE_DATA_PROVIDER', 'local');
     vi.stubEnv('REACT_APP_DATA_PROVIDER', 'local');
+    vi.stubEnv('VITE_API_BASE_URL', '');
+    vi.stubEnv('REACT_APP_API_BASE_URL', '');
+    vi.stubEnv('VITE_MEDIA_API_BASE_URL', '');
+    vi.stubEnv('REACT_APP_MEDIA_API_BASE_URL', '');
     setWindowOrigin('https://voicelog-audiorecorder.vercel.app');
 
     const config = await import('./config');
 
+    expect(config.API_BASE_URL).toBe('https://voicelog-audiorecorder.vercel.app');
+    expect(config.MEDIA_API_BASE_URL).toBe('https://voicelog-audiorecorder.vercel.app');
     expect(config.APP_DATA_PROVIDER).toBe('remote');
     expect(config.remoteApiEnabled()).toBe(true);
   });

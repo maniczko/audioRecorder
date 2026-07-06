@@ -31,7 +31,7 @@ function readEnv(key: string, fallback = '') {
   return fallback;
 }
 
-const RAILWAY_API_BASE_URL = 'https://voicelog-production.up.railway.app';
+const STABLE_VERCEL_HOSTNAME = 'voicelog-audiorecorder.vercel.app';
 
 function readMode(value, fallback = 'local') {
   const normalized = String(value || '')
@@ -40,11 +40,28 @@ function readMode(value, fallback = 'local') {
   return normalized === 'remote' ? 'remote' : fallback;
 }
 
-function isHostedPreviewRuntime() {
+function isStableProductionVercelRuntime() {
   if (typeof window === 'undefined') {
     return false;
   }
-  return /^https:\/\/[a-z0-9.-]+\.vercel\.app$/i.test(String(window.location.origin || ''));
+  const location = window.location;
+  return (
+    String(location?.protocol || '') === 'https:' &&
+    String(location?.hostname || '').toLowerCase() === STABLE_VERCEL_HOSTNAME
+  );
+}
+
+function isHostedVercelPreviewRuntime() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  const location = window.location;
+  const hostname = String(location?.hostname || '').toLowerCase();
+  return (
+    String(location?.protocol || '') === 'https:' &&
+    hostname.endsWith('.vercel.app') &&
+    hostname !== STABLE_VERCEL_HOSTNAME
+  );
 }
 
 function isHostedBrowserRuntime() {
@@ -66,6 +83,19 @@ function isHostedBrowserRuntime() {
 function readDefaultApiBaseUrl() {
   const env = (import.meta as any).env;
   const isProd = Boolean(env?.PROD);
+
+  if (isHostedVercelPreviewRuntime()) {
+    return '';
+  }
+
+  if (
+    isStableProductionVercelRuntime() &&
+    typeof window !== 'undefined' &&
+    window.location?.origin
+  ) {
+    return window.location.origin;
+  }
+
   if (!isProd) {
     if (typeof window !== 'undefined' && window.location?.hostname) {
       const hostname = window.location.hostname;
@@ -76,8 +106,8 @@ function readDefaultApiBaseUrl() {
     return 'http://localhost:4000';
   }
 
-  // In deployed frontend builds we proxy API paths through the same origin.
-  if (typeof window !== 'undefined' && window.location?.origin) {
+  // Stable production and custom hosted frontends proxy API paths through the same origin.
+  if (isProd && typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
 
@@ -88,10 +118,6 @@ function resolveApiBaseUrl() {
   const configuredValue = String(
     readEnv('VITE_API_BASE_URL') || readEnv('REACT_APP_API_BASE_URL') || ''
   ).trim();
-
-  if (isHostedPreviewRuntime()) {
-    return configuredValue || RAILWAY_API_BASE_URL;
-  }
 
   return configuredValue || readDefaultApiBaseUrl();
 }
@@ -105,7 +131,7 @@ function hasExplicitApiBaseUrl() {
 const RAW_API_BASE_URL = String(resolveApiBaseUrl()).trim();
 
 export const APP_DATA_PROVIDER = readMode(
-  isHostedBrowserRuntime()
+  isHostedBrowserRuntime() && RAW_API_BASE_URL
     ? 'remote'
     : hasExplicitApiBaseUrl()
       ? 'remote'
@@ -120,9 +146,7 @@ export const MEDIA_PIPELINE_PROVIDER = readMode(
 
 export const API_BASE_URL = RAW_API_BASE_URL;
 export const MEDIA_API_BASE_URL = String(
-  readEnv('VITE_MEDIA_API_BASE_URL') ||
-    readEnv('REACT_APP_MEDIA_API_BASE_URL') ||
-    (isHostedPreviewRuntime() ? RAILWAY_API_BASE_URL : API_BASE_URL)
+  readEnv('VITE_MEDIA_API_BASE_URL') || readEnv('REACT_APP_MEDIA_API_BASE_URL') || API_BASE_URL
 ).trim();
 
 export function apiBaseUrlConfigured() {
