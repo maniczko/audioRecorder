@@ -3,7 +3,12 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { CheckCircle2, RotateCcw, Trash2, X } from 'lucide-react';
 import { useToast } from './shared/Toast';
 import { PageShell, SplitPane } from './ui/LayoutPrimitives';
-import { buildTaskGroups, taskListStats } from './lib/tasks';
+import {
+  buildTaskGroups,
+  getTaskLifecycleStatus,
+  TASK_LIFECYCLE_STATUSES,
+  taskListStats,
+} from './lib/tasks';
 import TaskDetailsPanel from './tasks/TaskDetailsPanel';
 import TasksSidebar from './tasks/TasksSidebar';
 import TasksWorkspaceView from './tasks/TasksWorkspaceView';
@@ -118,12 +123,18 @@ export default function TasksTab({
   }, [selectedListId]);
 
   const taskGroups = useMemo(() => buildTaskGroups(tasks), [tasks]);
-  const stats = useMemo(() => taskListStats(tasks), [tasks]);
+  const stats = useMemo(() => taskListStats(tasks, boardColumns), [boardColumns, tasks]);
   const sidebarLists = useMemo(() => buildSidebarLists(tasks, boardColumns), [tasks, boardColumns]);
 
   const visibleTasks = useMemo(() => {
     const filtered = applyMainListFilter(tasks, selectedListId, boardColumns).filter((task) => {
-      if (task._softDeleted) return false;
+      const lifecycle = getTaskLifecycleStatus(task, boardColumns, tasks);
+      if (
+        lifecycle === TASK_LIFECYCLE_STATUSES.DELETE_PENDING ||
+        lifecycle === TASK_LIFECYCLE_STATUSES.ARCHIVED
+      ) {
+        return false;
+      }
       if (
         ownerFilter === 'me' &&
         !(
@@ -176,7 +187,10 @@ export default function TasksTab({
     tasks,
   ]);
 
-  const visibleStats = useMemo(() => taskListStats(visibleTasks), [visibleTasks]);
+  const visibleStats = useMemo(
+    () => taskListStats(visibleTasks, boardColumns),
+    [boardColumns, visibleTasks]
+  );
 
   useEffect(() => {
     if (!visibleTasks.length) {
@@ -255,7 +269,13 @@ export default function TasksTab({
     () =>
       boardColumns.map((column) => ({
         ...column,
-        tasks: visibleTasks.filter((task) => task.status === column.id),
+        tasks: visibleTasks.filter((task) => {
+          const lifecycle = getTaskLifecycleStatus(task, boardColumns, visibleTasks);
+          if (column.isDone) {
+            return lifecycle === TASK_LIFECYCLE_STATUSES.DONE;
+          }
+          return task.status === column.id && lifecycle !== TASK_LIFECYCLE_STATUSES.DONE;
+        }),
       })),
     [boardColumns, visibleTasks]
   );

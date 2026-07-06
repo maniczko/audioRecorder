@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { AlignLeft, History, Link, Trash2 } from 'lucide-react';
 import { formatDateTime } from '../lib/storage';
+import { getTaskLifecycleStatus, TASK_LIFECYCLE_STATUSES } from '../lib/tasks';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
 import MentionTextarea from '../shared/MentionTextarea';
@@ -113,6 +114,11 @@ function TaskDetailsPanel(props: any) {
   }
 
   const selectedTaskDraft = buildSelectedTaskDraft(selectedTask, boardColumns);
+  const selectedTaskLifecycle = getTaskLifecycleStatus(selectedTask, boardColumns, [selectedTask]);
+  const selectedTaskDone = selectedTaskLifecycle === TASK_LIFECYCLE_STATUSES.DONE;
+  const selectedTaskDoneLabel = selectedTaskDone
+    ? 'Oznacz jako nieukonczone'
+    : 'Oznacz jako ukonczone';
   const peopleSuggestions = normalizePeopleSuggestions(peopleOptions);
   const sharedTaskForm = (
     <TaskCreateForm
@@ -152,17 +158,12 @@ function TaskDetailsPanel(props: any) {
             <div className="todo-detail-title-row">
               <button
                 type="button"
-                className={
-                  selectedTask.completed ? 'todo-task-checkbox checked' : 'todo-task-checkbox'
-                }
-                aria-label={
-                  selectedTask.completed ? 'Oznacz jako nieukończone' : 'Oznacz jako ukończone'
-                }
-                onClick={() =>
-                  onUpdateTask(selectedTask.id, { completed: !selectedTask.completed })
-                }
+                className={selectedTaskDone ? 'todo-task-checkbox checked' : 'todo-task-checkbox'}
+                title={selectedTaskDoneLabel}
+                aria-label={selectedTaskDoneLabel}
+                onClick={() => onUpdateTask(selectedTask.id, { completed: !selectedTaskDone })}
               >
-                {selectedTask.completed ? '✓' : ''}
+                {selectedTaskDone ? '✓' : ''}
               </button>
               <span className="todo-detail-current-title">{selectedTask.title}</span>
             </div>

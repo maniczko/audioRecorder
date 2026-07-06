@@ -1,4 +1,9 @@
-import { getTaskOrder, TASK_PRIORITIES } from '../lib/tasks';
+import {
+  getTaskLifecycleStatus,
+  getTaskOrder,
+  TASK_LIFECYCLE_STATUSES,
+  TASK_PRIORITIES,
+} from '../lib/tasks';
 
 export function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -65,6 +70,39 @@ function statusLabel(status, boardColumns) {
   return boardColumns.find((column) => column.id === status)?.label || status;
 }
 
+function taskLifecycle(task, boardColumns, allTasks) {
+  return getTaskLifecycleStatus(task, boardColumns, allTasks);
+}
+
+function isOpenLifecycle(lifecycle) {
+  return ![
+    TASK_LIFECYCLE_STATUSES.DONE,
+    TASK_LIFECYCLE_STATUSES.ARCHIVED,
+    TASK_LIFECYCLE_STATUSES.DELETE_PENDING,
+  ].includes(lifecycle);
+}
+
+function isDoneColumn(column, boardColumns) {
+  if (!column) {
+    return false;
+  }
+  const id = String(column.id || '').toLowerCase();
+  const label = String(column.label || '').toLowerCase();
+  if (
+    column.isDone ||
+    id === 'done' ||
+    id === 'completed' ||
+    /(^|\s)(done|completed)($|\s)/.test(label) ||
+    label.includes('zakoncz') ||
+    label.includes('zakończ') ||
+    label.includes('ukoncz') ||
+    label.includes('ukończ')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function buildSidebarLists(tasks, boardColumns) {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -74,13 +112,13 @@ export function buildSidebarLists(tasks, boardColumns) {
   weekEnd.setDate(todayStart.getDate() + 7);
 
   const isDueToday = (task) => {
-    if (!task.dueDate || task.completed) return false;
+    if (!task.dueDate || !isOpenLifecycle(taskLifecycle(task, boardColumns, tasks))) return false;
     const due = new Date(task.dueDate).getTime();
     return due >= todayStart.getTime() && due < tomorrowStart.getTime();
   };
 
   const isDueThisWeek = (task) => {
-    if (!task.dueDate || task.completed) return false;
+    if (!task.dueDate || !isOpenLifecycle(taskLifecycle(task, boardColumns, tasks))) return false;
     const due = new Date(task.dueDate).getTime();
     return due >= todayStart.getTime() && due < weekEnd.getTime();
   };
@@ -136,7 +174,10 @@ export function buildSidebarLists(tasks, boardColumns) {
       label: 'Zaległe',
       icon: 'overdue',
       count: tasks.filter(
-        (task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()
+        (task) =>
+          task.dueDate &&
+          isOpenLifecycle(taskLifecycle(task, boardColumns, tasks)) &&
+          new Date(task.dueDate).getTime() < Date.now()
       ).length,
     },
     {
@@ -195,7 +236,9 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setDate(todayStart.getDate() + 1);
     return tasks.filter((task) => {
-      if (!task.dueDate || task.completed) return false;
+      if (!task.dueDate || !isOpenLifecycle(taskLifecycle(task, boardColumns, tasks))) {
+        return false;
+      }
       const due = new Date(task.dueDate).getTime();
       return due >= todayStart.getTime() && due < tomorrowStart.getTime();
     });
@@ -207,14 +250,18 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
     const weekEnd = new Date(todayStart);
     weekEnd.setDate(todayStart.getDate() + 7);
     return tasks.filter((task) => {
-      if (!task.dueDate || task.completed) return false;
+      if (!task.dueDate || !isOpenLifecycle(taskLifecycle(task, boardColumns, tasks))) {
+        return false;
+      }
       const due = new Date(task.dueDate).getTime();
       return due >= todayStart.getTime() && due < weekEnd.getTime();
     });
   }
 
   if (mainListId === 'smart:my_day') {
-    return tasks.filter((task) => task.myDay && !task.completed);
+    return tasks.filter(
+      (task) => task.myDay && isOpenLifecycle(taskLifecycle(task, boardColumns, tasks))
+    );
   }
 
   if (mainListId === 'smart:important') {
@@ -227,12 +274,17 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
 
   if (mainListId === 'smart:overdue') {
     return tasks.filter(
-      (task) => task.dueDate && !task.completed && new Date(task.dueDate).getTime() < Date.now()
+      (task) =>
+        task.dueDate &&
+        isOpenLifecycle(taskLifecycle(task, boardColumns, tasks)) &&
+        new Date(task.dueDate).getTime() < Date.now()
     );
   }
 
   if (mainListId === 'smart:completed') {
-    return tasks.filter((task) => task.completed);
+    return tasks.filter(
+      (task) => taskLifecycle(task, boardColumns, tasks) === TASK_LIFECYCLE_STATUSES.DONE
+    );
   }
 
   if (mainListId === 'smart:assigned') {
@@ -241,8 +293,15 @@ export function applyMainListFilter(tasks, mainListId, boardColumns) {
 
   if (mainListId.startsWith('column:')) {
     const columnId = mainListId.slice('column:'.length);
-    if (boardColumns.some((column) => column.id === columnId)) {
-      return tasks.filter((task) => task.status === columnId);
+    const column = boardColumns.find((candidate) => candidate.id === columnId);
+    if (column) {
+      return tasks.filter((task) => {
+        const lifecycle = taskLifecycle(task, boardColumns, tasks);
+        if (isDoneColumn(column, boardColumns)) {
+          return lifecycle === TASK_LIFECYCLE_STATUSES.DONE;
+        }
+        return task.status === columnId && isOpenLifecycle(lifecycle);
+      });
     }
   }
 

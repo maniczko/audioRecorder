@@ -276,7 +276,10 @@ describe('groupTasks', () => {
 /*  applyMainListFilter                                               */
 /* ------------------------------------------------------------------ */
 describe('applyMainListFilter', () => {
-  const columns = [{ id: 'col1' }, { id: 'col2' }];
+  const columns = [
+    { id: 'col1', isDone: false },
+    { id: 'col2', isDone: true },
+  ];
   const tasks = [
     {
       id: '1',
@@ -321,6 +324,28 @@ describe('applyMainListFilter', () => {
   });
   it('filters completed tasks', () => {
     expect(applyMainListFilter(tasks, 'smart:completed', columns)).toHaveLength(1);
+  });
+  it('uses lifecycle when filtering completed tasks and done columns', () => {
+    const lifecycleColumns = [
+      { id: 'col1', isDone: false },
+      { id: 'col2', isDone: true },
+    ];
+    const lifecycleTasks = [
+      { id: 'done-by-flag', completed: true, status: 'col1' },
+      { id: 'open', completed: false, status: 'col1' },
+    ];
+
+    expect(
+      applyMainListFilter(lifecycleTasks, 'smart:completed', lifecycleColumns).map(
+        (task) => task.id
+      )
+    ).toEqual(['done-by-flag']);
+    expect(
+      applyMainListFilter(lifecycleTasks, 'column:col2', lifecycleColumns).map((task) => task.id)
+    ).toEqual(['done-by-flag']);
+    expect(
+      applyMainListFilter(lifecycleTasks, 'column:col1', lifecycleColumns).map((task) => task.id)
+    ).toEqual(['open']);
   });
   it('filters overdue tasks', () => {
     const overdue = applyMainListFilter(tasks, 'smart:overdue', columns);

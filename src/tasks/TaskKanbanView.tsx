@@ -1,5 +1,9 @@
 import { memo, useState, useEffect } from 'react';
-import { getTaskDependencyDetails } from '../lib/tasks';
+import {
+  getTaskDependencyDetails,
+  getTaskLifecycleStatus,
+  TASK_LIFECYCLE_STATUSES,
+} from '../lib/tasks';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
 import './TaskKanbanViewStyles.css';
 import TagBadge from '../shared/TagBadge';
@@ -155,6 +159,8 @@ function KanbanCard({
   allTasks,
 }) {
   const dependencyState = getTaskDependencyDetails(task, allTasks);
+  const taskLifecycle = getTaskLifecycleStatus(task, boardColumns, allTasks);
+  const taskDone = taskLifecycle === TASK_LIFECYCLE_STATUSES.DONE;
   const subtasks = task.subtasks || [];
   const assignees = task.assignedTo?.length ? task.assignedTo : task.owner ? [task.owner] : [];
   const tags = task.tags || [];
@@ -165,7 +171,7 @@ function KanbanCard({
         role="button"
         tabIndex={0}
         draggable
-        className={`todo-kanban-card${isActive ? ' active' : ''}${task.completed ? ' completed' : ''}${dragTaskId === task.id ? ' dragging' : ''}`}
+        className={`todo-kanban-card${isActive ? ' active' : ''}${taskDone ? ' completed' : ''}${dragTaskId === task.id ? ' dragging' : ''}`}
         data-selected={isSelected}
         title="Kliknij aby otworzyc szczegoly. Zlap i przeciagnij, aby zmienic kolumne."
         onDragStart={(event) => {
@@ -203,11 +209,11 @@ function KanbanCard({
           <div className="todo-kanban-title">
             <button
               type="button"
-              className={`todo-task-circle${task.completed ? ' completed' : ''}`}
-              aria-label={task.completed ? 'Otworz ponownie' : 'Zakoncz zadanie'}
+              className={`todo-task-circle${taskDone ? ' completed' : ''}`}
+              aria-label={taskDone ? 'Otworz ponownie' : 'Zakoncz zadanie'}
               onClick={(event) => {
                 event.stopPropagation();
-                onUpdateTask(task.id, { completed: !task.completed });
+                onUpdateTask(task.id, { completed: !taskDone });
               }}
             />
             <strong className="kanban-card-title">{task.title}</strong>

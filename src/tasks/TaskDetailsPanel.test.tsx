@@ -71,7 +71,7 @@ describe('TaskDetailsPanel', () => {
   it('toggles task completion status', async () => {
     render(<TaskDetailsPanel {...mockProps} />);
 
-    const checkbox = screen.getByRole('button', { name: /Oznacz jako ukończone/i });
+    const checkbox = screen.getByRole('button', { name: /Oznacz jako uko(?:n|ń)czone/i });
     fireEvent.click(checkbox);
 
     expect(mockProps.onUpdateTask).toHaveBeenCalledWith('task-1', { completed: true });
