@@ -1510,3 +1510,104 @@ export function taskListStats(tasks, columns = DEFAULT_TASK_COLUMNS) {
     slaBreached: slaSummary.overdue + slaSummary.breached,
   };
 }
+
+function isDeletePendingTask(task) {
+  return Boolean(
+    task?.deletePending ||
+    task?._softDeleted ||
+    task?.pendingDelete ||
+    task?.status === 'delete_pending' ||
+    task?.lifecycleStatus === 'delete_pending'
+  );
+}
+
+function isRecurringTask(task) {
+  return Boolean(
+    task?.recurrence ||
+    task?.recurrenceParentId ||
+    task?.recurrenceGeneratedFromTaskId ||
+    task?.recurrenceOccurrenceDate
+  );
+}
+
+export function buildTaskDiagnosticsReport(tasks, options = {}) {
+  const workspaceId = normalizeWhitespace(options.workspaceId);
+  const columns = normalizeColumns(options.columns || DEFAULT_TASK_COLUMNS);
+  const validStatuses = new Set(columns.map((column) => column.id));
+  const sourceTasks = safeArray(tasks).filter(isTaskRecord);
+  const scopedTasks = sourceTasks.filter((task) => {
+    if (!workspaceId) {
+      return true;
+    }
+    return !task.workspaceId || task.workspaceId === workspaceId;
+  });
+  const excludedOtherWorkspace = sourceTasks.length - scopedTasks.length;
+  const idCounts = new Map();
+
+  scopedTasks.forEach((task) => {
+    const id = normalizeWhitespace(task.id);
+    if (!id) {
+      return;
+    }
+    idCounts.set(id, (idCounts.get(id) || 0) + 1);
+  });
+
+  const taskIds = new Set([...idCounts.keys()]);
+  const duplicateIds = [...idCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([id, count]) => ({ id, count }));
+  const missingWorkspaceId = scopedTasks
+    .filter((task) => !normalizeWhitespace(task.workspaceId))
+    .map((task) => normalizeWhitespace(task.id) || '<missing-id>');
+  const missingTitle = scopedTasks
+    .filter((task) => !normalizeWhitespace(task.title))
+    .map((task) => normalizeWhitespace(task.id) || '<missing-id>');
+  const invalidStatus = scopedTasks
+    .filter((task) => !validStatuses.has(normalizeWhitespace(task.status)))
+    .map((task) => ({
+      id: normalizeWhitespace(task.id) || '<missing-id>',
+      status: normalizeWhitespace(task.status) || '<missing-status>',
+    }));
+  const brokenDependencies = scopedTasks.flatMap((task) => {
+    const taskId = normalizeWhitespace(task.id) || '<missing-id>';
+    return normalizeTaskDependencies(task.dependencies)
+      .filter((dependencyId) => !taskIds.has(dependencyId))
+      .map((dependencyId) => ({ id: taskId, dependencyId }));
+  });
+
+  const counts = {
+    manualTasks: scopedTasks.filter((task) => task.sourceType === 'manual').length,
+    archivedTasks: scopedTasks.filter((task) => task.archived).length,
+    deletePendingTasks: scopedTasks.filter(isDeletePendingTask).length,
+    conflicts: scopedTasks.filter(
+      (task) => task.googleSyncStatus === 'conflict' || Boolean(task.googleSyncConflict)
+    ).length,
+    missingWorkspaceId: missingWorkspaceId.length,
+    missingTitle: missingTitle.length,
+    invalidStatus: invalidStatus.length,
+    brokenDependencies: brokenDependencies.length,
+    recurringTasks: scopedTasks.filter(isRecurringTask).length,
+    duplicateIds: duplicateIds.length,
+    totalTasks: scopedTasks.length,
+    excludedOtherWorkspace,
+  };
+
+  return {
+    workspaceId,
+    generatedAt: new Date().toISOString(),
+    counts,
+    healthy:
+      counts.missingWorkspaceId === 0 &&
+      counts.missingTitle === 0 &&
+      counts.invalidStatus === 0 &&
+      counts.brokenDependencies === 0 &&
+      counts.duplicateIds === 0,
+    issues: {
+      missingWorkspaceId,
+      missingTitle,
+      invalidStatus,
+      brokenDependencies,
+      duplicateIds,
+    },
+  };
+}
