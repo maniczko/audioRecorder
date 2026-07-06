@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Hono } from 'hono';
+import path from 'node:path';
 import { createClientErrorRoutes, _resetStoreForTest } from '../../routes/clientErrors.ts';
 
 describe('clientErrors route', () => {
@@ -211,5 +212,45 @@ describe('clientErrors route', () => {
     for (let retainedId = 11; retainedId <= 510; retainedId += 1) {
       expect(storedIds.has(retainedId)).toBe(true);
     }
+  });
+
+  it('writes client error store to the resolved upload dir instead of stale VOICELOG_UPLOAD_DIR', async () => {
+    const fallbackUploadDir = path.join(process.cwd(), '.tmp-client-errors-fallback');
+    const staleEnvUploadDir = path.join(process.cwd(), '.tmp-client-errors-env');
+    const fsMocks = (global as any).__mockFs;
+    fsMocks.writeFileSync.mockClear();
+
+    vi.stubEnv('VOICELOG_UPLOAD_DIR', staleEnvUploadDir);
+    _resetStoreForTest();
+
+    const configuredApp = new Hono();
+    configuredApp.route(
+      '/api/client-errors',
+      createClientErrorRoutes({ uploadDir: fallbackUploadDir })
+    );
+
+    const res = await configuredApp.request('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: 'issue-1445',
+        type: 'runtime',
+        message: 'Railway client error persistence regression',
+        timestamp: new Date().toISOString(),
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, received: 1 });
+    expect(fsMocks.writeFileSync).toHaveBeenCalledWith(
+      path.resolve(fallbackUploadDir, 'client-errors.json'),
+      expect.any(String),
+      'utf-8'
+    );
+    expect(fsMocks.writeFileSync).not.toHaveBeenCalledWith(
+      path.resolve(staleEnvUploadDir, 'client-errors.json'),
+      expect.any(String),
+      'utf-8'
+    );
   });
 });
