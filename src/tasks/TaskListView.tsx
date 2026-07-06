@@ -12,7 +12,13 @@ import {
   PencilLine,
   UsersRound,
 } from 'lucide-react';
-import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
+import {
+  canDrop,
+  formatListDueDate,
+  formatReminderDateTime,
+  handleCardKeyDown,
+  writeDragTask,
+} from './taskViewUtils';
 import {
   getTaskAssigneeSummary,
   getTaskLifecycleStatus,
@@ -383,6 +389,7 @@ function TaskListView({
                 const ai = aiMeta(task);
                 const SourceIcon = source.Icon;
                 const canOpenSource = Boolean(task.sourceMeetingId && openMeetingHandler);
+                const reminderLabel = formatReminderDateTime(task.reminderAt);
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -417,6 +424,11 @@ function TaskListView({
                       <span className="todo-title-cell">
                         <strong>{task.title}</strong>
                         <small className="todo-row-description">{displayDescription(task)}</small>
+                        {task.myDay ? (
+                          <span className="todo-row-meta-badges">
+                            <span className="todo-metadata-badge">Mój dzień</span>
+                          </span>
+                        ) : null}
                       </span>
 
                       <span className="todo-status-cell">
@@ -433,8 +445,13 @@ function TaskListView({
                         </span>
                       </span>
 
-                      <span className="todo-date">
-                        {formatListDueDate(task.dueDate) || 'Brak terminu'}
+                      <span className="todo-date todo-date-stack">
+                        <span>{formatListDueDate(task.dueDate) || 'Brak terminu'}</span>
+                        {reminderLabel ? (
+                          <small title="Metadane w zadaniu; aplikacja nie wysyła powiadomień push.">
+                            Przypomnienie: {reminderLabel}
+                          </small>
+                        ) : null}
                       </span>
 
                       <span className="todo-assignee-cell">

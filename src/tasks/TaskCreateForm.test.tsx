@@ -98,6 +98,8 @@ describe('TaskCreateForm', () => {
     expect(screen.getByPlaceholderText('Dodaj zadanie (N)...')).toBeInTheDocument();
     expect(screen.getByText('Termin')).toBeInTheDocument();
     expect(screen.getByText('Godzina')).toBeInTheDocument();
+    expect(screen.getByText('Przypomnienie')).toBeInTheDocument();
+    expect(screen.getByText('Dodaj do Mojego dnia')).toBeInTheDocument();
     expect(screen.getByLabelText('Cały dzień')).toBeInTheDocument();
     expect(screen.getByText('Osoba')).toBeInTheDocument();
     expect(screen.getByText('Priorytet')).toBeInTheDocument();
@@ -112,7 +114,6 @@ describe('TaskCreateForm', () => {
   it('does not render fields absent from the create modal reference', () => {
     render(<TaskCreateForm {...defaultProps} />);
 
-    expect(screen.queryByText('Przypomnienie')).not.toBeInTheDocument();
     expect(screen.queryByText('Status')).not.toBeInTheDocument();
     expect(screen.queryByText('Grupa')).not.toBeInTheDocument();
     expect(screen.queryByText('Ważne')).not.toBeInTheDocument();
@@ -262,6 +263,27 @@ describe('TaskCreateForm', () => {
       expect.objectContaining({
         description: 'Opis zadania',
         notes: '',
+      })
+    );
+  });
+
+  it('submits reminder metadata and My Day without implying push notifications', () => {
+    const onSubmit = vi.fn();
+    render(<TaskCreateForm {...defaultProps} onSubmit={onSubmit} />);
+
+    const titleInput = screen.getByPlaceholderText('Dodaj zadanie (N)...');
+    fireEvent.change(titleInput, { target: { value: 'Zadanie na dzisiaj' } });
+    fireEvent.change(screen.getByLabelText('Przypomnienie zadania'), {
+      target: { value: '2026-03-20T09:15' },
+    });
+    fireEvent.click(screen.getByLabelText('Dodaj do Mojego dnia'));
+    fireEvent.keyDown(titleInput, { key: 'Enter' });
+
+    expect(screen.getByText(/nie wysyła powiadomień push/i)).toBeInTheDocument();
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reminderAt: '2026-03-20T09:15',
+        myDay: true,
       })
     );
   });

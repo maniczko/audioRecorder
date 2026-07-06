@@ -8290,3 +8290,57 @@
     column-gap: 12px !important;
   }
 }
+
+.tasks-layout.ms-todo .todo-row-meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tasks-layout.ms-todo .todo-metadata-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: 999px;
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--color-teal-700, #0f766e);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tasks-layout.ms-todo .todo-date-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.tasks-layout.ms-todo .todo-date-stack small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.tasks-layout.ms-todo .todo-create-my-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-subtle, rgba(15, 23, 42, 0.03));
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.tasks-layout.ms-todo .todo-create-my-day span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

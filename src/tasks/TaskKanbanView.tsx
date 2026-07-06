@@ -4,7 +4,13 @@ import {
   getTaskLifecycleStatus,
   TASK_LIFECYCLE_STATUSES,
 } from '../lib/tasks';
-import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
+import {
+  canDrop,
+  formatListDueDate,
+  formatReminderDateTime,
+  handleCardKeyDown,
+  writeDragTask,
+} from './taskViewUtils';
 import './TaskKanbanViewStyles.css';
 import TagBadge from '../shared/TagBadge';
 
@@ -164,6 +170,7 @@ function KanbanCard({
   const subtasks = task.subtasks || [];
   const assignees = task.assignedTo?.length ? task.assignedTo : task.owner ? [task.owner] : [];
   const tags = task.tags || [];
+  const reminderLabel = formatReminderDateTime(task.reminderAt);
 
   return (
     <div className="todo-kanban-card-shell">
@@ -278,8 +285,16 @@ function KanbanCard({
                 ↻
               </span>
             ) : null}
-            {task.reminderAt ? (
-              <span className="kanban-flag-icon" title="Przypomnienie">
+            {task.myDay ? (
+              <span className="kanban-flag-icon" title="Mój dzień">
+                MD
+              </span>
+            ) : null}
+            {reminderLabel ? (
+              <span
+                className="kanban-flag-icon"
+                title={`Przypomnienie: ${reminderLabel}. Bez powiadomień push.`}
+              >
                 ⏰
               </span>
             ) : null}
