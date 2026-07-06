@@ -218,7 +218,7 @@ exports.config = {
   },
 
   rules: {
-    ignore: [/^\/health$/, /^\/ready$/],
+    ignore: [/^\/health$/, /^\/health\/live$/, /^\/ready$/],
   },
 };
 ```

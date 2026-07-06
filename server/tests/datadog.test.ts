@@ -119,7 +119,7 @@ describe('datadog.ts', () => {
 
     expect(mockTracerInit).toHaveBeenCalledWith(
       expect.objectContaining({
-        blocklist: ['/health', '/ready', '/metrics'],
+        blocklist: ['/health', '/health/live', '/ready', '/metrics'],
       })
     );
   });

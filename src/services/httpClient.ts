@@ -207,7 +207,7 @@ async function _probeRemoteApiHealthImpl(fetchImpl = fetch, maxRetries = 3) {
     // 10 s: accounts for Vercel edge-proxy overhead + Railway cold-start
     const timeoutId = setTimeout(() => controller.abort('Health probe timeout (10s)'), 10_000);
     try {
-      const response = await fetchImpl(buildUrl('/health'), {
+      const response = await fetchImpl(buildUrl('/health/live'), {
         method: 'GET',
         headers: {
           Accept: 'application/json',

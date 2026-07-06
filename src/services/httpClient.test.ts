@@ -389,6 +389,22 @@ describe('probeRemoteApiHealth retry logic', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('uses the lightweight liveness endpoint for availability probes', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockHealthResponse(true));
+
+    await probeRemoteApiHealth(fetchMock as any, 0);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://test-api.local/health/live',
+      expect.objectContaining({
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+    );
+  });
+
   it('retries on 502 and succeeds on second attempt', async () => {
     const fetchMock = vi
       .fn()
