@@ -84,15 +84,23 @@ If upload dir is not writable:
 # Ensure /app/server/data is mounted
 ```
 
-### 3. Health Check
+### 3. Health and Readiness Checks
 
 After deployment, check:
 
 ```
+https://voicelog-production.up.railway.app/health/live
 https://voicelog-production.up.railway.app/health
+https://voicelog-production.up.railway.app/ready
 ```
 
-Expected response:
+Endpoint contract:
+
+- `/health/live` is the lightweight process liveness check for frontend availability probes. It must return `200` when the backend process is running and must not depend on database or Supabase Storage readiness.
+- `/health` is the compatibility health/build metadata endpoint used by Railway/GitHub release checks. It includes `gitSha`, `supabaseStorage`, STT, diarization, and readiness summary fields.
+- `/ready` is strict dependency readiness. It may return `503` when production dependencies such as Supabase Storage are degraded.
+
+Expected `/health` response:
 
 ```json
 {
@@ -114,7 +122,7 @@ Before public launch, verify this sequence on Railway:
 5. Reopen the same recording and confirm audio plus transcript are still available.
 
 Do not launch a public environment when `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` is missing.
-Do not launch when `/health` returns `503` or `status: "degraded"`.
+Do not launch when `/ready` returns `503` or `status: "degraded"`.
 
 ### 5. Supabase Postgres URL Preflight
 
@@ -181,7 +189,9 @@ df -h /app/server/data
 ### API Health
 
 ```bash
-curl https://voicelog-production.up.railway.app/api/health
+curl https://voicelog-production.up.railway.app/health/live
+curl https://voicelog-production.up.railway.app/health
+curl https://voicelog-production.up.railway.app/ready
 ```
 
 ### Logs

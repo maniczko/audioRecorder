@@ -48,7 +48,7 @@ if (isProduction || process.env.DD_APM_ENABLED === 'true') {
     // Enable debug in development
     debug: isDevelopment,
   });
-  tracerOptions.blocklist = ['/health', '/ready', '/metrics'];
+  tracerOptions.blocklist = ['/health', '/health/live', '/ready', '/metrics'];
 
   tracer.init(tracerOptions);
 

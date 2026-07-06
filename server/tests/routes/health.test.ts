@@ -25,6 +25,14 @@ describe('http/health.ts', () => {
     expect(route.method).toBe('get');
   });
 
+  test('registers /health/live GET route', () => {
+    const app = makeHonoLike();
+    registerHealthRoute(app);
+    const route = app._routes.find((r: any) => r.path === '/health/live');
+    expect(route).toBeDefined();
+    expect(route.method).toBe('get');
+  });
+
   test('registers /ready GET route', () => {
     const app = makeHonoLike();
     registerHealthRoute(app);
@@ -52,6 +60,41 @@ describe('http/health.ts', () => {
     expect(response.data).toHaveProperty('uptime');
     expect(response.data).toHaveProperty('memory');
     expect(response.data).toHaveProperty('platform');
+  });
+
+  // ----------------------------------------------------------------
+  // Issue #1306 - frontend liveness probe used dependency-heavy health
+  // Date: 2026-07-06
+  // Bug: the availability probe could be coupled to DB/storage readiness,
+  //      causing false backend_unreachable states during dependency issues.
+  // Fix: expose /health/live as a process-only liveness endpoint.
+  // ----------------------------------------------------------------
+  test('Regression: #1306 /health/live is process-only and does not query dependencies', async () => {
+    const app = makeHonoLike();
+    const db = {
+      checkHealth: vi.fn().mockRejectedValue(new Error('database down')),
+      _get: vi.fn().mockRejectedValue(new Error('database down')),
+    };
+
+    registerHealthRoute(app, db);
+    const route = app._routes.find((r: any) => r.path === '/health/live');
+
+    let response: any;
+    const mockCtx = makeCtxLike((data: any, status: number) => {
+      response = { data, status };
+    });
+
+    await route.handler(mockCtx);
+
+    expect(response.status).toBe(200);
+    expect(response.data).toMatchObject({
+      ok: true,
+      status: 'ok',
+      check: 'liveness',
+    });
+    expect(response.data).toHaveProperty('gitSha');
+    expect(db.checkHealth).not.toHaveBeenCalled();
+    expect(db._get).not.toHaveBeenCalled();
   });
 
   test('checks db health via checkHealth method', async () => {

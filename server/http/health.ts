@@ -5,6 +5,20 @@ import { resolveSttRuntimePolicy } from '../stt/policy.ts';
 import { createUploadPolicy } from '../lib/mediaStoragePolicy.ts';
 
 export function registerHealthRoute(app: Hono<any>, db?: any) {
+  const buildLivenessPayload = () => {
+    const build = resolveBuildMetadata(process.env, '0.1.0');
+    return {
+      ok: true,
+      status: 'ok',
+      check: 'liveness',
+      uptime: Math.floor(process.uptime()),
+      gitSha: build.gitSha,
+      buildTime: build.buildTime,
+      appVersion: build.appVersion,
+      runtime: build.runtime,
+    };
+  };
+
   const buildHealthPayload = async () => {
     const build = resolveBuildMetadata(process.env, '0.1.0');
     let dbStatus: any = { ok: false, status: 'unreachable' };
@@ -103,6 +117,8 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
       },
     };
   };
+
+  app.get('/health/live', (c) => c.json(buildLivenessPayload(), 200));
 
   app.get('/health', async (c) => {
     const health = await buildHealthPayload();
