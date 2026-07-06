@@ -61,6 +61,14 @@ describe('workspaceBackup', () => {
     expect(preview.calendarMetaToUpdate).toBeGreaterThan(0);
   });
 
+  // ---------------------------------------------------------------
+  // Issue #1379 - taskState backup imports keep legacy string statuses
+  // Date: 2026-07-06
+  // Bug: the backup merge expectation still treated taskState entries as
+  //      raw strings after task contracts moved them to structured patches.
+  // Fix: legacy string statuses are accepted as input and normalized to
+  //      TaskStatePatch objects during merge.
+  // ---------------------------------------------------------------
   test('merges imported state into the current workspace state', () => {
     const merged = mergeWorkspaceBackup(
       {
@@ -95,7 +103,7 @@ describe('workspaceBackup', () => {
       { id: 't1', title: 'Task new' },
       { id: 't2', title: 'Task added' },
     ]);
-    expect(merged.taskState).toEqual({ t1: 'done', t2: 'todo' });
+    expect(merged.taskState).toEqual({ t1: { status: 'done' }, t2: { status: 'todo' } });
     expect(merged.taskBoards).toEqual({ board: ['y'], extra: [] });
     expect(merged.calendarMeta).toEqual({ 'meeting:m1': { googleEventId: 'g2' } });
     expect(merged.vocabulary).toEqual(['AI', 'Product']);

@@ -1,4 +1,5 @@
 import type { WorkspaceStatePayload } from '../shared/contracts';
+import type { TaskRecord, TaskStateOverlay, TaskStatePatch } from '../shared/types';
 
 interface PersistDeletedMeetingRemoteStateOptions {
   stateService: {
@@ -72,6 +73,38 @@ function collectRecordingIdsFromMeeting(meeting: unknown) {
   return [...ids];
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function normalizeTaskRecords(value: unknown): TaskRecord[] {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map((item) => item as unknown as TaskRecord)
+    : [];
+}
+
+function normalizeTaskStatePatch(value: unknown): TaskStatePatch | null {
+  if (isRecord(value)) {
+    return value as TaskStatePatch;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return { status: value.trim() };
+  }
+  return null;
+}
+
+function normalizeTaskState(value: unknown): TaskStateOverlay {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, patch]) => [key, normalizeTaskStatePatch(patch)] as const)
+      .filter((entry): entry is [string, TaskStatePatch] => Boolean(entry[1]))
+  );
+}
+
 export function buildDeletedMeetingRemotePayload({
   meetingId,
   recordingIds = [],
@@ -101,8 +134,8 @@ export function buildDeletedMeetingRemotePayload({
     meetings: safeMeetings.filter(
       (meeting: any) => String(meeting?.id || '').trim() !== normalizedMeetingId
     ),
-    manualTasks: Array.isArray(manualTasks) ? manualTasks : [],
-    taskState: taskState && typeof taskState === 'object' ? taskState : {},
+    manualTasks: normalizeTaskRecords(manualTasks),
+    taskState: normalizeTaskState(taskState),
     taskBoards: taskBoards && typeof taskBoards === 'object' ? taskBoards : {},
     calendarMeta: {
       ...meta,

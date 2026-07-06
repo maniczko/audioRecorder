@@ -259,6 +259,157 @@ export interface MeetingTask {
   sourceUnsupported?: boolean;
 }
 
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskSourceType =
+  'manual' | 'google' | 'meeting' | 'calendar' | 'microsoft' | 'ai' | (string & {});
+export type GoogleTaskSyncStatus = 'synced' | 'local_changes' | 'conflict' | 'error' | 'pending';
+
+export interface TaskColumn {
+  id: string;
+  label?: string;
+  color?: string;
+  isDone?: boolean;
+  system?: boolean;
+  wipLimit?: number | null;
+}
+
+export interface TaskComment {
+  id: string;
+  author?: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface TaskHistoryEntry {
+  id: string;
+  type?: string;
+  actor?: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface TaskDependency {
+  taskId: string;
+  type?: 'blocks' | 'blocked_by' | string;
+}
+
+export interface TaskRecurrence {
+  frequency: 'none' | 'daily' | 'weekly' | 'monthly' | 'custom' | string;
+  interval?: number;
+  until?: string;
+}
+
+export interface TaskSubtask {
+  id: string;
+  title: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
+export interface TaskLink {
+  id: string;
+  url: string;
+  title?: string;
+}
+
+export interface GoogleTaskSyncConflict {
+  id?: string;
+  reason?: string;
+  localUpdatedAt?: string;
+  remoteUpdatedAt?: string;
+  remoteSnapshot?: Record<string, unknown>;
+}
+
+// Persisted task entity stored in WorkspaceState.manualTasks for manual and external tasks.
+export interface TaskRecord {
+  id: string;
+  title: string;
+  status: string;
+  completed: boolean;
+  sourceType: TaskSourceType;
+  owner: string;
+  assignedTo: string[];
+  userId?: string;
+  createdByUserId?: string;
+  workspaceId?: string;
+  sourceMeetingId?: string;
+  sourceMeetingTitle?: string;
+  sourceQuote?: string;
+  sourceSegmentId?: string;
+  sourceTimestamp?: number;
+  sourceUnsupported?: boolean;
+  googleTaskId?: string;
+  googleTaskListId?: string;
+  googleUpdatedAt?: string;
+  googleSyncedAt?: string;
+  googlePulledAt?: string;
+  googleLocalUpdatedAt?: string;
+  googleSyncStatus?: GoogleTaskSyncStatus;
+  googleSyncConflict?: GoogleTaskSyncConflict | null;
+  group: string;
+  description: string;
+  notes: string;
+  dueDate: string;
+  reminderAt: string;
+  myDay: boolean;
+  important: boolean;
+  priority: TaskPriority;
+  tags: string[];
+  comments: TaskComment[];
+  history: TaskHistoryEntry[];
+  dependencies: Array<string | TaskDependency>;
+  recurrence: TaskRecurrence | null;
+  subtasks: TaskSubtask[];
+  links: TaskLink[];
+  order: number;
+  archived?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Overlay stored in WorkspaceState.taskState for derived meeting tasks and local UI state patches.
+export type TaskStatePatch = Partial<
+  Pick<
+    TaskRecord,
+    | 'title'
+    | 'status'
+    | 'completed'
+    | 'owner'
+    | 'assignedTo'
+    | 'group'
+    | 'description'
+    | 'notes'
+    | 'dueDate'
+    | 'reminderAt'
+    | 'myDay'
+    | 'important'
+    | 'priority'
+    | 'tags'
+    | 'comments'
+    | 'history'
+    | 'dependencies'
+    | 'recurrence'
+    | 'subtasks'
+    | 'links'
+    | 'order'
+    | 'googleUpdatedAt'
+    | 'googleSyncedAt'
+    | 'googlePulledAt'
+    | 'googleLocalUpdatedAt'
+    | 'googleSyncStatus'
+    | 'googleSyncConflict'
+    | 'updatedAt'
+    | 'archived'
+  >
+>;
+
+export type TaskStateOverlay = Record<string, TaskStatePatch>;
+
+export type TaskStatePatchInput = Omit<TaskStatePatch, 'assignedTo' | 'tags'> & {
+  assignedTo?: string[] | string | null;
+  tags?: string[] | string | null;
+};
+
 export interface MeetingNeedAnswer {
   need: string;
   answer: string;
@@ -381,9 +532,9 @@ export interface MeetingAnalysis {
 
 export interface WorkspaceState {
   meetings: unknown[];
-  manualTasks: unknown[];
+  manualTasks: TaskRecord[];
   manualPeople?: unknown[];
-  taskState: Record<string, unknown>;
+  taskState: TaskStateOverlay;
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];

@@ -10,13 +10,16 @@ import type {
   WorkspaceFeatureFlags,
   WorkspaceState,
   WorkspaceSttProvider,
+  TaskRecord,
+  TaskStatePatch,
+  TaskStateOverlay,
 } from './types.js';
 
 export interface WorkspaceStatePayload {
   meetings: unknown[];
-  manualTasks: unknown[];
+  manualTasks: TaskRecord[];
   manualPeople?: unknown[];
-  taskState: Record<string, unknown>;
+  taskState: TaskStateOverlay;
   taskBoards: Record<string, unknown>;
   calendarMeta: Record<string, unknown>;
   vocabulary: string[];
@@ -33,7 +36,7 @@ export interface WorkspaceStateDeltaPayload {
   meetings?: WorkspaceCollectionDelta | unknown[];
   manualTasks?: WorkspaceCollectionDelta | unknown[];
   manualPeople?: WorkspaceCollectionDelta | unknown[];
-  taskState?: Record<string, unknown>;
+  taskState?: Record<string, TaskStatePatch | null>;
   taskBoards?: Record<string, unknown>;
   calendarMeta?: Record<string, unknown>;
   vocabulary?: string[];
@@ -171,6 +174,34 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function asRecord(value: unknown): UnknownRecord {
   return isRecord(value) ? value : {};
+}
+
+function normalizeTaskRecords(value: unknown): TaskRecord[] {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map((item) => item as unknown as TaskRecord)
+    : [];
+}
+
+function normalizeTaskStatePatch(value: unknown): TaskStatePatch | null {
+  if (isRecord(value)) {
+    return value as TaskStatePatch;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return { status: value.trim() };
+  }
+  return null;
+}
+
+function normalizeTaskState(value: unknown): TaskStateOverlay {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, patch]) => [key, normalizeTaskStatePatch(patch)] as const)
+      .filter((entry): entry is [string, TaskStatePatch] => Boolean(entry[1]))
+  );
 }
 
 function itemId(item: unknown) {
@@ -429,9 +460,9 @@ export function normalizeWorkspaceState(input: unknown = {}): WorkspaceState {
       Array.isArray(source.meetings) ? source.meetings : [],
       calendarMeta
     ),
-    manualTasks: Array.isArray(source.manualTasks) ? source.manualTasks : [],
+    manualTasks: normalizeTaskRecords(source.manualTasks),
     manualPeople: Array.isArray(source.manualPeople) ? source.manualPeople : [],
-    taskState: isRecord(source.taskState) ? source.taskState : {},
+    taskState: normalizeTaskState(source.taskState),
     taskBoards: isRecord(source.taskBoards) ? source.taskBoards : {},
     calendarMeta,
     vocabulary: Array.isArray(source.vocabulary) ? source.vocabulary : [],
@@ -541,7 +572,7 @@ export function buildWorkspaceStateDelta(
   const taskStateDelta = buildObjectDelta(
     prevState.taskState as Record<string, unknown>,
     nextState.taskState as Record<string, unknown>
-  );
+  ) as Record<string, TaskStatePatch | null>;
   if (Object.keys(taskStateDelta).length) {
     delta.taskState = taskStateDelta;
   }

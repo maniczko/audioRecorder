@@ -17,6 +17,7 @@ import {
   updateTaskColumns,
   upsertGoogleImportedTasks,
 } from './tasks';
+import type { TaskRecord } from '../shared/types';
 
 describe('tasks extra coverage', () => {
   afterEach(() => {
@@ -85,7 +86,9 @@ describe('tasks extra coverage', () => {
       columns,
       'ws_1'
     );
+    const typedTask = task satisfies TaskRecord;
 
+    expect(typedTask.sourceType).toBe('manual');
     expect(task.completed).toBe(true);
     expect(task.status).toBe('done');
     expect(task.tags).toEqual(['finanse', 'raport']);
@@ -149,7 +152,9 @@ describe('tasks extra coverage', () => {
       { name: 'Anna' },
       'ws_1'
     );
+    const typedTask = task satisfies TaskRecord;
 
+    expect(typedTask.sourceType).toBe('google');
     expect(task.status).toBe('done');
     expect(task.completed).toBe(true);
     expect(task.group).toBe('Moj list');

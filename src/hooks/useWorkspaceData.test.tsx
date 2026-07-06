@@ -183,7 +183,7 @@ describe('useWorkspaceData', () => {
     expect(workspaceState.setWorkspaces).toHaveBeenCalledWith([{ id: 'ws2' }]);
     expect(meetingsState.setMeetings).toHaveBeenCalledWith([{ id: 'm1' }]);
     expect(meetingsState.setManualTasks).toHaveBeenCalledWith([{ id: 't1' }]);
-    expect(meetingsState.setTaskState).toHaveBeenCalledWith({ t1: 'done' });
+    expect(meetingsState.setTaskState).toHaveBeenCalledWith({ t1: { status: 'done' } });
     expect(meetingsState.setTaskBoards).toHaveBeenCalledWith({ ws2: [] });
     expect(meetingsState.setCalendarMeta).toHaveBeenCalledWith({
       'meeting:m1': { googleEventId: 'g1' },

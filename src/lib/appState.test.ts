@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { buildProfileDraft, normalizeTaskUpdatePayload } from './appState';
+import type { TaskRecord, TaskStatePatch } from '../shared/types';
 
 describe('appState library', () => {
   test('buildProfileDraft should provide defaults', () => {
@@ -31,12 +32,34 @@ describe('appState library', () => {
       { id: 'todo', isDone: false },
       { id: 'done', isDone: true },
     ];
-    const previousTask = {
+    const previousTask: TaskRecord = {
       id: 't1',
       title: 'Old Title',
       status: 'todo',
       completed: false,
       owner: 'Jan',
+      assignedTo: ['Jan'],
+      sourceType: 'manual',
+      userId: 'user_1',
+      workspaceId: 'ws_1',
+      priority: 'medium',
+      tags: [],
+      group: '',
+      description: '',
+      notes: '',
+      dueDate: '',
+      reminderAt: '',
+      myDay: false,
+      important: false,
+      comments: [],
+      history: [],
+      dependencies: [],
+      recurrence: null,
+      subtasks: [],
+      links: [],
+      order: 0,
+      createdAt: '2026-03-01T00:00:00.000Z',
+      updatedAt: '2026-03-01T00:00:00.000Z',
     };
 
     test('should update basic fields', () => {
@@ -51,6 +74,8 @@ describe('appState library', () => {
     test('should sync completed status with columns', () => {
       // Set status to done, should auto-complete
       const result = normalizeTaskUpdatePayload(previousTask, { status: 'done' }, columns);
+      const typedPatch = result satisfies TaskStatePatch;
+      expect(typedPatch.status).toBe('done');
       expect(result.completed).toBe(true);
       expect(result.status).toBe('done');
 

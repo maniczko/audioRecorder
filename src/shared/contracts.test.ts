@@ -70,6 +70,47 @@ describe('shared contracts', () => {
     });
   });
 
+  test('Issue #1379 - normalizes task records and task state overlays separately', () => {
+    const state = normalizeWorkspaceState({
+      meetings: [],
+      manualTasks: [
+        {
+          id: 'manual_1',
+          title: 'Manual',
+          status: 'todo',
+          completed: false,
+          sourceType: 'manual',
+        },
+        {
+          id: 'google_1',
+          title: 'Google',
+          status: 'done',
+          completed: true,
+          sourceType: 'google',
+          googleTaskId: 'gt_1',
+          googleTaskListId: 'list_1',
+        },
+        null,
+        'broken-task',
+      ],
+      taskState: {
+        derived_1: { status: 'done', completed: true, archived: false },
+        derived_legacy: 'waiting',
+        derived_2: 123,
+      },
+      taskBoards: {},
+      calendarMeta: {},
+      vocabulary: [],
+    });
+
+    expect(state.manualTasks).toHaveLength(2);
+    expect(state.manualTasks.map((task) => task.sourceType)).toEqual(['manual', 'google']);
+    expect(state.taskState).toEqual({
+      derived_1: { status: 'done', completed: true, archived: false },
+      derived_legacy: { status: 'waiting' },
+    });
+  });
+
   test('Regression: #0 - meeting remove delta creates meeting and recording tombstones', () => {
     const next = applyWorkspaceStateDelta(
       {

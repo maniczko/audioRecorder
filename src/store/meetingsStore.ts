@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptyMeetingDraft } from '../lib/meeting';
+import type { TaskRecord, TaskStatePatch } from '../shared/types';
 
 interface MeetingsState {
   meetings: any[];
-  manualTasks: any[];
+  manualTasks: TaskRecord[];
   manualPeople: any[];
-  taskState: Record<string, any>;
+  taskState: Record<string, TaskStatePatch>;
   taskBoards: Record<string, any>;
   calendarMeta: Record<string, any>;
   vocabulary: any[];
@@ -20,10 +21,12 @@ interface MeetingsState {
   hasMeetingDraftChanges: boolean;
 
   setMeetings: (updater: any[] | ((prev: any[]) => any[])) => void;
-  setManualTasks: (updater: any[] | ((prev: any[]) => any[])) => void;
+  setManualTasks: (updater: TaskRecord[] | ((prev: TaskRecord[]) => TaskRecord[])) => void;
   setManualPeople: (updater: any[] | ((prev: any[]) => any[])) => void;
   setTaskState: (
-    updater: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)
+    updater:
+      | Record<string, TaskStatePatch>
+      | ((prev: Record<string, TaskStatePatch>) => Record<string, TaskStatePatch>)
   ) => void;
   setTaskBoards: (
     updater: Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)
