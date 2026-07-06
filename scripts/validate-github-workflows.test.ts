@@ -373,6 +373,24 @@ describe('GitHub workflows validation', () => {
     expect(railwayWorkflow).toContain('set_railway_variable_with_retry APP_BUILD_TIME');
   });
 
+  it('collects Railway diagnostics when production health stays unavailable', () => {
+    const railwayWorkflow = readFileSync(
+      path.join(workflowDir, 'railway-build-metadata.yml'),
+      'utf8'
+    );
+
+    expect(railwayWorkflow).toContain('dump_railway_diagnostics()');
+    expect(railwayWorkflow).toContain('Railway health HTTP status: $last_http_status');
+    expect(railwayWorkflow).toContain(
+      'Railway health did not expose expected git SHA after 60 attempts'
+    );
+    expect(railwayWorkflow).toContain('railway logs');
+    expect(railwayWorkflow).toContain('--latest');
+    expect(railwayWorkflow).toContain('--deployment');
+    expect(railwayWorkflow).toContain('--http');
+    expect(railwayWorkflow).toContain('--status ">=500"');
+  });
+
   it('keeps Google OAuth Railway sync explicit and secret-safe', () => {
     const workflowPath = path.join(workflowDir, 'railway-sync-google-oauth.yml');
     const content = readFileSync(workflowPath, 'utf8');
