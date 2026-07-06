@@ -2636,6 +2636,114 @@
   font-size: 0.74rem;
 }
 
+.ff-summary-sectioned {
+  gap: 0;
+  padding-top: 6px;
+}
+
+.ff-summary-sectioned .summary-hero {
+  padding: 0 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ff-summary-sectioned .summary-highlights {
+  gap: 12px;
+}
+
+.ff-summary-sectioned .summary-highlight,
+.ff-summary-sectioned .summary-hero .summary-highlight:first-child {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.summary-grid-sectioned {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.summary-grid-sectioned .summary-card {
+  gap: 14px;
+  padding: 18px 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
+}
+
+.summary-grid-sectioned .summary-card:first-child {
+  border-top: 0;
+}
+
+.summary-grid-sectioned .summary-card-priority {
+  padding-block: 20px;
+}
+
+.summary-grid-sectioned .summary-card-head h3 {
+  color: var(--text-main, #fff);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+}
+
+.summary-grid-sectioned .summary-card-head span {
+  min-width: 28px;
+  min-height: 24px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(117, 214, 196, 0.1);
+  color: #9af0de;
+  font-weight: 700;
+  text-align: center;
+}
+
+.summary-grid-sectioned .analysis-list {
+  display: grid;
+  gap: 8px;
+}
+
+.summary-grid-sectioned .analysis-list li {
+  margin-bottom: 0;
+  padding: 10px 12px 10px 30px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.summary-grid-sectioned .analysis-list li::before {
+  top: 10px;
+  left: 12px;
+}
+
+.summary-grid-sectioned .summary-pill-card {
+  width: 100%;
+}
+
+.studio-analysis-summary-panel .ff-sov-card {
+  margin: 18px 24px 0;
+  padding: 0 0 20px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.studio-analysis-summary-panel .ff-sov-card-head {
+  margin-bottom: 16px;
+}
+
+.studio-analysis-summary-panel .ff-sov-bar-track {
+  height: 30px;
+}
+
+.studio-analysis-summary-panel .ff-sov-legend {
+  gap: 10px;
+}
+
+.studio-analysis-summary-panel .ff-sov-legend-item {
+  padding: 7px 12px;
+}
+
 .meeting-task-list {
   display: grid;
   gap: 10px;
@@ -4426,6 +4534,37 @@
 
 :root[data-theme='premium-light'] .ff-sov-percent {
   color: #087062;
+}
+
+:root[data-theme='premium-light'] .ff-summary-sectioned .summary-hero,
+:root[data-theme='premium-light'] .ff-summary-sectioned .summary-highlight,
+:root[data-theme='premium-light']
+  .ff-summary-sectioned
+  .summary-hero
+  .summary-highlight:first-child,
+:root[data-theme='premium-light'] .summary-grid-sectioned .summary-card,
+:root[data-theme='premium-light'] .studio-analysis-summary-panel .ff-sov-card {
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-theme='premium-light'] .ff-summary-sectioned .summary-hero,
+:root[data-theme='premium-light'] .summary-grid-sectioned .summary-card,
+:root[data-theme='premium-light'] .studio-analysis-summary-panel .ff-sov-card {
+  border-color: rgba(43, 82, 74, 0.12);
+}
+
+:root[data-theme='premium-light'] .summary-grid-sectioned .analysis-list li {
+  background: rgba(255, 255, 252, 0.66);
+}
+
+:root[data-theme='premium-light'] .summary-grid-sectioned .summary-card-head h3 {
+  color: var(--text-1);
+}
+
+:root[data-theme='premium-light'] .summary-grid-sectioned .summary-card-head span {
+  background: rgba(28, 141, 122, 0.08);
+  color: var(--accent-strong);
 }
 
 :root[data-theme='premium-light'] .ff-player-bar {

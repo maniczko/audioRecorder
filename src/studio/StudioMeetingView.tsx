@@ -2966,7 +2966,7 @@ export default function StudioMeetingView({
                 )}
 
                 {studioAnalysis?.summary || isEditingAnalysis ? (
-                  <div className="panel-body ff-summary-layout">
+                  <div className="panel-body ff-summary-layout ff-summary-sectioned">
                     <div className="summary-hero">
                       {/*
                          We render a single <ul className="summary-highlights"> for the blocks.
@@ -3026,7 +3026,7 @@ export default function StudioMeetingView({
                     </div>
 
                     <div
-                      className={`summary-grid${!isEditingAnalysis ? ' summary-grid-meta-only' : ''}`}
+                      className={`summary-grid summary-grid-sectioned${!isEditingAnalysis ? ' summary-grid-meta-only' : ''}`}
                     >
                       <section className="summary-card summary-card-overflow-visible">
                         <div className="summary-card-head">
@@ -3106,7 +3106,7 @@ export default function StudioMeetingView({
                         </div>
                       </section>
 
-                      <section className="summary-card">
+                      <section className="summary-card summary-card-priority">
                         <div className="summary-card-head">
                           <h3>Decyzje</h3>
                           {safeArray(studioAnalysis.decisions).length > 0 && (
@@ -3151,7 +3151,7 @@ export default function StudioMeetingView({
                           <p className="soft-copy">Brak wykrytych decyzji.</p>
                         )}
                       </section>
-                      <section className="summary-card">
+                      <section className="summary-card summary-card-priority">
                         <div className="summary-card-head">
                           <h3>Action items</h3>
                           {actionItems.length > 0 && <span>{actionItems.length}</span>}
