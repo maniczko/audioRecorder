@@ -45,7 +45,7 @@ jobs:
 
       - name: Checkout code
         if: steps.release-guard.outputs.skip != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         if: steps.release-guard.outputs.skip != 'true'
