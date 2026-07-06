@@ -42,6 +42,26 @@ export function formatListDueDate(value) {
     .replace(/\./g, '');
 }
 
+export function formatReminderDateTime(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+    .format(date)
+    .replace(/\./g, '');
+}
+
 export function dueTone(value) {
   if (!value) {
     return 'normal';
@@ -123,6 +143,9 @@ export function buildSidebarLists(tasks, boardColumns) {
     return due >= todayStart.getTime() && due < weekEnd.getTime();
   };
 
+  const isMyDay = (task) =>
+    Boolean(task.myDay) && isOpenLifecycle(taskLifecycle(task, boardColumns, tasks));
+
   const normalizeStatusLabel = (column) => {
     const id = String(column.id || '').toLowerCase();
     const label = String(column.label || '');
@@ -156,6 +179,12 @@ export function buildSidebarLists(tasks, boardColumns) {
       label: 'Dziś',
       icon: 'today',
       count: tasks.filter(isDueToday).length,
+    },
+    {
+      id: 'smart:my_day',
+      label: 'Mój dzień',
+      icon: 'my_day',
+      count: tasks.filter(isMyDay).length,
     },
     {
       id: 'smart:week',
@@ -501,6 +530,10 @@ export function buildContextualDraft(quickDraft, selectedListId, boardColumns) {
 
   if (selectedListId?.startsWith('group:') && !nextDraft.group) {
     nextDraft.group = selectedListId.slice('group:'.length);
+  }
+
+  if (selectedListId === 'smart:my_day') {
+    nextDraft.myDay = true;
   }
 
   return nextDraft;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Bell,
   Calendar,
   Check,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
   Lightbulb,
   Plus,
   Sparkles,
+  SunMedium,
   Tag,
   User,
 } from 'lucide-react';
@@ -31,6 +33,7 @@ export interface TaskDraft {
   reminderAt: string;
   tags: string | string[];
   important: boolean;
+  myDay: boolean;
   description: string;
   notes: string;
   allDay?: boolean;
@@ -116,6 +119,18 @@ function splitDraftDateTime(value: string) {
     date,
     time: /^\d{2}:\d{2}/.test(timeValue) ? timeValue.slice(0, 5) : '',
   };
+}
+
+function toDateTimeLocalInput(value: string) {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) ? value.slice(0, 16) : '';
+  }
+
+  const offset = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 function composeDueDate(displayDate: string, time: string, allDay: boolean) {
@@ -231,6 +246,7 @@ function buildInitialDraft(
     reminderAt: initialDraft.reminderAt || '',
     tags: normalizeDraftTags(initialDraft.tags),
     important: initialDraft.important || false,
+    myDay: Boolean(initialDraft.myDay),
     description: initialDraft.description || '',
     notes: initialDraft.notes || '',
     allDay: Boolean(initialDraft.allDay),
@@ -291,6 +307,8 @@ export default function TaskCreateForm({
     initialDraft.priority,
     initialDraft.status,
     initialDraft.dueDate,
+    initialDraft.reminderAt,
+    initialDraft.myDay,
     Array.isArray(initialDraft.tags) ? initialDraft.tags.join('|') : initialDraft.tags,
     initialDraft.description,
     initialDraft.notes,
@@ -398,6 +416,8 @@ export default function TaskCreateForm({
         ...draft,
         title: draft.title.trim(),
         dueDate,
+        reminderAt: draft.reminderAt || '',
+        myDay: Boolean(draft.myDay),
         allDay,
         notes: draft.notes || '',
       });
@@ -726,6 +746,38 @@ export default function TaskCreateForm({
             </select>
             <ChevronDown size={16} aria-hidden="true" />
           </div>
+        </label>
+
+        <label className="todo-create-field">
+          <span>
+            <Bell size={16} aria-hidden="true" />
+            Przypomnienie
+          </span>
+          <input
+            type="datetime-local"
+            className="todo-detail-unified-field"
+            value={toDateTimeLocalInput(draft.reminderAt)}
+            onChange={(event) => applyDraftPatch({ reminderAt: event.target.value })}
+            aria-label="Przypomnienie zadania"
+            aria-describedby="task-reminder-metadata-hint"
+          />
+          <small id="task-reminder-metadata-hint" className="todo-create-field-hint">
+            Metadane w zadaniu; aplikacja nie wysyła powiadomień push.
+          </small>
+        </label>
+
+        <label className="todo-create-my-day">
+          <span>
+            <SunMedium size={16} aria-hidden="true" />
+            Dodaj do Mojego dnia
+          </span>
+          <input
+            className="ui-checkbox"
+            type="checkbox"
+            checked={Boolean(draft.myDay)}
+            onChange={(event) => applyDraftPatch({ myDay: event.target.checked })}
+            aria-label="Dodaj do Mojego dnia"
+          />
         </label>
 
         <label className="todo-create-field todo-create-field--full">

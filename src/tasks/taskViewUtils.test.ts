@@ -3,6 +3,7 @@ import {
   safeArray,
   toInputDateTime,
   formatListDueDate,
+  formatReminderDateTime,
   dueTone,
   canDrop,
   writeDragTask,
@@ -68,6 +69,19 @@ describe('formatListDueDate', () => {
     expect(result).toMatch(/sty|01/i);
     expect(result).toMatch(/15/);
     expect(result).toMatch(/2026/);
+  });
+});
+
+describe('formatReminderDateTime', () => {
+  it('returns empty string for missing or invalid reminder metadata', () => {
+    expect(formatReminderDateTime('')).toBe('');
+    expect(formatReminderDateTime('not-a-date')).toBe('');
+  });
+
+  it('formats reminder metadata with date and time', () => {
+    const result = formatReminderDateTime('2026-03-20T09:15:00.000Z');
+    expect(result).toMatch(/20/);
+    expect(result).toMatch(/\d{2}:15/);
   });
 });
 
@@ -380,13 +394,21 @@ describe('buildSidebarLists', () => {
       { id: 'done', label: 'Zakonczone', isDone: true },
     ];
     const tasks = [
-      { id: '1', status: 'c1', important: true, group: 'Sprint1', priority: 'high' },
+      {
+        id: '1',
+        status: 'c1',
+        important: true,
+        group: 'Sprint1',
+        priority: 'high',
+        myDay: true,
+      },
       { id: '2', status: 'c1', group: '', priority: 'medium' },
     ];
     const result = buildSidebarLists(tasks, columns);
     expect(result.baseLists.length).toBeGreaterThan(0);
     expect(result.taskLists.map((item) => item.label)).toEqual([
       'Dziś',
+      'Mój dzień',
       'Ten tydzień',
       'Zaplanowane',
       'Zaległe',
@@ -445,6 +467,10 @@ describe('buildContextualDraft', () => {
   it('does not override existing group', () => {
     const draft = buildContextualDraft({ group: 'Beta' }, 'group:Alpha', cols);
     expect(draft.group).toBe('Beta');
+  });
+  it('marks contextual drafts as My Day from the My Day smart list', () => {
+    const draft = buildContextualDraft({ myDay: false }, 'smart:my_day', cols);
+    expect(draft.myDay).toBe(true);
   });
 });
 

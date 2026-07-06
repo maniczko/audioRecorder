@@ -19,6 +19,7 @@ import {
 
 const iconMap = {
   today: SunMedium,
+  my_day: SunMedium,
   week: CalendarRange,
   planned: Clock3,
   overdue: AlertCircle,

@@ -39,6 +39,8 @@ function buildTaskUpdatePatch(patch: Partial<TaskDraft>) {
 
   if ('title' in patch) nextPatch.title = patch.title;
   if ('dueDate' in patch) nextPatch.dueDate = patch.dueDate;
+  if ('reminderAt' in patch) nextPatch.reminderAt = patch.reminderAt || '';
+  if ('myDay' in patch) nextPatch.myDay = Boolean(patch.myDay);
   if ('owner' in patch) nextPatch.owner = patch.owner;
   if ('assignedTo' in patch) nextPatch.assignedTo = patch.assignedTo || [];
   if ('priority' in patch) nextPatch.priority = patch.priority;

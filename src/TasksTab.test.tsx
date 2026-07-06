@@ -252,6 +252,84 @@ describe('TasksTab', () => {
     expect(screen.getByText(/(Overdue|Zaległe|Zalegle)/i)).toBeInTheDocument();
   });
 
+  test('filters tasks from the visible My Day smart list', async () => {
+    renderTasksTab({
+      defaultView: 'list',
+      tasks: [
+        {
+          id: 'task_my_day',
+          title: 'Widoczne w Moim dniu',
+          owner: 'Anna',
+          group: '',
+          description: '',
+          dueDate: '',
+          reminderAt: '2026-03-20T09:00:00.000Z',
+          myDay: true,
+          notes: '',
+          sourceType: 'manual',
+          sourceMeetingId: '',
+          sourceMeetingTitle: '',
+          sourceMeetingDate: '',
+          sourceRecordingId: '',
+          sourceQuote: '',
+          createdAt: '2026-03-14T09:00:00.000Z',
+          updatedAt: '2026-03-14T09:00:00.000Z',
+          status: 'todo',
+          important: false,
+          completed: false,
+          priority: 'medium',
+          tags: [],
+          assignedTo: ['Anna'],
+          comments: [],
+          history: [],
+          dependencies: [],
+          subtasks: [],
+          order: -100,
+          assignedToMe: true,
+        },
+        {
+          id: 'task_other',
+          title: 'Poza Moim dniem',
+          owner: 'Anna',
+          group: '',
+          description: '',
+          dueDate: '',
+          reminderAt: '',
+          myDay: false,
+          notes: '',
+          sourceType: 'manual',
+          sourceMeetingId: '',
+          sourceMeetingTitle: '',
+          sourceMeetingDate: '',
+          sourceRecordingId: '',
+          sourceQuote: '',
+          createdAt: '2026-03-14T09:00:00.000Z',
+          updatedAt: '2026-03-14T09:00:00.000Z',
+          status: 'todo',
+          important: false,
+          completed: false,
+          priority: 'medium',
+          tags: [],
+          assignedTo: ['Anna'],
+          comments: [],
+          history: [],
+          dependencies: [],
+          subtasks: [],
+          order: -99,
+          assignedToMe: true,
+        },
+      ],
+    });
+
+    await userEvent.click(screen.getAllByRole('button', { name: /Mój dzień/i })[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Widoczne w Moim dniu')).toBeInTheDocument();
+      expect(screen.queryByText('Poza Moim dniem')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(/Przypomnienie:/i)).toBeInTheDocument();
+  });
+
   test('pokazuje komunikat bledu, gdy onCreateTask zwraca falsy (np. brak workspace)', async () => {
     const toastModule = await import('./shared/Toast');
     const errorSpy = vi.fn();
