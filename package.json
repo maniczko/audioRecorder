@@ -86,6 +86,8 @@
     "audit:a11y": "node scripts/accessibility-audit.cjs",
     "audit:a11y:ci": "node scripts/accessibility-audit.cjs --ci --strict",
     "audit:build-warnings": "node scripts/audit-build-warnings.mjs",
+    "audit:css-debt": "node scripts/css-debt-audit.mjs",
+    "audit:css-debt:update": "node scripts/css-debt-audit.mjs --write",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
     "audit:mojibake": "node scripts/audit-mojibake.mjs",
     "audit:repo-hygiene": "node scripts/validate-repo-hygiene.mjs && node scripts/validate-secret-hygiene.mjs && node scripts/validate-critical-path-coverage.mjs && node scripts/validate-database-schema-audit.mjs",
