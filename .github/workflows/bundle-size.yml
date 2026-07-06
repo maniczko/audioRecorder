@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout code (dependabot)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
       - name: Setup Node.js
         uses: actions/setup-node@v6
