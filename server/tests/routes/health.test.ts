@@ -25,6 +25,14 @@ describe('http/health.ts', () => {
     expect(route.method).toBe('get');
   });
 
+  test('registers /ready GET route', () => {
+    const app = makeHonoLike();
+    registerHealthRoute(app);
+    const route = app._routes.find((r: any) => r.path === '/ready');
+    expect(route).toBeDefined();
+    expect(route.method).toBe('get');
+  });
+
   test('returns ok status with db fallback', async () => {
     const app = makeHonoLike();
     registerHealthRoute(app, undefined);
@@ -160,6 +168,83 @@ describe('http/health.ts', () => {
       bucket: 'recordings',
     });
 
+    if (savedUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = savedUrl;
+    if (savedKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = savedKey;
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1436 — Railway deploy health blocked by storage readiness
+  // Date: 2026-07-06
+  // Bug: /health returned 503 when Supabase Storage was degraded, so
+  //      Railway marked otherwise booted backend containers as failed.
+  // Fix: /health is liveness; /ready remains strict dependency readiness.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: #1436 keeps Railway liveness healthy when storage readiness is degraded', async () => {
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const storageSpy = vi.spyOn(storageModule, 'checkSupabaseStorageReadiness').mockResolvedValue({
+      configured: true,
+      ready: false,
+      bucket: 'recordings',
+      status: 'bucket_unavailable',
+      error: 'exceed_egress_quota',
+    });
+    const savedNodeEnv = process.env.NODE_ENV;
+    const savedRailwayEnv = process.env.RAILWAY_ENVIRONMENT_NAME;
+    const savedUrl = process.env.SUPABASE_URL;
+    const savedKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.NODE_ENV = 'production';
+    process.env.RAILWAY_ENVIRONMENT_NAME = 'production';
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'key';
+
+    const app = makeHonoLike();
+    registerHealthRoute(app, {
+      checkHealth: vi.fn().mockResolvedValue({ ok: true, status: 'healthy' }),
+    });
+    const healthRoute = app._routes.find((r: any) => r.path === '/health');
+    const readyRoute = app._routes.find((r: any) => r.path === '/ready');
+
+    let healthResponse: any;
+    let readyResponse: any;
+    await healthRoute.handler(
+      makeCtxLike((data: any, status: number) => {
+        healthResponse = { data, status };
+      })
+    );
+    await readyRoute.handler(
+      makeCtxLike((data: any, status: number) => {
+        readyResponse = { data, status };
+      })
+    );
+
+    expect(healthResponse.status).toBe(200);
+    expect(healthResponse.data).toMatchObject({
+      ok: true,
+      status: 'ok',
+      supabaseRemote: false,
+      supabaseStorage: {
+        ready: false,
+        status: 'bucket_unavailable',
+      },
+      readiness: {
+        ok: false,
+        status: 'degraded',
+        storageRequired: true,
+      },
+    });
+    expect(readyResponse.status).toBe(503);
+    expect(readyResponse.data).toMatchObject({
+      ok: false,
+      status: 'degraded',
+    });
+
+    storageSpy.mockRestore();
+    if (savedNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = savedNodeEnv;
+    if (savedRailwayEnv === undefined) delete process.env.RAILWAY_ENVIRONMENT_NAME;
+    else process.env.RAILWAY_ENVIRONMENT_NAME = savedRailwayEnv;
     if (savedUrl === undefined) delete process.env.SUPABASE_URL;
     else process.env.SUPABASE_URL = savedUrl;
     if (savedKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
