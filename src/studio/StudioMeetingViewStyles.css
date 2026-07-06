@@ -3750,6 +3750,122 @@
   border-bottom-color: #75d6c4;
 }
 
+.ff-meeting-command-header {
+  display: grid;
+  grid-template-areas:
+    'title actions'
+    'tabs tabs';
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 20px;
+  align-items: end;
+  padding: 18px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ff-meeting-command-header .ff-header {
+  grid-area: title;
+  min-width: 0;
+  padding: 0;
+}
+
+.ff-meeting-command-header .ff-toolbar {
+  grid-area: actions;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.ff-meeting-command-header .ff-intelligence-tabs {
+  grid-area: tabs;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0;
+  overflow: visible;
+}
+
+.ff-meeting-command-header .ff-intelligence-tabs-shell {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.ff-meeting-command-header .ff-int-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.ff-meeting-command-header .ff-tb-btn,
+.ff-meeting-command-header .ff-tb-record,
+.ff-meeting-command-header .ff-tb-stop,
+.ff-meeting-command-header .ff-tb-cc {
+  min-height: 38px;
+}
+
+.ff-meeting-command-header .ff-tb-btn-ghost {
+  background: transparent;
+}
+
+.ff-meeting-command-header .ff-tb-btn-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ff-meeting-command-header .ff-tb-record {
+  min-height: 42px;
+  padding-inline: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .ff-meeting-command-header {
+    grid-template-areas:
+      'title'
+      'actions'
+      'tabs';
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ff-meeting-command-header .ff-toolbar {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .ff-meeting-command-header {
+    padding-top: 14px;
+  }
+
+  .ff-meeting-command-header .ff-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ff-meeting-command-header .ff-tb-sep {
+    display: none;
+  }
+
+  .ff-meeting-command-header .ff-tb-btn,
+  .ff-meeting-command-header .ff-tb-record,
+  .ff-meeting-command-header .ff-tb-stop,
+  .ff-meeting-command-header .ff-tb-cc,
+  .ff-meeting-command-header .ff-tb-queued {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .ff-meeting-command-header .ff-tb-rec-badge {
+    justify-content: center;
+  }
+
+  .ff-meeting-command-header .ff-tb-record,
+  .ff-meeting-command-header .ff-tb-stop {
+    grid-column: 1 / -1;
+  }
+}
+
 .ff-status-detail-stack {
   display: flex;
   flex-direction: column;
@@ -4311,6 +4427,32 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 14px 36px rgba(45, 75, 67, 0.08);
+}
+
+:root[data-theme='premium-light'] .ff-meeting-command-header {
+  padding: 18px 0 16px;
+  border-bottom-color: rgba(43, 82, 74, 0.1);
+}
+
+:root[data-theme='premium-light'] .ff-meeting-command-header .ff-toolbar {
+  align-self: center;
+}
+
+:root[data-theme='premium-light'] .ff-meeting-command-header .ff-tb-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+:root[data-theme='premium-light'] .ff-meeting-command-header .ff-tb-btn-secondary {
+  border-color: rgba(43, 82, 74, 0.14);
+  background: rgba(255, 255, 252, 0.78);
+}
+
+:root[data-theme='premium-light'] .ff-meeting-command-header .ff-int-tab.active {
+  border-color: rgba(8, 112, 98, 0.34);
+  box-shadow:
+    inset 0 0 0 1px rgba(8, 112, 98, 0.08),
+    0 10px 24px rgba(28, 141, 122, 0.12);
 }
 
 :root[data-theme='premium-light'] .ff-int-tab {
