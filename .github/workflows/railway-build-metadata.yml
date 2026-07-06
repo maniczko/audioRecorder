@@ -110,13 +110,65 @@ jobs:
 
       - name: Verify production health git SHA
         env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: 6c73db42-8183-4e3b-b546-5edaa616cfe4
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
+          dump_railway_diagnostics() {
+            echo "::group::Railway deployment diagnostics"
+            railway deployment list \
+              --service "$RAILWAY_SERVICE_ID" \
+              --environment production \
+              || true
+            railway logs \
+              --project "$RAILWAY_PROJECT_ID" \
+              --service "$RAILWAY_SERVICE_ID" \
+              --environment production \
+              --latest \
+              --deployment \
+              --lines 120 \
+              || true
+            railway logs \
+              --project "$RAILWAY_PROJECT_ID" \
+              --service "$RAILWAY_SERVICE_ID" \
+              --environment production \
+              --latest \
+              --lines 200 \
+              --filter "@level:error OR @level:warn" \
+              || true
+            railway logs \
+              --project "$RAILWAY_PROJECT_ID" \
+              --service "$RAILWAY_SERVICE_ID" \
+              --environment production \
+              --latest \
+              --http \
+              --status ">=500" \
+              --lines 50 \
+              || true
+            echo "::endgroup::"
+          }
+
+          last_http_status="unknown"
           for attempt in $(seq 1 60); do
             echo "Health check attempt $attempt"
-            payload="$(curl -fsS https://audiorecorder-production.up.railway.app/health || true)"
-            echo "$payload" | node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{try{const json=JSON.parse(data);console.log(JSON.stringify({ok:json.ok,gitSha:json.gitSha,runtime:json.runtime,supabaseRemote:json.supabaseRemote}));process.exit(json.gitSha===process.env.EXPECTED_SHA?0:2)}catch{process.exit(2)}});" && exit 0
+            body_file="$(mktemp)"
+            http_status="$(
+              curl \
+                -sS \
+                --max-time 20 \
+                -o "$body_file" \
+                -w "%{http_code}" \
+                https://audiorecorder-production.up.railway.app/health \
+                || true
+            )"
+            payload="$(cat "$body_file" || true)"
+            rm -f "$body_file"
+            last_http_status="${http_status:-curl_failed}"
+            echo "Railway health HTTP status: $last_http_status"
+            echo "$payload" | HTTP_STATUS="$last_http_status" node -e "let data='';process.stdin.on('data',d=>data+=d);process.stdin.on('end',()=>{try{const json=JSON.parse(data);console.log(JSON.stringify({ok:json.ok,status:json.status,gitSha:json.gitSha,runtime:json.runtime,supabaseRemote:json.supabaseRemote}));process.exit(process.env.HTTP_STATUS==='200'&&json.gitSha===process.env.EXPECTED_SHA?0:2)}catch{if(data.trim())console.log(data.slice(0,500));process.exit(2)}});" && exit 0
             sleep 10
           done
-          echo "Railway health did not expose expected git SHA" >&2
+          echo "Railway health did not expose expected git SHA after 60 attempts (last HTTP status: $last_http_status)" >&2
+          dump_railway_diagnostics
           exit 1
