@@ -19,12 +19,16 @@ const MAX_STORED_ERRORS = 500;
 const MAX_BODY_ERRORS = 50;
 const DEFAULT_CLIENT_ERROR_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
+interface ClientErrorRoutesOptions {
+  uploadDir?: string;
+}
+
 // In-memory store with periodic file persistence
 let errorStore: ClientErrorEntry[] = [];
 let storeLoaded = false;
 
-function getErrorsFilePath(): string {
-  const dataDir = process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
+function getErrorsFilePath(options: ClientErrorRoutesOptions = {}): string {
+  const dataDir = options.uploadDir || process.env.VOICELOG_UPLOAD_DIR || './server/data/uploads';
   return path.resolve(dataDir, 'client-errors.json');
 }
 
@@ -59,10 +63,10 @@ function enforceMaxStoredErrors(errors: ClientErrorEntry[]): ClientErrorEntry[] 
   return errors.slice(-MAX_STORED_ERRORS);
 }
 
-function loadFromDisk(): void {
+function loadFromDisk(options: ClientErrorRoutesOptions = {}): void {
   if (storeLoaded) return;
   try {
-    const filePath = getErrorsFilePath();
+    const filePath = getErrorsFilePath(options);
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
@@ -79,9 +83,9 @@ function loadFromDisk(): void {
   storeLoaded = true;
 }
 
-function persistToDisk(): void {
+function persistToDisk(options: ClientErrorRoutesOptions = {}): void {
   try {
-    const filePath = getErrorsFilePath();
+    const filePath = getErrorsFilePath(options);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -98,7 +102,7 @@ export function _resetStoreForTest(): void {
   storeLoaded = true; // skip disk read in tests
 }
 
-export function createClientErrorRoutes() {
+export function createClientErrorRoutes(options: ClientErrorRoutesOptions = {}) {
   const router = new Hono();
 
   // POST /api/client-errors — receive error reports from frontend
@@ -135,7 +139,7 @@ export function createClientErrorRoutes() {
         return c.json({ ok: true, received: 0 });
       }
 
-      loadFromDisk();
+      loadFromDisk(options);
       const wasCleaned = cleanupExpiredClientErrors();
 
       // Deduplicate by id
@@ -144,9 +148,9 @@ export function createClientErrorRoutes() {
 
       if (newErrors.length > 0) {
         errorStore = enforceMaxStoredErrors([...errorStore, ...newErrors]);
-        persistToDisk();
+        persistToDisk(options);
       } else if (wasCleaned) {
-        persistToDisk();
+        persistToDisk(options);
       }
       if (newErrors.length > 0) {
         logger.info(`[ClientErrors] Received ${newErrors.length} new error(s) from client.`);
@@ -164,10 +168,10 @@ export function createClientErrorRoutes() {
 
   // GET /api/client-errors — retrieve stored errors
   router.get('/', (c) => {
-    loadFromDisk();
+    loadFromDisk(options);
     const wasCleaned = cleanupExpiredClientErrors();
     if (wasCleaned) {
-      persistToDisk();
+      persistToDisk(options);
     }
     return c.json({ count: errorStore.length, errors: errorStore });
   });
@@ -175,7 +179,7 @@ export function createClientErrorRoutes() {
   // DELETE /api/client-errors — clear stored errors
   router.delete('/', (c) => {
     errorStore = [];
-    persistToDisk();
+    persistToDisk(options);
     return c.json({ ok: true, cleared: true });
   });
 

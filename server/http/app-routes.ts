@@ -277,5 +277,8 @@ export function registerAppRoutes(
   app.route('/digest', createDigestRoutes(services, middlewares));
   app.route('/integrations/google', createGoogleIntegrationRoutes(services, middlewares));
   app.route('/ai', createAiRoutes(services, middlewares));
-  app.route('/api/client-errors', createClientErrorRoutes());
+  app.route(
+    '/api/client-errors',
+    createClientErrorRoutes({ uploadDir: services.config?.uploadDir || services.db?.uploadDir })
+  );
 }
