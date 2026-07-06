@@ -8,6 +8,7 @@ import {
   normalizeTaskSubtasks,
   parseTagInput,
 } from './tasks';
+import type { TaskColumn, TaskRecord, TaskStatePatch, TaskStatePatchInput } from '../shared/types';
 
 export function buildProfileDraft(user) {
   return {
@@ -31,25 +32,30 @@ export function buildProfileDraft(user) {
   };
 }
 
-export function normalizeTaskUpdatePayload(previousTask, updates, columns) {
+export function normalizeTaskUpdatePayload(
+  previousTask: TaskRecord,
+  updates: TaskStatePatchInput = {},
+  columns: TaskColumn[] = []
+): TaskStatePatch {
+  const safeColumns = Array.isArray(columns) ? columns : [];
   const openColumnId =
-    columns.find((column) => !column.isDone)?.id || columns[0]?.id || previousTask.status;
-  const doneColumnId = columns.find((column) => column.isDone)?.id || previousTask.status;
-  const statusExists = columns.some((column) => column.id === updates.status);
+    safeColumns.find((column) => !column.isDone)?.id || safeColumns[0]?.id || previousTask.status;
+  const doneColumnId = safeColumns.find((column) => column.isDone)?.id || previousTask.status;
+  const statusExists = safeColumns.some((column) => column.id === updates.status);
   let nextStatus = statusExists ? updates.status : previousTask.status;
 
   if (typeof updates.completed === 'boolean' && !updates.status) {
     nextStatus = updates.completed ? doneColumnId : openColumnId;
   }
 
-  if (!columns.some((column) => column.id === nextStatus)) {
+  if (!safeColumns.some((column) => column.id === nextStatus)) {
     nextStatus = openColumnId;
   }
 
   const completed =
     typeof updates.completed === 'boolean'
       ? updates.completed
-      : columns.some((column) => column.id === nextStatus && column.isDone);
+      : safeColumns.some((column) => column.id === nextStatus && column.isDone);
   let assignedTo =
     updates.assignedTo === undefined
       ? normalizeTaskPeopleList(
