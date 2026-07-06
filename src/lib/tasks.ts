@@ -3,6 +3,7 @@ import { createId } from './storage';
 import { createGoogleTaskConflictState } from './googleSync';
 
 const ORDER_GAP = 1024;
+const ORDER_REBALANCE_MIN_GAP = 1;
 
 export const DEFAULT_TASK_COLUMNS = [
   { id: 'todo', label: 'Do zrobienia', color: '#5a92ff', isDone: false, system: true },
@@ -761,6 +762,36 @@ export function buildTaskReorderUpdate(tasks, placement = {}) {
     ...(placement.group !== undefined ? { group: placement.group } : {}),
     order,
   };
+}
+
+export function shouldRebalanceTaskOrders(tasks, options = {}) {
+  const minGap = Math.max(0, Number(options.minGap) || ORDER_REBALANCE_MIN_GAP);
+  const sorted = [...safeArray(tasks)].sort(
+    (left, right) => getTaskOrder(left) - getTaskOrder(right)
+  );
+
+  if (sorted.length < 2) {
+    return false;
+  }
+
+  for (let index = 1; index < sorted.length; index += 1) {
+    const gap = getTaskOrder(sorted[index]) - getTaskOrder(sorted[index - 1]);
+    if (!Number.isFinite(gap) || gap < minGap) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function rebalanceTaskOrders(tasks, options = {}) {
+  const gap = Math.max(1, Number(options.gap) || ORDER_GAP);
+  const startOrder = Number.isFinite(Number(options.startOrder)) ? Number(options.startOrder) : 0;
+
+  return safeArray(tasks).map((task, index) => ({
+    ...task,
+    order: startOrder + index * gap,
+  }));
 }
 
 export function nextRecurringDueDate(value, recurrence) {

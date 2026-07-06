@@ -121,6 +121,145 @@ describe('useTaskOperations', () => {
     expect(mockSetTaskState).toHaveBeenCalledTimes(1);
   });
 
+  test('reorderTask rebalances a crowded column without changing visual order', () => {
+    const crowdedTasks = [
+      {
+        id: 'first',
+        title: 'First',
+        status: 'c1',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 0,
+      },
+      {
+        id: 'second',
+        title: 'Second',
+        status: 'c1',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 0.000001,
+      },
+      {
+        id: 'dragged',
+        title: 'Dragged',
+        status: 'c2',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 100,
+      },
+      {
+        id: 'other-group',
+        title: 'Other group',
+        status: 'c1',
+        group: 'Sales',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 0.000002,
+      },
+    ];
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: crowdedTasks })
+    );
+
+    act(() => {
+      result.current.reorderTask('dragged', {
+        status: 'c1',
+        group: 'Ops',
+        previousTaskId: 'first',
+        nextTaskId: 'second',
+      });
+    });
+
+    expect(mockSetManualTasks).toHaveBeenCalledTimes(1);
+    expect(mockSetTaskState).not.toHaveBeenCalled();
+
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater(crowdedTasks);
+    const opsTasks = next
+      .filter((task: any) => task.status === 'c1' && task.group === 'Ops')
+      .sort((left: any, right: any) => left.order - right.order);
+
+    expect(opsTasks.map((task: any) => task.id)).toEqual(['first', 'dragged', 'second']);
+    expect(opsTasks[1].order - opsTasks[0].order).toBeGreaterThanOrEqual(1024);
+    expect(opsTasks[2].order - opsTasks[1].order).toBeGreaterThanOrEqual(1024);
+    expect(next.find((task: any) => task.id === 'other-group').order).toBe(0.000002);
+  });
+
+  test('reorderTask keeps the single-task update path when order gaps are healthy', () => {
+    const healthyTasks = [
+      {
+        id: 'first',
+        title: 'First',
+        status: 'c1',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 0,
+      },
+      {
+        id: 'second',
+        title: 'Second',
+        status: 'c1',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 2048,
+      },
+      {
+        id: 'dragged',
+        title: 'Dragged',
+        status: 'c1',
+        group: 'Ops',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+        order: 4096,
+      },
+    ];
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: healthyTasks })
+    );
+
+    act(() => {
+      result.current.reorderTask('dragged', {
+        group: 'Ops',
+        previousTaskId: 'first',
+        nextTaskId: 'second',
+      });
+    });
+
+    expect(mockSetManualTasks).toHaveBeenCalledTimes(1);
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater(healthyTasks);
+
+    expect(next.find((task: any) => task.id === 'first').order).toBe(0);
+    expect(next.find((task: any) => task.id === 'second').order).toBe(2048);
+    expect(next.find((task: any) => task.id === 'dragged').order).toBe(1024);
+  });
+
   test('bulkUpdateTasks invokes correct updaters with payload', () => {
     const { result } = renderHook(() => useTaskOperations(baseProps));
 

@@ -4,6 +4,9 @@ import {
   createManualTask,
   createRecurringTaskFromTask,
   getNextTaskOrderTop,
+  getTaskOrder,
+  rebalanceTaskOrders,
+  shouldRebalanceTaskOrders,
   updateTaskColumns,
   createTaskColumn,
   validateTaskDependencies,
@@ -67,6 +70,35 @@ function prependUniqueRecurringTasks(previous, recurringTasks) {
   });
 
   return uniqueRecurringTasks.length ? [...uniqueRecurringTasks, ...previous] : previous;
+}
+
+function taskScopeValue(value) {
+  return String(value || '');
+}
+
+function isTaskInOrderScope(task, status, group) {
+  return (
+    taskScopeValue(task?.status) === taskScopeValue(status) &&
+    taskScopeValue(task?.group) === taskScopeValue(group)
+  );
+}
+
+function insertTaskByPlacement(sortedTasks, movingTask, placement) {
+  const nextTasks = sortedTasks.filter((task) => task.id !== movingTask.id);
+  const previousIndex = nextTasks.findIndex((task) => task.id === placement.previousTaskId);
+  const nextIndex = nextTasks.findIndex((task) => task.id === placement.nextTaskId);
+
+  if (previousIndex >= 0) {
+    nextTasks.splice(previousIndex + 1, 0, movingTask);
+    return nextTasks;
+  }
+
+  if (nextIndex >= 0) {
+    nextTasks.splice(nextIndex, 0, movingTask);
+    return nextTasks;
+  }
+
+  return [movingTask, ...nextTasks];
 }
 
 export default function useTaskOperations({
@@ -178,6 +210,100 @@ export default function useTaskOperations({
     return nextTask;
   }
 
+  function applyTaskOrderPayloads(payloadsByTaskId) {
+    if (!payloadsByTaskId?.size) {
+      return;
+    }
+
+    const updatedAt = new Date().toISOString();
+    const manualPayloads = new Map();
+    const derivedPayloads = {};
+
+    payloadsByTaskId.forEach((payload, taskId) => {
+      const task = meetingTasks.find((item) => item.id === taskId);
+      if (!task) {
+        return;
+      }
+
+      const nextPayload = {
+        ...payload,
+        updatedAt,
+      };
+
+      if (task.sourceType === 'manual' || task.sourceType === 'google') {
+        manualPayloads.set(taskId, nextPayload);
+        return;
+      }
+
+      derivedPayloads[taskId] = nextPayload;
+    });
+
+    if (manualPayloads.size) {
+      setManualTasks((previous) =>
+        previous.map((item) =>
+          manualPayloads.has(item.id)
+            ? {
+                ...item,
+                ...manualPayloads.get(item.id),
+              }
+            : item
+        )
+      );
+    }
+
+    if (Object.keys(derivedPayloads).length) {
+      setTaskState((previous) => {
+        const nextState = { ...previous };
+        Object.entries(derivedPayloads).forEach(([taskId, nextPayload]) => {
+          nextState[taskId] = {
+            ...(previous[taskId] || {}),
+            ...(nextPayload && typeof nextPayload === 'object' ? nextPayload : {}),
+          };
+        });
+        return nextState;
+      });
+    }
+  }
+
+  function buildRebalancedReorderPayloads(task, placement) {
+    const nextStatus = placement.status !== undefined ? placement.status : task.status;
+    const nextGroup = placement.group !== undefined ? placement.group : task.group;
+    const destinationTasks = meetingTasks
+      .filter((item) => item.id !== task.id && isTaskInOrderScope(item, nextStatus, nextGroup))
+      .sort((left, right) => getTaskOrder(left) - getTaskOrder(right));
+
+    if (!shouldRebalanceTaskOrders(destinationTasks)) {
+      return null;
+    }
+
+    const movingTask = {
+      ...task,
+      ...(placement.status !== undefined ? { status: placement.status } : {}),
+      ...(placement.group !== undefined ? { group: placement.group } : {}),
+    };
+    const orderedTasks = insertTaskByPlacement(destinationTasks, movingTask, placement);
+    const payloadsByTaskId = new Map();
+
+    rebalanceTaskOrders(orderedTasks).forEach((nextTask) => {
+      const payload: Record<string, any> = {
+        order: nextTask.order,
+      };
+
+      if (nextTask.id === task.id) {
+        if (placement.status !== undefined) {
+          payload.status = placement.status;
+        }
+        if (placement.group !== undefined) {
+          payload.group = placement.group;
+        }
+      }
+
+      payloadsByTaskId.set(nextTask.id, payload);
+    });
+
+    return payloadsByTaskId;
+  }
+
   function createTaskFromComposer(draft) {
     if (!currentUser || !currentWorkspaceId) return null;
 
@@ -211,6 +337,12 @@ export default function useTaskOperations({
   function reorderTask(taskId, placement) {
     const task = meetingTasks.find((item) => item.id === taskId);
     if (!task) return;
+    const rebalancedPayloads = buildRebalancedReorderPayloads(task, placement);
+    if (rebalancedPayloads) {
+      applyTaskOrderPayloads(rebalancedPayloads);
+      return;
+    }
+
     updateTask(taskId, buildTaskReorderUpdate(meetingTasks, placement));
   }
 
