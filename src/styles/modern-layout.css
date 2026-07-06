@@ -1619,11 +1619,11 @@
 
 .production-readiness-banner {
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) minmax(240px, 1.4fr);
-  gap: 14px;
-  align-items: start;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px 12px;
+  align-items: center;
   margin: 0 0 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid color-mix(in srgb, #f59e0b 34%, transparent);
   border-radius: 8px;
   background:
@@ -1634,7 +1634,6 @@
 }
 
 .production-readiness-banner > svg {
-  margin-top: 2px;
   color: #b45309;
 }
 
@@ -1645,17 +1644,63 @@
 }
 
 .production-readiness-banner-copy strong {
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   line-height: 1.2;
 }
 
 .production-readiness-banner-copy span {
   color: #7c5a18;
-  font-size: 0.84rem;
-  line-height: 1.35;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.production-readiness-banner-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.production-readiness-banner-summary span {
+  min-width: 0;
+  max-width: 180px;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #6f4306;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.production-readiness-banner-action {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(180, 83, 9, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #6f4306;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.production-readiness-banner-action:hover,
+.production-readiness-banner-action:focus-visible {
+  border-color: rgba(180, 83, 9, 0.46);
+  background: #ffffff;
+  outline: none;
 }
 
 .production-readiness-banner-list {
+  grid-column: 2 / -1;
   display: grid;
   gap: 6px;
   margin: 0;
@@ -1665,7 +1710,7 @@
 
 .production-readiness-banner-list li {
   display: grid;
-  grid-template-columns: minmax(92px, 0.65fr) minmax(140px, 1fr);
+  grid-template-columns: minmax(120px, 0.5fr) minmax(180px, 1fr);
   gap: 10px;
   align-items: baseline;
   min-width: 0;
@@ -1683,6 +1728,7 @@
   color: #7c5a18;
   font-size: 0.78rem;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {
@@ -1701,15 +1747,18 @@
   }
 
   .production-readiness-banner {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 10px;
   }
 
-  .production-readiness-banner > svg {
-    display: none;
-  }
-
+  .production-readiness-banner-summary,
+  .production-readiness-banner-action,
   .production-readiness-banner-list {
-    grid-column: 1;
+    grid-column: 1 / -1;
+  }
+
+  .production-readiness-banner-summary {
+    justify-content: flex-start;
   }
 
   .production-readiness-banner-list li {
@@ -1723,7 +1772,10 @@
     grid-template-columns: auto minmax(0, 1fr);
   }
 
+  .production-readiness-banner-summary,
+  .production-readiness-banner-action,
   .production-readiness-banner-list {
     grid-column: 2;
+    justify-self: start;
   }
 }
