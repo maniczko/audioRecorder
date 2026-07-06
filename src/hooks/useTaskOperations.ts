@@ -11,6 +11,64 @@ import {
 } from '../lib/tasks';
 import { normalizeTaskUpdatePayload } from '../lib/appState';
 
+function normalizedText(value) {
+  return String(value || '').trim();
+}
+
+function sameJson(left, right) {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
+function isSameRecurringOccurrence(candidate, generatedTask) {
+  if (!candidate || !generatedTask) {
+    return false;
+  }
+
+  const occurrenceDate = normalizedText(generatedTask.recurrenceOccurrenceDate);
+  if (!occurrenceDate) {
+    return false;
+  }
+
+  const candidateOccurrenceDate =
+    normalizedText(candidate.recurrenceOccurrenceDate) || normalizedText(candidate.dueDate);
+  if (candidateOccurrenceDate !== occurrenceDate) {
+    return false;
+  }
+
+  const generatedFromTaskId = normalizedText(generatedTask.recurrenceGeneratedFromTaskId);
+  const parentId = normalizedText(generatedTask.recurrenceParentId);
+  const candidateGeneratedFromTaskId = normalizedText(candidate.recurrenceGeneratedFromTaskId);
+  const candidateParentId = normalizedText(candidate.recurrenceParentId);
+
+  if (generatedFromTaskId && candidateGeneratedFromTaskId === generatedFromTaskId) {
+    return true;
+  }
+  if (parentId && candidateParentId === parentId) {
+    return true;
+  }
+
+  return (
+    !candidateGeneratedFromTaskId &&
+    !candidateParentId &&
+    normalizedText(candidate.title) === normalizedText(generatedTask.title) &&
+    sameJson(candidate.recurrence, generatedTask.recurrence)
+  );
+}
+
+function prependUniqueRecurringTasks(previous, recurringTasks) {
+  const uniqueRecurringTasks: any[] = [];
+  (Array.isArray(recurringTasks) ? recurringTasks : []).filter(Boolean).forEach((recurringTask) => {
+    const exists =
+      previous.some((candidate) => isSameRecurringOccurrence(candidate, recurringTask)) ||
+      uniqueRecurringTasks.some((candidate) => isSameRecurringOccurrence(candidate, recurringTask));
+    if (!exists) {
+      uniqueRecurringTasks.push(recurringTask);
+    }
+  });
+
+  return uniqueRecurringTasks.length ? [...uniqueRecurringTasks, ...previous] : previous;
+}
+
 export default function useTaskOperations({
   currentUser,
   currentWorkspaceId,
@@ -89,17 +147,19 @@ export default function useTaskOperations({
     const { nextPayload, nextTask, recurringTask } = prepareTaskMutation(task, updates);
 
     if (task.sourceType === 'manual' || task.sourceType === 'google') {
-      setManualTasks((previous) => [
-        ...(recurringTask ? [recurringTask] : []),
-        ...previous.map((item) =>
-          item.id !== taskId
-            ? item
-            : {
-                ...item,
-                ...nextPayload,
-              }
-        ),
-      ]);
+      setManualTasks((previous) =>
+        prependUniqueRecurringTasks(
+          previous.map((item) =>
+            item.id !== taskId
+              ? item
+              : {
+                  ...item,
+                  ...nextPayload,
+                }
+          ),
+          recurringTask ? [recurringTask] : []
+        )
+      );
       return nextTask;
     }
 
@@ -112,7 +172,7 @@ export default function useTaskOperations({
     }));
 
     if (recurringTask) {
-      setManualTasks((previous) => [recurringTask, ...previous]);
+      setManualTasks((previous) => prependUniqueRecurringTasks(previous, [recurringTask]));
     }
 
     return nextTask;
@@ -188,19 +248,21 @@ export default function useTaskOperations({
     );
 
     if (manualPayloads.size) {
-      setManualTasks((previous) => [
-        ...recurringTasks,
-        ...previous.map((item) =>
-          manualPayloads.has(item.id)
-            ? {
-                ...item,
-                ...manualPayloads.get(item.id),
-              }
-            : item
-        ),
-      ]);
+      setManualTasks((previous) =>
+        prependUniqueRecurringTasks(
+          previous.map((item) =>
+            manualPayloads.has(item.id)
+              ? {
+                  ...item,
+                  ...manualPayloads.get(item.id),
+                }
+              : item
+          ),
+          recurringTasks
+        )
+      );
     } else if (recurringTasks.length) {
-      setManualTasks((previous) => [...recurringTasks, ...previous]);
+      setManualTasks((previous) => prependUniqueRecurringTasks(previous, recurringTasks));
     }
 
     if (Object.keys(derivedPayloads).length) {

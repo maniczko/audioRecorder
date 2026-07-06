@@ -139,6 +139,134 @@ describe('useTaskOperations', () => {
     expect(stateNext.t2.completed).toBe(true);
   });
 
+  test('completing the same recurring task twice creates one follow-up', () => {
+    const recurringTask = {
+      id: 'recurring-source',
+      title: 'Recurring check-in',
+      dueDate: '2026-03-01T00:00:00.000Z',
+      recurrence: { frequency: 'daily', interval: 1 },
+      status: 'c1',
+      sourceType: 'manual',
+      history: [],
+      completed: false,
+      tags: [],
+      assignedTo: [],
+    };
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: [recurringTask] })
+    );
+
+    act(() => {
+      result.current.updateTask('recurring-source', { completed: true });
+      result.current.updateTask('recurring-source', { completed: true });
+    });
+
+    const firstUpdater = mockSetManualTasks.mock.calls[0][0];
+    const secondUpdater = mockSetManualTasks.mock.calls[1][0];
+    const firstNext = firstUpdater([recurringTask]);
+    const secondNext = secondUpdater(firstNext);
+    const generated = secondNext.filter(
+      (task: any) => task.id !== 'recurring-source' && task.dueDate === '2026-03-02T00:00:00.000Z'
+    );
+
+    expect(generated).toHaveLength(1);
+  });
+
+  test('bulk completing recurring tasks creates one follow-up per source task', () => {
+    const recurringTasks = [
+      {
+        id: 'recurring-source-1',
+        title: 'Daily one',
+        dueDate: '2026-03-01T00:00:00.000Z',
+        recurrence: { frequency: 'daily', interval: 1 },
+        status: 'c1',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+      },
+      {
+        id: 'recurring-source-2',
+        title: 'Daily two',
+        dueDate: '2026-03-01T00:00:00.000Z',
+        recurrence: { frequency: 'daily', interval: 1 },
+        status: 'c1',
+        sourceType: 'manual',
+        history: [],
+        completed: false,
+        tags: [],
+        assignedTo: [],
+      },
+    ];
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: recurringTasks })
+    );
+
+    act(() => {
+      result.current.bulkUpdateTasks(['recurring-source-1', 'recurring-source-2'], {
+        completed: true,
+      });
+    });
+
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater(recurringTasks);
+    const generated = next.filter(
+      (task: any) =>
+        !task.id.startsWith('recurring-source-') && task.dueDate === '2026-03-02T00:00:00.000Z'
+    );
+
+    expect(generated).toHaveLength(2);
+    expect(new Set(generated.map((task: any) => task.recurrenceGeneratedFromTaskId))).toEqual(
+      new Set(['recurring-source-1', 'recurring-source-2'])
+    );
+  });
+
+  test('sync retry skips an already generated recurring occurrence', () => {
+    const recurringTask = {
+      id: 'recurring-source',
+      title: 'Retry-safe recurring task',
+      dueDate: '2026-03-01T00:00:00.000Z',
+      recurrence: { frequency: 'daily', interval: 1 },
+      status: 'c1',
+      sourceType: 'manual',
+      history: [],
+      completed: false,
+      tags: [],
+      assignedTo: [],
+    };
+    const existingOccurrence = {
+      id: 'existing-occurrence',
+      title: recurringTask.title,
+      dueDate: '2026-03-02T00:00:00.000Z',
+      recurrence: recurringTask.recurrence,
+      recurrenceParentId: 'recurring-source',
+      recurrenceGeneratedFromTaskId: 'recurring-source',
+      recurrenceOccurrenceDate: '2026-03-02T00:00:00.000Z',
+      status: 'c1',
+      sourceType: 'manual',
+      completed: false,
+    };
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: [recurringTask, existingOccurrence] })
+    );
+
+    act(() => {
+      result.current.updateTask('recurring-source', { completed: true });
+    });
+
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater([existingOccurrence, recurringTask]);
+    const generated = next.filter(
+      (task: any) =>
+        task.id !== 'recurring-source' &&
+        task.title === recurringTask.title &&
+        task.dueDate === '2026-03-02T00:00:00.000Z'
+    );
+
+    expect(generated).toHaveLength(1);
+  });
+
   test('addTaskColumn, changeTaskColumn, removeTaskColumn', () => {
     const { result } = renderHook(() => useTaskOperations(baseProps));
 

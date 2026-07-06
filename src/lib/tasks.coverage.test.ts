@@ -162,6 +162,7 @@ describe('tasks extra coverage', () => {
     vi.setSystemTime(new Date('2026-03-10T10:00:00.000Z'));
 
     const baseTask = {
+      id: 'task_recurring_source',
       title: 'Przygotuj demo',
       owner: 'Ola',
       assignedTo: ['Ola'],
@@ -200,9 +201,15 @@ describe('tasks extra coverage', () => {
 
     expect(recurring).not.toBeNull();
     expect(recurring.dueDate).toBe('2026-03-17T00:00:00.000Z');
+    expect(recurring.recurrenceParentId).toBe(baseTask.id);
+    expect(recurring.recurrenceGeneratedFromTaskId).toBe(baseTask.id);
+    expect(recurring.recurrenceOccurrenceDate).toBe('2026-03-17T00:00:00.000Z');
     expect(recurring.history[0].type).toBe('recurrence');
     expect(recurring.subtasks[0].completed).toBe(false);
     expect(recurring.subtasks[0].completedAt).toBe('');
+    expect(
+      createRecurringTaskFromTask(baseTask, 'user_3', 'ws_1', DEFAULT_TASK_COLUMNS, [recurring])
+    ).toBeNull();
   });
 
   test('upsertGoogleImportedTasks merges synced tasks and detects conflicts', () => {

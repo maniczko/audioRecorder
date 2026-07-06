@@ -82,6 +82,10 @@ function normalizeWhitespace(value) {
     .trim();
 }
 
+function sameJson(left, right) {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
 // Custom people/tags storage in localStorage to persist user-created values
 const CUSTOM_TASK_PEOPLE_KEY = 'voicelog_custom_task_people';
 const CUSTOM_TASK_TAGS_KEY = 'voicelog_custom_task_tags';
@@ -383,6 +387,47 @@ function recurrenceLabel(recurrence) {
 
 function normalizeRecurrenceFrequency(value) {
   return TASK_RECURRENCE_OPTIONS.some((option) => option.id === value) ? value : 'none';
+}
+
+function recurrenceParentId(task) {
+  return normalizeWhitespace(task?.recurrenceParentId) || normalizeWhitespace(task?.id);
+}
+
+function isRecurringOccurrenceFor(candidate, sourceTask, occurrenceDate, recurrence) {
+  if (!candidate || candidate.id === sourceTask.id) {
+    return false;
+  }
+
+  const candidateOccurrenceDate =
+    normalizeWhitespace(candidate.recurrenceOccurrenceDate) ||
+    normalizeWhitespace(candidate.dueDate);
+  if (candidateOccurrenceDate !== occurrenceDate) {
+    return false;
+  }
+
+  const sourceTaskId = normalizeWhitespace(sourceTask.id);
+  const parentId = recurrenceParentId(sourceTask);
+  const candidateGeneratedFrom = normalizeWhitespace(candidate.recurrenceGeneratedFromTaskId);
+  const candidateParentId = normalizeWhitespace(candidate.recurrenceParentId);
+  if (candidateGeneratedFrom && candidateGeneratedFrom === sourceTaskId) {
+    return true;
+  }
+  if (candidateParentId && candidateParentId === parentId) {
+    return true;
+  }
+
+  return (
+    !candidateGeneratedFrom &&
+    !candidateParentId &&
+    normalizeWhitespace(candidate.title) === normalizeWhitespace(sourceTask.title) &&
+    sameJson(normalizeTaskRecurrence(candidate.recurrence), recurrence)
+  );
+}
+
+function existingRecurringOccurrence(tasks, sourceTask, occurrenceDate, recurrence) {
+  return safeArray(tasks).find((candidate) =>
+    isRecurringOccurrenceFor(candidate, sourceTask, occurrenceDate, recurrence)
+  );
 }
 
 function sameTextList(left, right) {
@@ -937,6 +982,15 @@ function mergeTaskState(task, state, currentUser, columns) {
     recurrence: hasOwn(state, 'recurrence')
       ? normalizeTaskRecurrence(state.recurrence)
       : normalizeTaskRecurrence(task.recurrence),
+    recurrenceParentId: hasOwn(state, 'recurrenceParentId')
+      ? normalizeWhitespace(state.recurrenceParentId)
+      : normalizeWhitespace(task.recurrenceParentId),
+    recurrenceGeneratedFromTaskId: hasOwn(state, 'recurrenceGeneratedFromTaskId')
+      ? normalizeWhitespace(state.recurrenceGeneratedFromTaskId)
+      : normalizeWhitespace(task.recurrenceGeneratedFromTaskId),
+    recurrenceOccurrenceDate: hasOwn(state, 'recurrenceOccurrenceDate')
+      ? normalizeWhitespace(state.recurrenceOccurrenceDate)
+      : normalizeWhitespace(task.recurrenceOccurrenceDate),
     subtasks: hasOwn(state, 'subtasks')
       ? normalizeTaskSubtasks(state.subtasks)
       : normalizeTaskSubtasks(task.subtasks),
@@ -1071,6 +1125,9 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     ),
     dependencies: normalizeTaskDependencies(draft.dependencies),
     recurrence: normalizeTaskRecurrence(draft.recurrence),
+    recurrenceParentId: normalizeWhitespace(draft.recurrenceParentId),
+    recurrenceGeneratedFromTaskId: normalizeWhitespace(draft.recurrenceGeneratedFromTaskId),
+    recurrenceOccurrenceDate: normalizeWhitespace(draft.recurrenceOccurrenceDate),
     subtasks: normalizeTaskSubtasks(draft.subtasks),
     links: normalizeTaskLinks(draft.links),
     order: Number.isFinite(Number(draft.order)) ? Number(draft.order) : -Date.now(),
@@ -1146,6 +1203,13 @@ export function createRecurringTaskFromTask(task, userId, workspaceId, columns, 
     return null;
   }
 
+  const existingOccurrence = existingRecurringOccurrence(tasks, task, dueDate, recurrence);
+  if (existingOccurrence) {
+    return null;
+  }
+
+  const parentId = recurrenceParentId(task);
+
   return createManualTask(
     userId,
     {
@@ -1175,6 +1239,9 @@ export function createRecurringTaskFromTask(task, userId, workspaceId, columns, 
       links: task.links,
       order: getNextTaskOrderTop(tasks),
       workspaceId,
+      recurrenceParentId: parentId,
+      recurrenceGeneratedFromTaskId: task.id,
+      recurrenceOccurrenceDate: dueDate,
     },
     columns,
     workspaceId
