@@ -63,73 +63,127 @@ async function mockUnmatchedLocalBackendRequests(page) {
 }
 
 async function mockProductionCapabilities(page) {
-  await page.route('**/api/capabilities**', async (route) => {
+  const readyCapabilitiesPayload = JSON.stringify({
+    ok: true,
+    status: 'ready',
+    generatedAt: '2026-05-14T10:00:00.000Z',
+    capabilities: {
+      stt: {
+        id: 'stt',
+        label: 'Transkrypcja STT',
+        enabled: true,
+        status: 'available',
+        provider: 'openai',
+      },
+      diarization: {
+        id: 'diarization',
+        label: 'Diarization',
+        enabled: true,
+        status: 'available',
+        provider: 'pyannote',
+      },
+      meetingAnalysis: {
+        id: 'meetingAnalysis',
+        label: 'Analiza spotkan',
+        enabled: true,
+        status: 'available',
+        provider: 'anthropic',
+      },
+      supabaseStorage: {
+        id: 'supabaseStorage',
+        label: 'Magazyn audio',
+        enabled: true,
+        status: 'available',
+        provider: 'supabase-storage',
+      },
+      liveTranscription: {
+        id: 'liveTranscription',
+        label: 'Transkrypcja live',
+        enabled: true,
+        status: 'available',
+        provider: 'browser-speech-recognition',
+      },
+      embeddings: {
+        id: 'embeddings',
+        label: 'Embeddingi',
+        enabled: true,
+        status: 'available',
+        provider: 'openai',
+      },
+      imageGeneration: {
+        id: 'imageGeneration',
+        label: 'Generowanie obrazow',
+        enabled: true,
+        status: 'available',
+        provider: 'gemini',
+      },
+    },
+    degradedCapabilities: [],
+    telemetry: {
+      fallbackModeUsed: false,
+      fallbackModeCapabilities: [],
+    },
+  });
+  const fulfillReadyCapabilities = async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        ok: true,
-        status: 'ready',
-        generatedAt: '2026-05-14T10:00:00.000Z',
-        capabilities: {
-          stt: {
-            id: 'stt',
-            label: 'Transkrypcja STT',
-            enabled: true,
-            status: 'available',
-            provider: 'openai',
-          },
-          diarization: {
-            id: 'diarization',
-            label: 'Diarization',
-            enabled: true,
-            status: 'available',
-            provider: 'pyannote',
-          },
-          meetingAnalysis: {
-            id: 'meetingAnalysis',
-            label: 'Analiza spotkan',
-            enabled: true,
-            status: 'available',
-            provider: 'anthropic',
-          },
-          supabaseStorage: {
-            id: 'supabaseStorage',
-            label: 'Magazyn audio',
-            enabled: true,
-            status: 'available',
-            provider: 'supabase-storage',
-          },
-          liveTranscription: {
-            id: 'liveTranscription',
-            label: 'Transkrypcja live',
-            enabled: true,
-            status: 'available',
-            provider: 'browser-speech-recognition',
-          },
-          embeddings: {
-            id: 'embeddings',
-            label: 'Embeddingi',
-            enabled: true,
-            status: 'available',
-            provider: 'openai',
-          },
-          imageGeneration: {
-            id: 'imageGeneration',
-            label: 'Generowanie obrazow',
-            enabled: true,
-            status: 'available',
-            provider: 'gemini',
-          },
-        },
-        degradedCapabilities: [],
-        telemetry: {
-          fallbackModeUsed: false,
-          fallbackModeCapabilities: [],
-        },
-      }),
+      body: readyCapabilitiesPayload,
     });
+  };
+  await page.route('**/api/capabilities**', fulfillReadyCapabilities);
+  await page.route('**/workspaces/**/capabilities**', fulfillReadyCapabilities);
+}
+
+async function mockDegradedProductionCapabilities(page) {
+  const degradedCapabilitiesPayload = JSON.stringify({
+    ok: false,
+    status: 'degraded',
+    generatedAt: '2026-05-14T10:00:00.000Z',
+    capabilities: {},
+    degradedCapabilities: [
+      {
+        id: 'meetingAnalysis',
+        label: 'Analiza spotkan',
+        enabled: false,
+        status: 'degraded',
+        provider: 'local-fallback',
+        reason: 'HF_TOKEN or HUGGINGFACE_TOKEN is missing.',
+        fallbackMode: true,
+      },
+      {
+        id: 'diarization',
+        label: 'Diarization',
+        enabled: false,
+        status: 'degraded',
+        provider: 'local-fallback',
+        reason: 'Provider token missing.',
+        fallbackMode: true,
+      },
+      {
+        id: 'supabaseStorage',
+        label: 'Magazyn audio',
+        enabled: false,
+        status: 'unavailable',
+        provider: 'local-filesystem',
+        reason: 'Supabase Storage is not configured.',
+        fallbackMode: true,
+      },
+    ],
+    telemetry: {
+      fallbackModeUsed: true,
+      fallbackModeCapabilities: ['meetingAnalysis', 'diarization', 'supabaseStorage'],
+    },
   });
+  const fulfillDegradedCapabilities = async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: degradedCapabilitiesPayload,
+    });
+  };
+  await page.route('**/api/capabilities**', fulfillDegradedCapabilities);
+  await page.route('**/workspaces/**/capabilities**', fulfillDegradedCapabilities);
 }
 
 async function mockVisualBackendRequests(page) {
@@ -986,6 +1040,34 @@ test.describe('Release visual baselines', () => {
         path: `test-results/playwright/studio-compact-player-${viewport.name}.png`,
         fullPage: true,
       });
+    });
+  }
+
+  for (const viewport of [releaseViewports[1], releaseViewports[5]]) {
+    test(`@state compact production readiness banner ${viewport.name}`, async ({ page }) => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await seedReleaseData(page);
+      await page.unroute('**/api/capabilities**');
+      await mockDegradedProductionCapabilities(page);
+      await page.goto('/');
+      await waitForReleaseWorkspace(page);
+
+      const banner = page.locator('.production-readiness-banner');
+      await expect(banner).toBeVisible();
+      await expect(banner).toContainText('Tryb ograniczony');
+      await expect(banner).not.toContainText(/HF_TOKEN|HUGGINGFACE_TOKEN|Provider token/i);
+      await assertNoGlobalOverflow(page);
+      await screenshotPage(page, `production-readiness-banner-${viewport.name}.png`);
+
+      await banner.getByRole('button', { name: /szczegoly/i }).click();
+      await expect(banner.getByRole('button', { name: /ukryj/i })).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      );
+      await expect(banner).toContainText('Analiza AI wymaga konfiguracji');
+      await expect(banner).not.toContainText(/HF_TOKEN|HUGGINGFACE_TOKEN|Provider token/i);
+      await assertNoGlobalOverflow(page);
+      await screenshotPage(page, `production-readiness-banner-expanded-${viewport.name}.png`);
     });
   }
 

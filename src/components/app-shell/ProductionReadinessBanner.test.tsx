@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import ProductionReadinessBanner from './ProductionReadinessBanner';
 import {
@@ -26,7 +27,7 @@ describe('ProductionReadinessBanner', () => {
     workspaceSelectorsMock.currentWorkspaceId = null;
   });
 
-  test('shows degraded production mode with user-facing reasons', async () => {
+  test('shows degraded production mode with compact user-facing details', async () => {
     vi.mocked(fetchProductionCapabilities).mockResolvedValueOnce({
       ok: false,
       status: 'degraded',
@@ -60,10 +61,23 @@ describe('ProductionReadinessBanner', () => {
 
     render(<ProductionReadinessBanner />);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Tryb ograniczony');
+    const banner = await screen.findByRole('status');
+    expect(banner).toHaveTextContent('Tryb ograniczony');
+    expect(banner).toHaveTextContent('Mozesz dalej pracowac');
     expect(screen.getByText(/Analiza spotkan/i)).toBeInTheDocument();
     expect(screen.getByText(/Magazyn audio/i)).toBeInTheDocument();
-    expect(screen.getByText(/lokalny fallback/i)).toBeInTheDocument();
+    expect(screen.queryByText(/ANTHROPIC_API_KEY/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/lokalny fallback/i)).not.toBeInTheDocument();
+
+    const detailsButton = screen.getByRole('button', { name: /szczegoly/i });
+    expect(detailsButton).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(detailsButton);
+
+    expect(detailsButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/Analiza AI wymaga konfiguracji/i)).toBeInTheDocument();
+    expect(screen.getByText(/Magazyn audio wymaga konfiguracji/i)).toBeInTheDocument();
+    expect(screen.queryByText(/ANTHROPIC_API_KEY/i)).not.toBeInTheDocument();
   });
 
   test('stays hidden when all production capabilities are ready', async () => {
