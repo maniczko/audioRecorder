@@ -89,7 +89,7 @@ If upload dir is not writable:
 After deployment, check:
 
 ```
-https://audiorecorder-production.up.railway.app/health
+https://voicelog-production.up.railway.app/health
 ```
 
 Expected response:
@@ -181,7 +181,7 @@ df -h /app/server/data
 ### API Health
 
 ```bash
-curl https://audiorecorder-production.up.railway.app/api/health
+curl https://voicelog-production.up.railway.app/api/health
 ```
 
 ### Logs

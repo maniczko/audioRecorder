@@ -183,7 +183,7 @@ ${deploymentInfo}
 
   // Add health check
   try {
-    const healthUrl = 'https://audiorecorder-production.up.railway.app/health';
+    const healthUrl = 'https://voicelog-production.up.railway.app/health';
     const healthCmd = `curl -s ${healthUrl}`;
     const health = execSync(healthCmd, { encoding: 'utf-8' });
     report += `\`\`\`json\n${health}\n\`\`\`\n`;

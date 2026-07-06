@@ -288,7 +288,7 @@ async function getRailwayStatus() {
         const res = await fetch(`https://backboard.railway.app/graphql/v2`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ query, variables })
+          body: JSON.stringify({ query, variables }),
         });
         if (!res.ok) throw new Error(`Railway API: ${res.status}`);
         return res.json();
@@ -321,7 +321,7 @@ async function getRailwayStatus() {
 
     // Fallback: check Railway backend health endpoint
     // Always use production Railway URL for monitoring (not local dev server)
-    const RAILWAY_URL = 'https://audiorecorder-production.up.railway.app/health';
+    const RAILWAY_URL = 'https://voicelog-production.up.railway.app/health';
 
     let healthStatus = null;
     try {
@@ -334,7 +334,7 @@ async function getRailwayStatus() {
     }
 
     return {
-      status: healthStatus ? 'connected' : (hasConfig ? 'config-only' : 'not-configured'),
+      status: healthStatus ? 'connected' : hasConfig ? 'config-only' : 'not-configured',
       configured: hasConfig || !!process.env.RAILWAY_TOKEN,
       has_token: hasRailwayEnv,
       deployments: [],
@@ -342,9 +342,9 @@ async function getRailwayStatus() {
       health: healthStatus,
       note: healthStatus
         ? `Backend healthy: ${healthStatus.status || 'ok'}`
-        : (hasRailwayEnv
+        : hasRailwayEnv
           ? `Railway API token is not authorized. Run \`railway link\` or get a new token at https://railway.app/dashboard/account/tokens`
-          : 'Railway config files exist. Add RAILWAY_TOKEN for full deployment status.'),
+          : 'Railway config files exist. Add RAILWAY_TOKEN for full deployment status.',
       api_error: healthStatus ? null : 'Railway API not authorized — using health fallback',
     };
   } catch (error) {

@@ -32,7 +32,7 @@ jobs:
           test -n "$GOOGLE_CALENDAR_SCOPES"
           test -n "$GOOGLE_OAUTH_REDIRECT_URI"
           case "$GOOGLE_OAUTH_REDIRECT_URI" in
-            https://audiorecorder-production.up.railway.app/integrations/google/callback) ;;
+            https://voicelog-production.up.railway.app/integrations/google/callback) ;;
             *) echo "GOOGLE_OAUTH_REDIRECT_URI must point to the Railway production callback" >&2; exit 1 ;;
           esac
 
