@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-06T14:13:54.190Z",
+  "sourceFiles": 55,
+  "importantByFile": {
+    "src/PeopleTabStyles.css": 1,
+    "src/RecordingsTabStyles.css": 17,
+    "src/shared/MentionTextareaStyles.css": 3,
+    "src/shared/TagBadge.css": 1,
+    "src/studio/StudioBriefModalStyles.css": 33,
+    "src/studio/StudioMeetingViewStyles.css": 13,
+    "src/studio/TranscriptPanelStyles.css": 1,
+    "src/studio/UnifiedPlayerStyles.css": 1,
+    "src/styles/foundation.css": 1,
+    "src/styles/mobile-utilities.css": 3,
+    "src/styles/modern-layout.css": 14,
+    "src/styles/people.css": 1,
+    "src/styles/tasks.css": 500,
+    "src/tasks/TaskDetailsPanelStyles.css": 69,
+    "src/tasks/TasksWorkspaceViewStyles.css": 1042
+  }
+}
