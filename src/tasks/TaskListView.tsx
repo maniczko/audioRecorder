@@ -13,11 +13,21 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { canDrop, formatListDueDate, handleCardKeyDown, writeDragTask } from './taskViewUtils';
-import { getTaskAssigneeSummary } from '../lib/tasks';
+import {
+  getTaskAssigneeSummary,
+  getTaskLifecycleStatus,
+  TASK_LIFECYCLE_STATUSES,
+} from '../lib/tasks';
 
 const DEFAULT_SORT = 'due:asc';
 
-function statusLabel(task, boardColumns) {
+function statusLabel(task, boardColumns, allTasks = []) {
+  const lifecycle = getTaskLifecycleStatus(task, boardColumns, allTasks);
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.BLOCKED) return 'Zablokowane';
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.CONFLICT) return 'Konflikt';
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.DELETE_PENDING) return 'Usuwanie';
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.ARCHIVED) return 'Archiwum';
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.DONE) return 'Zakonczone';
   const status = String(task.status || '').toLowerCase();
   if (status === 'todo') return 'Do zrobienia';
   if (status === 'in_progress') return 'W toku';
@@ -26,7 +36,15 @@ function statusLabel(task, boardColumns) {
   return boardColumns.find((column) => column.id === task.status)?.label || task.status;
 }
 
-function statusTone(task) {
+function statusTone(task, boardColumns, allTasks = []) {
+  const lifecycle = getTaskLifecycleStatus(task, boardColumns, allTasks);
+  if (lifecycle === TASK_LIFECYCLE_STATUSES.DONE) return 'completed';
+  if (
+    lifecycle === TASK_LIFECYCLE_STATUSES.BLOCKED ||
+    lifecycle === TASK_LIFECYCLE_STATUSES.CONFLICT
+  ) {
+    return 'review';
+  }
   const status = String(task.status || '').toLowerCase();
   if (status === 'in_progress') return 'in-progress';
   if (status === 'waiting') return 'review';
@@ -291,7 +309,7 @@ function TaskListView({
             <option value="">Zmień status</option>
             {boardColumns.map((column) => (
               <option key={column.id} value={column.id}>
-                {statusLabel({ status: column.id }, boardColumns)}
+                {statusLabel({ status: column.id }, boardColumns, allTasks)}
               </option>
             ))}
           </select>
@@ -402,8 +420,10 @@ function TaskListView({
                       </span>
 
                       <span className="todo-status-cell">
-                        <span className={`todo-status-badge ${statusTone(task)}`}>
-                          {statusLabel(task, boardColumns)}
+                        <span
+                          className={`todo-status-badge ${statusTone(task, boardColumns, allTasks)}`}
+                        >
+                          {statusLabel(task, boardColumns, allTasks)}
                         </span>
                       </span>
 

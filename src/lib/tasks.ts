@@ -26,6 +26,17 @@ export const TASK_RECURRENCE_OPTIONS = [
   { id: 'custom', label: 'Wlasny interwal' },
 ];
 
+export const TASK_LIFECYCLE_STATUSES = {
+  ACTIVE: 'active',
+  IN_PROGRESS: 'in_progress',
+  WAITING: 'waiting',
+  BLOCKED: 'blocked',
+  DONE: 'done',
+  ARCHIVED: 'archived',
+  DELETE_PENDING: 'delete-pending',
+  CONFLICT: 'conflict',
+};
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -572,6 +583,48 @@ export function getTaskDependencyDetails(task, tasks) {
     unresolved,
     blocking: unresolved.length > 0,
   };
+}
+
+export function getTaskLifecycleStatus(
+  task: any,
+  columns: any[] = DEFAULT_TASK_COLUMNS,
+  allTasks: any[] = []
+) {
+  if (!task) {
+    return TASK_LIFECYCLE_STATUSES.ACTIVE;
+  }
+
+  if (task._softDeleted) {
+    return TASK_LIFECYCLE_STATUSES.DELETE_PENDING;
+  }
+
+  if (task.archived) {
+    return TASK_LIFECYCLE_STATUSES.ARCHIVED;
+  }
+
+  if (task.googleSyncConflict || task.googleSyncStatus === 'conflict') {
+    return TASK_LIFECYCLE_STATUSES.CONFLICT;
+  }
+
+  const normalizedColumns = normalizeColumns(columns);
+  const status = sanitizeStatus(normalizedColumns, task.status);
+  if (task.completed || isDoneStatus(normalizedColumns, status)) {
+    return TASK_LIFECYCLE_STATUSES.DONE;
+  }
+
+  if (getTaskDependencyDetails(task, allTasks).blocking) {
+    return TASK_LIFECYCLE_STATUSES.BLOCKED;
+  }
+
+  if (status === 'waiting') {
+    return TASK_LIFECYCLE_STATUSES.WAITING;
+  }
+
+  if (status === 'in_progress') {
+    return TASK_LIFECYCLE_STATUSES.IN_PROGRESS;
+  }
+
+  return TASK_LIFECYCLE_STATUSES.ACTIVE;
 }
 
 export function validateTaskDependencies(taskId, dependencyIds, tasks) {
@@ -1357,13 +1410,24 @@ export function buildTasksFromMeetings(
   });
 }
 
-export function taskListStats(tasks) {
+export function taskListStats(tasks, columns = DEFAULT_TASK_COLUMNS) {
   const list = safeArray(tasks);
+  const lifecycleByTaskId = new Map(
+    list.map((task) => [task.id, getTaskLifecycleStatus(task, columns, list)])
+  );
+  const hasLifecycle = (task, lifecycle) => lifecycleByTaskId.get(task.id) === lifecycle;
+  const isDoneTask = (task) => hasLifecycle(task, TASK_LIFECYCLE_STATUSES.DONE);
+  const isOpenTask = (task) =>
+    ![
+      TASK_LIFECYCLE_STATUSES.DONE,
+      TASK_LIFECYCLE_STATUSES.ARCHIVED,
+      TASK_LIFECYCLE_STATUSES.DELETE_PENDING,
+    ].includes(lifecycleByTaskId.get(task.id));
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const weekEdge = new Date(today);
   weekEdge.setDate(today.getDate() + 7);
-  const completedCount = list.filter((task) => task.completed).length;
+  const completedCount = list.filter(isDoneTask).length;
   const allSubtasks = list.flatMap((task) => safeArray(task.subtasks));
   const byPriority = TASK_PRIORITIES.reduce(
     (accumulator, priority) => ({
@@ -1403,22 +1467,22 @@ export function taskListStats(tasks) {
     assigned: list.filter((task) => task.assignedToMe).length,
     important: list.filter((task) => task.important).length,
     completed: completedCount,
-    open: list.filter((task) => !task.completed).length,
+    open: list.filter(isOpenTask).length,
     manual: list.filter((task) => task.sourceType === 'manual').length,
     overdue: list.filter((task) => {
-      if (!task.dueDate || task.completed) {
+      if (!task.dueDate || !isOpenTask(task)) {
         return false;
       }
       return new Date(task.dueDate).getTime() < today.getTime();
     }).length,
     dueToday: list.filter((task) => {
-      if (!task.dueDate || task.completed) {
+      if (!task.dueDate || !isOpenTask(task)) {
         return false;
       }
       return new Date(task.dueDate).toDateString() === today.toDateString();
     }).length,
     dueThisWeek: list.filter((task) => {
-      if (!task.dueDate || task.completed) {
+      if (!task.dueDate || !isOpenTask(task)) {
         return false;
       }
       const dueDate = new Date(task.dueDate).getTime();
@@ -1428,11 +1492,12 @@ export function taskListStats(tasks) {
     unassigned: list.filter(
       (task) => !(task.assignedTo || []).length && (!task.owner || task.owner === 'Nieprzypisane')
     ).length,
-    waiting: list.filter((task) => task.status === 'waiting').length,
-    inProgress: list.filter((task) => task.status === 'in_progress').length,
+    waiting: list.filter((task) => hasLifecycle(task, TASK_LIFECYCLE_STATUSES.WAITING)).length,
+    inProgress: list.filter((task) => hasLifecycle(task, TASK_LIFECYCLE_STATUSES.IN_PROGRESS))
+      .length,
     grouped: list.filter((task) => Boolean(task.group)).length,
     recurring: list.filter((task) => Boolean(task.recurrence)).length,
-    blocked: list.filter((task) => getTaskDependencyDetails(task, list).blocking).length,
+    blocked: list.filter((task) => hasLifecycle(task, TASK_LIFECYCLE_STATUSES.BLOCKED)).length,
     commented: list.filter((task) => (task.comments || []).length).length,
     subtasksOpen: allSubtasks.filter((subtask) => !subtask.completed).length,
     subtasksCompleted: allSubtasks.filter((subtask) => subtask.completed).length,

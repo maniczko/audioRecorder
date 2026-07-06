@@ -12,7 +12,9 @@ import {
   createTaskFromGoogle,
   DEFAULT_TASK_COLUMNS,
   extractMeetingTasks,
+  getTaskLifecycleStatus,
   nextRecurringDueDate,
+  TASK_LIFECYCLE_STATUSES,
   taskListStats,
   updateTaskColumns,
   upsertGoogleImportedTasks,
@@ -46,6 +48,48 @@ describe('tasks extra coverage', () => {
 
     const update = buildTaskReorderUpdate([], {});
     expect(update.order).toBe(-new Date('2026-03-01T00:00:00.000Z').getTime());
+  });
+
+  // ------------------------------------------------------------------
+  // Issue #1377 - canonical task lifecycle status
+  // Date: 2026-07-06
+  // Bug: task lifecycle was inferred differently from status, completed,
+  //      archived, soft-delete, dependency and Google conflict fields.
+  // Fix: getTaskLifecycleStatus centralizes the lifecycle mapping.
+  // ------------------------------------------------------------------
+  test('maps canonical task lifecycle statuses', () => {
+    const columns = [
+      { id: 'todo', label: 'Todo', isDone: false },
+      { id: 'in_progress', label: 'Doing', isDone: false },
+      { id: 'waiting', label: 'Waiting', isDone: false },
+      { id: 'done', label: 'Done', isDone: true },
+    ];
+    const tasks = [
+      { id: 'active', status: 'todo', completed: false },
+      { id: 'in-progress', status: 'in_progress', completed: false },
+      { id: 'waiting', status: 'waiting', completed: false },
+      { id: 'dependency', status: 'todo', completed: false },
+      { id: 'blocked', status: 'todo', completed: false, dependencies: ['dependency'] },
+      { id: 'done-by-completed', status: 'todo', completed: true },
+      { id: 'done-by-column', status: 'done', completed: false },
+      { id: 'archived', status: 'done', completed: true, archived: true },
+      { id: 'delete-pending', status: 'done', completed: true, _softDeleted: true },
+      { id: 'conflict', status: 'todo', completed: false, googleSyncStatus: 'conflict' },
+    ];
+
+    expect(getTaskLifecycleStatus(tasks[0], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.ACTIVE);
+    expect(getTaskLifecycleStatus(tasks[1], columns, tasks)).toBe(
+      TASK_LIFECYCLE_STATUSES.IN_PROGRESS
+    );
+    expect(getTaskLifecycleStatus(tasks[2], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.WAITING);
+    expect(getTaskLifecycleStatus(tasks[4], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.BLOCKED);
+    expect(getTaskLifecycleStatus(tasks[5], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.DONE);
+    expect(getTaskLifecycleStatus(tasks[6], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.DONE);
+    expect(getTaskLifecycleStatus(tasks[7], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.ARCHIVED);
+    expect(getTaskLifecycleStatus(tasks[8], columns, tasks)).toBe(
+      TASK_LIFECYCLE_STATUSES.DELETE_PENDING
+    );
+    expect(getTaskLifecycleStatus(tasks[9], columns, tasks)).toBe(TASK_LIFECYCLE_STATUSES.CONFLICT);
   });
 
   test('nextRecurringDueDate advances based on recurrence', () => {
@@ -624,7 +668,7 @@ describe('tasks extra coverage', () => {
     expect(stats.scheduled).toBe(4);
     expect(stats.unassigned).toBe(2);
     expect(stats.waiting).toBe(1);
-    expect(stats.inProgress).toBe(1);
+    expect(stats.inProgress).toBe(0);
     expect(stats.grouped).toBe(1);
     expect(stats.recurring).toBe(1);
     expect(stats.blocked).toBe(1);

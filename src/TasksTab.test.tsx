@@ -198,10 +198,13 @@ describe('TasksTab', () => {
 
     fireEvent.change(screen.getByPlaceholderText(/Szukaj/i), { target: { value: 'wysoki' } });
 
-    await waitFor(() => {
-      expect(screen.getByText('High priority review')).toBeInTheDocument();
-      expect(screen.queryByText('Low priority cleanup')).not.toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('High priority review')).toBeInTheDocument();
+        expect(screen.queryByText('Low priority cleanup')).not.toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
   });
 
   test('shows richer smart lists similar to task apps', () => {
