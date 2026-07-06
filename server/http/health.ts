@@ -5,7 +5,7 @@ import { resolveSttRuntimePolicy } from '../stt/policy.ts';
 import { createUploadPolicy } from '../lib/mediaStoragePolicy.ts';
 
 export function registerHealthRoute(app: Hono<any>, db?: any) {
-  app.get('/health', async (c) => {
+  const buildHealthPayload = async () => {
     const build = resolveBuildMetadata(process.env, '0.1.0');
     let dbStatus: any = { ok: false, status: 'unreachable' };
 
@@ -53,15 +53,21 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
       process.env.NODE_ENV === 'production' ||
       Boolean(process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
     const storageOk = !storageRequired || Boolean((supabaseStorage as any).ready);
-    const status = dbStatus.ok && storageOk ? 'ok' : 'degraded';
 
-    return c.json(
-      {
-        ok: dbStatus.ok && storageOk,
-        status,
+    return {
+      livenessOk: Boolean(dbStatus.ok),
+      readinessOk: Boolean(dbStatus.ok && storageOk),
+      payload: {
+        ok: Boolean(dbStatus.ok),
+        status: dbStatus.ok ? 'ok' : 'degraded',
         db: dbStatus.status,
         supabaseRemote: Boolean((supabaseStorage as any).ready),
         supabaseStorage,
+        readiness: {
+          ok: Boolean(dbStatus.ok && storageOk),
+          status: dbStatus.ok && storageOk ? 'ready' : 'degraded',
+          storageRequired,
+        },
         mediaUpload: {
           ...createUploadPolicy(),
           storageModeSupport: ['single', 'segmented'],
@@ -95,7 +101,23 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
           rss: `${(memory.rss / 1024 / 1024).toFixed(2)} MB`,
         },
       },
-      dbStatus.ok && storageOk ? 200 : 503
+    };
+  };
+
+  app.get('/health', async (c) => {
+    const health = await buildHealthPayload();
+    return c.json(health.payload, health.livenessOk ? 200 : 503);
+  });
+
+  app.get('/ready', async (c) => {
+    const health = await buildHealthPayload();
+    return c.json(
+      {
+        ...health.payload,
+        ok: health.readinessOk,
+        status: health.readinessOk ? 'ok' : 'degraded',
+      },
+      health.readinessOk ? 200 : 503
     );
   });
 }
