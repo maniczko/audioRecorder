@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 import {
   assertNoNewImportant,
@@ -7,6 +8,25 @@ import {
   createImportantBaseline,
   renderMarkdownReport,
 } from './css-debt-audit.mjs';
+
+function findAdjacentDuplicateRuleBlocks(css: string) {
+  const blockPattern = /([^{}]+\{[^{}]*\})(\r?\n\s*)*/g;
+  const duplicates: Array<{ index: number; block: string }> = [];
+  let previousBlock: string | null = null;
+  let match: RegExpExecArray | null;
+
+  while ((match = blockPattern.exec(css))) {
+    const normalizedBlock = match[1].trim().replace(/\s+/g, ' ');
+
+    if (normalizedBlock === previousBlock) {
+      duplicates.push({ index: match.index, block: normalizedBlock });
+    }
+
+    previousBlock = normalizedBlock;
+  }
+
+  return duplicates;
+}
 
 describe('css debt audit', () => {
   it('detects important declarations, duplicates, hardcoded values and global selectors', () => {
@@ -117,5 +137,22 @@ describe('css debt audit', () => {
     expect(result.sourceFiles).toBe(1);
     expect(result.files[0].file).toBe('src/PeopleTabStyles.css');
     expect(result.totals.totalFindings).toBeGreaterThan(0);
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1389 — adjacent duplicate CSS selector blocks
+  // Date: 2026-07-07
+  // Bug: recordings and tasks styles carried repeated copy-pasted blocks.
+  // Fix: remove adjacent duplicates and guard against reintroducing them.
+  // ─────────────────────────────────────────────────────────────────
+  describe('Regression: Issue #1389 — adjacent duplicate CSS selector blocks', () => {
+    it.each(['src/styles/recordings.css', 'src/styles/tasks.css'])(
+      'keeps %s free of adjacent duplicate rule blocks',
+      (filePath) => {
+        const css = readFileSync(filePath, 'utf8');
+
+        expect(findAdjacentDuplicateRuleBlocks(css)).toEqual([]);
+      }
+    );
   });
 });

@@ -9,47 +9,6 @@
   border-radius: 18px;
 }
 
-.feature-card,
-.metric-card,
-.answer-card,
-.segment-card,
-.meeting-card,
-.recording-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
-}
-
-.mode-switch,
-.button-row,
-.topbar-actions,
-.status-cluster,
-.meeting-card-top,
-.meeting-card-meta,
-.recording-card-top,
-.segment-meta,
-.hero-meta,
-.brief-columns,
-.analysis-columns {
-  display: flex;
-  gap: 12px;
-}
-
-.mode-switch,
-.button-row,
-.topbar-actions,
-.status-cluster,
-.meeting-card-top,
-.meeting-card-meta,
-.recording-card-top,
-.segment-meta,
-.hero-meta,
-.brief-columns,
-.analysis-columns {
-  display: flex;
-  gap: 12px;
-}
-
 .mode-switch,
 .button-row,
 .topbar-actions,
@@ -72,25 +31,6 @@
 .meeting-card:hover,
 .recording-card:hover {
   transform: translateY(-1px);
-}
-
-.primary-button:hover,
-.secondary-button:hover,
-.ghost-button:hover,
-.danger-button:hover,
-.meeting-card:hover,
-.recording-card:hover {
-  transform: translateY(-1px);
-}
-
-.auth-form span,
-.stack-form span,
-.speaker-editor-row span,
-.soft-copy,
-.microcopy,
-.meeting-card p,
-.recording-card p {
-  color: var(--muted);
 }
 
 .auth-form span,
@@ -121,24 +61,6 @@
   gap: 18px;
 }
 
-.workspace-sidebar,
-.workspace-main,
-.main-grid,
-.meeting-list,
-.recordings-list,
-.transcript-list,
-.speaker-editor-list,
-.analysis-stack {
-  display: grid;
-  gap: 18px;
-}
-
-.recorder-panel,
-.transcript-panel,
-.recordings-panel {
-  grid-column: span 2;
-}
-
 .recorder-panel,
 .transcript-panel,
 .recordings-panel {
@@ -164,18 +86,6 @@
   color: var(--muted);
 }
 
-.recorder-queue-card span,
-.recorder-queue-card small {
-  color: var(--muted);
-}
-
-.segment-card,
-.answer-card,
-.meeting-card,
-.recording-card {
-  padding: 16px;
-}
-
 .segment-card,
 .answer-card,
 .meeting-card,
@@ -190,29 +100,10 @@
   cursor: pointer;
 }
 
-.meeting-card,
-.recording-card {
-  text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-}
-
 .meeting-card.active,
 .recording-card.active {
   border-color: rgba(158, 242, 219, 0.38);
   background: rgba(116, 208, 191, 0.08);
-}
-
-.meeting-card.active,
-.recording-card.active {
-  border-color: rgba(158, 242, 219, 0.38);
-  background: rgba(116, 208, 191, 0.08);
-}
-
-.recording-card.pending.uploading,
-.recording-card.pending.processing {
-  border-color: rgba(243, 202, 114, 0.28);
-  background: rgba(243, 202, 114, 0.08);
 }
 
 .recording-card.pending.uploading,
@@ -224,15 +115,6 @@
 .recording-card.pending.failed {
   border-color: rgba(241, 125, 114, 0.3);
   background: rgba(241, 125, 114, 0.08);
-}
-
-.meeting-card p,
-.recording-card p,
-.segment-card p,
-.analysis-block p,
-.answer-card p {
-  margin: 8px 0 0;
-  line-height: 1.65;
 }
 
 .meeting-card p,
@@ -272,12 +154,6 @@
 }
 
 @media (max-width: 1120px) {
-  .recorder-panel,
-  .transcript-panel,
-  .recordings-panel {
-    grid-column: auto;
-  }
-
   .recorder-panel,
   .transcript-panel,
   .recordings-panel {
@@ -377,25 +253,6 @@
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 4px;
-}
-
-.primary-button:not(:disabled):hover,
-.secondary-button:not(:disabled):hover,
-.ghost-button:not(:disabled):hover,
-.tab-pill:not(.active):hover,
-.todo-command-button:not(:disabled):hover,
-.todo-side-link:not(.active):hover,
-.calendar-filter-chip:not(.active):hover,
-.note-card:not(.active):hover,
-.meeting-card:not(.active):hover,
-.recording-card:not(.active):hover,
-.agenda-card:not(:disabled):hover,
-.person-row:not(.active):hover,
-.calendar-tag-chip:not(.active):hover,
-.brief-tab:not(.active):hover,
-.topbar-record-btn:not(:disabled):hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
 }
 
 .primary-button:not(:disabled):hover,
