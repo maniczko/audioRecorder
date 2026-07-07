@@ -161,6 +161,24 @@
   .ff-player-main {
     gap: 8px;
   }
+
+  .ff-player-status-wrap[data-testid='player-loading-audio'],
+  .ff-player-status-wrap[data-testid='player-audio-error'] {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .ff-player-status-wrap[data-testid='player-loading-audio'] .ff-player-time,
+  .ff-player-status-wrap[data-testid='player-audio-error'] .ff-player-time {
+    min-width: 0;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .ff-player-status-wrap[data-testid='player-audio-error'] .ff-audio-error-copy {
+    min-width: 0;
+    line-height: 1.3;
+  }
 }
 
 @media (max-width: 480px) {
@@ -181,6 +199,14 @@
   .ff-player-bar {
     padding: 8px 12px;
     min-height: 48px;
+  }
+
+  .ff-player-status-wrap[data-testid='player-audio-error'] {
+    flex-wrap: wrap;
+  }
+
+  .ff-player-status-wrap[data-testid='player-audio-error'] .ff-audio-error-copy {
+    display: none;
   }
 }
 /* Current Studio mobile layout: stack the analysis and transcript panes,
