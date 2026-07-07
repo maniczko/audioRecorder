@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type TestInfo } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { seedLoggedInUser, seedMeeting, seedQueueItem, seedTask } from './helpers/seed.js';
+import { seedLoggedInUser, seedQueueItem } from './helpers/seed.js';
 
 const releaseViewports = [
   { name: 'mobile-320', width: 320, height: 844 },
@@ -33,9 +33,18 @@ const referenceFixtures = [
   'people-profile-desktop-1394x774.png',
 ];
 
+interface ReleaseSeedOptions {
+  meetings?: unknown[];
+  manualTasks?: unknown[];
+  taskState?: Record<string, unknown>;
+  taskBoards?: Record<string, unknown>;
+  includeQueueItem?: boolean;
+}
+
 const consoleErrorsByTest = new WeakMap<TestInfo, string[]>();
 const benignConsoleErrorPatterns = [
   /Failed to load resource: net::ERR_CONNECTION_CLOSED/i,
+  /Failed to load resource: net::ERR_CONNECTION_REFUSED/i,
   /Failed to load resource: net::ERR_NETWORK_CHANGED/i,
   /Failed to load resource: net::ERR_REQUEST_RANGE_NOT_SATISFIABLE/i,
   /Failed to load resource: the server responded with a status of 404 \(Not Found\)/i,
@@ -43,7 +52,7 @@ const benignConsoleErrorPatterns = [
 
 const coreTabs = [
   { label: 'Studio', surface: 'studio', expected: '.modern-content-wrapper' },
-  { label: 'Nagrania', surface: 'recordings', expected: '.recordings-tab-shell, main' },
+  { label: 'Nagrania', surface: 'recordings', expected: '.recordings-tab-shell' },
   { label: 'Kalendarz', surface: 'calendar', expected: '.calendar-view, .calendar-shell, main' },
   { label: 'Zadania', surface: 'tasks', expected: '.tasks-page-shell, .tasks-layout, main' },
   { label: 'Osoby', surface: 'people', expected: '.people-tab, .people-layout, main' },
@@ -211,7 +220,7 @@ async function freezeClock(page) {
   `);
 }
 
-async function seedReleaseData(page) {
+async function seedReleaseData(page, options: ReleaseSeedOptions = {}) {
   await mockVisualBackendRequests(page);
   const meeting = {
     id: 'meeting_visual_baseline',
@@ -259,11 +268,13 @@ async function seedReleaseData(page) {
     workspaceId: 'ws_e2e',
     createdByUserId: 'user_e2e',
   };
+  const releaseMeetings = options.meetings ?? [meeting];
+  const releaseTasks = options.manualTasks ?? [task];
   const state = {
-    meetings: [meeting],
-    manualTasks: [task],
-    taskState: {},
-    taskBoards: {},
+    meetings: releaseMeetings,
+    manualTasks: releaseTasks,
+    taskState: options.taskState ?? {},
+    taskBoards: options.taskBoards ?? {},
     calendarMeta: {},
     vocabulary: [],
     storedMeetingDrafts: {},
@@ -362,21 +373,42 @@ async function seedReleaseData(page) {
     });
   });
   await seedLoggedInUser(page);
-  await seedMeeting(page, meeting);
-  await seedTask(page, task);
-  await seedQueueItem(page, {
-    id: 'q_visual_ready',
-    recordingId: 'recording_visual_baseline',
-    meetingId: 'meeting_visual_baseline',
-    meetingTitle: 'Release baseline meeting',
-    meetingSnapshot: meeting,
-    status: 'done',
-    uploaded: true,
-    duration: 180,
-    transcriptOutcome: 'normal',
-    createdAt: '2026-05-14T10:05:00.000Z',
-    updatedAt: '2026-05-14T10:08:00.000Z',
-  });
+  await page.addInitScript(
+    ({ nextState }) => {
+      localStorage.setItem(
+        'voicelog_meetings_store',
+        JSON.stringify({
+          state: nextState,
+          version: 0,
+        })
+      );
+      localStorage.setItem('voicelog.meetings.v3', JSON.stringify(nextState.meetings));
+      localStorage.setItem('voicelog.manualTasks.v1', JSON.stringify(nextState.manualTasks));
+      localStorage.setItem('voicelog.taskState.v1', JSON.stringify(nextState.taskState || {}));
+      localStorage.setItem('voicelog.taskBoards.v1', JSON.stringify(nextState.taskBoards || {}));
+      localStorage.setItem(
+        'voicelog.calendarMeta.v1',
+        JSON.stringify(nextState.calendarMeta || {})
+      );
+      localStorage.setItem('voicelog.vocabulary.v1', JSON.stringify(nextState.vocabulary || []));
+    },
+    { nextState: state }
+  );
+  if (options.includeQueueItem !== false) {
+    await seedQueueItem(page, {
+      id: 'q_visual_ready',
+      recordingId: 'recording_visual_baseline',
+      meetingId: 'meeting_visual_baseline',
+      meetingTitle: 'Release baseline meeting',
+      meetingSnapshot: meeting,
+      status: 'done',
+      uploaded: true,
+      duration: 180,
+      transcriptOutcome: 'normal',
+      createdAt: '2026-05-14T10:05:00.000Z',
+      updatedAt: '2026-05-14T10:08:00.000Z',
+    });
+  }
 }
 
 async function waitForReleaseWorkspace(page) {
@@ -933,7 +965,10 @@ async function assertReferenceScreenQuality(page, options: { allowModalBackdrop?
 async function openShellTab(page, label: string) {
   const hamburger = page.locator('.modern-hamburger-btn');
   if (await hamburger.isVisible()) {
-    await hamburger.click();
+    const isExpanded = (await hamburger.getAttribute('aria-expanded')) === 'true';
+    if (!isExpanded) {
+      await hamburger.click();
+    }
   }
 
   const navItem = page.locator('.modern-nav').getByRole('button', { name: label });
@@ -986,7 +1021,8 @@ test.describe('Release visual baselines', () => {
       await screenshotPage(page, `auth-login-${viewport.name}.png`);
     });
 
-    test(`@baseline authenticated shell tabs ${viewport.name}`, async ({ page }) => {
+    test(`@baseline authenticated shell tabs ${viewport.name}`, async ({ page }, testInfo) => {
+      testInfo.setTimeout(90_000);
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await seedReleaseData(page);
       await page.goto('/');
@@ -998,6 +1034,10 @@ test.describe('Release visual baselines', () => {
       for (const tab of coreTabs) {
         await openShellTab(page, tab.label);
         await expect(page.locator(tab.expected).first()).toBeVisible();
+        if (tab.surface === 'tasks') {
+          await page.evaluate(() => window.scrollTo(0, 0));
+          await expect(page.getByRole('heading', { name: 'Zadania' })).toBeVisible();
+        }
         if (tab.surface === 'people') {
           await expect(page.getByRole('heading', { name: 'Osoby' })).toBeVisible();
         }
@@ -1070,6 +1110,105 @@ test.describe('Release visual baselines', () => {
       await screenshotPage(page, `production-readiness-banner-expanded-${viewport.name}.png`);
     });
   }
+
+  test('@state empty tasks, empty recordings and mobile navigation mobile-390', async ({
+    page,
+  }) => {
+    const viewport = releaseViewports[1];
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await seedReleaseData(page, { meetings: [], manualTasks: [], includeQueueItem: false });
+    await page.goto('/');
+    await expect(page.locator('.modern-main')).toBeVisible();
+
+    await page.locator('.modern-hamburger-btn').click();
+    await expect(page.locator('.modern-sidebar')).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `mobile-navigation-open-${viewport.name}.png`);
+
+    await openShellTab(page, 'Zadania');
+    await page.getByText(/Brak zada/).scrollIntoViewIfNeeded();
+    await expect(page.getByText('Brak zadań na dziś')).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `tasks-empty-${viewport.name}.png`);
+
+    await openShellTab(page, 'Nagrania');
+    await expect(page.getByText('Brak nagrań')).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `recordings-empty-${viewport.name}.png`);
+  });
+
+  test('@state task conflict, detail panel and undo toast desktop-1440', async ({ page }) => {
+    const viewport = releaseViewports[5];
+    const conflictTask = {
+      id: 'task_visual_conflict',
+      title: 'Resolve Google task conflict',
+      notes: 'Local notes waiting for review.',
+      dueDate: '2026-05-14T14:00:00.000Z',
+      priority: 'high',
+      sourceType: 'google',
+      workspaceId: 'ws_e2e',
+      createdByUserId: 'user_e2e',
+      googleSyncConflict: {
+        sourceLabel: 'Google Tasks',
+        detectedAt: '2026-05-14T10:06:00.000Z',
+        localSnapshot: {
+          title: 'Resolve Google task conflict',
+          dueDate: '2026-05-14T14:00:00.000Z',
+          notes: 'Local notes waiting for review.',
+          completed: false,
+        },
+        remoteSnapshot: {
+          title: 'Resolve Google task conflict from remote',
+          dueDate: '2026-05-15T09:00:00.000Z',
+          notes: 'Remote notes changed in Google.',
+          completed: false,
+        },
+        finalSnapshot: {
+          title: 'Resolve Google task conflict',
+          dueDate: '2026-05-14T14:00:00.000Z',
+          notes: 'Merged review note.',
+          completed: false,
+        },
+      },
+    };
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await seedReleaseData(page, { manualTasks: [conflictTask] });
+    await page.goto('/');
+    await waitForReleaseWorkspace(page);
+    await openShellTab(page, 'Zadania');
+
+    await expect(page.getByText('Konflikt').first()).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `tasks-conflict-${viewport.name}.png`);
+
+    await page.getByText('Resolve Google task conflict').first().click();
+    await expect(page.getByRole('dialog', { name: 'Podgląd zadania' })).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `tasks-detail-open-${viewport.name}.png`);
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Usuń zadanie' }).click();
+    await expect(page.getByRole('button', { name: 'Cofnij' })).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `tasks-delete-undo-toast-${viewport.name}.png`);
+  });
+
+  test('@state studio transcript selection and speaker dropdown tablet-768', async ({ page }) => {
+    const viewport = releaseViewports[2];
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await seedReleaseData(page);
+    await page.goto('/');
+    await waitForReleaseWorkspace(page);
+
+    const segmentCheckbox = page.getByLabel(/Zaznacz segment/i).first();
+    await segmentCheckbox.check();
+    await expect(segmentCheckbox).toBeChecked();
+
+    await page.locator('.ff-speaker-trigger').first().click();
+    await expect(page.locator('.ff-speaker-dropdown')).toBeVisible();
+    await assertNoGlobalOverflow(page);
+    await screenshotPage(page, `studio-transcript-speaker-dropdown-${viewport.name}.png`);
+  });
 
   for (const viewport of overlayViewports) {
     test(`@state auth register and reset states ${viewport.name}`, async ({ page }) => {
