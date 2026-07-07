@@ -56,6 +56,27 @@ describe('mobile responsive CSS contracts', () => {
     expect(css).toContain('.tasks-layout.ms-todo .todo-primary-toolbar');
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1390 — Tasks reference-list light-theme variant
+  // Date: 2026-07-07
+  // Bug: screenshot-specific light-theme overrides were scoped only to
+  //      `.tasks-layout.ms-todo`, making the cascade too broad.
+  // Fix: require an explicit root variant class for the reference list view.
+  // ─────────────────────────────────────────────────────────────────
+  it('scopes screenshot-first task list overrides to the reference-list variant', () => {
+    const css = readCss('./tasks.css');
+    const tasksTab = readFileSync('src/TasksTab.tsx', 'utf8');
+    const referenceBlock = css.slice(0, css.indexOf('@keyframes todoOverlayFadeIn'));
+
+    expect(tasksTab).toContain('tasks-layout ms-todo tasks-layout--reference-list');
+    expect(referenceBlock).toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo:where(.tasks-layout--reference-list)"
+    );
+    expect(referenceBlock).not.toContain(
+      ":root[data-theme='premium-light'] .tasks-layout.ms-todo .todo-sidebar"
+    );
+  });
+
   it('turns recordings tables into labeled mobile cards', () => {
     const css = readCss('./recordings.css');
 

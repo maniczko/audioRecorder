@@ -830,7 +830,7 @@ export default function TasksTab({
   return (
     <PageShell className="tasks-page-shell">
       <SplitPane
-        className="tasks-layout ms-todo"
+        className="tasks-layout ms-todo tasks-layout--reference-list"
         sidebarWidth="default"
         sidebar={
           <TasksSidebar
