@@ -110,6 +110,29 @@ describe('TaskDetailsPanel', () => {
     expect(screen.getByText('Status changed to todo')).toBeInTheDocument();
   });
 
+  it('renders structured task events before legacy history entries', async () => {
+    const taskWithEvents = {
+      ...mockSelectedTask,
+      events: [
+        {
+          id: 'event-1',
+          type: 'status_change',
+          actor: 'User',
+          summary: 'Przeniesiono do W toku.',
+          createdAt: '2026-03-26T10:00:00Z',
+        },
+      ],
+    };
+    const { container } = render(<TaskDetailsPanel {...mockProps} selectedTask={taskWithEvents} />);
+
+    fireEvent.click(container.querySelector('.todo-history-toggle') as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByText('Przeniesiono do W toku.')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Created task')).not.toBeInTheDocument();
+  });
+
   it('collapses history when expanded', async () => {
     render(<TaskDetailsPanel {...mockProps} />);
 

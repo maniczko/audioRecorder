@@ -53,6 +53,12 @@ describe('useTaskOperations', () => {
     });
 
     expect(created).toEqual(expect.objectContaining({ title: 'New Task' }));
+    expect(created.events).toEqual([
+      expect.objectContaining({
+        type: 'create',
+        summary: 'Utworzono zadanie.',
+      }),
+    ]);
     expect(mockSetManualTasks).toHaveBeenCalledTimes(1);
 
     const updater = mockSetManualTasks.mock.calls[0][0];
@@ -87,6 +93,13 @@ describe('useTaskOperations', () => {
     const next = updater(prev);
     expect(next.find((t: any) => t.id === 't1').title).toBe('Updated T1');
     expect(next.find((t: any) => t.id === 'other').title).toBe('Other');
+    expect(next.find((t: any) => t.id === 't1').events).toEqual([
+      expect.objectContaining({
+        type: 'update',
+        field: 'title',
+        summary: 'Zmieniono tytul na "Updated T1".',
+      }),
+    ]);
   });
 
   test('updateTask auto merges payload into taskState', () => {
@@ -100,6 +113,42 @@ describe('useTaskOperations', () => {
     const updater = mockSetTaskState.mock.calls[0][0];
     const next = updater({});
     expect(next.t2.title).toBe('Updated T2');
+    expect(next.t2.events).toEqual([
+      expect.objectContaining({
+        type: 'update',
+        field: 'title',
+      }),
+    ]);
+  });
+
+  test('updateTask deduplicates structured events on retry', () => {
+    const taskWithExistingEvent = {
+      ...baseProps.meetingTasks[0],
+      updatedAt: '2026-03-20T10:00:00.000Z',
+      events: [
+        {
+          id: 'event-existing',
+          type: 'update',
+          taskId: 't1',
+          actor: 'User',
+          summary: 'Zmieniono tytul na "Updated T1".',
+          field: 'title',
+          createdAt: '2026-03-20T10:01:00.000Z',
+          dedupeKey: 'task:t1:update:title:2026-03-20T10:00:00.000Z:"Updated T1"',
+        },
+      ],
+    };
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: [taskWithExistingEvent] })
+    );
+
+    act(() => {
+      result.current.updateTask('t1', { title: 'Updated T1' });
+    });
+
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater([taskWithExistingEvent]);
+    expect(next[0].events).toHaveLength(1);
   });
 
   test('local edit of a Google task updates nested sync state separately from task status', () => {
@@ -504,6 +553,12 @@ describe('useTaskOperations', () => {
     const next = updater({});
     expect(next.t2.archived).toBe(true);
     expect(next.t2.updatedAt).toBeDefined();
+    expect(next.t2.events).toEqual([
+      expect.objectContaining({
+        type: 'delete',
+        summary: 'Usunieto zadanie.',
+      }),
+    ]);
   });
 
   test('bulkDeleteTasks calls deleteTask for each unique id', () => {
