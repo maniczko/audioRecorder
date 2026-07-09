@@ -1,6 +1,11 @@
 // @ts-nocheck
 import { createId } from './storage';
-import { createGoogleTaskConflictState } from './googleSync';
+import {
+  createGoogleTaskConflictState,
+  getGoogleTaskSyncConflict,
+  getGoogleTaskSyncStatus,
+  normalizeGoogleTaskSyncState,
+} from './googleSync';
 
 const ORDER_GAP = 1024;
 const ORDER_REBALANCE_MIN_GAP = 1;
@@ -603,7 +608,7 @@ export function getTaskLifecycleStatus(
     return TASK_LIFECYCLE_STATUSES.ARCHIVED;
   }
 
-  if (task.googleSyncConflict || task.googleSyncStatus === 'conflict') {
+  if (getGoogleTaskSyncConflict(task) || getGoogleTaskSyncStatus(task) === 'conflict') {
     return TASK_LIFECYCLE_STATUSES.CONFLICT;
   }
 
@@ -1231,6 +1236,16 @@ export function createTaskFromGoogle(
   const completed = googleTask.status === 'completed';
   const owner = currentUser?.name || currentUser?.email || 'Ja';
   const syncedAt = new Date().toISOString();
+  const googleUpdatedAt = googleTask.updated || googleTask.completed || dueDate;
+  const googleSync = normalizeGoogleTaskSyncState({
+    googleTaskId: googleTask.id,
+    googleTaskListId: taskList.id,
+    googleUpdatedAt,
+    googleSyncedAt: syncedAt,
+    googlePulledAt: syncedAt,
+    googleSyncStatus: 'synced',
+    googleSyncConflict: null,
+  });
 
   return {
     id: createId('google_task'),
@@ -1268,11 +1283,12 @@ export function createTaskFromGoogle(
     subtasks: [],
     links: [],
     order: -new Date(googleTask.updated || new Date().toISOString()).getTime(),
-    googleUpdatedAt: googleTask.updated || googleTask.completed || dueDate,
+    googleUpdatedAt,
     googleSyncedAt: syncedAt,
     googlePulledAt: syncedAt,
     googleSyncStatus: 'synced',
     googleSyncConflict: null,
+    googleSync,
   };
 }
 
@@ -1350,17 +1366,25 @@ export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) 
       const existingTask = merged[index];
       const conflict = createGoogleTaskConflictState(existingTask, task);
       if (conflict) {
+        const googleUpdatedAt =
+          task.googleUpdatedAt || task.updatedAt || existingTask.googleUpdatedAt || '';
         merged[index] = {
           ...existingTask,
-          googleUpdatedAt:
-            task.googleUpdatedAt || task.updatedAt || existingTask.googleUpdatedAt || '',
+          googleUpdatedAt,
           googlePulledAt: syncedAt,
           googleSyncStatus: 'conflict',
           googleSyncConflict: conflict,
+          googleSync: normalizeGoogleTaskSyncState(existingTask, {
+            remoteUpdatedAt: googleUpdatedAt,
+            pulledAt: syncedAt,
+            status: 'conflict',
+            conflict,
+          }),
         };
         return;
       }
 
+      const googleUpdatedAt = task.googleUpdatedAt || task.updatedAt || '';
       merged[index] = {
         ...existingTask,
         title: task.title,
@@ -1374,26 +1398,45 @@ export function upsertGoogleImportedTasks(existingTasks, importedTasks, userId) 
         group: task.group,
         owner: task.owner || existingTask.owner,
         assignedTo: task.assignedTo?.length ? task.assignedTo : existingTask.assignedTo,
-        googleUpdatedAt: task.googleUpdatedAt || task.updatedAt || '',
+        googleUpdatedAt,
         googleSyncedAt: syncedAt,
         googlePulledAt: syncedAt,
         googleSyncStatus: 'synced',
         googleSyncConflict: null,
+        googleSync: normalizeGoogleTaskSyncState(existingTask, {
+          taskId: task.googleTaskId || existingTask.googleTaskId,
+          taskListId: task.googleTaskListId || existingTask.googleTaskListId,
+          remoteUpdatedAt: googleUpdatedAt,
+          syncedAt,
+          pulledAt: syncedAt,
+          status: 'synced',
+          conflict: null,
+        }),
         id: existingTask.id,
       };
       return;
     }
 
+    const googleUpdatedAt = task.googleUpdatedAt || task.updatedAt || '';
     merged.unshift({
       ...task,
       googleSyncedAt: syncedAt,
       googlePulledAt: syncedAt,
       googleSyncStatus: 'synced',
       googleSyncConflict: null,
+      googleSync: normalizeGoogleTaskSyncState(task, {
+        remoteUpdatedAt: googleUpdatedAt,
+        syncedAt,
+        pulledAt: syncedAt,
+        status: 'synced',
+        conflict: null,
+      }),
     });
   });
 
-  const conflictCount = merged.filter((task) => task.googleSyncStatus === 'conflict').length;
+  const conflictCount = merged.filter(
+    (task) => getGoogleTaskSyncStatus(task) === 'conflict'
+  ).length;
   return { merged, conflictCount };
 }
 
@@ -1611,7 +1654,8 @@ export function buildTaskDiagnosticsReport(tasks, options = {}) {
     archivedTasks: scopedTasks.filter((task) => task.archived).length,
     deletePendingTasks: scopedTasks.filter(isDeletePendingTask).length,
     conflicts: scopedTasks.filter(
-      (task) => task.googleSyncStatus === 'conflict' || Boolean(task.googleSyncConflict)
+      (task) =>
+        getGoogleTaskSyncStatus(task) === 'conflict' || Boolean(getGoogleTaskSyncConflict(task))
     ).length,
     missingWorkspaceId: missingWorkspaceId.length,
     missingTitle: missingTitle.length,

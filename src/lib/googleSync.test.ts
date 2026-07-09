@@ -6,6 +6,9 @@ import {
   createGoogleCalendarConflictState,
   createGoogleTaskConflictState,
   detectGoogleTaskConflict,
+  getGoogleTaskSyncConflict,
+  getGoogleTaskSyncStatus,
+  normalizeGoogleTaskSyncState,
 } from './googleSync';
 
 describe('googleSync helpers', () => {
@@ -109,5 +112,57 @@ describe('googleSync helpers', () => {
     );
 
     expect(snapshot.endsAt).toBe('2026-03-15T10:30:00.000Z');
+  });
+
+  test('normalizes legacy Google Task fields into the nested sync model', () => {
+    const conflict = {
+      detectedAt: '2026-03-15T09:30:00.000Z',
+      localSnapshot: { title: 'Local' },
+      remoteSnapshot: { title: 'Remote' },
+    };
+
+    const state = normalizeGoogleTaskSyncState({
+      googleTaskId: 'task_1',
+      googleTaskListId: 'list_1',
+      googleUpdatedAt: '2026-03-15T09:00:00.000Z',
+      googleSyncedAt: '2026-03-15T08:00:00.000Z',
+      googlePulledAt: '2026-03-15T08:10:00.000Z',
+      googleLocalUpdatedAt: '2026-03-15T08:30:00.000Z',
+      googleSyncStatus: 'conflict',
+      googleSyncConflict: conflict,
+    });
+
+    expect(state).toEqual({
+      provider: 'google_tasks',
+      taskId: 'task_1',
+      taskListId: 'list_1',
+      remoteUpdatedAt: '2026-03-15T09:00:00.000Z',
+      syncedAt: '2026-03-15T08:00:00.000Z',
+      pulledAt: '2026-03-15T08:10:00.000Z',
+      localUpdatedAt: '2026-03-15T08:30:00.000Z',
+      status: 'conflict',
+      conflict,
+    });
+  });
+
+  test('prefers nested Google Task sync state over legacy aliases', () => {
+    const nestedConflict = {
+      detectedAt: '2026-03-16T10:00:00.000Z',
+      localSnapshot: { title: 'Nested local' },
+    };
+    const task = {
+      googleSync: {
+        provider: 'google_tasks',
+        taskId: 'nested_task',
+        taskListId: 'nested_list',
+        status: 'local_changes',
+        conflict: nestedConflict,
+      },
+      googleSyncStatus: 'synced',
+      googleSyncConflict: null,
+    };
+
+    expect(getGoogleTaskSyncStatus(task)).toBe('local_changes');
+    expect(getGoogleTaskSyncConflict(task)).toBe(nestedConflict);
   });
 });

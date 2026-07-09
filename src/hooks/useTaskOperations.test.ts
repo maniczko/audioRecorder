@@ -102,6 +102,58 @@ describe('useTaskOperations', () => {
     expect(next.t2.title).toBe('Updated T2');
   });
 
+  test('local edit of a Google task updates nested sync state separately from task status', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-20T10:00:00.000Z'));
+
+    const googleTask = {
+      id: 'google-task',
+      title: 'Imported task',
+      status: 'c1',
+      sourceType: 'google',
+      googleTaskId: 'remote-1',
+      googleTaskListId: 'list-1',
+      googleSync: {
+        provider: 'google_tasks',
+        taskId: 'remote-1',
+        taskListId: 'list-1',
+        status: 'synced',
+        syncedAt: '2026-03-20T09:00:00.000Z',
+      },
+      history: [],
+      completed: false,
+      tags: [],
+      assignedTo: [],
+    };
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: [googleTask] })
+    );
+
+    act(() => {
+      result.current.updateTask('google-task', { title: 'Local title' });
+    });
+
+    const updater = mockSetManualTasks.mock.calls[0][0];
+    const next = updater([googleTask]);
+    const updatedTask = next.find((task: any) => task.id === 'google-task');
+
+    expect(updatedTask.status).toBe('c1');
+    expect(updatedTask.googleSyncStatus).toBe('local_changes');
+    expect(updatedTask.googleLocalUpdatedAt).toBe('2026-03-20T10:00:00.000Z');
+    expect(updatedTask.googleSync).toEqual(
+      expect.objectContaining({
+        provider: 'google_tasks',
+        taskId: 'remote-1',
+        taskListId: 'list-1',
+        status: 'local_changes',
+        localUpdatedAt: '2026-03-20T10:00:00.000Z',
+        conflict: null,
+      })
+    );
+
+    vi.useRealTimers();
+  });
+
   test('moveTaskToColumn, rescheduleTask, reorderTask', () => {
     const { result } = renderHook(() => useTaskOperations(baseProps));
 

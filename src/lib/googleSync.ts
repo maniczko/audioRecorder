@@ -20,6 +20,61 @@ function toTimestamp(value) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
+const GOOGLE_TASK_SYNC_PROVIDER = 'google_tasks';
+
+function cleanSyncStatus(value) {
+  const status = cleanText(value);
+  return ['synced', 'local_changes', 'conflict', 'error', 'pending'].includes(status) ? status : '';
+}
+
+export function normalizeGoogleTaskSyncState(taskLike: any, overrides: any = {}) {
+  const nested: any =
+    taskLike?.googleSync && typeof taskLike.googleSync === 'object' ? taskLike.googleSync : {};
+  const taskId = cleanText(overrides.taskId || nested.taskId || taskLike?.googleTaskId);
+  const taskListId = cleanText(
+    overrides.taskListId || nested.taskListId || taskLike?.googleTaskListId
+  );
+  const status =
+    cleanSyncStatus(overrides.status) ||
+    cleanSyncStatus(nested.status) ||
+    cleanSyncStatus(taskLike?.googleSyncStatus) ||
+    (taskId ? 'synced' : '');
+  const conflict =
+    overrides.conflict !== undefined
+      ? overrides.conflict
+      : nested.conflict !== undefined
+        ? nested.conflict
+        : taskLike?.googleSyncConflict || null;
+
+  if (!taskId && !taskListId && !status && !conflict) {
+    return null;
+  }
+
+  return {
+    provider: GOOGLE_TASK_SYNC_PROVIDER,
+    taskId,
+    taskListId,
+    remoteUpdatedAt: toIsoOrEmpty(
+      overrides.remoteUpdatedAt || nested.remoteUpdatedAt || taskLike?.googleUpdatedAt
+    ),
+    syncedAt: toIsoOrEmpty(overrides.syncedAt || nested.syncedAt || taskLike?.googleSyncedAt),
+    pulledAt: toIsoOrEmpty(overrides.pulledAt || nested.pulledAt || taskLike?.googlePulledAt),
+    localUpdatedAt: toIsoOrEmpty(
+      overrides.localUpdatedAt || nested.localUpdatedAt || taskLike?.googleLocalUpdatedAt
+    ),
+    status,
+    conflict: conflict || null,
+  };
+}
+
+export function getGoogleTaskSyncStatus(taskLike: any) {
+  return normalizeGoogleTaskSyncState(taskLike)?.status || '';
+}
+
+export function getGoogleTaskSyncConflict(taskLike: any) {
+  return normalizeGoogleTaskSyncState(taskLike)?.conflict || null;
+}
+
 function computeDurationMinutes(startsAt, endsAt, fallbackMinutes = 30) {
   const start = new Date(startsAt || 0);
   const end = new Date(endsAt || 0);
@@ -49,19 +104,31 @@ export function areGoogleTaskSnapshotsEqual(left, right) {
 }
 
 export function detectGoogleTaskConflict(existingTask, importedTask) {
+  const existingSync = normalizeGoogleTaskSyncState(existingTask);
   const localSnapshot = buildGoogleTaskSnapshot(existingTask);
   const remoteSnapshot = buildGoogleTaskSnapshot(importedTask);
   const lastSyncedAt =
+    existingSync?.syncedAt ||
+    existingSync?.pulledAt ||
     existingTask?.googleSyncedAt ||
     existingTask?.googlePulledAt ||
     existingTask?.createdAt ||
     importedTask?.createdAt ||
     '';
   const localUpdatedAt =
-    existingTask?.googleLocalUpdatedAt || existingTask?.updatedAt || existingTask?.createdAt || '';
+    existingSync?.localUpdatedAt ||
+    existingTask?.googleLocalUpdatedAt ||
+    existingTask?.updatedAt ||
+    existingTask?.createdAt ||
+    '';
   const remoteUpdatedAt =
-    importedTask?.googleUpdatedAt || importedTask?.updatedAt || importedTask?.createdAt || '';
+    importedTask?.googleSync?.remoteUpdatedAt ||
+    importedTask?.googleUpdatedAt ||
+    importedTask?.updatedAt ||
+    importedTask?.createdAt ||
+    '';
   const localChanged =
+    existingSync?.status === 'local_changes' ||
     existingTask?.googleSyncStatus === 'local_changes' ||
     toTimestamp(localUpdatedAt) > toTimestamp(lastSyncedAt);
   const remoteChanged = toTimestamp(remoteUpdatedAt) > toTimestamp(lastSyncedAt);
