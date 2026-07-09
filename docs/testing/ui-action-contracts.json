@@ -88,7 +88,7 @@
       "screen": "Tasks",
       "file": "src/TasksTab.tsx",
       "expectedActionCount": 3,
-      "fingerprint": "d77070c727c5105c",
+      "fingerprint": "12112b603ef37025",
       "contractStatus": "covered",
       "testFiles": ["src/TasksTab.test.tsx"],
       "testEvidence": [
