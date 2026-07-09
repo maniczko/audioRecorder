@@ -102,6 +102,37 @@ describe('useTaskOperations', () => {
     expect(next.t2.title).toBe('Updated T2');
   });
 
+  test('completing a blocked task names the unresolved blocker', () => {
+    const blocker = {
+      id: 'blocker',
+      title: 'Approve budget',
+      status: 'c1',
+      sourceType: 'manual',
+      history: [],
+      completed: false,
+      tags: [],
+      assignedTo: [],
+    };
+    const blockedTask = {
+      id: 'blocked',
+      title: 'Send offer',
+      status: 'c1',
+      sourceType: 'manual',
+      history: [],
+      completed: false,
+      tags: [],
+      assignedTo: [],
+      dependencies: ['blocker'],
+    };
+    const { result } = renderHook(() =>
+      useTaskOperations({ ...baseProps, meetingTasks: [blockedTask, blocker] })
+    );
+
+    expect(() => {
+      result.current.updateTask('blocked', { completed: true });
+    }).toThrow(/Approve budget/);
+  });
+
   test('local edit of a Google task updates nested sync state separately from task status', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-20T10:00:00.000Z'));

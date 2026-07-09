@@ -20,6 +20,7 @@ import {
   writeDragTask,
 } from './taskViewUtils';
 import {
+  getTaskDependencyDetails,
   getTaskAssigneeSummary,
   getTaskLifecycleStatus,
   TASK_LIFECYCLE_STATUSES,
@@ -390,6 +391,8 @@ function TaskListView({
                 const SourceIcon = source.Icon;
                 const canOpenSource = Boolean(task.sourceMeetingId && openMeetingHandler);
                 const reminderLabel = formatReminderDateTime(task.reminderAt);
+                const dependencyState = getTaskDependencyDetails(task, allTasks);
+                const firstBlocker = dependencyState.unresolved[0]?.title || '';
 
                 return (
                   <div key={task.id} className="todo-list-row-shell">
@@ -427,6 +430,18 @@ function TaskListView({
                         {task.myDay ? (
                           <span className="todo-row-meta-badges">
                             <span className="todo-metadata-badge">Mój dzień</span>
+                          </span>
+                        ) : null}
+                        {dependencyState.blocking ? (
+                          <span className="todo-row-meta-badges">
+                            <span
+                              className="todo-metadata-badge warning"
+                              title={
+                                firstBlocker ? `Blokowane przez: ${firstBlocker}` : 'Blokowane'
+                              }
+                            >
+                              Blokowane
+                            </span>
                           </span>
                         ) : null}
                       </span>
