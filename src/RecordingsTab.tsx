@@ -1,4 +1,5 @@
 import './styles/recordings.css';
+import './styles/studio-library.css';
 import React from 'react';
 import { useToast } from './shared/Toast';
 import Modal from './shared/Modal';
@@ -1065,24 +1066,7 @@ function UnifiedLibrary({
             </button>
 
             {showFilters && (
-              <div
-                className="recordings-filters-dropdown"
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 12px)',
-                  left: 0,
-                  zIndex: 9999,
-                  background: '#101c1a',
-                  border: '1px solid rgba(117, 214, 196, 0.2)',
-                  borderRadius: 12,
-                  padding: 24,
-                  width: 340,
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.8)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 20,
-                }}
-              >
+              <div className="recordings-filters-dropdown">
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 >

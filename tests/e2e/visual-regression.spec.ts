@@ -1347,4 +1347,15 @@ test.describe('Release visual baselines', () => {
       await screenshotPage(page, `reference-recordings-table-${viewport.name}.png`);
     });
   }
+
+  test('@state recordings filters dropdown desktop-1366', async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await seedReferenceData(page, { recordingsTableReference: true });
+    await page.goto('/');
+    await openShellTab(page, 'Nagrania');
+    await page.getByRole('button', { name: /Filtry/ }).click();
+    await expect(page.locator('.recordings-filters-dropdown')).toBeVisible();
+    await assertReferenceScreenQuality(page);
+    await screenshotPage(page, 'recordings-filters-dropdown-desktop-1366.png');
+  });
 });
