@@ -1,7 +1,12 @@
 import { memo, useEffect, useState } from 'react';
 import { AlignLeft, History, Link, Trash2 } from 'lucide-react';
 import { formatDateTime } from '../lib/storage';
-import { getTaskLifecycleStatus, TASK_LIFECYCLE_STATUSES } from '../lib/tasks';
+import {
+  getTaskBlockingDetails,
+  getTaskDependencyDetails,
+  getTaskLifecycleStatus,
+  TASK_LIFECYCLE_STATUSES,
+} from '../lib/tasks';
 import { getGoogleTaskSyncConflict } from '../lib/googleSync';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
@@ -73,8 +78,10 @@ function TaskDetailsPanel(props: any) {
     onUpdateTask,
     onDeleteTask,
     onOpenMeeting,
+    onOpenTask,
     onResolveGoogleTaskConflict,
     presentation = 'panel',
+    tasks = [],
   } = props;
   const selectedTaskGoogleConflict = getGoogleTaskSyncConflict(selectedTask);
   const [conflictDraft, setConflictDraft] = useState(
@@ -118,7 +125,8 @@ function TaskDetailsPanel(props: any) {
   }
 
   const selectedTaskDraft = buildSelectedTaskDraft(selectedTask, boardColumns);
-  const selectedTaskLifecycle = getTaskLifecycleStatus(selectedTask, boardColumns, [selectedTask]);
+  const relatedTasks = tasks?.length ? tasks : [selectedTask];
+  const selectedTaskLifecycle = getTaskLifecycleStatus(selectedTask, boardColumns, relatedTasks);
   const selectedTaskDone = selectedTaskLifecycle === TASK_LIFECYCLE_STATUSES.DONE;
   const selectedTaskDoneLabel = selectedTaskDone
     ? 'Oznacz jako nieukonczone'
@@ -135,6 +143,66 @@ function TaskDetailsPanel(props: any) {
         type: event.type,
       }))
     : legacyHistory;
+  const dependencyState = getTaskDependencyDetails(selectedTask, relatedTasks);
+  const blockingState = getTaskBlockingDetails(selectedTask, relatedTasks);
+  const canOpenTask = typeof onOpenTask === 'function';
+  const dependencySection =
+    dependencyState.dependencies.length || blockingState.blocking.length ? (
+      <section className="todo-detail-section todo-dependency-section">
+        <div className="todo-section-head">
+          <strong>Zależności</strong>
+          {dependencyState.blocking ? <span>Zablokowane</span> : null}
+        </div>
+
+        {dependencyState.dependencies.length ? (
+          <div className="todo-dependency-group">
+            <span className="todo-card-eyebrow">Blokowane przez</span>
+            <div className="todo-dependency-list">
+              {dependencyState.dependencies.map((dependency) => (
+                <button
+                  key={dependency.id}
+                  type="button"
+                  className={
+                    dependency.completed
+                      ? 'todo-dependency-link completed'
+                      : 'todo-dependency-link blocked'
+                  }
+                  onClick={() => canOpenTask && onOpenTask(dependency.id)}
+                  disabled={!canOpenTask}
+                >
+                  <span>{dependency.title || 'Zadanie bez tytułu'}</span>
+                  <small>{dependency.completed ? 'Gotowe' : 'Blokuje ukończenie'}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {blockingState.blocking.length ? (
+          <div className="todo-dependency-group">
+            <span className="todo-card-eyebrow">Blokuje</span>
+            <div className="todo-dependency-list">
+              {blockingState.blocking.map((blockedTask) => (
+                <button
+                  key={blockedTask.id}
+                  type="button"
+                  className={
+                    blockedTask.completed
+                      ? 'todo-dependency-link completed'
+                      : 'todo-dependency-link blocked'
+                  }
+                  onClick={() => canOpenTask && onOpenTask(blockedTask.id)}
+                  disabled={!canOpenTask}
+                >
+                  <span>{blockedTask.title || 'Zadanie bez tytułu'}</span>
+                  <small>{blockedTask.completed ? 'Gotowe' : 'Czeka na to zadanie'}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    ) : null;
   const sharedTaskForm = (
     <TaskCreateForm
       key={selectedTask.id}
@@ -157,7 +225,12 @@ function TaskDetailsPanel(props: any) {
   );
 
   if (presentation === 'modal') {
-    return <div className="todo-details todo-details--modal-form">{sharedTaskForm}</div>;
+    return (
+      <div className="todo-details todo-details--modal-form">
+        {sharedTaskForm}
+        {dependencySection}
+      </div>
+    );
   }
 
   return (
@@ -304,6 +377,8 @@ function TaskDetailsPanel(props: any) {
         ) : null}
 
         {sharedTaskForm}
+
+        {dependencySection}
 
         <section className="todo-detail-section todo-detail-notes-section">
           <label className="todo-detail-row note-row">

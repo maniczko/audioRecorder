@@ -165,6 +165,7 @@ function KanbanCard({
   allTasks,
 }) {
   const dependencyState = getTaskDependencyDetails(task, allTasks);
+  const firstBlocker = dependencyState.unresolved[0]?.title || '';
   const taskLifecycle = getTaskLifecycleStatus(task, boardColumns, allTasks);
   const taskDone = taskLifecycle === TASK_LIFECYCLE_STATUSES.DONE;
   const subtasks = task.subtasks || [];
@@ -304,8 +305,11 @@ function KanbanCard({
               </span>
             ) : null}
             {dependencyState.blocking ? (
-              <span className="kanban-flag-icon tone-warning" title="Blokowane">
-                ⛔
+              <span
+                className="kanban-flag-icon tone-warning kanban-blocked-badge"
+                title={firstBlocker ? `Blokowane przez: ${firstBlocker}` : 'Blokowane'}
+              >
+                Blokowane
               </span>
             ) : null}
           </div>

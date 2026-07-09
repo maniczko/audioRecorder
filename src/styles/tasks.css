@@ -5914,6 +5914,12 @@
   line-height: 1;
 }
 
+.tasks-layout.ms-todo .todo-metadata-badge.warning {
+  border-color: rgba(217, 119, 6, 0.28);
+  background: rgba(217, 119, 6, 0.1);
+  color: #b45309;
+}
+
 .tasks-layout.ms-todo .todo-date-stack {
   display: flex;
   flex-direction: column;
