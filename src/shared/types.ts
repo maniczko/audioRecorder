@@ -320,6 +320,18 @@ export interface GoogleTaskSyncConflict {
   remoteSnapshot?: Record<string, unknown>;
 }
 
+export interface GoogleTaskSyncState {
+  provider: 'google_tasks';
+  taskId?: string;
+  taskListId?: string;
+  remoteUpdatedAt?: string;
+  syncedAt?: string;
+  pulledAt?: string;
+  localUpdatedAt?: string;
+  status?: GoogleTaskSyncStatus;
+  conflict?: GoogleTaskSyncConflict | null;
+}
+
 // Persisted task entity stored in WorkspaceState.manualTasks for manual and external tasks.
 export interface TaskRecord {
   id: string;
@@ -346,6 +358,7 @@ export interface TaskRecord {
   googleLocalUpdatedAt?: string;
   googleSyncStatus?: GoogleTaskSyncStatus;
   googleSyncConflict?: GoogleTaskSyncConflict | null;
+  googleSync?: GoogleTaskSyncState | null;
   group: string;
   description: string;
   notes: string;
@@ -398,6 +411,7 @@ export type TaskStatePatch = Partial<
     | 'googleLocalUpdatedAt'
     | 'googleSyncStatus'
     | 'googleSyncConflict'
+    | 'googleSync'
     | 'updatedAt'
     | 'archived'
   >

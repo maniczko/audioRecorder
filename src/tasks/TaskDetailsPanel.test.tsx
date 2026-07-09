@@ -218,6 +218,23 @@ describe('TaskDetailsPanel', () => {
       expect(screen.getByText('Finalna wersja')).toBeInTheDocument();
     });
 
+    it('renders conflict resolution panel from nested googleSync state', () => {
+      const taskWithConflict = {
+        ...mockSelectedTask,
+        googleSyncConflict: null,
+        googleSync: {
+          provider: 'google_tasks',
+          status: 'conflict',
+          conflict: mockConflict,
+        },
+      };
+      render(<TaskDetailsPanel {...mockProps} selectedTask={taskWithConflict} />);
+
+      expect(screen.getByText('Konflikt synchronizacji Google')).toBeInTheDocument();
+      expect(screen.getByText('Local Task')).toBeInTheDocument();
+      expect(screen.getByText('Remote Task')).toBeInTheDocument();
+    });
+
     it('does not render conflict panel when no conflict', () => {
       render(<TaskDetailsPanel {...mockProps} />);
 

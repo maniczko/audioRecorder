@@ -13,6 +13,7 @@ import {
   validateTaskCompletion,
 } from '../lib/tasks';
 import { normalizeTaskUpdatePayload } from '../lib/appState';
+import { normalizeGoogleTaskSyncState } from '../lib/googleSync';
 
 function normalizedText(value) {
   return String(value || '').trim();
@@ -83,6 +84,11 @@ function isTaskInOrderScope(task, status, group) {
   );
 }
 
+function getGoogleTaskSyncIdentity(task) {
+  const sync = normalizeGoogleTaskSyncState(task);
+  return sync?.taskId || task?.googleTaskId || '';
+}
+
 function insertTaskByPlacement(sortedTasks, movingTask, placement) {
   const nextTasks = sortedTasks.filter((task) => task.id !== movingTask.id);
   const previousIndex = nextTasks.findIndex((task) => task.id === placement.previousTaskId);
@@ -119,33 +125,35 @@ export default function useTaskOperations({
 
     const updatedAt = new Date().toISOString();
     const actor = currentUser?.name || currentUser?.email || 'Ty';
+    const shouldMarkGoogleLocalChanges =
+      Boolean(getGoogleTaskSyncIdentity(task)) &&
+      updates.googleSyncStatus === undefined &&
+      updates.googleSync === undefined;
+    const googleSyncPatch = shouldMarkGoogleLocalChanges
+      ? {
+          googleSyncStatus: 'local_changes',
+          googleLocalUpdatedAt: updatedAt,
+          googleSyncConflict: null,
+          googleSync: normalizeGoogleTaskSyncState(task, {
+            status: 'local_changes',
+            localUpdatedAt: updatedAt,
+            conflict: null,
+          }),
+        }
+      : {};
     const nextTask = {
       ...task,
       ...normalizedUpdates,
-      ...(task.googleTaskId && updates.googleSyncStatus === undefined
-        ? {
-            googleSyncStatus: 'local_changes',
-            googleLocalUpdatedAt: updatedAt,
-            googleSyncConflict: null,
-          }
-        : {}),
+      ...googleSyncPatch,
       updatedAt,
     };
-    const syncPayload =
-      task.googleTaskId && updates.googleSyncStatus === undefined
-        ? {
-            googleSyncStatus: 'local_changes',
-            googleLocalUpdatedAt: updatedAt,
-            googleSyncConflict: null,
-          }
-        : {};
     const nextHistory = [
       ...(normalizedUpdates.history || task.history || []),
       ...buildTaskChangeHistory(task, nextTask, actor, taskColumns),
     ];
     const nextPayload = {
       ...normalizedUpdates,
-      ...syncPayload,
+      ...googleSyncPatch,
       history: nextHistory,
       updatedAt,
     };

@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { AlignLeft, History, Link, Trash2 } from 'lucide-react';
 import { formatDateTime } from '../lib/storage';
 import { getTaskLifecycleStatus, TASK_LIFECYCLE_STATUSES } from '../lib/tasks';
+import { getGoogleTaskSyncConflict } from '../lib/googleSync';
 import { toInputDateTime } from './taskViewUtils';
 import { Input } from '../ui/Input';
 import MentionTextarea from '../shared/MentionTextarea';
@@ -75,15 +76,16 @@ function TaskDetailsPanel(props: any) {
     onResolveGoogleTaskConflict,
     presentation = 'panel',
   } = props;
+  const selectedTaskGoogleConflict = getGoogleTaskSyncConflict(selectedTask);
   const [conflictDraft, setConflictDraft] = useState(
-    buildConflictDraft(selectedTask?.googleSyncConflict)
+    buildConflictDraft(selectedTaskGoogleConflict)
   );
   const [historyExpanded, setHistoryExpanded] = useState(false);
 
   useEffect(() => {
-    setConflictDraft(buildConflictDraft(selectedTask?.googleSyncConflict));
+    setConflictDraft(buildConflictDraft(selectedTaskGoogleConflict));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTask?.googleSyncConflict?.detectedAt, selectedTask?.id]);
+  }, [selectedTaskGoogleConflict?.detectedAt, selectedTask?.id]);
 
   if (!selectedTask) {
     return (
@@ -97,7 +99,7 @@ function TaskDetailsPanel(props: any) {
   }
 
   async function resolveConflict(mode) {
-    if (typeof onResolveGoogleTaskConflict !== 'function' || !selectedTask.googleSyncConflict) {
+    if (typeof onResolveGoogleTaskConflict !== 'function' || !selectedTaskGoogleConflict) {
       return;
     }
 
@@ -184,36 +186,36 @@ function TaskDetailsPanel(props: any) {
           </div>
         </div>
 
-        {selectedTask.googleSyncConflict ? (
+        {selectedTaskGoogleConflict ? (
           <section className="todo-detail-section todo-conflict-resolution">
             <div className="todo-section-head">
               <strong>Konflikt synchronizacji Google</strong>
-              <span>{selectedTask.googleSyncConflict.sourceLabel || 'Google Tasks'}</span>
+              <span>{selectedTaskGoogleConflict.sourceLabel || 'Google Tasks'}</span>
             </div>
 
             <div className="todo-conflict-grid">
               <article className="todo-conflict-panel">
                 <span className="todo-card-eyebrow">Lokalne</span>
-                <strong>{selectedTask.googleSyncConflict.localSnapshot?.title || 'Brak'}</strong>
+                <strong>{selectedTaskGoogleConflict.localSnapshot?.title || 'Brak'}</strong>
                 <small>
                   Termin:{' '}
-                  {selectedTask.googleSyncConflict.localSnapshot?.dueDate
-                    ? formatDateTime(selectedTask.googleSyncConflict.localSnapshot.dueDate)
+                  {selectedTaskGoogleConflict.localSnapshot?.dueDate
+                    ? formatDateTime(selectedTaskGoogleConflict.localSnapshot.dueDate)
                     : 'Brak'}
                 </small>
-                <p>{selectedTask.googleSyncConflict.localSnapshot?.notes || 'Brak notatek.'}</p>
+                <p>{selectedTaskGoogleConflict.localSnapshot?.notes || 'Brak notatek.'}</p>
               </article>
 
               <article className="todo-conflict-panel">
                 <span className="todo-card-eyebrow">Google</span>
-                <strong>{selectedTask.googleSyncConflict.remoteSnapshot?.title || 'Brak'}</strong>
+                <strong>{selectedTaskGoogleConflict.remoteSnapshot?.title || 'Brak'}</strong>
                 <small>
                   Termin:{' '}
-                  {selectedTask.googleSyncConflict.remoteSnapshot?.dueDate
-                    ? formatDateTime(selectedTask.googleSyncConflict.remoteSnapshot.dueDate)
+                  {selectedTaskGoogleConflict.remoteSnapshot?.dueDate
+                    ? formatDateTime(selectedTaskGoogleConflict.remoteSnapshot.dueDate)
                     : 'Brak'}
                 </small>
-                <p>{selectedTask.googleSyncConflict.remoteSnapshot?.notes || 'Brak notatek.'}</p>
+                <p>{selectedTaskGoogleConflict.remoteSnapshot?.notes || 'Brak notatek.'}</p>
               </article>
 
               <article className="todo-conflict-panel editable">

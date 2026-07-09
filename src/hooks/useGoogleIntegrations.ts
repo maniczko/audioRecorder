@@ -18,6 +18,11 @@ import {
   upsertGoogleImportedTasks,
 } from '../lib/tasks';
 import {
+  getGoogleTaskSyncConflict,
+  getGoogleTaskSyncStatus,
+  normalizeGoogleTaskSyncState,
+} from '../lib/googleSync';
+import {
   disconnectGoogleCalendar as disconnectGoogleCalendarOnServer,
   fetchGoogleCalendarEvents,
   getGoogleCalendarStatus,
@@ -556,13 +561,15 @@ export default function useGoogleIntegrations({
       return undefined;
     }
 
-    const pendingTasks = manualTasks.filter(
-      (task) =>
-        task?.googleTaskId &&
-        task?.googleTaskListId === selectedGoogleTaskListId &&
-        task?.googleSyncStatus === 'local_changes' &&
-        !task?.googleSyncConflict
-    );
+    const pendingTasks = manualTasks.filter((task) => {
+      const sync = normalizeGoogleTaskSyncState(task);
+      return (
+        sync?.taskId &&
+        sync?.taskListId === selectedGoogleTaskListId &&
+        getGoogleTaskSyncStatus(task) === 'local_changes' &&
+        !getGoogleTaskSyncConflict(task)
+      );
+    });
 
     if (!pendingTasks.length) {
       return undefined;
@@ -576,7 +583,12 @@ export default function useGoogleIntegrations({
           break;
         }
 
-        const taskKey = `${task.googleTaskListId}:${task.googleTaskId}`;
+        const sync = normalizeGoogleTaskSyncState(task);
+        if (!sync?.taskId || !sync?.taskListId) {
+          continue;
+        }
+
+        const taskKey = `${sync.taskListId}:${sync.taskId}`;
         if (inFlightTaskSyncRef.current.has(taskKey)) {
           continue;
         }
@@ -585,8 +597,8 @@ export default function useGoogleIntegrations({
         try {
           const remoteResponse = await updateGoogleTask(
             googleTasksTokenRef.current,
-            task.googleTaskListId,
-            task.googleTaskId,
+            sync.taskListId,
+            sync.taskId,
             buildGoogleTaskPayloadFromSnapshot(task)
           );
           const now = new Date().toISOString();
@@ -605,6 +617,16 @@ export default function useGoogleIntegrations({
                     googleLocalUpdatedAt: now,
                     googleSyncStatus: 'synced',
                     googleSyncConflict: null,
+                    googleSync: normalizeGoogleTaskSyncState(item, {
+                      taskId: sync.taskId,
+                      taskListId: sync.taskListId,
+                      remoteUpdatedAt,
+                      syncedAt: now,
+                      pulledAt: now,
+                      localUpdatedAt: now,
+                      status: 'synced',
+                      conflict: null,
+                    }),
                     updatedAt: now,
                   }
             )
@@ -723,10 +745,11 @@ export default function useGoogleIntegrations({
   const resolveGoogleTaskConflict = useCallback(
     async (taskId, mode, finalSnapshot = null) => {
       const task = meetingTasks.find((item) => item.id === taskId);
-      const conflict = task?.googleSyncConflict;
+      const conflict = getGoogleTaskSyncConflict(task);
       if (!task || !conflict) {
         return;
       }
+      const sync = normalizeGoogleTaskSyncState(task);
 
       const nextSnapshot: Record<string, any> =
         mode === 'google'
@@ -741,14 +764,14 @@ export default function useGoogleIntegrations({
       let remoteResponse: { updated?: string } | null = null;
 
       if (mode !== 'google') {
-        if (!googleTasksTokenRef.current || !task.googleTaskId || !task.googleTaskListId) {
+        if (!googleTasksTokenRef.current || !sync?.taskId || !sync?.taskListId) {
           throw new Error('Najpierw polacz Google Tasks, aby zapisac finalna wersje.');
         }
 
         remoteResponse = await updateGoogleTask(
           googleTasksTokenRef.current,
-          task.googleTaskListId,
-          task.googleTaskId,
+          sync.taskListId,
+          sync.taskId,
           buildGoogleTaskPayloadFromSnapshot(nextSnapshot)
         );
       }
@@ -768,7 +791,7 @@ export default function useGoogleIntegrations({
                 updatedAt: now,
                 googleUpdatedAt:
                   remoteResponse?.updated ||
-                  task.googleSyncConflict?.remoteUpdatedAt ||
+                  conflict.remoteUpdatedAt ||
                   task.googleUpdatedAt ||
                   now,
                 googleSyncedAt: now,
@@ -776,6 +799,16 @@ export default function useGoogleIntegrations({
                 googleLocalUpdatedAt: now,
                 googleSyncStatus: 'synced',
                 googleSyncConflict: null,
+                googleSync: normalizeGoogleTaskSyncState(item, {
+                  taskId: sync?.taskId || item.googleTaskId,
+                  taskListId: sync?.taskListId || item.googleTaskListId,
+                  remoteUpdatedAt: remoteResponse?.updated || conflict.remoteUpdatedAt || now,
+                  syncedAt: now,
+                  pulledAt: now,
+                  localUpdatedAt: now,
+                  status: 'synced',
+                  conflict: null,
+                }),
                 history: [
                   ...(item.history || []),
                   createTaskHistoryEntry(

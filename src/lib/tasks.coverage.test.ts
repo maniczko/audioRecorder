@@ -204,6 +204,16 @@ describe('tasks extra coverage', () => {
     expect(task.group).toBe('Moj list');
     expect(task.googleSyncedAt).toBe('2026-03-10T09:00:00.000Z');
     expect(task.googleSyncStatus).toBe('synced');
+    expect(task.googleSync).toEqual(
+      expect.objectContaining({
+        provider: 'google_tasks',
+        taskId: 'google_1',
+        taskListId: 'list_1',
+        status: 'synced',
+        syncedAt: '2026-03-10T09:00:00.000Z',
+        pulledAt: '2026-03-10T09:00:00.000Z',
+      })
+    );
   });
 
   test('createRecurringTaskFromTask creates a new cycle task', () => {
@@ -315,6 +325,16 @@ describe('tasks extra coverage', () => {
     expect(mergedResult.merged[0].title).toBe('New');
     expect(mergedResult.merged[0].googleSyncStatus).toBe('synced');
     expect(mergedResult.merged[0].googleSyncedAt).toBe('2026-03-12T08:00:00.000Z');
+    expect(mergedResult.merged[0].googleSync).toEqual(
+      expect.objectContaining({
+        provider: 'google_tasks',
+        taskId: 'g1',
+        taskListId: 'l1',
+        status: 'synced',
+        syncedAt: '2026-03-12T08:00:00.000Z',
+        pulledAt: '2026-03-12T08:00:00.000Z',
+      })
+    );
 
     const conflictExisting = [
       {
@@ -337,6 +357,34 @@ describe('tasks extra coverage', () => {
     expect(conflictResult.conflictCount).toBe(1);
     expect(conflictResult.merged[0].googleSyncStatus).toBe('conflict');
     expect(conflictResult.merged[0].googleSyncConflict).not.toBeNull();
+    expect(conflictResult.merged[0].googleSync).toEqual(
+      expect.objectContaining({
+        provider: 'google_tasks',
+        taskId: 'g1',
+        taskListId: 'l1',
+        status: 'conflict',
+        conflict: conflictResult.merged[0].googleSyncConflict,
+      })
+    );
+  });
+
+  test('Google sync conflict lifecycle can read the nested sync state', () => {
+    const lifecycle = getTaskLifecycleStatus(
+      {
+        id: 'nested-conflict',
+        status: 'todo',
+        completed: false,
+        googleSync: {
+          provider: 'google_tasks',
+          status: 'conflict',
+          conflict: { detectedAt: '2026-03-12T08:00:00.000Z' },
+        },
+      },
+      DEFAULT_TASK_COLUMNS,
+      []
+    );
+
+    expect(lifecycle).toBe(TASK_LIFECYCLE_STATUSES.CONFLICT);
   });
 
   test('extractMeetingTasks uses analysis tasks or action items', () => {
