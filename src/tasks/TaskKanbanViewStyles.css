@@ -292,6 +292,17 @@
   color: #f17d72;
 }
 
+.kanban-blocked-badge {
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(241, 125, 114, 0.28);
+  border-radius: 999px;
+  background: rgba(241, 125, 114, 0.12);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .kanban-cover-bar {
   height: 6px;
   border-radius: 6px 6px 0 0;

@@ -261,4 +261,34 @@ describe('TaskListView', () => {
 
     expect(screen.getByText('Brak zadań w tej sekcji.')).toBeInTheDocument();
   });
+
+  it('renders a blocked badge when task dependencies are unresolved', () => {
+    const baseTask = createBaseProps().groupedTasks[0].tasks[0];
+    const blocker = {
+      ...baseTask,
+      id: 'task-blocker',
+      title: 'Approve budget',
+      completed: false,
+      dependencies: [],
+    };
+    const blockedTask = {
+      ...baseTask,
+      id: 'task-blocked',
+      title: 'Send offer',
+      dependencies: ['task-blocker'],
+    };
+    const groupedTasks = [{ id: 'todo', label: 'Todo', tasks: [blockedTask] }];
+
+    render(
+      <TaskListView
+        {...createBaseProps({
+          groupedTasks,
+          allTasks: [blockedTask, blocker],
+        })}
+      />
+    );
+
+    expect(screen.getByText('Blokowane')).toBeInTheDocument();
+    expect(screen.getByTitle('Blokowane przez: Approve budget')).toBeInTheDocument();
+  });
 });

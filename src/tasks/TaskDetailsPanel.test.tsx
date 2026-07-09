@@ -176,6 +176,36 @@ describe('TaskDetailsPanel', () => {
     expect(screen.getByText('Google Tasks')).toBeInTheDocument();
   });
 
+  it('opens a blocker task from the dependency section', () => {
+    const onOpenTask = vi.fn();
+    const blocker = {
+      ...mockSelectedTask,
+      id: 'task-blocker',
+      title: 'Approve budget',
+      completed: false,
+      dependencies: [],
+    };
+    const blockedTask = {
+      ...mockSelectedTask,
+      id: 'task-blocked',
+      title: 'Send offer',
+      dependencies: ['task-blocker'],
+    };
+
+    render(
+      <TaskDetailsPanel
+        {...mockProps}
+        selectedTask={blockedTask}
+        tasks={[blockedTask, blocker]}
+        onOpenTask={onOpenTask}
+        presentation="modal"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Approve budget/i }));
+    expect(onOpenTask).toHaveBeenCalledWith('task-blocker');
+  });
+
   it('renders meeting eyebrow for meeting source type', () => {
     render(<TaskDetailsPanel {...mockProps} />);
 

@@ -972,6 +972,7 @@ export default function TasksTab({
                 onMoveTaskToColumn={safeMoveTaskToColumn}
                 onDeleteTask={safeDeleteTask}
                 onOpenMeeting={onOpenMeeting}
+                onOpenTask={setSelectedTaskId}
                 currentUserName={currentUserName}
                 onResolveGoogleTaskConflict={onResolveGoogleTaskConflict}
               />

@@ -134,6 +134,73 @@
   background: rgba(117, 214, 196, 0.16);
 }
 
+.todo-dependency-section {
+  display: grid;
+  gap: 14px;
+}
+
+.todo-dependency-group {
+  display: grid;
+  gap: 8px;
+}
+
+.todo-dependency-list {
+  display: grid;
+  gap: 8px;
+}
+
+.todo-dependency-link {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(117, 214, 196, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.todo-dependency-link:hover {
+  border-color: rgba(117, 214, 196, 0.4);
+  background: rgba(117, 214, 196, 0.1);
+}
+
+.todo-dependency-link:focus-visible {
+  outline: 2px solid rgba(117, 214, 196, 0.74);
+  outline-offset: 2px;
+}
+
+.todo-dependency-link:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.todo-dependency-link.blocked {
+  border-color: rgba(243, 202, 114, 0.32);
+  background: rgba(243, 202, 114, 0.08);
+}
+
+.todo-dependency-link.completed {
+  opacity: 0.82;
+}
+
+.todo-dependency-link span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.todo-dependency-link small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .todo-tag-dropdown {
   position: absolute;
   left: 0;

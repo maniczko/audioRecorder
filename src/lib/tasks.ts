@@ -591,6 +591,22 @@ export function getTaskDependencyDetails(task, tasks) {
   };
 }
 
+export function getTaskBlockingDetails(task, tasks) {
+  const taskId = normalizeWhitespace(task?.id);
+  if (!taskId) {
+    return { blocking: [], unresolved: [] };
+  }
+
+  const blocking = safeArray(tasks).filter((candidate) =>
+    normalizeTaskDependencies(candidate?.dependencies).includes(taskId)
+  );
+
+  return {
+    blocking,
+    unresolved: blocking.filter((candidate) => !candidate.completed),
+  };
+}
+
 export function getTaskLifecycleStatus(
   task: any,
   columns: any[] = DEFAULT_TASK_COLUMNS,

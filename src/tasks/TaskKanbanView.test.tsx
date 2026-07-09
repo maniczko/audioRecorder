@@ -81,6 +81,39 @@ describe('TaskKanbanView', () => {
     expect(screen.getByText('Task 1')).toBeInTheDocument();
   });
 
+  test('renders blocked badge for cards with unresolved dependencies', () => {
+    const blocker = {
+      ...defaultProps.allTasks[1],
+      id: 'blocker',
+      title: 'Approve budget',
+      completed: false,
+    };
+    const blockedTask = {
+      ...defaultProps.allTasks[0],
+      id: 'blocked',
+      title: 'Send offer',
+      dependencies: ['blocker'],
+    };
+    const kanbanColumns = [
+      {
+        ...defaultProps.kanbanColumns[0],
+        tasks: [blockedTask, blocker],
+      },
+      defaultProps.kanbanColumns[1],
+    ];
+
+    render(
+      <TaskKanbanView
+        {...defaultProps}
+        kanbanColumns={kanbanColumns}
+        allTasks={[blockedTask, blocker]}
+      />
+    );
+
+    expect(screen.getByText('Blokowane')).toBeInTheDocument();
+    expect(screen.getByTitle('Blokowane przez: Approve budget')).toBeInTheDocument();
+  });
+
   test('interactions with KanbanCard', async () => {
     render(<TaskKanbanView {...defaultProps} />);
 
