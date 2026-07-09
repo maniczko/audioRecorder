@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const readCss = (relativePath: string) =>
-  readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+  readFileSync(new URL(relativePath, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 describe('global app shell layout contract', () => {
   it('defines one desktop sidebar and page spacing token set', () => {
@@ -75,5 +75,22 @@ describe('global app shell layout contract', () => {
     expect(css).toContain('.ui-badge');
     expect(css).toContain('cursor: pointer;');
     expect(css).toContain('--ui-space-6: 24px;');
+  });
+
+  // Issue #1391 - split Recordings and Studio picker style ownership
+  // Date: 2026-07-07
+  // Contract: RecordingsTabStyles.css owns Recordings-only layout rules; shared
+  // legacy Studio picker/table classes live in src/styles/studio-library.css.
+  it('keeps shared Studio picker and table classes out of RecordingsTabStyles', () => {
+    const recordingsCss = readCss('../RecordingsTabStyles.css');
+    const studioLibraryCss = readCss('./studio-library.css');
+    const recordingsTab = readFileSync('src/RecordingsTab.tsx', 'utf8');
+
+    expect(recordingsTab).toContain("import './styles/studio-library.css';");
+    expect(recordingsCss).not.toContain('studio-picker-');
+    expect(recordingsCss).not.toContain('studio-recordings-table');
+    expect(studioLibraryCss).toContain('.studio-picker-dropdown');
+    expect(studioLibraryCss).toContain('.studio-recordings-table-wrap');
+    expect(studioLibraryCss).toContain('.studio-recordings-table');
   });
 });
