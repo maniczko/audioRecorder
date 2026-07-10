@@ -91,7 +91,7 @@ describe('service-worker', () => {
     listeners.fetch({
       request: {
         method: 'GET',
-        url: 'https://voicelog-production.up.railway.app/voice-profiles',
+        url: 'https://audiorecorder-production.up.railway.app/voice-profiles',
         mode: 'cors',
       },
       respondWith,

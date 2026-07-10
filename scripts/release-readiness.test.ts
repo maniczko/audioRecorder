@@ -789,10 +789,10 @@ describe('release readiness gates', () => {
 
     for (const rewrite of vercelConfig.rewrites || []) {
       expect(String(rewrite.destination || '')).toContain(
-        'https://voicelog-production.up.railway.app'
+        'https://audiorecorder-production.up.railway.app'
       );
       expect(String(rewrite.destination || '')).not.toContain(
-        'https://audiorecorder-production.up.railway.app'
+        'https://voicelog-production.up.railway.app'
       );
     }
   });

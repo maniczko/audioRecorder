@@ -76,13 +76,13 @@ describe('httpClient retry logic', () => {
     global.fetch = mockFetch as any;
 
     const result = await apiRequest('/media/upload-policy', {
-      baseUrl: 'https://voicelog-production.up.railway.app/',
+      baseUrl: 'https://audiorecorder-production.up.railway.app/',
       retries: 0,
     });
 
     expect(result).toEqual({ ok: true });
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://voicelog-production.up.railway.app/media/upload-policy',
+      'https://audiorecorder-production.up.railway.app/media/upload-policy',
       expect.any(Object)
     );
   });

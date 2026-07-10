@@ -321,7 +321,7 @@ async function getRailwayStatus() {
 
     // Fallback: check Railway backend health endpoint
     // Always use production Railway URL for monitoring (not local dev server)
-    const RAILWAY_URL = 'https://voicelog-production.up.railway.app/health';
+    const RAILWAY_URL = 'https://audiorecorder-production.up.railway.app/health';
 
     let healthStatus = null;
     try {
