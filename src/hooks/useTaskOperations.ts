@@ -1,6 +1,9 @@
 import {
+  appendUniqueTaskEvents,
   buildTaskChangeHistory,
+  buildTaskEventsFromHistory,
   buildTaskReorderUpdate,
+  createTaskEvent,
   createManualTask,
   createRecurringTaskFromTask,
   getNextTaskOrderTop,
@@ -147,14 +150,18 @@ export default function useTaskOperations({
       ...googleSyncPatch,
       updatedAt,
     };
-    const nextHistory = [
-      ...(normalizedUpdates.history || task.history || []),
-      ...buildTaskChangeHistory(task, nextTask, actor, taskColumns),
-    ];
+    const taskHistory = normalizedUpdates.history || task.history || [];
+    const changeHistory = buildTaskChangeHistory(task, nextTask, actor, taskColumns);
+    const nextHistory = [...taskHistory, ...changeHistory];
+    const nextEvents = appendUniqueTaskEvents(
+      task.events,
+      buildTaskEventsFromHistory(task, nextTask, changeHistory, actor, updatedAt)
+    );
     const nextPayload = {
       ...normalizedUpdates,
       ...googleSyncPatch,
       history: nextHistory,
+      events: nextEvents,
       updatedAt,
     };
     const shouldCreateRecurringFollowUp =
@@ -456,6 +463,17 @@ export default function useTaskOperations({
     const task = meetingTasks.find((item) => item.id === taskId);
     if (!task) return;
 
+    const updatedAt = new Date().toISOString();
+    const actor = currentUser?.name || currentUser?.email || 'Ty';
+    const deleteEvent = createTaskEvent('delete', task, 'Usunieto zadanie.', actor, {
+      field: 'archived',
+      from: Boolean(task.archived),
+      to: true,
+      previousUpdatedAt: task.updatedAt || task.createdAt,
+      createdAt: updatedAt,
+    });
+    const events = appendUniqueTaskEvents(task.events, [deleteEvent]);
+
     if (task.sourceType === 'manual') {
       setManualTasks((previous) => previous.filter((item) => item.id !== taskId));
       return;
@@ -466,7 +484,8 @@ export default function useTaskOperations({
       [taskId]: {
         ...(previous[taskId] || {}),
         archived: true,
-        updatedAt: new Date().toISOString(),
+        events,
+        updatedAt,
       },
     }));
   }

@@ -1,6 +1,7 @@
 import {
   normalizeTaskComments,
   normalizeTaskDependencies,
+  normalizeTaskEvents,
   normalizeTaskHistory,
   normalizeTaskLinks,
   normalizeTaskPeopleList,
@@ -104,6 +105,8 @@ export function normalizeTaskUpdatePayload(
         : normalizeTaskComments(updates.comments),
     history:
       updates.history === undefined ? previousTask.history : normalizeTaskHistory(updates.history),
+    events:
+      updates.events === undefined ? previousTask.events : normalizeTaskEvents(updates.events),
     dependencies:
       updates.dependencies === undefined
         ? previousTask.dependencies

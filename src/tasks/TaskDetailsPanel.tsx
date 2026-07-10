@@ -132,6 +132,17 @@ function TaskDetailsPanel(props: any) {
     ? 'Oznacz jako nieukonczone'
     : 'Oznacz jako ukonczone';
   const peopleSuggestions = normalizePeopleSuggestions(peopleOptions);
+  const structuredEvents = Array.isArray(selectedTask.events) ? selectedTask.events : [];
+  const legacyHistory = Array.isArray(selectedTask.history) ? selectedTask.history : [];
+  const auditEntries = structuredEvents.length
+    ? structuredEvents.map((event) => ({
+        id: event.id,
+        actor: event.actor || 'System',
+        message: event.summary || event.message,
+        createdAt: event.createdAt,
+        type: event.type,
+      }))
+    : legacyHistory;
   const dependencyState = getTaskDependencyDetails(selectedTask, relatedTasks);
   const blockingState = getTaskBlockingDetails(selectedTask, relatedTasks);
   const canOpenTask = typeof onOpenTask === 'function';
@@ -397,8 +408,8 @@ function TaskDetailsPanel(props: any) {
                 Historia zmian
               </strong>
               <div className="todo-section-head-row">
-                <span>{(selectedTask.history || []).length}</span>
-                {(selectedTask.history || []).length > 0 && (
+                <span>{auditEntries.length}</span>
+                {auditEntries.length > 0 && (
                   <button
                     type="button"
                     className="todo-history-toggle"
@@ -427,7 +438,7 @@ function TaskDetailsPanel(props: any) {
           </div>
           {historyExpanded && (
             <div className="todo-history-list">
-              {[...selectedTask.history].reverse().map((entry) => (
+              {[...auditEntries].reverse().map((entry) => (
                 <article key={entry.id} className="todo-history-row">
                   <strong>{entry.actor || 'System'}</strong>
                   <p>{entry.message}</p>
@@ -436,7 +447,7 @@ function TaskDetailsPanel(props: any) {
               ))}
             </div>
           )}
-          {!historyExpanded && (selectedTask.history || []).length === 0 && (
+          {!historyExpanded && auditEntries.length === 0 && (
             <p className="todo-section-empty">Historia pojawi się po pierwszych zmianach.</p>
           )}
         </section>

@@ -351,6 +351,35 @@ function normalizeTaskHistoryEntry(item, index = 0) {
   };
 }
 
+function normalizeTaskEvent(item, index = 0) {
+  const summary = normalizeWhitespace(item?.summary ?? item?.message ?? item);
+  if (!summary) {
+    return null;
+  }
+
+  const type = normalizeWhitespace(item?.type) || 'update';
+  const taskId = normalizeWhitespace(item?.taskId);
+  const field = normalizeWhitespace(item?.field);
+  const createdAt = item?.createdAt || new Date().toISOString();
+  const dedupeKey =
+    normalizeWhitespace(item?.dedupeKey) ||
+    ['task', taskId, type, field, summary].filter(Boolean).join(':');
+
+  return {
+    id: normalizeWhitespace(item?.id) || createId(`event_${index}`),
+    type,
+    taskId,
+    actor: normalizeWhitespace(item?.actor) || 'System',
+    summary,
+    field,
+    from: item?.from,
+    to: item?.to,
+    metadata: item?.metadata && typeof item.metadata === 'object' ? item.metadata : {},
+    dedupeKey,
+    createdAt,
+  };
+}
+
 function normalizeTaskSubtask(item, index = 0) {
   const title = normalizeWhitespace(item?.title ?? item);
   if (!title) {
@@ -520,6 +549,10 @@ export function normalizeTaskHistory(value) {
   return normalizeTaskArray(value, normalizeTaskHistoryEntry);
 }
 
+export function normalizeTaskEvents(value) {
+  return normalizeTaskArray(value, normalizeTaskEvent);
+}
+
 export function normalizeTaskSubtasks(value) {
   return normalizeTaskArray(value, normalizeTaskSubtask);
 }
@@ -574,6 +607,118 @@ export function createTaskHistoryEntry(message, actor = 'System', type = 'update
     type,
     message,
     createdAt: new Date().toISOString(),
+  });
+}
+
+function taskEventTypeFromHistory(entry, previousTask, nextTask) {
+  const type = normalizeWhitespace(entry?.type);
+  if (type === 'created') return 'create';
+  if (type === 'import') return 'import';
+  if (type === 'status' || type === 'group') return 'status_change';
+  if (type === 'completed') return nextTask?.completed ? 'complete' : 'reopen';
+  if (type === 'comment') return 'comment';
+  if (type === 'dependencies') return 'dependency';
+  if (type === 'recurrence') return 'recurrence';
+  if (type === 'order') return 'order';
+  if ((previousTask?.archived || false) !== (nextTask?.archived || false)) {
+    return nextTask?.archived ? 'delete' : 'restore';
+  }
+  return 'update';
+}
+
+function taskEventFieldFromHistory(entry) {
+  const type = normalizeWhitespace(entry?.type);
+  if (!type || ['created', 'import', 'updated'].includes(type)) {
+    return '';
+  }
+  if (type === 'dependencies') {
+    return 'dependencies';
+  }
+  return type;
+}
+
+function taskEventValueForField(task, field) {
+  if (!field || !task) {
+    return undefined;
+  }
+  if (field === 'status') {
+    return task.status;
+  }
+  if (field === 'completed') {
+    return Boolean(task.completed);
+  }
+  if (field === 'dependencies') {
+    return normalizeTaskDependencies(task.dependencies);
+  }
+  return task[field];
+}
+
+export function createTaskEvent(type, task, summary, actor = 'System', options = {}) {
+  const taskId = normalizeWhitespace(options.taskId) || normalizeWhitespace(task?.id);
+  const field = normalizeWhitespace(options.field);
+  const createdAt = options.createdAt || new Date().toISOString();
+  const previousUpdatedAt =
+    normalizeWhitespace(options.previousUpdatedAt) ||
+    normalizeWhitespace(task?.updatedAt) ||
+    normalizeWhitespace(task?.createdAt);
+  const toValue = options.to !== undefined ? options.to : taskEventValueForField(task, field);
+  const dedupeKey =
+    normalizeWhitespace(options.dedupeKey) ||
+    ['task', taskId, type, field, previousUpdatedAt, JSON.stringify(toValue ?? '')]
+      .filter(Boolean)
+      .join(':');
+
+  return normalizeTaskEvent({
+    id: createId('event'),
+    type,
+    taskId,
+    actor,
+    summary,
+    field,
+    from: options.from,
+    to: toValue,
+    metadata: options.metadata || {},
+    dedupeKey,
+    createdAt,
+  });
+}
+
+export function appendUniqueTaskEvents(existingEvents, newEvents) {
+  const normalizedExisting = normalizeTaskEvents(existingEvents);
+  const seen = new Set(normalizedExisting.map((event) => event.dedupeKey || event.id));
+  const additions = normalizeTaskEvents(newEvents).filter((event) => {
+    const key = event.dedupeKey || event.id;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+  return [...normalizedExisting, ...additions];
+}
+
+export function buildTaskEventsFromHistory(
+  previousTask,
+  nextTask,
+  historyEntries,
+  actor,
+  createdAt
+) {
+  return normalizeTaskHistory(historyEntries).map((entry) => {
+    const field = taskEventFieldFromHistory(entry);
+    return createTaskEvent(
+      taskEventTypeFromHistory(entry, previousTask, nextTask),
+      nextTask,
+      entry.message,
+      actor,
+      {
+        field,
+        from: taskEventValueForField(previousTask, field),
+        to: taskEventValueForField(nextTask, field),
+        previousUpdatedAt: previousTask?.updatedAt || previousTask?.createdAt,
+        createdAt: entry.createdAt || createdAt,
+      }
+    );
   });
 }
 
@@ -844,7 +989,7 @@ export function buildTaskChangeHistory(previousTask, nextTask, actor, columns) {
   const entries = [];
 
   if ((previousTask.title || '') !== (nextTask.title || '')) {
-    entries.push(createTaskHistoryEntry(`Zmieniono tytul na "${nextTask.title}".`, actor));
+    entries.push(createTaskHistoryEntry(`Zmieniono tytul na "${nextTask.title}".`, actor, 'title'));
   }
 
   if ((previousTask.status || '') !== (nextTask.status || '')) {
@@ -867,7 +1012,9 @@ export function buildTaskChangeHistory(previousTask, nextTask, actor, columns) {
     );
   }
 
-  if ((previousTask.owner || '') !== (nextTask.owner || '')) {
+  const previousOwner = normalizeWhitespace(previousTask.owner) || 'Nieprzypisane';
+  const nextOwner = normalizeWhitespace(nextTask.owner) || 'Nieprzypisane';
+  if (previousOwner !== nextOwner) {
     entries.push(
       createTaskHistoryEntry(
         nextTask.owner
@@ -1021,6 +1168,7 @@ function taskFromCandidate(candidate, meeting, index, columns) {
     group: normalizeGroup(candidate.group),
     comments: [],
     history: [],
+    events: [],
     dependencies: [],
     recurrence: null,
     subtasks: [],
@@ -1081,6 +1229,9 @@ function mergeTaskState(task, state, currentUser, columns) {
     history: hasOwn(state, 'history')
       ? normalizeTaskHistory(state.history)
       : normalizeTaskHistory(task.history),
+    events: hasOwn(state, 'events')
+      ? appendUniqueTaskEvents(task.events, state.events)
+      : normalizeTaskEvents(task.events),
     dependencies: hasOwn(state, 'dependencies')
       ? normalizeTaskDependencies(state.dependencies)
       : normalizeTaskDependencies(task.dependencies),
@@ -1184,6 +1335,7 @@ export function buildTaskGroups(tasks) {
 
 export function createManualTask(userId, draft, columns, workspaceId) {
   const now = new Date().toISOString();
+  const id = createId('task');
   const title = titleCase(draft.title);
   if (!title) {
     throw new Error('Dodaj tytul zadania.');
@@ -1194,9 +1346,14 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     draft.assignedTo?.length ? draft.assignedTo : draft.owner
   );
   const owner = assignedTo[0] || normalizeWhitespace(draft.owner) || 'Nieprzypisane';
+  const history = normalizeTaskHistory(
+    draft.history?.length
+      ? draft.history
+      : [createTaskHistoryEntry('Utworzono zadanie.', 'System', 'created')]
+  );
 
   return {
-    id: createId('task'),
+    id,
     userId,
     workspaceId: workspaceId || draft.workspaceId || '',
     createdByUserId: userId,
@@ -1223,10 +1380,17 @@ export function createManualTask(userId, draft, columns, workspaceId) {
     tags: Array.isArray(draft.tags) ? draft.tags : parseTagInput(draft.tags),
     group: normalizeGroup(draft.group),
     comments: normalizeTaskComments(draft.comments),
-    history: normalizeTaskHistory(
-      draft.history?.length
-        ? draft.history
-        : [createTaskHistoryEntry('Utworzono zadanie.', 'System', 'created')]
+    history,
+    events: normalizeTaskEvents(
+      draft.events?.length
+        ? draft.events
+        : buildTaskEventsFromHistory(
+            null,
+            { id, sourceType: 'manual', updatedAt: now },
+            history,
+            'System',
+            now
+          )
     ),
     dependencies: normalizeTaskDependencies(draft.dependencies),
     recurrence: normalizeTaskRecurrence(draft.recurrence),
@@ -1253,6 +1417,8 @@ export function createTaskFromGoogle(
   const owner = currentUser?.name || currentUser?.email || 'Ja';
   const syncedAt = new Date().toISOString();
   const googleUpdatedAt = googleTask.updated || googleTask.completed || dueDate;
+  const id = createId('google_task');
+  const history = [createTaskHistoryEntry('Zaimportowano z Google Tasks.', 'System', 'import')];
   const googleSync = normalizeGoogleTaskSyncState({
     googleTaskId: googleTask.id,
     googleTaskListId: taskList.id,
@@ -1264,7 +1430,7 @@ export function createTaskFromGoogle(
   });
 
   return {
-    id: createId('google_task'),
+    id,
     userId,
     workspaceId: workspaceId || '',
     createdByUserId: userId,
@@ -1293,7 +1459,14 @@ export function createTaskFromGoogle(
     tags: [],
     group: normalizeGroup(taskList.title || ''),
     comments: [],
-    history: [createTaskHistoryEntry('Zaimportowano z Google Tasks.', 'System', 'import')],
+    history,
+    events: buildTaskEventsFromHistory(
+      null,
+      { id, sourceType: 'google', updatedAt: syncedAt },
+      history,
+      'System',
+      syncedAt
+    ),
     dependencies: [],
     recurrence: null,
     subtasks: [],

@@ -288,6 +288,34 @@ export interface TaskHistoryEntry {
   createdAt: string;
 }
 
+export type TaskEventType =
+  | 'create'
+  | 'update'
+  | 'status_change'
+  | 'complete'
+  | 'reopen'
+  | 'delete'
+  | 'restore'
+  | 'comment'
+  | 'dependency'
+  | 'recurrence'
+  | 'order'
+  | 'import';
+
+export interface TaskEvent {
+  id: string;
+  type: TaskEventType | (string & {});
+  taskId?: string;
+  actor?: string;
+  summary: string;
+  field?: string;
+  from?: unknown;
+  to?: unknown;
+  metadata?: Record<string, unknown>;
+  dedupeKey?: string;
+  createdAt: string;
+}
+
 export interface TaskDependency {
   taskId: string;
   type?: 'blocks' | 'blocked_by' | string;
@@ -370,6 +398,7 @@ export interface TaskRecord {
   tags: string[];
   comments: TaskComment[];
   history: TaskHistoryEntry[];
+  events: TaskEvent[];
   dependencies: Array<string | TaskDependency>;
   recurrence: TaskRecurrence | null;
   subtasks: TaskSubtask[];
@@ -400,6 +429,7 @@ export type TaskStatePatch = Partial<
     | 'tags'
     | 'comments'
     | 'history'
+    | 'events'
     | 'dependencies'
     | 'recurrence'
     | 'subtasks'
