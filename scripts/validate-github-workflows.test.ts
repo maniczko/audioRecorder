@@ -299,6 +299,21 @@ describe('GitHub workflows validation', () => {
     );
   });
 
+  it('keeps scheduled workspace maintenance dry-run by default with an explicit apply gate', () => {
+    const workflowPath = path.join(workflowDir, 'workspace-maintenance-report.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('name: Workspace Maintenance Report');
+    expect(content).toContain('workflow_dispatch:');
+    expect(content).toContain("default: 'false'");
+    expect(content).toContain("github.event.inputs.apply == 'true'");
+    expect(content).toContain('pnpm run repair:supabase:workspace -- --apply');
+    expect(content).toContain('pnpm run repair:supabase:workspace -- --write-report');
+    expect(content).toContain('pnpm run verify:supabase:workspace');
+    expect(content).toContain('reports/supabase-workspace-repair/');
+    expect(content).toContain('reports/supabase-workspace-consistency/');
+  });
+
   it('keeps backend smoke dependency setup resilient and debugs only smoke failures', () => {
     const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
     const content = readFileSync(workflowPath, 'utf8');
