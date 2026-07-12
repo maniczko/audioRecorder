@@ -26,6 +26,7 @@ Root stays intentionally small:
 
 - `adr/` - architecture decision records
 - `ops/` - deployment, runtime, monitoring, APM, disk, and Node setup notes
+  - `ops/BACKUP_RESTORE_RUNBOOK.md` - backup sources, restore drill checklist, and restore verification workflow
   - `ops/TRANSCRIPTION_JOB_OPERATIONS.md` - operator workflow for durable transcription jobs
   - `ops/PROVIDER_QUOTAS.md` - cost controls for AI, STT, live transcription, images, and embeddings
 - `automation/` - automation workflows, task runners, and historical automation notes
