@@ -956,9 +956,9 @@ function UnifiedLibrary({
       )}
       <div className="recordings-reference-header">
         <div className="ui-page-header__copy recordings-library-heading">
-          <h2 className="ui-page-header__title" style={{ marginTop: 0 }}>
+          <h1 className="ui-page-header__title" style={{ marginTop: 0 }}>
             {'Baza nagra\u0144'}
-          </h2>
+          </h1>
           <p className="recordings-reference-subtitle">
             {
               'Przegl\u0105daj, wyszukuj i analizuj nagrania spotka\u0144. Wgrywaj pliki, \u015Bled\u017A status przetwarzania i wracaj do rozm\u00F3w.'

@@ -118,7 +118,7 @@ describe('RecordingsTab', () => {
       </ToastProvider>
     );
 
-    expect(screen.getByRole('heading', { name: 'Baza nagrań' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Baza nagrań' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Wgraj nagranie/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Sortuj: Data/i })).not.toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Data i godzina/i })).toHaveAttribute(
