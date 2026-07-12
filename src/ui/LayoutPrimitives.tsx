@@ -3,6 +3,8 @@ import type { CSSProperties, ElementType, PropsWithChildren, ReactNode } from 'r
 type GapSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type Align = 'start' | 'center' | 'end' | 'stretch';
 type Justify = 'start' | 'center' | 'end' | 'between';
+type PageLayoutVariant = 'default' | 'wide' | 'centered' | 'studio';
+type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 function cx(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -42,18 +44,27 @@ type PrimitiveProps<T extends ElementType> = PropsWithChildren<{
   style?: CSSProperties;
 }>;
 
-export function PageShell<T extends ElementType = 'section'>({
+export function PageLayout<T extends ElementType = 'section'>({
   as,
   className,
   style,
   children,
-}: PrimitiveProps<T>) {
+  variant = 'default',
+}: PrimitiveProps<T> & { variant?: PageLayoutVariant }) {
   const Comp = (as || 'section') as ElementType;
   return (
-    <Comp className={cx('ui-page-shell', className)} style={style}>
+    <Comp
+      className={cx('ui-page-shell', `ui-page-layout--${variant}`, className)}
+      data-layout-variant={variant}
+      style={style}
+    >
       {children}
     </Comp>
   );
+}
+
+export function PageShell<T extends ElementType = 'section'>(props: PrimitiveProps<T>) {
+  return <PageLayout {...props} />;
 }
 
 export function Panel<T extends ElementType = 'section'>({
@@ -88,6 +99,12 @@ export function Stack<T extends ElementType = 'div'>({
   );
 }
 
+export function SectionStack<T extends ElementType = 'div'>(
+  props: PrimitiveProps<T> & { gap?: GapSize }
+) {
+  return <Stack {...props} />;
+}
+
 export function Cluster<T extends ElementType = 'div'>({
   as,
   className,
@@ -119,18 +136,22 @@ export function PageHeader({
   description,
   actions,
   className,
+  headingLevel = 1,
 }: {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  headingLevel?: HeadingLevel;
 }) {
+  const Heading = `h${headingLevel}` as ElementType;
+
   return (
     <header className={cx('ui-page-header', className)}>
       <div className="ui-page-header__copy">
         {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
-        <h2 className="ui-page-header__title">{title}</h2>
+        <Heading className="ui-page-header__title">{title}</Heading>
         {description ? <p className="ui-page-header__description">{description}</p> : null}
       </div>
       {actions ? (
@@ -139,6 +160,28 @@ export function PageHeader({
         </Cluster>
       ) : null}
     </header>
+  );
+}
+
+export function PageToolbar({
+  children,
+  className,
+  style,
+  'aria-label': ariaLabel,
+}: PropsWithChildren<{
+  className?: string;
+  style?: CSSProperties;
+  'aria-label': string;
+}>) {
+  return (
+    <div
+      aria-label={ariaLabel}
+      className={cx('ui-cluster', className)}
+      role="toolbar"
+      style={style}
+    >
+      {children}
+    </div>
   );
 }
 
