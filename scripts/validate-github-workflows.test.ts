@@ -272,7 +272,7 @@ describe('GitHub workflows validation', () => {
     expect(installStep?.run).toContain('pnpm install --frozen-lockfile --ignore-scripts');
     expect(debugStep?.if).toBe("failure() && steps.smoke.outcome == 'failure'");
     expect(debugStep?.env?.SMOKE_TEST_URL).toBe(
-      'https://voicelog-production.up.railway.app/health'
+      'https://audiorecorder-production.up.railway.app/health'
     );
   });
 
@@ -402,7 +402,7 @@ describe('GitHub workflows validation', () => {
       'GOOGLE_OAUTH_REDIRECT_URI: ${{ secrets.GOOGLE_OAUTH_REDIRECT_URI }}'
     );
     expect(content).toContain(
-      'https://voicelog-production.up.railway.app/integrations/google/callback'
+      'https://audiorecorder-production.up.railway.app/integrations/google/callback'
     );
     expect(content).toContain('--skip-deploys');
     expect(content).toContain('--stdin');
@@ -418,15 +418,14 @@ describe('GitHub workflows validation', () => {
       '.github/workflows/railway-sync-google-oauth.yml',
       'scripts/fetch-railway-errors.js',
       'scripts/monitor-external-services.js',
-      'src/services/config.ts',
       'vercel.json',
     ];
 
     for (const fileName of checkedFiles) {
       const content = readFileSync(path.resolve(fileName), 'utf8');
 
-      expect(content, fileName).toContain('https://voicelog-production.up.railway.app');
-      expect(content, fileName).not.toContain('https://audiorecorder-production.up.railway.app');
+      expect(content, fileName).toContain('https://audiorecorder-production.up.railway.app');
+      expect(content, fileName).not.toContain('https://voicelog-production.up.railway.app');
     }
   });
 

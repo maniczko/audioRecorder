@@ -89,9 +89,9 @@ If upload dir is not writable:
 After deployment, check:
 
 ```
-https://voicelog-production.up.railway.app/health/live
-https://voicelog-production.up.railway.app/health
-https://voicelog-production.up.railway.app/ready
+https://audiorecorder-production.up.railway.app/health/live
+https://audiorecorder-production.up.railway.app/health
+https://audiorecorder-production.up.railway.app/ready
 ```
 
 Endpoint contract:
@@ -189,9 +189,9 @@ df -h /app/server/data
 ### API Health
 
 ```bash
-curl https://voicelog-production.up.railway.app/health/live
-curl https://voicelog-production.up.railway.app/health
-curl https://voicelog-production.up.railway.app/ready
+curl https://audiorecorder-production.up.railway.app/health/live
+curl https://audiorecorder-production.up.railway.app/health
+curl https://audiorecorder-production.up.railway.app/ready
 ```
 
 ### Logs

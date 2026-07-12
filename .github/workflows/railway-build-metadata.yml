@@ -159,7 +159,7 @@ jobs:
                 --max-time 20 \
                 -o "$body_file" \
                 -w "%{http_code}" \
-                https://voicelog-production.up.railway.app/health \
+                https://audiorecorder-production.up.railway.app/health \
                 || true
             )"
             payload="$(cat "$body_file" || true)"
