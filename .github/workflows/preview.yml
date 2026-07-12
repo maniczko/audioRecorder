@@ -59,13 +59,35 @@ jobs:
 
       - name: Deploy Project Artifacts to Vercel
         id: vercel_deploy
+        shell: bash
         run: |
-          DEPLOY_URL=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
-          echo "preview_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          set +e
+          DEPLOY_OUTPUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+          DEPLOY_STATUS=$?
+          set -e
+
+          echo "$DEPLOY_OUTPUT"
+
+          if [ "$DEPLOY_STATUS" -ne 0 ]; then
+            if echo "$DEPLOY_OUTPUT" | grep -q 'api-deployments-free-per-day'; then
+              echo "preview_skipped=true" >> "$GITHUB_OUTPUT"
+              {
+                echo "## Vercel preview skipped"
+                echo ""
+                echo "Vercel returned \`api-deployments-free-per-day\`. The GitHub App deployment status remains the authoritative preview signal for this PR."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            exit "$DEPLOY_STATUS"
+          fi
+
+          DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -Eo 'https://[^[:space:]]+' | tail -n 1)
+          echo "preview_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
 
       - name: Comment on PR
         uses: actions/github-script@v8
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.vercel_deploy.outputs.preview_url != ''
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

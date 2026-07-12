@@ -216,6 +216,19 @@ describe('GitHub workflows validation', () => {
     expect(content).not.toContain('pnpm install -g vercel@latest');
   });
 
+  it('treats Vercel preview deployment quota as a controlled skip', () => {
+    const workflowPath = path.join(workflowDir, 'preview.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('api-deployments-free-per-day');
+    expect(content).toContain('preview_skipped=true');
+    expect(content).toContain(
+      'GitHub App deployment status remains the authoritative preview signal'
+    );
+    expect(content).toContain('exit "$DEPLOY_STATUS"');
+    expect(content).toContain("steps.vercel_deploy.outputs.preview_url != ''");
+  });
+
   it('gives optimized ci test job extra heap for the large Vitest suite', () => {
     const workflowPath = path.join(workflowDir, 'ci-optimized.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
