@@ -118,7 +118,7 @@ describe('RecordingsTab', () => {
       </ToastProvider>
     );
 
-    expect(screen.getByTestId('recordings-page-shell')).toHaveAttribute(
+    expect(document.querySelector('.recordings-tab-shell')).toHaveAttribute(
       'data-layout-variant',
       'wide'
     );
