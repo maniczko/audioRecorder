@@ -90,6 +90,7 @@ function deriveStatus(input: RecordingQueueStatusViewInput): RecordingQueueUxSta
       'diarization',
       'review',
       'failed',
+      'auth_required',
       'failed_permanent',
       'done',
       'empty',
@@ -223,6 +224,19 @@ export function getRecordingQueueStatusView(
       busy: hasBackoff(input),
       actions: retryable ? ['retry', 'contact_admin'] : ['contact_admin'],
       retryable,
+    },
+    auth_required: {
+      status: 'auth_required',
+      label: 'Wymagane ponowne logowanie',
+      summary: 'Zaloguj sie ponownie, aby wznowic upload.',
+      description:
+        'Sesja wygasla lub jest nieprawidlowa. Nagranie pozostaje zapisane lokalnie. Zaloguj sie ponownie, a potem ponow upload.',
+      tone: 'danger',
+      role: 'alert',
+      live: 'assertive',
+      busy: false,
+      actions: ['retry'],
+      retryable: true,
     },
     failed_permanent: {
       status: 'failed_permanent',
