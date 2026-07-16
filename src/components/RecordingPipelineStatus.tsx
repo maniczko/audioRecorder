@@ -52,7 +52,7 @@ export function RecordingPipelineStatus({
   progressPercent = 0,
   stageLabel = '',
   onRetry,
-  retryLabel = 'Spróbuj ponownie',
+  retryLabel,
   allowInProgressRetry = false,
   className = '',
   processingStartedAt,
@@ -78,9 +78,15 @@ export function RecordingPipelineStatus({
   );
   const isDone = normalizedStatus === 'done' || normalizedStatus === 'review';
   const retryHandler =
-    (statusView.retryable && normalizedStatus === 'failed') || (allowInProgressRetry && inProgress)
+    (statusView.retryable && ['failed', 'auth_required'].includes(normalizedStatus)) ||
+    (allowInProgressRetry && inProgress)
       ? onRetry
       : undefined;
+  const resolvedRetryLabel =
+    retryLabel ||
+    (normalizedStatus === 'auth_required'
+      ? 'Zaloguj ponownie i ponów upload'
+      : 'Spróbuj ponownie');
   const progressText = progressMessage || statusView.summary;
   const detailMessage = errorMessage || statusView.description;
 
@@ -142,7 +148,7 @@ export function RecordingPipelineStatus({
           }}
         >
           <RetryIcon />
-          {retryLabel}
+          {resolvedRetryLabel}
         </button>
       ) : null}
 
@@ -178,7 +184,7 @@ export function RecordingPipelineStatus({
               }}
             >
               <RetryIcon />
-              {retryLabel}
+              {resolvedRetryLabel}
             </button>
           )}
         </div>
