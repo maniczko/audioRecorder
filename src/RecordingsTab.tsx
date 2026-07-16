@@ -8,7 +8,7 @@ import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
 import './RecordingsTabStyles.css';
 
-import { PageLayout } from './ui/LayoutPrimitives';
+import { PageHeader, PageLayout, PageToolbar } from './ui/LayoutPrimitives';
 import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
@@ -955,19 +955,17 @@ function UnifiedLibrary({
           </div>
         </div>
       )}
-      <div className="recordings-reference-header">
-        <div className="ui-page-header__copy recordings-library-heading">
-          <h1 className="ui-page-header__title" style={{ marginTop: 0 }}>
-            {'Baza nagra\u0144'}
-          </h1>
-          <p className="recordings-reference-subtitle">
-            {
-              'Przegl\u0105daj, wyszukuj i analizuj nagrania spotka\u0144. Wgrywaj pliki, \u015Bled\u017A status przetwarzania i wracaj do rozm\u00F3w.'
-            }
-          </p>
-        </div>
-
-        <div className="recordings-reference-actions">
+      <PageHeader
+        className="recordings-reference-header"
+        title={'Baza nagra\u0144'}
+        description={
+          'Przegl\u0105daj, wyszukuj i analizuj nagrania spotka\u0144. Wgrywaj pliki, \u015Bled\u017A status przetwarzania i wracaj do rozm\u00F3w.'
+        }
+        actions={
+          <PageToolbar
+            aria-label="Dzia\u0142ania i filtry nagra\u0144"
+            className="recordings-reference-actions"
+          >
           {isUploading ? (
             <div
               style={{
@@ -1183,7 +1181,9 @@ function UnifiedLibrary({
             </div>
           </div>
         </div>
-      </div>
+          </PageToolbar>
+        }
+      />
       <RecordingsStatsBar
         meetings={mergeMeetingsWithPendingImports(userMeetings, recordingQueue, selectedMeeting)}
       />
