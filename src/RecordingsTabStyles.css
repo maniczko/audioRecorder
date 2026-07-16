@@ -252,7 +252,9 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   }
 }
 
-.recordings-tab-shell {
+.ui-page-shell.recordings-tab-shell {
+  display: block;
+  gap: 0;
   padding: 24px;
   width: 100%;
   max-width: none;
@@ -704,6 +706,10 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   padding: 28px 28px 8px;
 }
 
+:root[data-theme='premium-light'] .recordings-reference-header .ui-page-header__actions {
+  width: 100%;
+}
+
 :root[data-theme='premium-light'] .recordings-library-heading .ui-page-header__title {
   font-size: 2.18rem;
   line-height: 1.06;
@@ -711,7 +717,8 @@ input[type='date'].recordings-library-filter-control::-webkit-calendar-picker-in
   color: #0d2924;
 }
 
-:root[data-theme='premium-light'] .recordings-reference-subtitle {
+:root[data-theme='premium-light'] .recordings-reference-subtitle,
+:root[data-theme='premium-light'] .recordings-library-heading .ui-page-header__description {
   max-width: 620px;
   margin: 10px 0 0;
   color: #536963;
