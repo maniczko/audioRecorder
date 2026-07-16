@@ -1224,6 +1224,46 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
     }
 
     const retryCount = nextItem.retryCount || 0;
+    const userFacingMessage = toUserFacingQueueError(error);
+    const isAuthenticationFailure =
+      Number(errorDetails?.status) === 401 ||
+      Number(errorDetails?.statusCode) === 401 ||
+      /brak tokenu autoryzacyjnego|sesja wygasla|unauthorized/i.test(
+        String(errorDetails?.message || userFacingMessage)
+      );
+
+    if (isAuthenticationFailure) {
+      const authenticationRequiredMessage = 'Brak autoryzacji do backendu. Zaloguj sie ponownie.';
+      updateQueueItem(nextItem.recordingId, {
+        status: 'auth_required',
+        errorMessage: authenticationRequiredMessage,
+        lastErrorMessage: '',
+        retryCount: 0,
+        backoffUntil: 0,
+        retryable: true,
+        errorCode: 'AUTH_REQUIRED',
+      });
+      addRecordingQueueBreadcrumb(
+        nextItem,
+        'Recording upload paused until the user signs in again.',
+        {
+          pipelineStage: 'auth_required',
+          errorCode: 'AUTH_REQUIRED',
+          retryable: true,
+          status: 401,
+        },
+        { level: 'warning' }
+      );
+      const authSnapshot = getPipelineSnapshot('failed', 0, authenticationRequiredMessage);
+      setState({
+        analysisStatus: 'error',
+        pipelineProgressPercent: authSnapshot.progressPercent,
+        pipelineStageLabel: authSnapshot.stageLabel,
+        recordingMessage: authenticationRequiredMessage,
+      });
+      return;
+    }
+
     if (isTransientNetworkError(error) && retryCount < maxAutoRetries) {
       const fallbackDelay = retryDelaysMs[retryCount] ?? retryDelaysMs[retryDelaysMs.length - 1];
       const delay = getTransientRetryDelayMs(error, fallbackDelay);
@@ -1259,7 +1299,6 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       return;
     }
 
-    const userFacingMessage = toUserFacingQueueError(error);
     const errorKey = `${nextItem.recordingId}:${userFacingMessage}`;
     if (getState().lastQueueErrorKey !== errorKey) {
       if (!isExpectedDomainFailure(error)) {

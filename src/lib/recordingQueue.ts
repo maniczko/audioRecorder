@@ -8,6 +8,7 @@ export type RecordingPipelineStatus =
   | 'diarization'
   | 'review'
   | 'failed'
+  | 'auth_required'
   | 'failed_permanent'
   | 'done';
 
@@ -267,6 +268,7 @@ export interface RecordingQueueSummary {
   diarization: number;
   review: number;
   failed: number;
+  auth_required: number;
   failed_permanent: number;
   done: number;
 }
@@ -295,6 +297,7 @@ export function normalizeRecordingPipelineStatus(value: unknown): RecordingPipel
       'diarization',
       'review',
       'failed',
+      'auth_required',
       'failed_permanent',
       'done',
     ].includes(String(value || ''))
@@ -508,6 +511,7 @@ export function buildRecordingQueueSummary(queue: unknown[]): RecordingQueueSumm
       diarization: 0,
       review: 0,
       failed: 0,
+      auth_required: 0,
       failed_permanent: 0,
       done: 0,
     }

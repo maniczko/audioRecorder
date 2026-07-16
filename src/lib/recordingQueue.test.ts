@@ -27,6 +27,7 @@ describe('recordingQueue helpers', () => {
       diarization: 0,
       review: 0,
       failed: 0,
+      auth_required: 0,
       failed_permanent: 0,
       done: 0,
     });
@@ -35,6 +36,7 @@ describe('recordingQueue helpers', () => {
   test('normalizes completed to done', () => {
     expect(normalizeRecordingPipelineStatus('completed')).toBe('done');
     expect(normalizeRecordingPipelineStatus('processing')).toBe('processing');
+    expect(normalizeRecordingPipelineStatus('auth_required')).toBe('auth_required');
   });
 
   test('updates queue item state and keeps meeting filters working', () => {
