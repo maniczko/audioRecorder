@@ -4,11 +4,14 @@ Issue: #1286
 
 ## Cards and sections
 
-Use `.ui-panel` for a self-contained tool, form, or repeated operational item.
-Do not wrap a whole page section in a second card only to obtain spacing. Use
-`.ui-stack` for vertical sections and `.ui-cluster` or `.button-row` for
-wrapping controls. The canonical surface values are `--surface-panel`,
-`--surface-stroke`, `--shadow-panel`, `--panel-padding`, and `--panel-radius`.
+In React, use `Panel` for a self-contained tool, form, or repeated operational
+item. Do not wrap a whole page section in a second card only to obtain spacing.
+Use `Stack` for vertical sections and `Cluster` or `.button-row` for wrapping
+controls. These wrappers are exported from `src/ui/LayoutPrimitives.tsx` and
+provide the shared spacing and alignment API; use the raw `.ui-panel`,
+`.ui-stack`, and `.ui-cluster` classes only in non-React markup. The canonical
+surface values are `--surface-panel`, `--surface-stroke`, `--shadow-panel`,
+`--panel-padding`, and `--panel-radius`.
 
 ## Empty, loading, and error states
 
