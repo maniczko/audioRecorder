@@ -966,220 +966,220 @@ function UnifiedLibrary({
             aria-label="Dzia\u0142ania i filtry nagra\u0144"
             className="recordings-reference-actions"
           >
-          {isUploading ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                minWidth: 160,
-                justifyContent: 'center',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-base)',
-                    whiteSpace: 'nowrap',
-                    maxWidth: 120,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                  title={uploadingFileName}
-                >
-                  {uploadingFileName || 'Wgrywanie...'}
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--muted)',
-                    whiteSpace: 'nowrap',
-                    marginLeft: 'auto',
-                  }}
-                >
-                  {uploadProgress}%
-                </span>
+            {isUploading ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  minWidth: 160,
+                  justifyContent: 'center',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-base)',
+                      whiteSpace: 'nowrap',
+                      maxWidth: 120,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={uploadingFileName}
+                  >
+                    {uploadingFileName || 'Wgrywanie...'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--muted)',
+                      whiteSpace: 'nowrap',
+                      marginLeft: 'auto',
+                    }}
+                  >
+                    {uploadProgress}%
+                  </span>
+                </div>
+                <ProgressBar value={uploadProgress} variant="upload" />
               </div>
-              <ProgressBar value={uploadProgress} variant="upload" />
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="primary-button recordings-upload-primary"
-              onClick={onUploadClick}
-              style={{
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: '0.82rem',
-                padding: '0 12px',
-              }}
-            >
-              <Upload size={14} /> Wgraj nagranie
-            </button>
-          )}
-          <input
-            data-testid="recordings-file-input"
-            type="file"
-            ref={fileInputRef}
-            accept="audio/*,video/*"
-            className="recordings-hidden-input"
-            onChange={handleFileUpload}
-          />
+            ) : (
+              <button
+                type="button"
+                className="primary-button recordings-upload-primary"
+                onClick={onUploadClick}
+                style={{
+                  height: 36,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '0.82rem',
+                  padding: '0 12px',
+                }}
+              >
+                <Upload size={14} /> Wgraj nagranie
+              </button>
+            )}
+            <input
+              data-testid="recordings-file-input"
+              type="file"
+              ref={fileInputRef}
+              accept="audio/*,video/*"
+              className="recordings-hidden-input"
+              onChange={handleFileUpload}
+            />
 
-          <div
-            className="recordings-tab-filters-col"
-            ref={filterDropdownRef}
-            style={{ position: 'relative' }}
-          >
-            <button
-              type="button"
-              className="secondary-button recordings-filter-button"
-              onClick={() => setShowFilters(!showFilters)}
-              style={{
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                position: 'relative',
-                fontSize: '0.82rem',
-                padding: '0 12px',
-              }}
+            <div
+              className="recordings-tab-filters-col"
+              ref={filterDropdownRef}
+              style={{ position: 'relative' }}
             >
-              <Filter size={14} /> Filtry
-              {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: -4,
-                    width: 10,
-                    height: 10,
-                    background: 'var(--accent)',
-                    borderRadius: '50%',
-                  }}
-                />
-              )}
-            </button>
+              <button
+                type="button"
+                className="secondary-button recordings-filter-button"
+                onClick={() => setShowFilters(!showFilters)}
+                style={{
+                  height: 36,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  position: 'relative',
+                  fontSize: '0.82rem',
+                  padding: '0 12px',
+                }}
+              >
+                <Filter size={14} /> Filtry
+                {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      width: 10,
+                      height: 10,
+                      background: 'var(--accent)',
+                      borderRadius: '50%',
+                    }}
+                  />
+                )}
+              </button>
 
-            {showFilters && (
-              <div className="recordings-filters-dropdown">
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <h3 style={{ margin: 0, fontSize: '0.95rem' }}>Filtry</h3>
-                  {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      onClick={() => {
-                        setDateFilter('');
-                        setTagFilter([]);
-                        setParticipantFilter([]);
-                      }}
+              {showFilters && (
+                <div className="recordings-filters-dropdown">
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <h3 style={{ margin: 0, fontSize: '0.95rem' }}>Filtry</h3>
+                    {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => {
+                          setDateFilter('');
+                          setTagFilter([]);
+                          setParticipantFilter([]);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          height: 'auto',
+                          color: 'var(--text-3)',
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        Wyczyść wszystko
+                      </button>
+                    )}
+                  </div>
+                  <div className="filter-group">
+                    <label
                       style={{
-                        padding: '4px 8px',
-                        height: 'auto',
-                        color: 'var(--text-3)',
                         fontSize: '0.8rem',
+                        fontWeight: 600,
+                        color: 'var(--text-2)',
+                        marginBottom: 8,
+                        display: 'block',
                       }}
                     >
-                      Wyczyść wszystko
-                    </button>
-                  )}
+                      Data Spotkania
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      style={{ width: '100%', background: 'var(--surface-1)' }}
+                    />
+                  </div>
+                  <div className="filter-group">
+                    <label
+                      style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        color: 'var(--text-2)',
+                        marginBottom: 8,
+                        display: 'block',
+                      }}
+                    >
+                      Tagi
+                    </label>
+                    <TagInput
+                      tags={tagFilter}
+                      suggestions={allTags}
+                      onChange={setTagFilter}
+                      placeholder="Filtruj wg tagów..."
+                    />
+                  </div>
+                  <div className="filter-group">
+                    <label
+                      style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        color: 'var(--text-2)',
+                        marginBottom: 8,
+                        display: 'block',
+                      }}
+                    >
+                      Uczestnicy
+                    </label>
+                    <TagInput
+                      tags={participantFilter}
+                      suggestions={allParticipants}
+                      onChange={setParticipantFilter}
+                      placeholder="Dodaj uczestników..."
+                    />
+                  </div>
                 </div>
-                <div className="filter-group">
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: 'var(--text-2)',
-                      marginBottom: 8,
-                      display: 'block',
-                    }}
-                  >
-                    Data Spotkania
-                  </label>
-                  <Input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    style={{ width: '100%', background: 'var(--surface-1)' }}
-                  />
-                </div>
-                <div className="filter-group">
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: 'var(--text-2)',
-                      marginBottom: 8,
-                      display: 'block',
-                    }}
-                  >
-                    Tagi
-                  </label>
-                  <TagInput
-                    tags={tagFilter}
-                    suggestions={allTags}
-                    onChange={setTagFilter}
-                    placeholder="Filtruj wg tagów..."
-                  />
-                </div>
-                <div className="filter-group">
-                  <label
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: 'var(--text-2)',
-                      marginBottom: 8,
-                      display: 'block',
-                    }}
-                  >
-                    Uczestnicy
-                  </label>
-                  <TagInput
-                    tags={participantFilter}
-                    suggestions={allParticipants}
-                    onChange={setParticipantFilter}
-                    placeholder="Dodaj uczestników..."
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="recordings-tab-search-col" style={{ flex: 1 }}>
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Search
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-3)',
-                }}
-              />
-              <Input
-                type="search"
-                placeholder="Szukaj nagrania, hosta lub tytułu..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  paddingLeft: 36,
-                  background: 'var(--surface-0)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  height: 36,
-                  fontSize: '0.85rem',
-                }}
-              />
+              )}
             </div>
-          </div>
+
+            <div className="recordings-tab-search-col" style={{ flex: 1 }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-3)',
+                  }}
+                />
+                <Input
+                  type="search"
+                  placeholder="Szukaj nagrania, hosta lub tytułu..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    paddingLeft: 36,
+                    background: 'var(--surface-0)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    height: 36,
+                    fontSize: '0.85rem',
+                  }}
+                />
+              </div>
+            </div>
           </PageToolbar>
         }
       />
