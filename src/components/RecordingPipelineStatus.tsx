@@ -78,15 +78,12 @@ export function RecordingPipelineStatus({
   );
   const isDone = normalizedStatus === 'done' || normalizedStatus === 'review';
   const canRetryFailedStatus =
-    statusView.retryable &&
-    (normalizedStatus === 'failed' || normalizedStatus === 'auth_required');
+    statusView.retryable && (normalizedStatus === 'failed' || normalizedStatus === 'auth_required');
   const retryHandler =
     canRetryFailedStatus || (allowInProgressRetry && inProgress) ? onRetry : undefined;
   const resolvedRetryLabel =
     retryLabel ||
-    (normalizedStatus === 'auth_required'
-      ? 'Zaloguj ponownie i ponów upload'
-      : 'Spróbuj ponownie');
+    (normalizedStatus === 'auth_required' ? 'Zaloguj ponownie i ponów upload' : 'Spróbuj ponownie');
   const progressText = progressMessage || statusView.summary;
   const detailMessage = errorMessage || statusView.description;
 

@@ -1233,8 +1233,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
       );
 
     if (isAuthenticationFailure) {
-      const authenticationRequiredMessage =
-        'Brak autoryzacji do backendu. Zaloguj sie ponownie.';
+      const authenticationRequiredMessage = 'Brak autoryzacji do backendu. Zaloguj sie ponownie.';
       updateQueueItem(nextItem.recordingId, {
         status: 'auth_required',
         errorMessage: authenticationRequiredMessage,
@@ -1255,11 +1254,7 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         },
         { level: 'warning' }
       );
-      const authSnapshot = getPipelineSnapshot(
-        'failed',
-        0,
-        authenticationRequiredMessage
-      );
+      const authSnapshot = getPipelineSnapshot('failed', 0, authenticationRequiredMessage);
       setState({
         analysisStatus: 'error',
         pipelineProgressPercent: authSnapshot.progressPercent,
