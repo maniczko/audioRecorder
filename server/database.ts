@@ -1277,40 +1277,6 @@ export class Database {
   }
 
   async ensureWorkspaceState(workspaceId: string, executor: QueryExecutor = this): Promise<void> {
-    try {
-      await executor._execute(
-        "ALTER TABLE workspace_state ADD COLUMN manual_people_json TEXT NOT NULL DEFAULT '[]'"
-      );
-    } catch (error) {
-      if (
-        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
-      ) {
-        throw error;
-      }
-    }
-    try {
-      await executor._execute(
-        `ALTER TABLE workspace_state ADD COLUMN retention_days INTEGER NOT NULL DEFAULT ${DEFAULT_RETENTION_DAYS}`
-      );
-    } catch (error) {
-      if (
-        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
-      ) {
-        throw error;
-      }
-    }
-    try {
-      await this._execute(
-        "ALTER TABLE workspace_state ADD COLUMN feature_flags_json TEXT NOT NULL DEFAULT '{}'"
-      );
-    } catch (error) {
-      if (
-        !isAddColumnAlreadyAppliedMigrationError('ALTER TABLE workspace_state ADD COLUMN', error)
-      ) {
-        throw error;
-      }
-    }
-
     const existing = await executor._get(
       'SELECT workspace_id FROM workspace_state WHERE workspace_id = ?',
       [workspaceId]

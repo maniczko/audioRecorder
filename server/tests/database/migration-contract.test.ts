@@ -35,6 +35,8 @@ const retentionHoldIndexes = [
   'idx_recording_retention_holds_active',
 ] as const;
 
+const manualPeopleMigration = '20260716_workspace_state_manual_people.sql';
+
 function readMigration(fileName: string) {
   return fs.readFileSync(path.join(migrationsDir, fileName), 'utf8');
 }
@@ -160,5 +162,12 @@ describe('Database migration contracts', () => {
     expect(migration).toContain('alter table workspace_state');
     expect(migration).toContain('add column feature_flags_json text not null default');
     expect(initialSchema).toContain('feature_flags_json text not null default');
+  });
+
+  test('Issue #1506 - manual people state is migrated before registration transactions', () => {
+    const migration = readMigration(manualPeopleMigration).replace(/\s+/g, ' ').toLowerCase();
+
+    expect(migration).toContain('alter table workspace_state');
+    expect(migration).toContain("add column manual_people_json text not null default '[]'");
   });
 });
