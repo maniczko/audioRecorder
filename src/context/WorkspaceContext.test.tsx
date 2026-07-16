@@ -5,7 +5,7 @@
  * Tests for WorkspaceContext provider and hook
  */
 
-import { renderHook, render, screen } from '@testing-library/react';
+import { act, renderHook, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { WorkspaceProvider, useWorkspaceCtx } from './WorkspaceContext';
@@ -39,11 +39,17 @@ const mockWorkspaceSelectors = vi.hoisted(() => ({
   useWorkspaceStore: () => mockWorkspaceStore,
 }));
 
+const httpClientMocks = vi.hoisted(() => ({
+  onUnauthorized: vi.fn(),
+}));
+
 vi.mock('../store/workspaceStore', () => mockWorkspaceSelectors);
+vi.mock('../services/httpClient', () => httpClientMocks);
 
 describe('WorkspaceContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    httpClientMocks.onUnauthorized.mockReturnValue(vi.fn());
   });
 
   afterEach(() => {
@@ -255,6 +261,33 @@ describe('WorkspaceContext', () => {
       result.current.workspace.logout();
 
       expect(mockWorkspaceStore.logout).toHaveBeenCalled();
+    });
+
+    it('logs out the active Zustand session when an API request returns 401', () => {
+      let handleUnauthorized: (() => void) | undefined;
+      const unsubscribe = vi.fn();
+      httpClientMocks.onUnauthorized.mockImplementation((handler: () => void) => {
+        handleUnauthorized = handler;
+        return unsubscribe;
+      });
+
+      const { unmount } = render(
+        <WorkspaceProvider>
+          <div>Child</div>
+        </WorkspaceProvider>
+      );
+
+      expect(httpClientMocks.onUnauthorized).toHaveBeenCalledOnce();
+
+      act(() => {
+        handleUnauthorized?.();
+      });
+
+      expect(mockWorkspaceStore.logout).toHaveBeenCalledOnce();
+
+      unmount();
+
+      expect(unsubscribe).toHaveBeenCalledOnce();
     });
   });
 

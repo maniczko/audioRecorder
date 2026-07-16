@@ -1,5 +1,6 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useWorkspaceSelectors, useWorkspaceStore } from '../store/workspaceStore';
+import { onUnauthorized } from '../services/httpClient';
 
 const defaultWorkspaceCtx = {
   workspace: {
@@ -30,6 +31,14 @@ const WorkspaceContext = createContext(defaultWorkspaceCtx);
 export function WorkspaceProvider({ children }) {
   const selectors = useWorkspaceSelectors();
   const workspaceStore = useWorkspaceStore();
+  const { logout } = workspaceStore;
+
+  useEffect(() => {
+    const unsubscribe = onUnauthorized(logout);
+    return () => {
+      unsubscribe();
+    };
+  }, [logout]);
 
   const value = {
     workspace: {
