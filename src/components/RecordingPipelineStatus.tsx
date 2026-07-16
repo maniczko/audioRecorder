@@ -77,12 +77,11 @@ export function RecordingPipelineStatus({
     normalizedStatus
   );
   const isDone = normalizedStatus === 'done' || normalizedStatus === 'review';
+  const canRetryFailedStatus =
+    statusView.retryable &&
+    (normalizedStatus === 'failed' || normalizedStatus === 'auth_required');
   const retryHandler =
-    (statusView.retryable &&
-      (normalizedStatus === 'failed' || normalizedStatus === 'auth_required')) ||
-    (allowInProgressRetry && inProgress)
-      ? onRetry
-      : undefined;
+    canRetryFailedStatus || (allowInProgressRetry && inProgress) ? onRetry : undefined;
   const resolvedRetryLabel =
     retryLabel ||
     (normalizedStatus === 'auth_required'
