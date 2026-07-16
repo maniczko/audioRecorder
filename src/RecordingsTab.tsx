@@ -956,14 +956,14 @@ function UnifiedLibrary({
         </div>
       )}
       <PageHeader
-        className="recordings-reference-header"
+        className="recordings-reference-header recordings-library-heading"
         title={'Baza nagra\u0144'}
         description={
           'Przegl\u0105daj, wyszukuj i analizuj nagrania spotka\u0144. Wgrywaj pliki, \u015Bled\u017A status przetwarzania i wracaj do rozm\u00F3w.'
         }
         actions={
           <PageToolbar
-            aria-label="Dzia\u0142ania i filtry nagra\u0144"
+            aria-label="Działania i filtry nagrań"
             className="recordings-reference-actions"
           >
             {isUploading ? (
