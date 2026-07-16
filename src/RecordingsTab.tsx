@@ -8,6 +8,7 @@ import { RecordingPipelineStatus } from './components/RecordingPipelineStatus';
 import { ProgressBar } from './components/ProgressBar';
 import './RecordingsTabStyles.css';
 
+import { PageLayout } from './ui/LayoutPrimitives';
 import { Input } from './ui/Input';
 import { EmptyState } from './components/Skeleton';
 import TagInput from './shared/TagInput';
@@ -1790,7 +1791,11 @@ export default function RecordingsTab(props) {
   };
 
   return (
-    <div className="recordings-tab-container recordings-tab-shell">
+    <PageLayout
+      as="div"
+      variant="wide"
+      className="recordings-tab-container recordings-tab-shell"
+    >
       {showStandalonePipelineStatus && !activeQueueItemShownInPendingList ? (
         <section className="panel recordings-status-panel">
           <div className="panel-header compact recordings-panel-header-flat">
@@ -1963,6 +1968,6 @@ export default function RecordingsTab(props) {
           handleFileUpload={handleMainFileUpload}
         />
       </main>
-    </div>
+    </PageLayout>
   );
 }
