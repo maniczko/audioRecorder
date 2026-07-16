@@ -636,6 +636,36 @@ describe('recorderStore', { timeout: 30000 }, () => {
     });
   });
 
+  test('pauses an invalid backend session until the user signs in again', async () => {
+    mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
+
+    mocks.createMediaService.mockReturnValue({
+      mode: 'remote',
+      persistRecordingAudio: vi
+        .fn()
+        .mockRejectedValue(new Error('Sesja wygasla lub jest nieprawidlowa')),
+      subscribeToTranscriptionProgress: vi.fn().mockReturnValue(null),
+    });
+
+    const { useRecorderStore } = await import('./recorderStore');
+    useRecorderStore.setState({
+      recordingQueue: [{ recordingId: 'rec_invalid_auth', status: 'queued', uploaded: false }],
+    });
+
+    await useRecorderStore
+      .getState()
+      .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
+
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: 'auth_required',
+      uploaded: false,
+      retryCount: 0,
+      backoffUntil: 0,
+      retryable: true,
+      errorMessage: 'Brak autoryzacji do backendu. Zaloguj sie ponownie.',
+    });
+  });
+
   test('maps failed fetch errors to a backend availability message', async () => {
     mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
