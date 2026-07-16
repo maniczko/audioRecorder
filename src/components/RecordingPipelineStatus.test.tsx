@@ -13,6 +13,7 @@ describe('RecordingPipelineStatus', () => {
     ['empty', 'Brak mowy', 'empty'],
     ['no_audio', 'Brak audio', 'empty'],
     ['failed', 'Błąd przetwarzania', 'failed'],
+    ['auth_required', 'Wymagane ponowne logowanie', 'failed'],
     ['failed_permanent', 'Wymaga ponownego importu', 'failed'],
   ])('renders status chip for %s', (status, label, className) => {
     const { container } = render(<RecordingPipelineStatus status={status} />);
@@ -122,6 +123,25 @@ describe('RecordingPipelineStatus', () => {
       />
     );
     expect(screen.queryByRole('button', { name: /Spróbuj ponownie/ })).not.toBeInTheDocument();
+  });
+
+  test('shows an explicit login-and-retry action for expired upload sessions', () => {
+    const onRetry = vi.fn();
+    render(
+      <RecordingPipelineStatus
+        status="auth_required"
+        errorMessage="Brak autoryzacji do backendu. Zaloguj sie ponownie."
+        onRetry={onRetry}
+      />
+    );
+
+    const alert = screen.getByRole('alert', { name: /Wymagane ponowne logowanie/i });
+    expect(alert).toHaveAttribute('aria-live', 'assertive');
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Zaloguj ponownie i ponów upload' })
+    );
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 
   test('renders custom retry action for in-progress status when explicitly allowed', () => {
