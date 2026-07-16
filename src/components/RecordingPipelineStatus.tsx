@@ -78,7 +78,8 @@ export function RecordingPipelineStatus({
   );
   const isDone = normalizedStatus === 'done' || normalizedStatus === 'review';
   const retryHandler =
-    (statusView.retryable && ['failed', 'auth_required'].includes(normalizedStatus)) ||
+    (statusView.retryable &&
+      (normalizedStatus === 'failed' || normalizedStatus === 'auth_required')) ||
     (allowInProgressRetry && inProgress)
       ? onRetry
       : undefined;
