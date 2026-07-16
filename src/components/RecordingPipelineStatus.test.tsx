@@ -138,9 +138,7 @@ describe('RecordingPipelineStatus', () => {
     const alert = screen.getByRole('alert', { name: /Wymagane ponowne logowanie/i });
     expect(alert).toHaveAttribute('aria-live', 'assertive');
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Zaloguj ponownie i ponów upload' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Zaloguj ponownie i ponów upload' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 
