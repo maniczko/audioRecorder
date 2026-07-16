@@ -1067,7 +1067,11 @@ function UnifiedLibrary({
               {showFilters && (
                 <div className="recordings-filters-dropdown">
                   <div
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
                   >
                     <h3 style={{ margin: 0, fontSize: '0.95rem' }}>Filtry</h3>
                     {(dateFilter || tagFilter.length > 0 || participantFilter.length > 0) && (
@@ -1790,11 +1794,7 @@ export default function RecordingsTab(props) {
   };
 
   return (
-    <PageLayout
-      as="div"
-      variant="wide"
-      className="recordings-tab-container recordings-tab-shell"
-    >
+    <PageLayout as="div" variant="wide" className="recordings-tab-container recordings-tab-shell">
       {showStandalonePipelineStatus && !activeQueueItemShownInPendingList ? (
         <section className="panel recordings-status-panel">
           <div className="panel-header compact recordings-panel-header-flat">
