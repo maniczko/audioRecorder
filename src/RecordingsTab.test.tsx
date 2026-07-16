@@ -111,6 +111,19 @@ describe('RecordingsTab', () => {
     expect(screen.getByText('1 mówca')).toBeInTheDocument();
   });
 
+  test('Regression: uses the shared wide page shell for the recordings workspace', () => {
+    render(
+      <ToastProvider>
+        <RecordingsTab {...defaultProps} />
+      </ToastProvider>
+    );
+
+    expect(screen.getByTestId('recordings-page-shell')).toHaveAttribute(
+      'data-layout-variant',
+      'wide'
+    );
+  });
+
   test('renders screenshot-first recordings table controls', () => {
     render(
       <ToastProvider>
