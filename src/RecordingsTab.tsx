@@ -1180,7 +1180,6 @@ function UnifiedLibrary({
               />
             </div>
           </div>
-        </div>
           </PageToolbar>
         }
       />
