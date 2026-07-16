@@ -603,7 +603,13 @@ describe('recorderStore', { timeout: 30000 }, () => {
     expect(useRecorderStore.getState().analysisStatus).toBe('error');
   });
 
-  test('maps missing-token failures to a re-login message', async () => {
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1279 — Expired sessions must stop automatic upload retries
+  // Date: 2026-07-16
+  // Bug: missing or invalid backend credentials left the local upload as failed.
+  // Fix: preserve the recording and require an explicit retry after login.
+  // ─────────────────────────────────────────────────────────────────
+  test('maps missing-token failures to an explicit login recovery state', async () => {
     mocks.getAudioBlob.mockResolvedValueOnce(new Blob(['audio']));
 
     mocks.createMediaService.mockReturnValue({
@@ -621,9 +627,13 @@ describe('recorderStore', { timeout: 30000 }, () => {
       .getState()
       .processQueue(() => ({ id: 'm1', workspaceId: 'ws1' }), vi.fn(), vi.fn());
 
-    expect(useRecorderStore.getState().recordingQueue[0].errorMessage).toBe(
-      'Brak autoryzacji do backendu. Zaloguj sie ponownie.'
-    );
+    expect(useRecorderStore.getState().recordingQueue[0]).toMatchObject({
+      status: 'auth_required',
+      uploaded: false,
+      retryCount: 0,
+      backoffUntil: 0,
+      errorMessage: 'Brak autoryzacji do backendu. Zaloguj sie ponownie.',
+    });
   });
 
   test('maps failed fetch errors to a backend availability message', async () => {
