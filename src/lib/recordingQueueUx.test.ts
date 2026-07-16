@@ -14,6 +14,12 @@ describe('recordingQueueUx', () => {
       ['refresh', 'export'],
     ],
     ['done', 'Transkrypcja gotowa', 'Nagranie jest gotowe.', ['export']],
+    [
+      'auth_required',
+      'Wymagane ponowne logowanie',
+      'Zaloguj sie ponownie, aby wznowic upload.',
+      ['retry'],
+    ],
     ['empty', 'Brak mowy', 'Nie wykryto wypowiedzi w nagraniu.', ['retry', 'reimport', 'delete']],
     [
       'no_audio',
