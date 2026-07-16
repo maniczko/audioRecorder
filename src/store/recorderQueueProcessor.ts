@@ -1255,7 +1255,11 @@ export async function processRecordingQueueItem(context: QueueProcessorContext) 
         },
         { level: 'warning' }
       );
-      const authSnapshot = getPipelineSnapshot('failed', 0, authenticationRequiredMessage);
+      const authSnapshot = getPipelineSnapshot(
+        'failed',
+        0,
+        authenticationRequiredMessage
+      );
       setState({
         analysisStatus: 'error',
         pipelineProgressPercent: authSnapshot.progressPercent,
