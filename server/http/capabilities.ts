@@ -325,7 +325,7 @@ export function resolveProductionCapabilities(
   };
 }
 
-async function defaultStorageReadiness() {
+export async function resolveStorageReadiness() {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return DEFAULT_STORAGE_READINESS;
   }
@@ -343,7 +343,7 @@ async function defaultStorageReadiness() {
 
 export function registerCapabilitiesRoute(app: Hono<any>, options: RegisterOptions = {}) {
   app.get('/api/capabilities', async (c) => {
-    const storageReadiness = await (options.resolveStorageReadiness || defaultStorageReadiness)();
+    const storageReadiness = await (options.resolveStorageReadiness || resolveStorageReadiness)();
     const payload = resolveProductionCapabilities({ storageReadiness });
 
     for (const capabilityId of payload.telemetry.fallbackModeCapabilities) {

@@ -141,6 +141,88 @@ describe('Regression: Issue #341 - supabaseStorage null handling', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────
+// Issue #0 — workspace capabilities report healthy audio storage as unavailable
+// Date: 2026-07-17
+// Bug: The authenticated workspace capabilities route skipped the Supabase
+//      readiness probe and always used the unavailable default.
+// Fix: Resolve the same storage readiness used by /api/capabilities.
+// ─────────────────────────────────────────────────────────────────
+describe('Regression: Issue #0 — workspace capabilities preserve storage readiness', () => {
+  const originalSupabaseUrl = process.env.SUPABASE_URL;
+  const originalSupabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  afterEach(() => {
+    if (originalSupabaseUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = originalSupabaseUrl;
+    if (originalSupabaseServiceRoleKey === undefined) {
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    } else {
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalSupabaseServiceRoleKey;
+    }
+    vi.doUnmock('../../lib/supabaseStorage.ts');
+    vi.resetModules();
+  });
+
+  test('does not show Supabase Storage as degraded when the production bucket is ready', async () => {
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+    const checkSupabaseStorageReadiness = vi.fn().mockResolvedValue({
+      configured: true,
+      ready: true,
+      bucket: 'recordings',
+      status: 'ready',
+    });
+    vi.doMock('../../lib/supabaseStorage.ts', () => ({ checkSupabaseStorageReadiness }));
+
+    const { createWorkspacesRoutes } = await import('../../routes/workspaces.ts');
+    const router = createWorkspacesRoutes(
+      {
+        authService: {},
+        workspaceService: {
+          getWorkspaceState: vi.fn().mockResolvedValue({
+            featureFlags: {
+              sttProvider: 'auto',
+              diarization: true,
+              meetingAnalysis: true,
+              embeddings: true,
+              imageGeneration: true,
+              liveTranscription: true,
+              retentionFeatures: true,
+              experimentalUi: false,
+            },
+          }),
+        },
+        transcriptionService: {},
+        db: {},
+        config: {},
+      },
+      {
+        authMiddleware: async (c: any, next: any) => {
+          c.set('session', { user_id: 'user-1', workspace_id: 'workspace-1' });
+          await next();
+        },
+        ensureWorkspaceAccess: vi.fn().mockResolvedValue({ member_role: 'owner' }),
+        applyRateLimit: () => async (_c: any, next: any) => next(),
+      } as any
+    );
+
+    const response = await router.request('/workspaces/workspace-1/capabilities');
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(checkSupabaseStorageReadiness).toHaveBeenCalledTimes(1);
+    expect(payload.capabilities.supabaseStorage).toMatchObject({
+      enabled: true,
+      status: 'available',
+      provider: 'supabase-storage',
+    });
+    expect(payload.degradedCapabilities).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'supabaseStorage' })])
+    );
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Issue #456 - Recording ID sanitization breaks with unicode characters
 // Date: 2026-03-28
