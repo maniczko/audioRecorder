@@ -6,7 +6,7 @@ import { AppServices, AppMiddlewares } from './middleware.ts';
 import { applyWorkspaceStateDelta, normalizeWorkspaceState } from '../../src/shared/contracts.ts';
 import { workspaceMembershipCan } from '../../src/shared/workspacePermissions.ts';
 import type { VoiceProfileSummary, VoiceProfilesListPayload } from '../../src/shared/types.ts';
-import { resolveProductionCapabilities } from '../http/capabilities.ts';
+import { resolveProductionCapabilities, resolveStorageReadiness } from '../http/capabilities.ts';
 import { buildFallbackRagAnswer, generateRagAnswer } from '../lib/ragAnswer.ts';
 import {
   createVoiceProfileEmbeddingFailure,
@@ -236,10 +236,14 @@ export function createWorkspacesRoutes(services: AppServices, middlewares: AppMi
   router.get('/workspaces/:workspaceId/capabilities', async (c) => {
     const workspaceId = c.req.param('workspaceId');
     await ensureWorkspaceAccess(c, workspaceId);
-    const state = await workspaceService.getWorkspaceState(workspaceId);
+    const [state, storageReadiness] = await Promise.all([
+      workspaceService.getWorkspaceState(workspaceId),
+      resolveStorageReadiness(),
+    ]);
     return c.json(
       resolveProductionCapabilities({
         workspaceFeatureFlags: state.featureFlags,
+        storageReadiness,
       }),
       200
     );
