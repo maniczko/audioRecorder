@@ -44,7 +44,7 @@ function AuthPanelHeader({ authMode }: { authMode: AuthMode }) {
         {isRegister
           ? 'Załóż darmowe konto by zacząć'
           : isForgot
-            ? 'Podaj email, abyśmy mogli wysłać instrukcje'
+            ? 'Podaj email, aby wygenerować kod resetu'
             : 'Zaloguj się do swojego konta'}
       </p>
     </div>

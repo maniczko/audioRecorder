@@ -54,7 +54,7 @@ export default function PasswordResetForm({
       ) : null}
 
       <div className="auth-input-group">
-        <label htmlFor="reset-code">Kod z emaila (lokalnie: podaj z góry)</label>
+        <label htmlFor="reset-code">Kod resetu</label>
         <div className="auth-input-wrapper">
           <KeyRound />
           <input

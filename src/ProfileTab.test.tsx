@@ -235,6 +235,17 @@ describe('ProfileTab', () => {
       expect(screen.getByPlaceholderText('Nowe hasło')).toBeInTheDocument();
     });
 
+    test('Regression: allows password changes for local accounts without a password hash', () => {
+      render(
+        <ProfileTab
+          {...baseProps}
+          currentUser={{ ...baseProps.currentUser, provider: 'local', passwordHash: undefined }}
+        />
+      );
+
+      expect(screen.getByPlaceholderText('Aktualne hasło')).toBeInTheDocument();
+    });
+
     it('shows info for Google accounts without password hash', () => {
       render(
         <ProfileTab

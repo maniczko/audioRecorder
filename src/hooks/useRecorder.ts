@@ -53,7 +53,8 @@ interface StartRecordingOptions {
 }
 
 interface PendingRecordingRequest {
-  active: any;
+  active: any | null;
+  requiresAdHocMeeting: boolean;
 }
 
 export default function useRecorder({
@@ -122,10 +123,14 @@ export default function useRecorder({
     return hardware.startRecording(active.id);
   }
 
-  function requestRecordingConsent(active: any) {
-    pendingRecordingRequestRef.current = { active };
+  function requestRecordingConsent(active: any | null, requiresAdHocMeeting: boolean) {
+    pendingRecordingRequestRef.current = { active, requiresAdHocMeeting };
     setRecordingConsentPromptOpen(true);
     pipeline.setRecordingMessage('Przed nagrywaniem zaakceptuj zgode i ujawnienie dostawcow AI.');
+  }
+
+  function createPendingAdHocMeeting() {
+    return withWorkspaceFallback(createAdHocMeeting());
   }
 
   function normalizeErrorMessage(error: unknown) {
@@ -288,28 +293,37 @@ export default function useRecorder({
   }, [serverCaption, mediaService.mode, liveTranscriptEnabled]);
 
   const startRecordingWrapper = (options: StartRecordingOptions = {}) => {
-    const active = withWorkspaceFallback(
-      options.adHoc || !selectedMeeting ? createAdHocMeeting() : selectedMeeting
-    );
-    if (!active) {
-      pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');
-      return;
-    }
-    if (!remoteWorkspaceReady(active)) {
+    const requiresAdHocMeeting = options.adHoc || !selectedMeeting;
+    const active = requiresAdHocMeeting ? null : withWorkspaceFallback(selectedMeeting);
+    const consentTarget = active || withWorkspaceFallback({ workspaceId: currentWorkspaceId });
+
+    if (!remoteWorkspaceReady(consentTarget)) {
       blockMissingWorkspace();
       return;
     }
-    const consent = resolveRecordingConsent(active);
+    const consent = resolveRecordingConsent(consentTarget);
     if (!consent) {
-      requestRecordingConsent(active);
+      requestRecordingConsent(active, requiresAdHocMeeting);
       return;
     }
-    return startHardwareRecording(active, consent);
+
+    const resolvedActive = active || createPendingAdHocMeeting();
+    if (!resolvedActive) {
+      pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');
+      return;
+    }
+    if (!remoteWorkspaceReady(resolvedActive)) {
+      blockMissingWorkspace();
+      return;
+    }
+    return startHardwareRecording(resolvedActive, consent);
   };
 
   const acceptRecordingConsent = () => {
     const pending = pendingRecordingRequestRef.current;
-    const active = pending?.active || withWorkspaceFallback(selectedMeeting);
+    const active = pending?.requiresAdHocMeeting
+      ? createPendingAdHocMeeting()
+      : pending?.active || withWorkspaceFallback(selectedMeeting);
     const consent = createRecordingConsentMetadata({
       workspaceId: getWorkspaceConsentId(active),
       disclosure: recordingConsentDisclosure,
@@ -317,11 +331,16 @@ export default function useRecorder({
     saveRecordingConsent(consent);
     pendingRecordingRequestRef.current = null;
     setRecordingConsentPromptOpen(false);
-    pipeline.setRecordingMessage('Zgoda zapisana. Rozpoczynamy nagrywanie.');
-    if (active) {
-      return startHardwareRecording(active, consent);
+    if (!active) {
+      pipeline.setRecordingMessage('Nie udalo sie przygotowac spotkania.');
+      return undefined;
     }
-    return undefined;
+    if (!remoteWorkspaceReady(active)) {
+      blockMissingWorkspace();
+      return undefined;
+    }
+    pipeline.setRecordingMessage('Zgoda zapisana. Rozpoczynamy nagrywanie.');
+    return startHardwareRecording(active, consent);
   };
 
   const declineRecordingConsent = () => {

@@ -136,7 +136,7 @@ describe('useRecorder', () => {
     listStoredSizesMock.mockResolvedValue([]);
   });
 
-  test('blocks ad hoc recording until consent disclosure is accepted', () => {
+  test('defers ad hoc meeting creation until consent disclosure is accepted', () => {
     const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
     const selectMeeting = vi.fn();
 
@@ -156,7 +156,7 @@ describe('useRecorder', () => {
       result.current.startRecording();
     });
 
-    expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
+    expect(createAdHocMeeting).not.toHaveBeenCalled();
     expect(result.current.recordingConsent.isPromptOpen).toBe(true);
     expect(hardwareState.startRecording).not.toHaveBeenCalled();
 
@@ -164,9 +164,43 @@ describe('useRecorder', () => {
       result.current.recordingConsent.accept();
     });
 
+    expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
     expect(selectMeeting).toHaveBeenCalledWith({ id: 'meeting-ad-hoc', workspaceId: 'ws1' });
     expect(hardwareState.startRecording).toHaveBeenCalledWith('meeting-ad-hoc');
     expect(window.localStorage.length).toBe(1);
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 - declining recording consent created an ad hoc meeting
+  // Date: 2026-07-20
+  // Bug: starting an ad hoc recording created a persistent meeting before
+  //      the consent dialog was accepted, so cancelling left a false record.
+  // Fix: defer ad hoc meeting creation until the user accepts consent.
+  // -----------------------------------------------------------------
+  test('Regression: declining consent does not create an ad hoc meeting', () => {
+    const createAdHocMeeting = vi.fn(() => ({ id: 'meeting-ad-hoc', workspaceId: 'ws1' }));
+
+    const { result } = renderHook(() =>
+      useRecorder({
+        selectedMeeting: null,
+        userMeetings: [],
+        createAdHocMeeting,
+        attachCompletedRecording: vi.fn(),
+        isHydratingRemoteState: false,
+        currentWorkspaceId: 'ws1',
+      })
+    );
+
+    act(() => {
+      result.current.startRecording({ adHoc: true });
+    });
+    act(() => {
+      result.current.recordingConsent.decline();
+    });
+
+    expect(createAdHocMeeting).not.toHaveBeenCalled();
+    expect(hardwareState.startRecording).not.toHaveBeenCalled();
+    expect(window.localStorage.length).toBe(0);
   });
 
   test('uses persisted workspace consent to start recording without prompting again', () => {
@@ -470,7 +504,7 @@ describe('useRecorder', () => {
     expect(pipelineState.setRecordingQueue).not.toHaveBeenCalled();
   });
 
-  test('startRecording is a no-op when createAdHocMeeting returns null', () => {
+  test('does not start recording when accepted consent cannot create an ad hoc meeting', () => {
     const createAdHocMeeting = vi.fn(() => null);
     const selectMeeting = vi.fn();
 
@@ -482,6 +516,7 @@ describe('useRecorder', () => {
         attachCompletedRecording: vi.fn(),
         isHydratingRemoteState: false,
         selectMeeting,
+        currentWorkspaceId: 'ws1',
       })
     );
 
@@ -489,8 +524,14 @@ describe('useRecorder', () => {
       result.current.startRecording();
     });
 
+    expect(createAdHocMeeting).not.toHaveBeenCalled();
+    expect(result.current.recordingConsent.isPromptOpen).toBe(true);
+
+    act(() => {
+      result.current.recordingConsent.accept();
+    });
+
     expect(createAdHocMeeting).toHaveBeenCalledTimes(1);
-    // startRecording on hardware should not be called when no meeting was created
     expect(hardwareState.startRecording).not.toHaveBeenCalled();
   });
 

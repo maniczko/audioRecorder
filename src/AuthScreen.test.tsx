@@ -169,12 +169,13 @@ describe('AuthScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Zapomniałeś hasła?' }));
 
     expect(setAuthModeSpy).toHaveBeenCalledWith('forgot');
+    expect(screen.getByText(/wygenerować kod resetu/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Adres email'), {
       target: { value: 'anna@example.com' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Wyślij kod resetu' }));
-    fireEvent.change(screen.getByLabelText(/Kod z emaila \(lokalnie: podaj z góry\)/i), {
+    fireEvent.change(screen.getByLabelText('Kod resetu'), {
       target: { value: '123456' },
     });
     fireEvent.change(screen.getByLabelText('Nowe hasło'), {

@@ -953,6 +953,7 @@ export default function StudioMeetingView({
   briefOpen,
   setBriefOpen,
   setActiveTab,
+  googleCalendarStatus = 'idle',
   silenceCountdown,
   resetSilenceTimer,
   boardColumns: boardColumnsProp,
@@ -2214,16 +2215,17 @@ export default function StudioMeetingView({
   const studioStats = useMemo(() => {
     const meetings = Array.isArray(userMeetings) ? userMeetings : [];
     const tasks = Array.isArray(meetingTasks) ? meetingTasks : [];
-    const recordingsCount = meetings.length || 2;
+    const recordingsCount = meetings.length;
     const totalMinutes = meetings.reduce(
       (sum, meeting) => sum + getMeetingDurationMinutes(meeting),
       0
     );
-    const aiTasksCount =
-      tasks.filter((task) => String(task?.sourceType || '').includes('ai')).length || 6;
-    const summariesCount =
-      meetings.filter((meeting) => Boolean(meeting?.analysis?.summary || meeting?.summary))
-        .length || 1;
+    const aiTasksCount = tasks.filter((task) =>
+      String(task?.sourceType || '').includes('ai')
+    ).length;
+    const summariesCount = meetings.filter((meeting) =>
+      Boolean(meeting?.analysis?.summary || meeting?.summary)
+    ).length;
 
     return [
       {
@@ -2235,7 +2237,7 @@ export default function StudioMeetingView({
       {
         id: 'duration',
         icon: Clock3,
-        value: totalMinutes > 0 ? formatStudioMinutes(totalMinutes) : '1h 30m',
+        value: formatStudioMinutes(totalMinutes),
         label: 'Łączny czas sesji',
       },
       {
@@ -2442,8 +2444,14 @@ export default function StudioMeetingView({
               </div>
               <div className="studio-calendar-connected">
                 <CalendarDays size={17} strokeWidth={2.2} />
-                <span>Kalendarz Google jest połączony</span>
-                <button type="button">Zarządzaj</button>
+                <span>
+                  {googleCalendarStatus === 'connected'
+                    ? 'Kalendarz Google jest połączony'
+                    : 'Kalendarz Google nie jest połączony'}
+                </span>
+                <button type="button" onClick={() => setActiveTab?.('profile')}>
+                  Zarządzaj
+                </button>
               </div>
               <div className="studio-calendar-list">
                 {studioCalendarItems.length ? (

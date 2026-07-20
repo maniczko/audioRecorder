@@ -1654,7 +1654,7 @@ export default function ProfileTab({
   sessionToken,
   apiBaseUrl,
 }) {
-  const canManagePassword = Boolean(currentUser?.passwordHash);
+  const canManagePassword = currentUser?.provider !== 'google';
   const [activeCategory, setActiveCategory] = useState('account');
   const currentAppearanceMode =
     appearanceMode === 'premium-light' || theme === 'premium-light' ? 'premium-light' : 'dark';

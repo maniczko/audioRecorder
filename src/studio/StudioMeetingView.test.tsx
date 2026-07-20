@@ -1831,6 +1831,8 @@ describe('StudioMeetingView', () => {
     expect(screen.queryByText('Kickoff projektu Mercury')).not.toBeInTheDocument();
     expect(screen.getByText('Nagrania w tym miesiącu')).toBeInTheDocument();
     expect(screen.getByText('Gotowe podsumowania')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /Podsumowanie pracy/i })).toHaveTextContent('0m');
+    expect(screen.getByText(/Kalendarz Google nie jest połączony/i)).toBeInTheDocument();
   });
 
   test('routes Studio home quick actions through existing handlers', () => {

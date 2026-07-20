@@ -124,7 +124,7 @@ describe('AuthScreen - Accessibility', () => {
     await userEvent.click(screen.getByRole('button', { name: /wyslij kod resetu|reset/i }));
     expect(requestResetCodeMock).toHaveBeenCalledTimes(1);
 
-    expect(screen.getByLabelText(/kod z emaila/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Kod resetu')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /zmień hasło|zmien haslo/i })).toBeInTheDocument();
     expect(completeResetMock).not.toHaveBeenCalled();
   });

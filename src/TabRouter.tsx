@@ -399,6 +399,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             currentWorkspacePermissions={workspace.currentWorkspacePermissions}
             updateWorkspaceMemberRole={workspace.updateWorkspaceMemberRole}
             setActiveTab={ui.setActiveTab}
+            googleCalendarStatus={google.googleCalendarStatus}
             meetingDraft={meetings.meetingDraft}
             setMeetingDraft={meetings.setMeetingDraft}
             activeStoredMeetingDraft={meetings.activeStoredMeetingDraft}
