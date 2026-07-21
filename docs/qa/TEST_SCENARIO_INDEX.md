@@ -34,6 +34,22 @@ This file tracks the canonical scenario inventory. Detailed steps live under `do
 | STU-003 | Studio | Last transcript segment and action item remain reachable | P0 | M + V | ready | candidate | `scenarios/studio.md` |
 | SMOKE-001 | Production smoke | Health, auth, upload, processing, persistence, download, and delete | P0 | S + E2E | ready | partial | `scenarios/production-smoke.md` |
 
+## Phase 2 — workspace security and recovery
+
+| ID | Area | Scenario | Priority | Type | Status | Automation | File |
+|---|---|---|---:|---|---|---|---|
+| WS-001 | Workspace | Default workspace bootstrap | P0 | M + E2E + API | ready | partial | `scenarios/workspace-rbac.md` |
+| WS-002 | Workspace | Switch workspace without data leakage | P0 | M + E2E + API | ready | partial | `scenarios/workspace-rbac.md` |
+| WS-003 | Workspace security | Backend enforces workspace boundary | P0 | API + E2E | ready | partial | `scenarios/workspace-rbac.md` |
+| RBAC-001 | RBAC | Owner permission matrix | P0 | M + E2E + API | ready | partial | `scenarios/workspace-rbac.md` |
+| RBAC-002 | RBAC | Viewer remains read-only | P0 | M + E2E + API | ready | partial | `scenarios/workspace-rbac.md` |
+| QUE-001 | Queue | Queue survives navigation | P0 | M + E2E | automated | automated | `scenarios/queue-recovery.md` |
+| QUE-002 | Queue | Queue survives browser refresh | P0 | M + E2E | ready | candidate | `scenarios/queue-recovery.md` |
+| QUE-003 | Recovery | Backend restart while job is queued | P0 | API + S + recovery | blocked | candidate | `scenarios/queue-recovery.md` |
+| QUE-004 | Recovery | Backend restart while job is processing | P0 | API + S + recovery | blocked | candidate | `scenarios/queue-recovery.md` |
+| QUE-005 | Queue idempotency | Duplicate transcribe request | P0 | API + E2E | ready | partial | `scenarios/queue-recovery.md` |
+| QUE-006 | Queue idempotency | Retry completed recording | P0 | API + E2E | ready | partial | `scenarios/queue-recovery.md` |
+
 ## Execution history
 
 Execution results should be recorded in GitHub issue comments or release validation reports under `docs/qa/releases/`. Do not turn this index into a verbose execution log.
