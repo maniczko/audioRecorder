@@ -1,0 +1,57 @@
+name: Setup Node 22 and pnpm
+description: Install the repository-pinned Node and pnpm toolchain with a deterministic dependency profile.
+
+inputs:
+  install-profile:
+    description: Use pure-js for tooling that must not execute native postinstall scripts, or native when artifacts are required.
+    required: false
+    default: native
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm 9.12.1
+      uses: pnpm/action-setup@v6
+      with:
+        version: 9.12.1
+        run_install: false
+
+    - name: Setup Node 22 and cache pnpm store
+      uses: actions/setup-node@v6
+      with:
+        node-version: '22'
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        INSTALL_PROFILE: ${{ inputs.install-profile }}
+      run: |
+        set -euo pipefail
+
+        case "$INSTALL_PROFILE" in
+          pure-js)
+            if ! pnpm install --frozen-lockfile --ignore-scripts; then
+              echo "::error title=Dependency installation failed before tests started::Pure JavaScript dependency installation failed. This is an infrastructure or registry failure; no application checks have run."
+              exit 1
+            fi
+            ;;
+          native)
+            for attempt in 1 2 3; do
+              echo "pnpm native install attempt ${attempt}/3..."
+              if pnpm install --frozen-lockfile; then
+                exit 0
+              fi
+              if [ "$attempt" -lt 3 ]; then
+                sleep $((attempt * 10))
+              fi
+            done
+            echo "::error title=Dependency installation failed before tests started::Native dependency installation failed after three attempts. This is an infrastructure, registry, or native artifact failure; no application checks have run."
+            exit 1
+            ;;
+          *)
+            echo "Unsupported install profile: $INSTALL_PROFILE" >&2
+            exit 2
+            ;;
+        esac

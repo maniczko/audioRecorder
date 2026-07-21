@@ -31,16 +31,12 @@ jobs:
           # Deploy the exact SHA that CI tested, not whatever is on main at deploy time
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      # Vercel frontend deployment and release smoke do not need server-side
+      # ffmpeg-static postinstall binaries. Avoid blocking production deploys
+      # on transient GitHub release asset 504s.
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 22
-      - run: corepack enable
-      - name: Install dependencies
-        # Vercel frontend deployment and release smoke do not need server-side
-        # ffmpeg-static postinstall binaries. Avoid blocking production deploys
-        # on transient GitHub release asset 504s.
-        run: pnpm install --frozen-lockfile --ignore-scripts
+          install-profile: pure-js
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest

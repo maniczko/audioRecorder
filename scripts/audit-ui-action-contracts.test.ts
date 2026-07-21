@@ -9,6 +9,7 @@ import {
   findUiActionContractIssues,
   loadUiActionContracts,
   mainViewTargets,
+  summarizeUiActions,
 } from './audit-ui-action-contracts.mjs';
 
 describe('audit-ui-action-contracts', () => {
@@ -86,6 +87,33 @@ describe('audit-ui-action-contracts', () => {
         expect.objectContaining({ kind: 'menuitem', label: 'Usun', hasOnClick: true }),
       ])
     );
+  });
+
+  it('produces the same fingerprint for LF and CRLF source files', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'voicelog-ui-actions-line-endings-'));
+    const sourcePath = path.join(root, 'src/CalendarTab.tsx');
+    const source = fs
+      .readFileSync(path.resolve('src/CalendarTab.tsx'), 'utf8')
+      .replace(/\r\n/g, '\n');
+    fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+
+    fs.writeFileSync(sourcePath, source, 'utf8');
+    const lfSummary = summarizeUiActions(
+      collectUiActionsFromFiles({
+        root,
+        targets: [{ screen: 'Calendar', file: 'src/CalendarTab.tsx' }],
+      })
+    );
+
+    fs.writeFileSync(sourcePath, source.replace(/\n/g, '\r\n'), 'utf8');
+    const crlfSummary = summarizeUiActions(
+      collectUiActionsFromFiles({
+        root,
+        targets: [{ screen: 'Calendar', file: 'src/CalendarTab.tsx' }],
+      })
+    );
+
+    expect(crlfSummary).toEqual(lfSummary);
   });
 
   it('reports an inventory mismatch when a tracked screen changes actions', () => {
