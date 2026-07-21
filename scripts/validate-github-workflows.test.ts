@@ -256,13 +256,17 @@ describe('GitHub workflows validation', () => {
   //      the repository-owned setup action used earlier in the job.
   // Fix: restore the pull-request checkout after artifact and comment steps.
   // -----------------------------------------------------------------
-  it('restores the pull-request checkout after compressed-size-action finishes', () => {
-    const workflowPath = path.join(workflowDir, 'bundle-size.yml');
-    const content = readFileSync(workflowPath, 'utf8');
+  it('restores the pull-request checkout after every compressed-size-action finishes', () => {
+    const workflowNames = ['bundle-size.yml', 'code-review.yml'];
 
-    expect(content).toContain('name: Restore pull request checkout for action cleanup');
-    expect(content).toContain("if: always() && github.event_name == 'pull_request'");
-    expect(content).toContain('ref: ${{ github.event.pull_request.head.sha }}');
+    for (const workflowName of workflowNames) {
+      const content = readFileSync(path.join(workflowDir, workflowName), 'utf8');
+
+      expect(content, workflowName).toContain(
+        'name: Restore pull request checkout for action cleanup'
+      );
+      expect(content, workflowName).toContain('ref: ${{ github.event.pull_request.head.sha }}');
+    }
   });
 
   it('pins remediation versions for dependency findings that block the high-severity gate', () => {
