@@ -75,7 +75,7 @@
       "screen": "Calendar",
       "file": "src/CalendarTab.tsx",
       "expectedActionCount": 28,
-      "fingerprint": "0622033559f2fb5a",
+      "fingerprint": "33b6085769c1893e",
       "contractStatus": "covered",
       "testFiles": ["src/CalendarTab.test.tsx"],
       "testEvidence": [
