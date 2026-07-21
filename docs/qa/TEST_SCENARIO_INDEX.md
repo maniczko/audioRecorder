@@ -18,10 +18,10 @@ This file tracks the canonical scenario inventory. Detailed steps live under `do
 | ID | Area | Scenario | Priority | Type | Status | Automation | File |
 |---|---|---|---:|---|---|---|---|
 | AUTH-001 | Authentication | Successful login and workspace bootstrap | P0 | M + E2E | ready | candidate | `scenarios/auth-session.md` |
-| AUTH-002 | Authentication | Invalid credentials show a safe error | P0 | M + E2E | draft | candidate | `scenarios/auth-session.md` |
-| AUTH-003 | Authentication | Expired session during navigation | P0 | M + E2E | draft | candidate | `scenarios/auth-session.md` |
-| AUTH-004 | Authentication | Expired session during audio upload | P0 | M + E2E | draft | candidate | `scenarios/auth-session.md` |
-| REC-001 | Recording | Start, pause, resume, and stop recording | P0 | M + E2E | draft | candidate | `scenarios/recording.md` |
+| AUTH-002 | Authentication | Invalid credentials show a safe error | P0 | M + E2E | ready | candidate | `scenarios/auth-session.md` |
+| AUTH-003 | Authentication | Expired session during navigation | P0 | M + E2E | ready | candidate | `scenarios/auth-session.md` |
+| AUTH-004 | Authentication | Expired session during audio upload | P0 | M + E2E | ready | candidate | `scenarios/auth-session.md` |
+| REC-001 | Recording | Start, pause, resume, and stop recording | P0 | M + E2E | ready | candidate | `scenarios/recording.md` |
 | REC-002 | Recording | Unsupported microphone | P0 | M + E2E | draft | candidate | `scenarios/recording.md` |
 | REC-003 | Recording | Microphone permission denied | P0 | M + E2E | draft | candidate | `scenarios/recording.md` |
 | REC-004 | Recording | Import short deterministic audio file | P0 | M + E2E | draft | candidate | `scenarios/recording.md` |
