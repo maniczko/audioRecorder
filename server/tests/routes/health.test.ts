@@ -100,7 +100,8 @@ describe('http/health.ts', () => {
   test('checks db health via checkHealth method', async () => {
     const app = makeHonoLike();
     const db = {
-      checkHealth: vi.fn().mockResolvedValue({ ok: true, status: 'healthy' }),
+      type: 'postgres',
+      checkHealth: vi.fn().mockResolvedValue({ ok: true, status: 'healthy', type: 'postgres' }),
     };
     registerHealthRoute(app, db);
     const route = app._routes.find((r: any) => r.path === '/health');
@@ -114,6 +115,7 @@ describe('http/health.ts', () => {
 
     expect(db.checkHealth).toHaveBeenCalled();
     expect(response.data.db).toBe('healthy');
+    expect(response.data.databaseAdapter).toBe('postgres');
     expect(response.status).toBe(200);
   });
 

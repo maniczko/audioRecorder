@@ -63,6 +63,14 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
     });
 
     const memory = process.memoryUsage();
+    const databaseAdapter =
+      typeof dbStatus.type === 'string'
+        ? dbStatus.type
+        : typeof db?.type === 'string'
+          ? db.type
+          : db
+            ? 'unknown'
+            : 'none';
     const storageRequired =
       process.env.NODE_ENV === 'production' ||
       Boolean(process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID);
@@ -75,6 +83,7 @@ export function registerHealthRoute(app: Hono<any>, db?: any) {
         ok: Boolean(dbStatus.ok),
         status: dbStatus.ok ? 'ok' : 'degraded',
         db: dbStatus.status,
+        databaseAdapter,
         supabaseRemote: Boolean((supabaseStorage as any).ready),
         supabaseStorage,
         readiness: {

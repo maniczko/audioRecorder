@@ -160,7 +160,7 @@ function evaluateDatabaseUrl(value, productionDeployment) {
     'Postgres database URL',
     value,
     /^postgres(ql)?:\/\//,
-    'warning'
+    productionDeployment ? 'error' : 'warning'
   );
 
   if (baseCheck.status !== STATUS_OK || !value) {
