@@ -14,11 +14,14 @@ This directory is the source of truth for repeatable browser scenarios executed 
 
 ## Source-of-truth rules
 
+- Premium coverage audit and target catalogue: `docs/qa/PREMIUM_TEST_COVERAGE_PLAN.md`
 - Scenario definition: `docs/qa/scenarios/*.md`
 - Scenario inventory and status: `docs/qa/TEST_SCENARIO_INDEX.md`
 - Scenario writing contract: `docs/qa/TEST_SCENARIO_STANDARD.md`
 - Automated implementation: `tests/e2e/*.spec.ts`
 - Deterministic data: `tests/e2e/fixtures/` and `tests/e2e/helpers/`
+
+The premium coverage plan is the complete target model. The scenario index lists scenarios that have been fully written and are ready to execute. A catalogue entry is not considered executable until it has a detailed scenario file following `TEST_SCENARIO_STANDARD.md`.
 
 ## Execution result template
 
