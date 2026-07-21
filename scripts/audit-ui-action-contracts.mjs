@@ -163,7 +163,7 @@ export function collectUiActionsFromFiles({ root = rootDir, targets = mainViewTa
   for (const target of targets) {
     const absoluteFile = path.join(root, target.file);
     if (!fs.existsSync(absoluteFile)) continue;
-    const content = fs.readFileSync(absoluteFile, 'utf8');
+    const content = fs.readFileSync(absoluteFile, 'utf8').replace(/\r\n?/g, '\n');
     const sourceFile = ts.createSourceFile(
       absoluteFile,
       content,

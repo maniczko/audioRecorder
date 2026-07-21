@@ -249,6 +249,35 @@ describe('GitHub workflows validation', () => {
     }
   });
 
+  // -----------------------------------------------------------------
+  // Issue #1514 — compressed-size action replaces the repository checkout
+  // Date: 2026-07-21
+  // Bug: the action checked out main and its post step then could not locate
+  //      the repository-owned setup action used earlier in the job.
+  // Fix: restore the pull-request checkout after artifact and comment steps.
+  // -----------------------------------------------------------------
+  it('restores the pull-request checkout after compressed-size-action finishes', () => {
+    const workflowPath = path.join(workflowDir, 'bundle-size.yml');
+    const content = readFileSync(workflowPath, 'utf8');
+
+    expect(content).toContain('name: Restore pull request checkout for action cleanup');
+    expect(content).toContain("if: always() && github.event_name == 'pull_request'");
+    expect(content).toContain('ref: ${{ github.event.pull_request.head.sha }}');
+  });
+
+  it('pins remediation versions for dependency findings that block the high-severity gate', () => {
+    const packageJson = JSON.parse(readFileSync(path.resolve('package.json'), 'utf8')) as {
+      pnpm?: { overrides?: Record<string, string> };
+    };
+
+    expect(packageJson.pnpm?.overrides).toMatchObject({
+      axios: '1.18.0',
+      'brace-expansion': '1.1.16',
+      'fast-uri': '3.1.3',
+      'js-yaml': '4.3.0',
+    });
+  });
+
   it('gives code review coverage check extra heap for the large coverage suite', () => {
     const workflowPath = path.join(workflowDir, 'code-review.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
