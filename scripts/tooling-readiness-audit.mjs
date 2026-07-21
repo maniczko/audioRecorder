@@ -47,10 +47,6 @@ function contains(root, relativePath, ...needles) {
   return needles.every((needle) => content.includes(needle));
 }
 
-function matches(root, relativePath, pattern) {
-  return pattern.test(readRepoFile(root, relativePath));
-}
-
 function scriptEquals(root, name, expected) {
   return packageJson(root).scripts?.[name] === expected;
 }
@@ -80,7 +76,13 @@ const toolingDefinitions = [
         description: 'CI and package engines pin Node 22 release runtime.',
         test: (root) =>
           contains(root, 'package.json', '"node": "22.x"') &&
-          matches(root, '.github/workflows/ci.yml', /node-version:\s*['"]?22/),
+          contains(root, '.github/workflows/ci.yml', 'uses: ./.github/actions/setup-node-pnpm') &&
+          contains(
+            root,
+            '.github/actions/setup-node-pnpm/action.yml',
+            "node-version: '22'",
+            'version: 9.12.1'
+          ),
       },
       {
         id: 'release-gates',

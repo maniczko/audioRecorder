@@ -66,11 +66,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm run lint
         name: Run ESLint
 
@@ -83,11 +81,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm run typecheck
         name: Run TypeScript
 
@@ -100,11 +96,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm run format:check
         name: Check formatting
 
@@ -119,11 +113,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: native
       - run: pnpm run test:smart-retry
         name: Run tests with retry
       - uses: actions/upload-artifact@v7
@@ -142,11 +134,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: native
       - run: pnpm run test:coverage
         name: Run coverage
       - uses: codecov/codecov-action@v7
@@ -164,11 +154,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm audit --prod
         name: Run pnpm audit
         continue-on-error: true
@@ -182,11 +170,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: native
       - run: pnpm run build
         name: Build project
       - uses: actions/upload-artifact@v7
@@ -204,11 +190,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm run docs:generate 2>/dev/null || echo "No docs script found"
         name: Generate docs
         continue-on-error: true

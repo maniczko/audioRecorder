@@ -15,11 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - uses: reviewdog/action-eslint@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -33,11 +31,9 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: native
       - run: node scripts/ensure-coverage-dirs.mjs
       - run: pnpm exec vitest run --coverage --exclude=src/App.test.tsx --exclude=src/App.integration.test.tsx --exclude=src/hooks/useMeetings.test.tsx --maxWorkers=2
       - uses: codecov/codecov-action@v7
@@ -50,11 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: native
       - uses: preactjs/compressed-size-action@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -66,11 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
+          install-profile: pure-js
       - run: pnpm audit --prod
         continue-on-error: true
       - uses: snyk/actions/node@master

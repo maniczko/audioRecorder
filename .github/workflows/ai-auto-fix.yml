@@ -31,14 +31,9 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          install-profile: pure-js
 
       - name: Run ESLint and capture errors
         id: lint

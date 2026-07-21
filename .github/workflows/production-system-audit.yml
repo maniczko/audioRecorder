@@ -53,15 +53,9 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 22
-
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          install-profile: native
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install chromium --with-deps

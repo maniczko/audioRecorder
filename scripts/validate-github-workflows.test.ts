@@ -60,7 +60,7 @@ describe('GitHub workflows validation', () => {
     expect(content).toContain('high > 0 || critical > 0');
   });
 
-  it('keeps the main CI install path resilient with Node 22, pnpm cache, and install retries', () => {
+  it('routes every main CI job through one named installation profile', () => {
     const workflowPath = path.join(workflowDir, 'ci.yml');
     const parsed = parse(readFileSync(workflowPath, 'utf8')) as {
       jobs?: Record<
@@ -79,36 +79,101 @@ describe('GitHub workflows validation', () => {
 
     for (const [jobName, job] of Object.entries(jobs)) {
       const steps = job.steps ?? [];
-      const setupNodeStep = steps.find((step) => step.uses?.startsWith('actions/setup-node@'));
-      const setupPnpmStep = steps.find((step) => step.name === 'Setup pnpm');
-      const resolveStoreStep = steps.find((step) => step.name === 'Resolve pnpm store');
-      const cacheStep = steps.find((step) => step.name === 'Cache pnpm store');
-      const installStep = steps.find((step) => step.name === 'Install dependencies');
+      const setupStep = steps.find((step) => step.uses === './.github/actions/setup-node-pnpm');
 
-      expect(setupNodeStep, `${jobName} setup-node step`).toBeTruthy();
-      expect(setupNodeStep?.uses, `${jobName} setup-node action`).toBe('actions/setup-node@v6');
-      expect(setupNodeStep?.with?.['node-version'], `${jobName} node version`).toBe('22');
-      expect(setupNodeStep?.with?.cache, `${jobName} setup-node cache before pnpm exists`).toBe(
-        undefined
-      );
-      expect(setupPnpmStep?.uses, `${jobName} pnpm action`).toBe('pnpm/action-setup@v6');
-      expect(resolveStoreStep?.run, `${jobName} pnpm store path`).toContain('pnpm store path');
-      expect(cacheStep?.uses, `${jobName} cache action`).toBe('actions/cache@v6');
-      expect(cacheStep?.with?.path, `${jobName} cache path`).toBe('${{ env.PNPM_STORE_PATH }}');
-      expect(cacheStep?.with?.key, `${jobName} cache key`).toContain("hashFiles('pnpm-lock.yaml')");
-      expect(installStep?.run, `${jobName} install retry loop`).toContain('for attempt in 1 2 3');
-      expect(installStep?.run, `${jobName} frozen lockfile`).toContain(
-        'pnpm install --frozen-lockfile'
+      expect(setupStep, `${jobName} canonical setup`).toBeTruthy();
+      expect(setupStep?.with?.['install-profile'], `${jobName} install profile`).toMatch(
+        /^(pure-js|native)$/u
       );
     }
   });
 
-  it('keeps backend production smoke on the supported cache action major', () => {
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1514 — canonical GitHub Actions Node and pnpm toolchain
+  // Date: 2026-07-21
+  // Bug: workflows mixed Corepack with direct pnpm action setup, so the
+  //      package-manager version and install strategy could drift.
+  // Fix: every workflow that invokes pnpm delegates setup and installation
+  //      to the repository-owned composite action.
+  // ─────────────────────────────────────────────────────────────────
+  it('uses the canonical Node 22 and pnpm setup action for every pnpm workflow', async () => {
+    const { readdirSync } = await import('node:fs');
+    const workflowFiles = readdirSync(workflowDir).filter((entry) => entry.endsWith('.yml'));
+
+    for (const fileName of workflowFiles) {
+      const content = readFileSync(path.join(workflowDir, fileName), 'utf8');
+      const parsed = parse(content) as {
+        jobs?: Record<
+          string,
+          {
+            steps?: Array<{
+              run?: string;
+              uses?: string;
+            }>;
+          }
+        >;
+      };
+      for (const [jobName, job] of Object.entries(parsed.jobs ?? {})) {
+        const invokesPnpm = (job.steps ?? []).some((step) =>
+          (step.run ?? '')
+            .split(/\r?\n/u)
+            .some((line) => !line.trimStart().startsWith('#') && /\bpnpm\b/u.test(line))
+        );
+
+        if (!invokesPnpm) {
+          continue;
+        }
+
+        expect(
+          (job.steps ?? []).some((step) => step.uses === './.github/actions/setup-node-pnpm'),
+          `${fileName} ${jobName}`
+        ).toBe(true);
+      }
+
+      expect(content, fileName).not.toContain('corepack enable');
+      expect(content, fileName).not.toContain('uses: pnpm/action-setup@');
+    }
+  });
+
+  it('pins pnpm 9.12.1, Node 22, cache and install profiles in the shared action', () => {
+    const actionPath = path.resolve('.github/actions/setup-node-pnpm/action.yml');
+    const content = readFileSync(actionPath, 'utf8');
+
+    expect(content).toContain('uses: pnpm/action-setup@v6');
+    expect(content).toContain('version: 9.12.1');
+    expect(content).toContain('uses: actions/setup-node@v6');
+    expect(content).toContain("node-version: '22'");
+    expect(content).toContain('cache: pnpm');
+    expect(content).toContain('pnpm install --frozen-lockfile --ignore-scripts');
+    expect(content).toContain('for attempt in 1 2 3');
+    expect(content).toContain('Dependency installation failed before tests started');
+  });
+
+  it('rejects a future workflow that mixes direct pnpm setup or installation back in', async () => {
+    const { validateWorkflowContent } = await import('./validate-github-workflows.mjs');
+    const directPnpmSetup = [
+      'name: Broken setup',
+      'on: workflow_dispatch',
+      'jobs:',
+      '  verify:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: pnpm/action-setup@v6',
+      '      - run: pnpm install --frozen-lockfile',
+    ].join('\n');
+
+    expect(() => validateWorkflowContent(directPnpmSetup, 'broken.yml')).toThrow(
+      'direct pnpm action setup is not allowed'
+    );
+  });
+
+  it('uses the shared cache-owning action in backend production smoke', () => {
     const workflowPath = path.join(workflowDir, 'backend-production-smoke.yml');
     const content = readFileSync(workflowPath, 'utf8');
 
-    expect(content).toContain('uses: actions/cache@v6');
-    expect(content).not.toContain('uses: actions/cache@v4');
+    expect(content).toContain('uses: ./.github/actions/setup-node-pnpm');
+    expect(content).toContain('install-profile: pure-js');
+    expect(content).not.toContain('uses: actions/cache@');
   });
 
   it('keeps CodeQL security scanning enabled on current action majors', () => {
@@ -332,18 +397,11 @@ describe('GitHub workflows validation', () => {
       };
     } | null;
     const steps = parsed?.jobs?.['verify-backend-production']?.steps ?? [];
-    const resolveStoreStep = steps.find((step) => step.name === 'Resolve pnpm store');
-    const cacheStep = steps.find((step) => step.name === 'Cache pnpm store');
-    const installStep = steps.find((step) => step.name === 'Install dependencies');
+    const setupStep = steps.find((step) => step.uses === './.github/actions/setup-node-pnpm');
     const debugStep = steps.find((step) => step.name === 'Debug - Log Railway deployment status');
 
-    expect(content).not.toContain('pnpm install --no-frozen-lockfile');
-    expect(resolveStoreStep?.run).toContain('pnpm store path');
-    expect(cacheStep?.uses).toBe('actions/cache@v6');
-    expect(cacheStep?.with?.path).toBe('${{ env.PNPM_STORE_PATH }}');
-    expect(cacheStep?.with?.key).toContain("hashFiles('pnpm-lock.yaml')");
-    expect(installStep?.run).toContain('for attempt in 1 2 3');
-    expect(installStep?.run).toContain('pnpm install --frozen-lockfile --ignore-scripts');
+    expect(content).not.toContain('pnpm install');
+    expect(setupStep?.with?.['install-profile']).toBe('pure-js');
     expect(debugStep?.if).toBe("failure() && steps.smoke.outcome == 'failure'");
     expect(debugStep?.env?.SMOKE_TEST_URL).toBe(
       'https://audiorecorder-production.up.railway.app/health'
@@ -564,7 +622,7 @@ describe('GitHub workflows validation', () => {
 
     const content = readFileSync(workflowPath, 'utf8');
 
-    expect(content).toContain('node-version: 22');
+    expect(content).toContain('uses: ./.github/actions/setup-node-pnpm');
     expect(content).toContain('PRODUCTION_SMOKE_AUTH_TOKEN');
     expect(content).toContain('PRODUCTION_SMOKE_WORKSPACE_ID');
     expect(content).toContain('PRODUCTION_SYSTEM_AUDIT_REQUIRED');

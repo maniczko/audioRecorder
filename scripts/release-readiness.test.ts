@@ -751,7 +751,8 @@ describe('release readiness gates', () => {
     expect(workflow).toContain('pnpm run release:prod-smoke:strict');
     expect(workflow).toContain('pnpm run sentry:release-health');
     expect(workflow).toContain('SENTRY_AUTH_TOKEN');
-    expect(workflow).toContain('pnpm install --frozen-lockfile --ignore-scripts');
+    expect(workflow).toContain('uses: ./.github/actions/setup-node-pnpm');
+    expect(workflow).toContain('install-profile: pure-js');
   });
 
   it('keeps production action crawler evidence as uploaded CI artifacts', () => {

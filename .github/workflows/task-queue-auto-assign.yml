@@ -52,9 +52,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '22'
-      - if: steps.release-guard.outputs.skip != 'true'
-        run: corepack enable
-
       - name: Assign owners to new TASK_QUEUE items
         if: steps.release-guard.outputs.skip != 'true'
         run: node scripts/assign-task-agents.mjs

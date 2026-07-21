@@ -60,15 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 22
-
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          install-profile: pure-js
 
       - name: Validate maintenance secrets
         shell: bash
@@ -128,15 +122,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: 22
-
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          install-profile: pure-js
 
       - name: Validate restore verification secrets
         shell: bash

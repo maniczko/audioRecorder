@@ -23,6 +23,6 @@ describe('PWA image assets', () => {
   test('manifest icons are valid PNG files with matching dimensions', () => {
     expect(readPngSize('public/logo192.png')).toEqual({ width: 192, height: 192 });
     expect(readPngSize('public/logo512.png')).toEqual({ width: 512, height: 512 });
-    expect(readPngSize('public/favicon.png')).toEqual({ width: 512, height: 512 });
+    expect(readPngSize('public/favicon.png')).toEqual({ width: 64, height: 64 });
   });
 });

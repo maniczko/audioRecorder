@@ -23,14 +23,9 @@ jobs:
       - name: Checkout code (dependabot)
         uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-pnpm
         with:
-          node-version: '22'
-      - run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          install-profile: native
 
       - name: Check bundle size
         uses: preactjs/compressed-size-action@v3

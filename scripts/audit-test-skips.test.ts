@@ -13,7 +13,7 @@ describe('audit-test-skips', () => {
     expect(
       isAllowedDocumentedSkip([
         '// Issue: #0',
-        '// Expires: 2026-06-21',
+        '// Expires: 2099-06-21',
         '// Reason: legacy selectors need rewrite before promotion to release gate.',
       ])
     ).toBe(true);
