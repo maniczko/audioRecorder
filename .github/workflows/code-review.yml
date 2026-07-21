@@ -56,6 +56,14 @@ jobs:
           exclude: '**/*.map'
           build-script: 'pnpm run build'
 
+      # compressed-size-action checks out main to compare bundle output. Restore
+      # the PR tree so the post step of the local setup action can load action.yml.
+      - name: Restore pull request checkout for action cleanup
+        if: always()
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
   security-scan:
     runs-on: ubuntu-latest
     steps:
