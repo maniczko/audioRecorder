@@ -1595,6 +1595,7 @@ export default function ProfileTab({
   setProfileDraft,
   saveProfile,
   profileMessage,
+  profileError,
   googleEnabled,
   googleCalendarStatus,
   googleCalendarMessage,
@@ -1793,6 +1794,7 @@ export default function ProfileTab({
                     Zapisz profil
                   </button>
                   {profileMessage && <div className="inline-alert success">{profileMessage}</div>}
+                  {profileError && <div className="inline-alert error">{profileError}</div>}
                 </form>
               </section>
 

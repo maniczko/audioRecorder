@@ -48,6 +48,7 @@ export const useAuthStore = create<any>((set, get) => ({
   resetExpiresAt: '',
   profileDraft: buildProfileDraft(null),
   profileMessage: '',
+  profileError: '',
   passwordDraft: EMPTY_PASSWORD_DRAFT,
   securityMessage: '',
 
@@ -170,7 +171,7 @@ export const useAuthStore = create<any>((set, get) => ({
 
   saveProfile: async (currentUser) => {
     if (!currentUser) return;
-    set({ securityMessage: '' });
+    set({ profileMessage: '', profileError: '' });
     const { profileDraft } = get();
     const { users, setUsers } = useWorkspaceStore.getState();
     try {
@@ -182,9 +183,9 @@ export const useAuthStore = create<any>((set, get) => ({
       if (Array.isArray(result)) setUsers(result);
       else if (Array.isArray(result?.users)) setUsers(result.users);
       else if (result?.user) setUsers((prev) => mergeUserIntoCollection(prev, result.user));
-      set({ profileMessage: 'Profil zapisany.' });
+      set({ profileMessage: 'Profil zapisany.', profileError: '' });
     } catch (error: any) {
-      set({ securityMessage: error.message });
+      set({ profileError: normalizeAuthErrorMessage(error) });
     }
   },
 

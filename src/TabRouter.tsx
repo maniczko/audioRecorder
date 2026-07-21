@@ -302,6 +302,7 @@ export default function TabRouter({ calendarMonth, setCalendarMonth }) {
             setProfileDraft={auth.setProfileDraft}
             saveProfile={auth.saveProfile}
             profileMessage={auth.profileMessage}
+            profileError={auth.profileError}
             googleEnabled={google.googleEnabled}
             googleCalendarStatus={google.googleCalendarStatus}
             googleCalendarMessage={google.googleCalendarMessage}

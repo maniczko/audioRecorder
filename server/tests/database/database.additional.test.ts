@@ -829,6 +829,82 @@ describe('Database - Additional Coverage Tests', () => {
       expect(meeting?.latestRecordingId).toBe(recordingId);
     });
 
+    // -----------------------------------------------------------------
+    // Issue #0 — speaker rename was discarded while preserving transcript
+    // Date: 2026-07-21
+    // Bug: anti-degradation always retained current speakerNames together
+    //      with the fuller transcript, overwriting an explicit user rename.
+    // Fix: preserve the fuller transcript but retain incoming speaker names.
+    // -----------------------------------------------------------------
+    test('Regression: Issue #0 — preserves an explicit speaker rename with a fuller transcript', async () => {
+      if (!(await tablesExist())) return;
+
+      const workspaceId = 'ws_state_speaker_rename';
+      const meetingId = 'meeting_state_speaker_rename';
+      const recordingId = 'rec_state_speaker_rename';
+      const fullTranscript = [
+        { id: 'seg1', speakerId: '0', timestamp: 0, text: 'Pierwszy pełny fragment.' },
+        { id: 'seg2', speakerId: '0', timestamp: 4, text: 'Drugi pełny fragment.' },
+      ];
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Zmiana nazwy mówcy',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                transcript: fullTranscript,
+                speakerNames: { '0': 'Speaker 1' },
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      await db.saveWorkspaceState(workspaceId, {
+        meetings: [
+          {
+            id: meetingId,
+            workspaceId,
+            title: 'Zmiana nazwy mówcy',
+            latestRecordingId: recordingId,
+            recordings: [
+              {
+                id: recordingId,
+                pipelineStatus: 'done',
+                transcriptionStatus: 'done',
+                transcript: [{ id: 'seg1', speakerId: '0', timestamp: 0, text: 'Pierwszy.' }],
+                speakerNames: { '0': 'Iwo' },
+              },
+            ],
+          },
+        ],
+        manualTasks: [],
+        taskState: {},
+        taskBoards: {},
+        calendarMeta: {},
+        vocabulary: [],
+      });
+
+      const state = await db.getWorkspaceState(workspaceId);
+      const recording = state.meetings.find((meeting: any) => meeting.id === meetingId)
+        ?.recordings?.[0];
+
+      expect(recording?.transcript).toEqual(fullTranscript);
+      expect(recording?.speakerNames).toEqual({ '0': 'Iwo' });
+    });
+
     test('Regression: #0 - missing media asset keeps completed transcript but marks audio unavailable', async () => {
       if (!(await tablesExist())) return;
 

@@ -44,6 +44,7 @@ describe('authStore', () => {
       resetPreviewCode: '',
       resetExpiresAt: '',
       profileMessage: '',
+      profileError: '',
       passwordDraft: { currentPassword: '', newPassword: '', confirmPassword: '' },
       securityMessage: '',
     });
@@ -145,5 +146,27 @@ describe('authStore', () => {
     await useAuthStore.getState().updatePassword(null);
 
     expect(mocks.changePassword).not.toHaveBeenCalled();
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #0 — profile save errors were only stored in password state
+  // Date: 2026-07-21
+  // Bug: a failed profile update put its error in securityMessage, which
+  //      is rendered only in the password section.
+  // Fix: keep the error in dedicated profile state rendered by the profile form.
+  // -----------------------------------------------------------------
+  test('Regression: Issue #0 — exposes a failed profile save in profile state', async () => {
+    mocks.updateProfile.mockRejectedValue(new Error('Nie udało się zapisać profilu.'));
+    useAuthStore.setState({
+      profileDraft: { name: 'Nowa nazwa' },
+      profileMessage: '',
+      profileError: '',
+      securityMessage: '',
+    });
+
+    await useAuthStore.getState().saveProfile({ id: 'u1' });
+
+    expect(useAuthStore.getState().profileError).toBe('Nie udało się zapisać profilu.');
+    expect(useAuthStore.getState().securityMessage).toBe('');
   });
 });

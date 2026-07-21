@@ -206,6 +206,12 @@ describe('ProfileTab', () => {
       expect(screen.getByText('Profil zapisany.')).toBeInTheDocument();
     });
 
+    test('Regression: renders a profile save error next to the profile form', () => {
+      render(<ProfileTab {...baseProps} profileError="Nie udało się zapisać profilu." />);
+
+      expect(screen.getByText('Nie udało się zapisać profilu.')).toHaveClass('error');
+    });
+
     it('shows avatar fallback with initial', () => {
       render(<ProfileTab {...baseProps} />);
 

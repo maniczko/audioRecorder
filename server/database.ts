@@ -858,7 +858,10 @@ export class Database {
       analysis: currentRecording.analysis || incomingRecording.analysis,
       aiDebrief: currentRecording.aiDebrief || incomingRecording.aiDebrief,
       reviewSummary: currentRecording.reviewSummary || incomingRecording.reviewSummary,
-      speakerNames: currentRecording.speakerNames || incomingRecording.speakerNames,
+      speakerNames:
+        incomingRecording.speakerNames && Object.keys(incomingRecording.speakerNames).length > 0
+          ? incomingRecording.speakerNames
+          : currentRecording.speakerNames,
       speakerCount: currentRecording.speakerCount || incomingRecording.speakerCount,
       diarizationConfidence:
         currentRecording.diarizationConfidence || incomingRecording.diarizationConfidence,
