@@ -30,6 +30,7 @@ FROM deps AS build
 ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 COPY --link server/ ./server/
+COPY --link src/lib/ ./src/lib/
 COPY --link src/shared/ ./src/shared/
 
 RUN pnpm exec esbuild server/index.ts server/sqliteWorker.ts \

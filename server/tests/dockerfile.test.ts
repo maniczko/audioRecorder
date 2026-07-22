@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-// Note: This test reads the actual Dockerfile, so fs is not mocked here
-// The vi.mock in setup.ts is bypassed for this specific test file
+// This test validates files in the Docker build context, so it must bypass
+// the global node:fs mock from server/tests/setup.ts.
+vi.unmock('node:fs');
+vi.unmock('fs');
 
 const ROOT = process.cwd();
 const dockerfile = fs.readFileSync(path.join(ROOT, 'Dockerfile'), 'utf8');
@@ -49,6 +51,21 @@ describe('Dockerfile COPY sources not excluded by .dockerignore', () => {
     const patterns = buildIgnorePatterns(dockerignore);
     expect(isExcluded('src/shared', patterns)).toBe(false);
     expect(isExcluded('src/shared/meetingFeedback.ts', patterns)).toBe(false);
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1511 — recording consent server adapter is bundled in Docker
+  // Date: 2026-07-22
+  // Bug: the adapter imports src/lib/recordingConsent.ts but the build stage
+  //      copied only src/shared/, so production image builds could not resolve it.
+  // Fix: include src/lib/ in the Docker build context before esbuild runs.
+  // ─────────────────────────────────────────────────────────────────
+  it('copies src/lib/ required by the recording consent server adapter', () => {
+    expect(dockerfile).toMatch(/COPY --link src\/lib\/ \.\/src\/lib\//);
+    expect(dockerignore).toMatch(/^!src\/lib\/$/m);
+    const patterns = buildIgnorePatterns(dockerignore);
+    expect(isExcluded('src/lib', patterns)).toBe(false);
+    expect(isExcluded('src/lib/recordingConsent.ts', patterns)).toBe(false);
   });
 
   it('all COPY source paths (non --from) are reachable in build context', () => {
