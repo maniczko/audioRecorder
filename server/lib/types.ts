@@ -32,6 +32,7 @@ export interface RecordingConsentAuditMetadata {
   acceptedAt?: string;
   workspaceId?: string;
   policyVersion?: string;
+  actorUserId?: string;
   disclosureTitle?: string;
   providerNotice?: string;
   providers?: Array<{
