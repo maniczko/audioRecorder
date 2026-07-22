@@ -177,6 +177,87 @@ async function installFakeAudioCapture(page, mode: 'ready' | 'permission-denied'
   }, mode);
 }
 
+async function mockRemoteWorkspaceShell(page) {
+  const user = {
+    id: 'user_e2e',
+    email: 'e2e@voicelog.test',
+    name: 'E2E Tester',
+    workspaceMemberRole: 'owner',
+  };
+  const workspace = {
+    id: 'ws_e2e',
+    name: 'E2E Workspace',
+    memberIds: [user.id],
+    memberRoles: { [user.id]: 'owner' },
+  };
+  const capabilities = {
+    ok: true,
+    status: 'ready',
+    capabilities: {},
+    degradedCapabilities: [],
+    telemetry: {
+      fallbackModeUsed: false,
+      fallbackModeCapabilities: [],
+    },
+  };
+
+  await page.route('**/state/bootstrap?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        workspaceId: workspace.id,
+        users: [user],
+        workspaces: [workspace],
+        state: {
+          meetings: [],
+          manualPeople: [],
+          manualTasks: [],
+          taskState: {},
+          taskBoards: {},
+          calendarMeta: {},
+          vocabulary: [],
+        },
+      }),
+    })
+  );
+  await page.route('**/api/capabilities', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(capabilities),
+    })
+  );
+  await page.route('**/workspaces/*/capabilities', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(capabilities),
+    })
+  );
+  await page.route('**/state/workspaces/*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    })
+  );
+  await page.route('**/voice-profiles', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ profiles: [] }),
+    })
+  );
+  await page.route('**/integrations/google/status?*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ configured: false, connected: false, writable: false }),
+    })
+  );
+}
+
 async function mockRemoteAudioPipeline(page, options: AudioRouteOptions = {}) {
   const stats = {
     uploadRequests: 0,
@@ -361,6 +442,14 @@ async function mockRemoteAudioPipeline(page, options: AudioRouteOptions = {}) {
     });
   });
 
+  await page.route('**/media/recordings/*/progress*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: 'event: completed\ndata: {"status":"done"}\n\n',
+    })
+  );
+
   await page.route('**/media/analyze', async (route) => {
     await route.fulfill({
       status: 200,
@@ -399,6 +488,10 @@ async function mockRemoteAudioPipeline(page, options: AudioRouteOptions = {}) {
 
 test.describe('Audio recording pipeline E2E', () => {
   test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockRemoteWorkspaceShell(page);
+  });
 
   test('records, pauses, resumes, uploads, processes, and attaches transcript', async ({
     page,

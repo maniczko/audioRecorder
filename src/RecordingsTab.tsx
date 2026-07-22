@@ -532,6 +532,7 @@ function isStalePendingImport(item: PendingImportQueueItem, nowMs = Date.now()) 
 
 function getPendingImportRetryLabel(item: PendingImportQueueItem) {
   const status = String(item?.status || '').toLowerCase();
+  if (status === 'auth_required') return 'Zaloguj ponownie i ponów upload';
   if (status === 'failed') return 'Spróbuj ponownie';
   if (isStalePendingImport(item)) return 'Odśwież status';
   return '';

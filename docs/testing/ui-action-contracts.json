@@ -69,10 +69,10 @@
       "screen": "Recordings",
       "file": "src/RecordingsTab.tsx",
       "expectedActionCount": 25,
-      "fingerprint": "c72cd0ebc1873d7b",
+      "fingerprint": "6e5e8d9898af1345",
       "contractStatus": "covered",
       "testFiles": ["src/RecordingsTab.test.tsx", "src/RecordingsTab.toast-regression.test.tsx"],
-      "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent"],
+      "testEvidence": ["Ponow transkrypcje", "stale remote import is permanent", "Zaloguj ponownie i ponów upload"],
       "owner": "frontend-recordings"
     },
     {
