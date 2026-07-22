@@ -41,6 +41,7 @@ export const useAuthStore = create<any>((set, get) => ({
   authMode: 'register',
   authDraft: EMPTY_AUTH_DRAFT,
   authError: '',
+  isSubmitting: false,
   googleAuthMessage: '',
   resetDraft: EMPTY_RESET_DRAFT,
   resetMessage: '',
@@ -81,7 +82,9 @@ export const useAuthStore = create<any>((set, get) => ({
     })),
 
   submitAuth: async () => {
-    set({ authError: '', resetMessage: '' });
+    if (get().isSubmitting) return;
+
+    set({ authError: '', resetMessage: '', isSubmitting: true });
     const { authMode, authDraft } = get();
     const { users, workspaces, setUsers, setWorkspaces, setSession } = useWorkspaceStore.getState();
 
@@ -107,6 +110,8 @@ export const useAuthStore = create<any>((set, get) => ({
       });
     } catch (error: any) {
       set({ authError: normalizeAuthErrorMessage(error) });
+    } finally {
+      set({ isSubmitting: false });
     }
   },
 

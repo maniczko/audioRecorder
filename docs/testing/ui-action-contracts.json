@@ -5,9 +5,13 @@
       "screen": "Auth",
       "file": "src/components/auth/AuthCredentialsForm.tsx",
       "expectedActionCount": 11,
-      "fingerprint": "61136dc0d155d1a4",
+      "fingerprint": "9ed3623fe7c84c28",
       "contractStatus": "covered",
-      "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
+      "testFiles": [
+        "src/AuthScreen.test.tsx",
+        "src/AuthScreen.a11y.test.tsx",
+        "src/components/auth/AuthCredentialsForm.test.tsx"
+      ],
       "testEvidence": ["Zapomnia", "Dołącz z kodu", "Wejd[zź]"],
       "owner": "frontend-auth"
     },

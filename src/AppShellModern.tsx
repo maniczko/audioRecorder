@@ -70,6 +70,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
         authMode={auth.authMode}
         authDraft={auth.authDraft}
         authError={auth.authError}
+        isSubmitting={auth.isSubmitting}
         setAuthMode={auth.setAuthMode}
         setAuthDraft={auth.setAuthDraft}
         submitAuth={auth.submitAuth}

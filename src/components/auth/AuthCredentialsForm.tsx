@@ -6,6 +6,7 @@ interface AuthCredentialsFormProps {
   authMode: AuthMode;
   authValues: AuthValues;
   authError?: string;
+  isSubmitting?: boolean;
   setAuthDraft: (updater: (previous: AuthDraftLike) => AuthDraftLike) => void;
   setAuthMode: (mode: AuthMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -15,6 +16,7 @@ export default function AuthCredentialsForm({
   authMode,
   authValues,
   authError,
+  isSubmitting = false,
   setAuthDraft,
   setAuthMode,
   onSubmit,
@@ -185,7 +187,12 @@ export default function AuthCredentialsForm({
         </>
       ) : null}
 
-      <button type="submit" className="auth-submit-btn">
+      <button
+        type="submit"
+        className="auth-submit-btn"
+        disabled={isSubmitting}
+        aria-busy={isSubmitting || undefined}
+      >
         {isRegister ? 'Wejdź do aplikacji' : 'Zaloguj się'}
         <ArrowRight size={18} />
       </button>

@@ -18,6 +18,7 @@ interface AuthScreenProps {
   authMode: AuthMode;
   authDraft?: AuthDraftLike | null;
   authError?: string;
+  isSubmitting?: boolean;
   setAuthMode: (mode: AuthMode) => void;
   setAuthDraft: (updater: (previous: AuthDraftLike) => AuthDraftLike) => void;
   submitAuth: (event: FormEvent<HTMLFormElement>) => void;
@@ -55,6 +56,7 @@ export default function AuthScreen({
   authMode,
   authDraft,
   authError,
+  isSubmitting,
   setAuthMode,
   setAuthDraft,
   submitAuth,
@@ -109,6 +111,7 @@ export default function AuthScreen({
               authMode={authMode}
               authValues={authValues}
               authError={authError}
+              isSubmitting={isSubmitting}
               setAuthDraft={setAuthDraft}
               setAuthMode={setAuthMode}
               onSubmit={internalSubmit}
