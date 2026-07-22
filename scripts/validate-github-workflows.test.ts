@@ -277,8 +277,9 @@ describe('GitHub workflows validation', () => {
     expect(packageJson.pnpm?.overrides).toMatchObject({
       axios: '1.18.0',
       'brace-expansion': '1.1.16',
-      'fast-uri': '3.1.3',
+      'fast-uri': '3.1.4',
       'js-yaml': '4.3.0',
+      sharp: '0.35.0',
     });
   });
 
