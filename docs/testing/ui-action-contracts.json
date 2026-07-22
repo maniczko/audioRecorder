@@ -5,10 +5,10 @@
       "screen": "Auth",
       "file": "src/components/auth/AuthCredentialsForm.tsx",
       "expectedActionCount": 11,
-      "fingerprint": "61136dc0d155d1a4",
+      "fingerprint": "2adaa9714505ef9d",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx", "src/AuthScreen.a11y.test.tsx"],
-      "testEvidence": ["Zapomnia", "Dołącz z kodu", "Wejd[zź]"],
+      "testEvidence": ["zapomnia", "wejd", "Dołącz z kodu"],
       "owner": "frontend-auth"
     },
     {
@@ -25,10 +25,10 @@
       "screen": "Auth",
       "file": "src/components/auth/PasswordResetForm.tsx",
       "expectedActionCount": 7,
-      "fingerprint": "e8736ee6df3db5ef",
+      "fingerprint": "c543fb75cae0ffd7",
       "contractStatus": "covered",
       "testFiles": ["src/AuthScreen.test.tsx"],
-      "testEvidence": ["Wyślij kod resetu", "Zmień hasło"],
+      "testEvidence": ["wy", "zmi", "lokalny kod resetu"],
       "owner": "frontend-auth"
     },
     {
