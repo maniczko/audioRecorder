@@ -42,6 +42,14 @@ describe('AuthCredentialsForm', () => {
     expect(props.setAuthMode).toHaveBeenCalledWith('forgot');
   });
 
+  test('disables the visible submit action while authentication is pending', () => {
+    renderForm({ isSubmitting: true });
+
+    const submit = screen.getByRole('button', { name: /Zaloguj/i });
+    expect(submit).toBeDisabled();
+    expect(submit).toHaveAttribute('aria-busy', 'true');
+  });
+
   test('renders registration-only workspace controls', () => {
     renderForm({ authMode: 'register', authValues: normalizeAuthDraft({}) });
 

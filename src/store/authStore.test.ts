@@ -38,6 +38,7 @@ describe('authStore', () => {
         workspaceCode: '',
       },
       authError: '',
+      isSubmitting: false,
       googleAuthMessage: '',
       resetDraft: { email: '', code: '', newPassword: '', confirmPassword: '' },
       resetMessage: '',
@@ -92,6 +93,40 @@ describe('authStore', () => {
       'Logowanie jest chwilowo niedostępne. Spróbuj ponownie za chwilę.'
     );
     expect(useAuthStore.getState().authError).not.toMatch(/ENOTFOUND|postgres|tenant/i);
+    expect(useAuthStore.getState().isSubmitting).toBe(false);
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1547 — prevent duplicate authentication requests
+  // Date: 2026-07-22
+  // Bug: concurrent submitAuth calls started multiple login requests.
+  // Fix: keep a submission lock until the original request settles.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: Issue #1547 — ignores a second login while the first is pending', async () => {
+    let resolveLogin: (value: unknown) => void = () => {};
+    mocks.login.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve;
+        })
+    );
+    useAuthStore.getState().setAuthMode('login');
+    useAuthStore.getState().setAuthDraft({ email: 'a@example.com', password: 'pass123' });
+
+    const firstSubmission = useAuthStore.getState().submitAuth();
+    const secondSubmission = useAuthStore.getState().submitAuth();
+
+    expect(mocks.login).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().isSubmitting).toBe(true);
+
+    resolveLogin({
+      user: { id: 'u1', email: 'a@example.com' },
+      workspaceId: 'ws1',
+      token: 'token-1',
+    });
+    await Promise.all([firstSubmission, secondSubmission]);
+
+    expect(useAuthStore.getState().isSubmitting).toBe(false);
   });
 
   test('submitAuth rejects remote auth responses without backend token', async () => {
