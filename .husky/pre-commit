@@ -7,7 +7,7 @@ echo "Smart Lint - checking staged files..."
 
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx)$' || true)
 STYLE_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(css|scss)$' || true)
-FORMAT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|css|scss|json|md|yml|yaml)$' || true)
+FORMAT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|css|scss|json|md|yml|yaml)$' | grep -v '^pnpm-lock\.yaml$' || true)
 
 if [ -z "$FORMAT_FILES" ]; then
   echo "No lintable or formattable files staged"
