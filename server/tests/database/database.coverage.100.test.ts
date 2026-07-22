@@ -4,6 +4,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import fsNode from 'node:fs';
 import { initDatabase, getDatabase, Database } from '../../database.ts';
@@ -371,6 +372,47 @@ describe('Database - 100% Coverage Tests', () => {
       });
       expect(result).toBeDefined();
     });
+
+    test('stores hashed recovery code and short TTL', async () => {
+      if (!(await tablesExist())) return;
+
+      const registered = await db.registerUser({
+        name: 'Reset User Hashed',
+        email: `resetuser-hash${Date.now()}@test.com`,
+        password: 'password123',
+        role: 'user',
+        company: 'Test Corp',
+      });
+
+      const randomSpy = vi.spyOn(crypto, 'randomInt').mockReturnValue(654321);
+      const now = Date.now();
+      vi.stubEnv('VOICELOG_SMTP_HOST', '');
+      vi.stubEnv('VOICELOG_SMTP_USER', '');
+      vi.stubEnv('VOICELOG_SMTP_PASS', '');
+
+      try {
+        const result = await db.requestPasswordReset({
+          email: registered.user.email,
+        });
+
+        const row = await db._get(
+          'SELECT recovery_code_hash, recovery_code_expires_at FROM users WHERE email = ?',
+          [registered.user.email]
+        );
+
+        expect(result).toHaveProperty('expiresAt');
+        expect(row?.recovery_code_hash).toBe(db._hashRecoveryCode('654321'));
+        expect(row?.recovery_code_hash).toHaveLength(64);
+        const expiresAt = row?.recovery_code_expires_at
+          ? new Date(row.recovery_code_expires_at).getTime()
+          : 0;
+        expect(expiresAt - now).toBeGreaterThan(9 * 60 * 1000);
+        expect(expiresAt - now).toBeLessThan(11 * 60 * 1000);
+      } finally {
+        randomSpy.mockRestore();
+        vi.unstubAllEnvs();
+      }
+    });
   });
 
   describe('resetPasswordWithCode()', () => {
@@ -385,6 +427,49 @@ describe('Database - 100% Coverage Tests', () => {
           confirmPassword: 'newpassword123',
         })
       ).rejects.toThrow();
+    });
+
+    test('clears user sessions after successful password reset', async () => {
+      if (!(await tablesExist())) return;
+
+      const registered = await db.registerUser({
+        name: 'Reset User Sessions',
+        email: `resetuser-session${Date.now()}@test.com`,
+        password: 'password123',
+        role: 'user',
+        company: 'Test Corp',
+      });
+
+      const randomSpy = vi.spyOn(crypto, 'randomInt').mockReturnValue(111222);
+      const userId = registered.user.id;
+      vi.stubEnv('VOICELOG_SMTP_HOST', '');
+      vi.stubEnv('VOICELOG_SMTP_USER', '');
+      vi.stubEnv('VOICELOG_SMTP_PASS', '');
+
+      try {
+        await db.createSession(userId, 'ws_reset');
+        await db.createSession(userId, 'ws_reset_2');
+
+        await db.requestPasswordReset({
+          email: registered.user.email,
+        });
+
+        await db.resetPasswordWithCode({
+          email: registered.user.email,
+          code: '111222',
+          newPassword: 'new-password-123',
+          confirmPassword: 'new-password-123',
+        });
+      } finally {
+        randomSpy.mockRestore();
+        vi.unstubAllEnvs();
+      }
+
+      const sessionRows = await db._get(
+        'SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?',
+        [userId]
+      );
+      expect(Number(sessionRows?.count || 0)).toBe(0);
     });
   });
 

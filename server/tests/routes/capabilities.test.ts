@@ -34,6 +34,12 @@ const managedEnvKeys = [
   'USE_LOCAL_WHISPER',
   'WHISPER_CPP_PATH',
   'VOICELOG_ENABLE_MEETING_ANALYSIS',
+  'VOICELOG_SMTP_HOST',
+  'VOICELOG_SMTP_USER',
+  'VOICELOG_SMTP_PASS',
+  'VOICELOG_SMTP_PORT',
+  'VOICELOG_SMTP_SECURE',
+  'VOICELOG_SMTP_FROM',
 ];
 
 function withCleanCapabilityEnv() {
@@ -92,6 +98,11 @@ describe('http/capabilities.ts', () => {
       status: 'unavailable',
       provider: 'none',
     });
+    expect(response.data.capabilities.passwordReset).toMatchObject({
+      enabled: false,
+      status: 'unavailable',
+      provider: 'none',
+    });
     expect(response.data.capabilities.meetingAnalysis).toMatchObject({
       enabled: false,
       status: 'degraded',
@@ -138,6 +149,9 @@ describe('http/capabilities.ts', () => {
     process.env.ANTHROPIC_API_KEY = 'anthropic-secret';
     process.env.GEMINI_API_KEY = 'gemini-secret';
     process.env.VOICELOG_ENABLE_MEETING_ANALYSIS = 'true';
+    process.env.VOICELOG_SMTP_HOST = 'smtp.test.local';
+    process.env.VOICELOG_SMTP_USER = 'smtp-user';
+    process.env.VOICELOG_SMTP_PASS = 'smtp-pass';
 
     const payload = resolveProductionCapabilities({
       storageReadiness: {
@@ -152,6 +166,11 @@ describe('http/capabilities.ts', () => {
     expect(payload.status).toBe('ready');
     expect(payload.degradedCapabilities).toEqual([]);
     expect(payload.capabilities.stt.status).toBe('available');
+    expect(payload.capabilities.passwordReset).toMatchObject({
+      enabled: true,
+      status: 'available',
+      provider: 'smtp',
+    });
     expect(payload.capabilities.diarization.status).toBe('available');
     expect(payload.capabilities.meetingAnalysis.status).toBe('available');
     expect(payload.capabilities.supabaseStorage.status).toBe('available');

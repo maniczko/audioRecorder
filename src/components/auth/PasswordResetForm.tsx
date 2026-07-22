@@ -11,6 +11,7 @@ interface PasswordResetFormProps {
   requestResetCode: () => void;
   completeReset: () => void;
   onBackToLogin: () => void;
+  passwordResetEnabled?: boolean;
 }
 
 export default function PasswordResetForm({
@@ -22,9 +23,18 @@ export default function PasswordResetForm({
   requestResetCode,
   completeReset,
   onBackToLogin,
+  passwordResetEnabled = true,
 }: PasswordResetFormProps) {
+  const isDisabled = passwordResetEnabled !== true;
+
   return (
     <div className="auth-form">
+      {isDisabled ? (
+        <div className="inline-alert warning mb-4">
+          Reset hasła jest obecnie niedostępny. Skontaktuj się z administratorem.
+        </div>
+      ) : null}
+
       <div className="auth-input-group">
         <label htmlFor="reset-email">Adres email</label>
         <div className="auth-input-wrapper">
@@ -33,6 +43,7 @@ export default function PasswordResetForm({
             id="reset-email"
             type="email"
             value={resetValues.email}
+            disabled={isDisabled}
             onChange={(event) => {
               const { value } = event.target;
               setResetDraft((previous) => ({ ...previous, email: value }));
@@ -42,7 +53,12 @@ export default function PasswordResetForm({
         </div>
       </div>
 
-      <button type="button" className="auth-submit-btn mb-6" onClick={requestResetCode}>
+      <button
+        type="button"
+        className="auth-submit-btn mb-6"
+        disabled={isDisabled}
+        onClick={requestResetCode}
+      >
         Wyślij kod resetu
       </button>
 
@@ -61,6 +77,7 @@ export default function PasswordResetForm({
             id="reset-code"
             type="text"
             value={resetValues.code}
+            disabled={isDisabled}
             onChange={(event) => {
               const { value } = event.target;
               setResetDraft((previous) => ({ ...previous, code: value }));
@@ -78,6 +95,7 @@ export default function PasswordResetForm({
             id="new-password"
             type="password"
             value={resetValues.newPassword}
+            disabled={isDisabled}
             onChange={(event) => {
               const { value } = event.target;
               setResetDraft((previous) => ({
@@ -98,6 +116,7 @@ export default function PasswordResetForm({
             id="confirm-password"
             type="password"
             value={resetValues.confirmPassword}
+            disabled={isDisabled}
             onChange={(event) => {
               const { value } = event.target;
               setResetDraft((previous) => ({
@@ -110,7 +129,12 @@ export default function PasswordResetForm({
         </div>
       </div>
 
-      <button type="button" className="auth-submit-btn" onClick={completeReset}>
+      <button
+        type="button"
+        className="auth-submit-btn"
+        disabled={isDisabled}
+        onClick={completeReset}
+      >
         Zmień hasło
       </button>
 

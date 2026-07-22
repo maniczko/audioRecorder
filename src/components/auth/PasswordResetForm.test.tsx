@@ -17,6 +17,7 @@ function renderForm(overrides = {}) {
     requestResetCode: vi.fn(),
     completeReset: vi.fn(),
     onBackToLogin: vi.fn(),
+    passwordResetEnabled: true,
     ...overrides,
   };
 
@@ -36,14 +37,28 @@ describe('PasswordResetForm', () => {
     expect(props.setResetDraft.mock.calls[0][0]({})).toEqual({ email: 'anna@example.com' });
   });
 
-  test('runs request and completion actions', () => {
+  test('runs request and completion actions when enabled', () => {
     const props = renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wyślij kod resetu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Zmień hasło' }));
+    fireEvent.click(screen.getByRole('button', { name: /wyślij kod resetu/i }));
+    fireEvent.click(screen.getByRole('button', { name: /zmień hasło/i }));
 
     expect(props.requestResetCode).toHaveBeenCalledTimes(1);
     expect(props.completeReset).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not run actions when reset is disabled', () => {
+    renderForm({ passwordResetEnabled: false });
+
+    expect(screen.getByText(/reset hasła jest obecnie niedostępny/i)).toBeInTheDocument();
+
+    const sendButton = screen.getByRole('button', { name: /wyślij kod resetu/i });
+    const resetButton = screen.getByRole('button', { name: /zmień hasło/i });
+    fireEvent.click(sendButton);
+    fireEvent.click(resetButton);
+
+    expect(sendButton).toBeDisabled();
+    expect(resetButton).toBeDisabled();
   });
 
   test('shows preview code and back-to-login action', () => {
@@ -51,7 +66,7 @@ describe('PasswordResetForm', () => {
 
     expect(screen.getByText(/Twój lokalny kod resetu:/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wróć do logowania' }));
+    fireEvent.click(screen.getByRole('button', { name: /wróć do logowania/i }));
 
     expect(props.onBackToLogin).toHaveBeenCalledTimes(1);
   });

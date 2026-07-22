@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './styles/modern-layout.css';
 import AuthScreen from './AuthScreen';
 import CommandPalette from './CommandPalette';
@@ -8,6 +8,8 @@ import AppShellSkeleton from './components/app-shell/AppShellSkeleton';
 import AppSidebar from './components/app-shell/AppSidebar';
 import ProductionReadinessBanner from './components/app-shell/ProductionReadinessBanner';
 import RecordingConsentDialog from './components/app-shell/RecordingConsentDialog';
+import { APP_DATA_PROVIDER } from './services/config';
+import { fetchProductionCapabilities } from './services/capabilitiesService';
 import { useWorkspaceSelectors } from './store/workspaceStore';
 import { useAuthStore } from './store/authStore';
 import { useRecorderCtx } from './context/RecorderContext';
@@ -28,6 +30,9 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
   const google = useGoogleCtx();
   const [showAskAI, setShowAskAI] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [passwordResetEnabled, setPasswordResetEnabled] = useState<boolean>(
+    APP_DATA_PROVIDER !== 'remote'
+  );
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const closeSidebar = useCallback((options?: { returnFocus?: boolean }) => {
@@ -60,6 +65,31 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
     },
   ]);
 
+  useEffect(() => {
+    if (APP_DATA_PROVIDER !== 'remote') {
+      setPasswordResetEnabled(true);
+      return;
+    }
+
+    let active = true;
+    const load = async () => {
+      try {
+        const capabilities = await fetchProductionCapabilities();
+        if (active) {
+          setPasswordResetEnabled(Boolean(capabilities?.capabilities?.passwordReset?.enabled));
+        }
+      } catch (_error) {
+        if (active) {
+          setPasswordResetEnabled(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   if (workspace.isHydratingSession && !workspace.currentUser) {
     return <AppShellSkeleton />;
   }
@@ -83,6 +113,7 @@ export default function AppShellModern({ calendarMonth, setCalendarMonth }: AppS
         resetExpiresAt={auth.resetExpiresAt}
         requestResetCode={auth.requestResetCode}
         completeReset={auth.completeReset}
+        passwordResetEnabled={passwordResetEnabled}
       />
     );
   }

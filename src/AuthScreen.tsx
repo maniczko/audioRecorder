@@ -31,6 +31,7 @@ interface AuthScreenProps {
   resetExpiresAt?: string;
   requestResetCode: () => void;
   completeReset: () => void;
+  passwordResetEnabled?: boolean;
 }
 
 function AuthPanelHeader({ authMode }: { authMode: AuthMode }) {
@@ -42,7 +43,7 @@ function AuthPanelHeader({ authMode }: { authMode: AuthMode }) {
       <h2>{isRegister ? 'Dołącz do nas' : isForgot ? 'Zresetuj hasło' : 'Witaj ponownie'}</h2>
       <p>
         {isRegister
-          ? 'Załóż darmowe konto by zacząć'
+          ? 'Załóż darmowe konto, by zacząć'
           : isForgot
             ? 'Podaj email, aby wygenerować kod resetu'
             : 'Zaloguj się do swojego konta'}
@@ -65,6 +66,7 @@ export default function AuthScreen({
   resetExpiresAt,
   requestResetCode,
   completeReset,
+  passwordResetEnabled = true,
 }: AuthScreenProps) {
   const authValues = normalizeAuthDraft(authDraft);
   const resetValues = normalizeResetDraft(resetDraft);
@@ -95,6 +97,7 @@ export default function AuthScreen({
 
           {isForgot ? (
             <PasswordResetForm
+              passwordResetEnabled={passwordResetEnabled}
               resetValues={resetValues}
               resetMessage={resetMessage}
               resetPreviewCode={resetPreviewCode}
@@ -111,6 +114,7 @@ export default function AuthScreen({
               authError={authError}
               setAuthDraft={setAuthDraft}
               setAuthMode={setAuthMode}
+              passwordResetEnabled={passwordResetEnabled}
               onSubmit={internalSubmit}
             />
           )}

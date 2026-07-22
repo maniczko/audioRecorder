@@ -39,6 +39,7 @@ import {
   TranscriptionResult,
   WorkspaceState,
 } from './lib/types.ts';
+import { createSmtpTransport, isSmtpConfigured, renderPasswordResetEmail } from './lib/smtp.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,6 +48,7 @@ const ENOSPC_MESSAGE = 'Brak miejsca na dysku serwera. Skontaktuj sie z administ
 const DEFAULT_RETENTION_DAYS = 365;
 const DEFAULT_REMOTE_AUDIO_AVAILABILITY_TIMEOUT_MS = 2500;
 const WORKSPACE_RETENTION_HOLD_RECORDING_ID = '__workspace__';
+const PASSWORD_RESET_TTL_MS = 10 * 60 * 1000;
 
 type QueryExecutor = {
   _query(sql: string, params?: any[]): Promise<any[]>;
@@ -1845,21 +1847,58 @@ export class Database {
 
   async requestPasswordReset(draft: { email: string }): Promise<any> {
     const email = this._normalizeEmail(draft.email);
-    const genericExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const genericExpiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString();
     const row = await this._get('SELECT * FROM users WHERE email = ?', [email]);
     if (!row || !row.password_hash) return { expiresAt: genericExpiresAt };
 
-    const recoveryCode = String(Math.floor(100000 + Math.random() * 900000));
+    const recoveryCode = String(crypto.randomInt(100000, 1000000));
     const expiresAt = genericExpiresAt;
+    const hashedCode = this._hashRecoveryCode(recoveryCode);
     await this._execute(
       'UPDATE users SET recovery_code_hash = ?, recovery_code_expires_at = ?, updated_at = ? WHERE id = ?',
-      [this._hashRecoveryCode(recoveryCode), expiresAt, this.nowIso(), row.id]
+      [hashedCode, expiresAt, this.nowIso(), row.id]
     );
 
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[DEV] Password reset requested for ${email} (expires ${expiresAt})`);
+      console.log(`[DEV] Recovery code for ${email}: ${recoveryCode}`);
+    }
+
+    if (!isSmtpConfigured()) {
+      return { expiresAt };
+    }
+
+    if (process.env.NODE_ENV === 'production' && isSmtpConfigured()) {
+      const mailer = await createSmtpTransport();
+      if (mailer) {
+        try {
+          const payload = renderPasswordResetEmail({
+            to: row.email,
+            code: recoveryCode,
+            expiresAtIso: expiresAt,
+          });
+          await mailer.sendMail({
+            ...payload,
+            from: (
+              config.VOICELOG_SMTP_FROM ||
+              config.VOICELOG_SMTP_USER ||
+              'no-reply@voicelog.local'
+            ).trim(),
+            to: row.email,
+          });
+        } catch (error) {
+          logger.warn('[database] Failed to send password reset email.', {
+            email,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
     }
     return { expiresAt };
+  }
+
+  async deleteSessionsForUser(userId: string): Promise<void> {
+    await this._execute('DELETE FROM sessions WHERE user_id = ?', [userId]);
   }
 
   async resetPasswordWithCode(draft: {
@@ -1890,6 +1929,7 @@ export class Database {
       "UPDATE users SET password_hash = ?, recovery_code_hash = '', recovery_code_expires_at = '', updated_at = ? WHERE id = ?",
       [this._hashPassword(newPassword), this.nowIso(), row.id]
     );
+    await this.deleteSessionsForUser(row.id);
     return { success: true };
   }
 

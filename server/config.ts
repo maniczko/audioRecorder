@@ -41,6 +41,14 @@ const envSchema = z.object({
     (val) => (val ? Number(val) : undefined),
     z.number().optional()
   ),
+  VOICELOG_SMTP_HOST: z.string().optional(),
+  VOICELOG_SMTP_USER: z.string().optional(),
+  VOICELOG_SMTP_PASS: z.string().optional(),
+  VOICELOG_SMTP_PORT: z.string().optional(),
+  VOICELOG_SMTP_SECURE: z
+    .preprocess((val) => String(val || '').toLowerCase() === 'true', z.boolean())
+    .optional(),
+  VOICELOG_SMTP_FROM: z.string().optional(),
 
   SUPABASE_URL: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),

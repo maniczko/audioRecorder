@@ -33,6 +33,7 @@ async function renderAuthHarness({
   resetMessage = '',
   resetPreviewCode = '',
   resetExpiresAt = '',
+  passwordResetEnabled = true,
 } = {}) {
   vi.resetModules();
   vi.doMock('./services/config', () => ({
@@ -75,6 +76,7 @@ async function renderAuthHarness({
         resetMessage={resetMessage}
         resetPreviewCode={resetPreviewCode}
         resetExpiresAt={resetExpiresAt}
+        passwordResetEnabled={passwordResetEnabled}
         requestResetCode={requestResetCode}
         completeReset={completeReset}
       />
@@ -109,7 +111,7 @@ describe('AuthScreen', () => {
       target: { value: 'jan@example.com' },
     });
     fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'test-password' } });
-    fireEvent.click(screen.getByRole('button', { name: /Zaloguj się/i }));
+    fireEvent.click(screen.getByRole('button', { name: /zaloguj się/i }));
 
     expect(screen.getByDisplayValue('jan@example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('test-password')).toBeInTheDocument();
@@ -124,7 +126,6 @@ describe('AuthScreen', () => {
     fireEvent.change(screen.getByLabelText('Firma'), { target: { value: 'VoiceLog' } });
     fireEvent.click(screen.getByRole('button', { name: 'Dołącz z kodu' }));
 
-    // Wait for the join mode inputs to appear
     await waitFor(() => {
       expect(screen.getByLabelText('Kod zaproszenia')).toBeInTheDocument();
     });
@@ -134,7 +135,7 @@ describe('AuthScreen', () => {
       target: { value: 'anna@example.com' },
     });
     fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: 'secret-123' } });
-    fireEvent.click(screen.getByRole('button', { name: /Wejd[zź] do aplikacji/i }));
+    fireEvent.click(screen.getByRole('button', { name: /wejdź do aplikacji/i }));
 
     expect(screen.getByDisplayValue('Anna Nowak')).toBeInTheDocument();
     expect(screen.getByDisplayValue('AB12CD')).toBeInTheDocument();
@@ -150,10 +151,8 @@ describe('AuthScreen', () => {
     });
     fireEvent.change(screen.getByLabelText('Hasło'), { target: { value: '123' } });
 
-    // Click submit with short password - should not submit
-    fireEvent.click(screen.getByRole('button', { name: /Wejd[zź] do aplikacji/i }));
+    fireEvent.click(screen.getByRole('button', { name: /wejdź do aplikacji/i }));
 
-    // Password is too short, form should not submit
     await waitFor(() => {
       expect(submitAuth).not.toHaveBeenCalled();
     });
@@ -166,15 +165,15 @@ describe('AuthScreen', () => {
       resetExpiresAt: '2026-03-21T10:30:00.000Z',
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Zapomniałeś hasła?' }));
+    fireEvent.click(screen.getByRole('button', { name: /zapomnia/i }));
 
     expect(setAuthModeSpy).toHaveBeenCalledWith('forgot');
-    expect(screen.getByText(/wygenerować kod resetu/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /zresetuj hasło/i })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Adres email'), {
       target: { value: 'anna@example.com' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Wyślij kod resetu' }));
+    fireEvent.click(screen.getByRole('button', { name: /wyślij kod resetu/i }));
     fireEvent.change(screen.getByLabelText('Kod resetu'), {
       target: { value: '123456' },
     });
@@ -184,12 +183,27 @@ describe('AuthScreen', () => {
     fireEvent.change(screen.getByLabelText('Potwierdź nowe hasło'), {
       target: { value: 'new-secret' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Zmień hasło' }));
+    fireEvent.click(screen.getByRole('button', { name: /zmień hasło/i }));
 
-    expect(screen.getByText(/Twój lokalny kod resetu:/)).toBeInTheDocument();
+    expect(screen.getByText(/twój lokalny kod resetu:/i)).toBeInTheDocument();
     expect(requestResetCode).toHaveBeenCalledTimes(1);
     expect(completeReset).toHaveBeenCalledTimes(1);
   }, 15000);
+
+  test('disables forgot-password flow when capability is off', async () => {
+    const { requestResetCode, completeReset } = await renderAuthHarness({
+      authMode: 'forgot',
+      passwordResetEnabled: false,
+    });
+
+    expect(screen.getByText(/reset hasła jest obecnie niedostępny/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /wyślij kod resetu/i })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /wyślij kod resetu/i }));
+    expect(requestResetCode).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /zmień hasło/i }));
+    expect(completeReset).not.toHaveBeenCalled();
+  });
 
   test('shows local-session warning only in local provider mode', async () => {
     // This test requires refactoring AuthScreen to accept APP_DATA_PROVIDER as prop

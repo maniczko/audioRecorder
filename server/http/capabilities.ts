@@ -4,6 +4,7 @@ import { resolveSttRuntimePolicy } from '../stt/policy.ts';
 import { MetricsService } from '../services/MetricsService.ts';
 import { normalizeWorkspaceFeatureFlags } from '../../src/shared/contracts.ts';
 import type { WorkspaceFeatureFlags, WorkspaceSttProvider } from '../../src/shared/types.ts';
+import { isSmtpConfigured } from '../lib/smtp.ts';
 
 export type CapabilityStatus = 'available' | 'degraded' | 'unavailable';
 export type ProductionStatus = 'ready' | 'degraded';
@@ -18,7 +19,8 @@ export interface CapabilityFlag {
     | 'embeddings'
     | 'imageGeneration'
     | 'retentionFeatures'
-    | 'experimentalUi';
+    | 'experimentalUi'
+    | 'passwordReset';
   label: string;
   enabled: boolean;
   status: CapabilityStatus;
@@ -169,6 +171,7 @@ export function resolveProductionCapabilities(
   const hasHfToken = hasValue(env, 'HF_TOKEN') || hasValue(env, 'HUGGINGFACE_TOKEN');
   const hasAnthropic = hasValue(env, 'ANTHROPIC_API_KEY');
   const hasGemini = hasValue(env, 'GEMINI_API_KEY');
+  const hasSmtp = isSmtpConfigured(env);
   const meetingAnalysisFlag = isEnabled(env.VOICELOG_ENABLE_MEETING_ANALYSIS);
   const sttPolicy = resolveSttRuntimePolicy(makeConfigLike(env), { hasOpenAi, hasGroq });
 
@@ -294,6 +297,15 @@ export function resolveProductionCapabilities(
       reason: workspaceFeatureFlags.retentionFeatures
         ? undefined
         : 'Disabled by workspace feature flags.',
+    },
+    passwordReset: {
+      id: 'passwordReset',
+      label: 'Reset hasła',
+      enabled: hasSmtp,
+      status: hasSmtp ? 'available' : 'unavailable',
+      provider: hasSmtp ? 'smtp' : 'none',
+      reason: hasSmtp ? undefined : 'SMTP is not configured. Password reset is disabled.',
+      fallbackMode: false,
     },
     experimentalUi: {
       id: 'experimentalUi',

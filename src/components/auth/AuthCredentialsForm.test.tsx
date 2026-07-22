@@ -25,7 +25,7 @@ describe('AuthCredentialsForm', () => {
     fireEvent.change(screen.getByLabelText('Adres email'), {
       target: { value: 'jan@example.com' },
     });
-    fireEvent.change(screen.getByLabelText('Hasło'), {
+    fireEvent.change(screen.getByLabelText(/has/i), {
       target: { value: 'secret-123' },
     });
 
@@ -37,16 +37,23 @@ describe('AuthCredentialsForm', () => {
   test('switches to forgot mode from login form', () => {
     const props = renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Zapomniałeś hasła?' }));
+    fireEvent.click(screen.getByRole('button', { name: /zapomnia/i }));
 
     expect(props.setAuthMode).toHaveBeenCalledWith('forgot');
+  });
+
+  test('hides forgot-password action when reset capability is disabled', () => {
+    renderForm({ passwordResetEnabled: false });
+
+    expect(screen.queryByRole('button', { name: /zapomnia/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Reset hasła jest niedostępny/i)).toBeInTheDocument();
   });
 
   test('renders registration-only workspace controls', () => {
     renderForm({ authMode: 'register', authValues: normalizeAuthDraft({}) });
 
-    expect(screen.getByLabelText('Imię i nazwisko')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Nowy zespół' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Dołącz z kodu' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/imi/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /nowy zespół/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /dołącz z kodu/i })).toBeInTheDocument();
   });
 });

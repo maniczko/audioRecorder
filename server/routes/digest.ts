@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { AppServices, AppMiddlewares } from './middleware.ts';
+import { createSmtpTransport, resolveSmtpSettings } from '../lib/smtp.ts';
 
 type DigestTask = {
   id: string;
@@ -111,22 +112,12 @@ function renderDigestHtml(userName: string, digests: ReturnType<typeof buildWork
   `;
 }
 
-async function buildMailer() {
-  const host = String(process.env.VOICELOG_SMTP_HOST || '').trim();
-  const user = String(process.env.VOICELOG_SMTP_USER || '').trim();
-  const pass = String(process.env.VOICELOG_SMTP_PASS || '').trim();
-  if (!host || !user || !pass) {
-    return null;
-  }
-
-  const { createTransport } = await import('nodemailer');
-  return createTransport({
-    host,
-    port: Number(process.env.VOICELOG_SMTP_PORT || 587),
-    secure: String(process.env.VOICELOG_SMTP_SECURE || '').toLowerCase() === 'true',
-    auth: { user, pass },
-  });
-}
+const passwordResetMailFromAddress = (env: NodeJS.ProcessEnv = process.env) => {
+  const settings = resolveSmtpSettings(env);
+  return (
+    settings?.fromAddress || String(env.VOICELOG_SMTP_USER || 'no-reply@voicelog.local').trim()
+  );
+};
 
 export function createDigestRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono();
@@ -140,10 +131,8 @@ export function createDigestRoutes(services: AppServices, middlewares: AppMiddle
     }
 
     const users = await db._query('SELECT * FROM users', []);
-    const mailer = await buildMailer();
-    const fromAddress = String(
-      process.env.VOICELOG_SMTP_FROM || process.env.VOICELOG_SMTP_USER || 'no-reply@voicelog.local'
-    ).trim();
+    const mailer = await createSmtpTransport();
+    const fromAddress = passwordResetMailFromAddress();
     const previews: any[] = [];
     let sent = 0;
     let skipped = 0;

@@ -9,6 +9,7 @@ interface AuthCredentialsFormProps {
   setAuthDraft: (updater: (previous: AuthDraftLike) => AuthDraftLike) => void;
   setAuthMode: (mode: AuthMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  passwordResetEnabled?: boolean;
 }
 
 export default function AuthCredentialsForm({
@@ -18,6 +19,7 @@ export default function AuthCredentialsForm({
   setAuthDraft,
   setAuthMode,
   onSubmit,
+  passwordResetEnabled = true,
 }: AuthCredentialsFormProps) {
   const isRegister = authMode === 'register';
 
@@ -97,14 +99,22 @@ export default function AuthCredentialsForm({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <label htmlFor="auth-password">Hasło</label>
           {!isRegister && (
-            <button
-              type="button"
-              className="link-button"
-              style={{ fontSize: '0.8rem' }}
-              onClick={() => setAuthMode('forgot')}
-            >
-              Zapomniałeś hasła?
-            </button>
+            <>
+              {passwordResetEnabled ? (
+                <button
+                  type="button"
+                  className="link-button"
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => setAuthMode('forgot')}
+                >
+                  Zapomniałeś hasła?
+                </button>
+              ) : (
+                <span className="inline-alert warning" style={{ fontSize: '0.78rem' }}>
+                  Reset hasła jest niedostępny.
+                </span>
+              )}
+            </>
           )}
         </div>
         <div className="auth-input-wrapper">
