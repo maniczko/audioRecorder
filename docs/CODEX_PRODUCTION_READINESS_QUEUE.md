@@ -121,8 +121,9 @@ Issue `#1241` adds a dedicated deterministic browser audio gate:
 pnpm run test:e2e:audio
 ```
 
-The runner starts Playwright with `PLAYWRIGHT_MEDIA_PROVIDER=remote`, mocks browser
-capture APIs instead of using real microphone hardware, and exercises record,
+The runner starts Playwright with both `PLAYWRIGHT_DATA_PROVIDER=remote` and
+`PLAYWRIGHT_MEDIA_PROVIDER=remote`, so browser requests stay on the same-origin mock
+layer. It mocks capture APIs instead of using real microphone hardware, and exercises record,
 pause, resume, stop, upload, processing, retry, transcript attach, and fixture
 audio import paths.
 

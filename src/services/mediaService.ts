@@ -58,6 +58,12 @@ export interface PersistRecordingAudioResult {
   audioQuality?: unknown;
 }
 
+interface MediaTransportError extends Error {
+  status?: number;
+  statusCode?: number;
+  code?: string;
+}
+
 export interface StartTranscriptionJobInput {
   recordingId?: string;
   blob?: Blob | null;
@@ -457,9 +463,28 @@ function createRemoteMediaService(): MediaService {
           if (failed) {
             const reason = (failed as PromiseRejectedResult).reason;
             const failedIndex = batchStart + results.indexOf(failed);
-            throw new Error(
+            const failedDetails = reason as
+              | {
+                  status?: unknown;
+                  statusCode?: unknown;
+                  code?: unknown;
+                  message?: unknown;
+                }
+              | null
+              | undefined;
+            const uploadError = new Error(
               `Upload audio przerwany na fragmencie ${failedIndex + 1}/${total}. ${reason?.message || 'Backend jest chwilowo niedostepny. Sprobuj ponownie za chwile.'}`
-            );
+            ) as MediaTransportError;
+            const status = Number(failedDetails?.status ?? failedDetails?.statusCode);
+            if (Number.isFinite(status)) {
+              uploadError.status = status;
+              uploadError.statusCode = status;
+            }
+            const code = String(failedDetails?.code || '').trim();
+            if (code) {
+              uploadError.code = code;
+            }
+            throw uploadError;
           }
 
           uploaded = batchEnd;

@@ -926,6 +926,15 @@ describe('release readiness gates', () => {
     expect(remoteApiRunner).toContain("PLAYWRIGHT_MEDIA_PROVIDER: 'remote'");
   });
 
+  it('runs the deterministic audio browser gate through the same-origin remote mock layer', () => {
+    const audioRunner = read('scripts/run-audio-playwright.mjs');
+
+    expect(audioRunner).toContain("PLAYWRIGHT_DATA_PROVIDER: 'remote'");
+    expect(audioRunner).toContain("VITE_DATA_PROVIDER: 'remote'");
+    expect(audioRunner).toContain("PLAYWRIGHT_MEDIA_PROVIDER: 'remote'");
+    expect(audioRunner).toContain("VITE_MEDIA_PROVIDER: 'remote'");
+  });
+
   it('keeps release-critical UI/config surfaces free of mojibake', () => {
     expect(findMojibakeIssues()).toEqual([]);
   }, 20_000);

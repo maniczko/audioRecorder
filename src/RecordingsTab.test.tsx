@@ -593,6 +593,58 @@ describe('RecordingsTab', () => {
     expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec_stale_queued');
   });
 
+  // ─────────────────────────────────────────────────────────────────
+  // Issue #1538 — an expired upload had no recovery action in the imports list
+  // Date: 2026-07-22
+  // Bug: auth_required was rendered as an alert but retryLabel was empty.
+  // Fix: expose the explicit reauthentication-and-retry action.
+  // ─────────────────────────────────────────────────────────────────
+  test('Regression: Issue #1538 — expired import exposes reauthentication retry', () => {
+    const retryRecordingQueueItem = vi.fn();
+
+    render(
+      <ToastProvider>
+        <RecordingsTab
+          {...defaultProps}
+          userMeetings={[]}
+          retryRecordingQueueItem={retryRecordingQueueItem}
+          recordingQueue={[
+            {
+              id: 'rec_auth_retry',
+              recordingId: 'rec_auth_retry',
+              meetingId: 'meeting_auth_retry',
+              workspaceId: 'ws1',
+              meetingTitle: 'Import wymagający logowania',
+              meetingSnapshot: {
+                id: 'meeting_auth_retry',
+                workspaceId: 'ws1',
+                title: 'Import wymagający logowania',
+              },
+              mimeType: 'audio/webm',
+              rawSegments: [],
+              duration: 4,
+              status: 'auth_required',
+              uploaded: false,
+              attempts: 1,
+              retryCount: 0,
+              backoffUntil: 0,
+              lastErrorMessage: '',
+              errorMessage: 'Brak autoryzacji do backendu. Zaloguj sie ponownie.',
+              errorCode: 'AUTH_REQUIRED',
+              retryable: true,
+              createdAt: '2026-07-22T10:00:00.000Z',
+              updatedAt: '2026-07-22T10:00:00.000Z',
+            },
+          ]}
+        />
+      </ToastProvider>
+    );
+
+    expect(screen.getByRole('alert', { name: /Wymagane ponowne logowanie/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Zaloguj ponownie i ponów upload' }));
+    expect(retryRecordingQueueItem).toHaveBeenCalledWith('rec_auth_retry');
+  });
+
   test('Regression: failed import exposes retry action and retries the queue item', () => {
     const retryRecordingQueueItem = vi.fn();
 

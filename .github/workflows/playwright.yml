@@ -45,6 +45,9 @@ jobs:
           PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
           PLAYWRIGHT_HTML_OUTPUT: playwright-report
 
+      - name: Run authentication session scenarios
+        run: pnpm run test:e2e:auth-session
+
       - name: Run remote API workspace contract
         run: pnpm run test:e2e:remote-api
 
