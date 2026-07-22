@@ -68,6 +68,24 @@ Capability identifiers used by `/api/capabilities`:
 | Local Whisper              | Audio chunks                                           | Offline STT fallback                                 | `USE_LOCAL_WHISPER`, `WHISPER_CPP_PATH`, `WHISPER_MODEL_PATH`, `WHISPER_THREADS` | Audio remains on the application host during processing. Model files are local artifacts.                            | Disable `USE_LOCAL_WHISPER` and configure OpenAI or Groq.                                  |
 | Browser speech recognition | Microphone audio handled by the browser implementation | Live transcription                                   | Browser support and microphone permission                                        | Residency depends on the browser implementation and user device/browser vendor behavior.                             | Disable live transcription in product configuration or do not grant microphone permission. |
 
+## Recording consent enforcement
+
+The browser disclosure is only a user-interface prompt; it is not the production security
+boundary. For every production `POST /media/recordings/:recordingId/transcribe` request, the
+backend requires the versioned `recording-consent-v1` metadata with a current acceptance time,
+the recording workspace, disclosure title, provider notice, and enabled STT category. The
+authenticated user is recorded by the server, not trusted from the request body.
+
+The accepted consent and original actor are stored with the recording. A retry reads that stored
+consent; legacy/imported recordings without a valid stored consent return
+`recording_consent_invalid` and cannot start or retry transcription until a new consent is
+captured. The audit event stores only policy version, timestamp, and provider category IDs—never
+audio, transcript text, prompts, or provider payloads.
+
+Development and test environments keep the local workflow compatible with fixtures and do not
+enforce the production request gate. They must still exercise the same contract in route tests;
+production/Railway is the enforcement boundary.
+
 ## Manual Review Checklist
 
 - Confirm every configured provider in Railway/Vercel secrets appears in the Provider Register.

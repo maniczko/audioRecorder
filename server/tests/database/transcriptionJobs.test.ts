@@ -113,6 +113,7 @@ describe('transcription_jobs durable queue', () => {
           acceptedAt: '2026-06-25T10:00:00.000Z',
           workspaceId: 'ws_consent',
           policyVersion: 'recording-consent-v1',
+          actorUserId: 'user_consent',
           disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
           providerNotice: 'Dane moga byc przekazywane do dostawcow AI/audio.',
           providers: [
@@ -129,6 +130,7 @@ describe('transcription_jobs durable queue', () => {
         acceptedAt: '2026-06-25T10:00:00.000Z',
         workspaceId: 'ws_consent',
         policyVersion: 'recording-consent-v1',
+        actorUserId: 'user_consent',
       });
       expect(diarization.recordingConsent.providers).toEqual(
         expect.arrayContaining([
@@ -136,6 +138,18 @@ describe('transcription_jobs durable queue', () => {
           expect.objectContaining({ id: 'llm-analysis', enabled: true }),
         ])
       );
+
+      await db.queueTranscription('rec_consent', {
+        workspaceId: 'ws_consent',
+        meetingId: 'meeting_consent',
+        contentType: 'audio/webm',
+      });
+
+      const requeued = await db.getMediaAsset('rec_consent');
+      expect(JSON.parse(requeued.diarization_json || '{}').recordingConsent).toMatchObject({
+        actorUserId: 'user_consent',
+        policyVersion: 'recording-consent-v1',
+      });
     } finally {
       await db.shutdown();
     }

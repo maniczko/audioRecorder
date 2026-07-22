@@ -27,6 +27,18 @@ import { createApp } from '../../app.ts';
 import { MAX_RAW_UPLOAD_BYTES, buildSegmentedMediaManifest } from '../../lib/mediaStoragePolicy.ts';
 import { createProgressToken, resetProgressTokensForTests } from '../../lib/progressTokens.ts';
 
+function validRecordingConsent(overrides: Record<string, unknown> = {}) {
+  return {
+    acceptedAt: '2026-07-21T09:00:00.000Z',
+    workspaceId: 'ws_1',
+    policyVersion: 'recording-consent-v1',
+    disclosureTitle: 'Zgoda na nagrywanie i przetwarzanie AI',
+    providerNotice: 'Dane audio moga byc przekazywane do dostawcow AI/audio.',
+    providers: [{ id: 'stt', label: 'transkrypcja mowy na tekst', enabled: true }],
+    ...overrides,
+  };
+}
+
 // Helper to control fs mock state between tests
 function setFsState(overrides?: { existsSync?: boolean; statSyncSize?: number }) {
   (global as any).__TEST_FS_STATE__ = {
@@ -402,6 +414,180 @@ describe('Media Routes', () => {
       'rec_1',
       expect.objectContaining({ processingMode: 'fast' })
     );
+  });
+
+  // -----------------------------------------------------------------
+  // Issue #1511 — production transcription requires durable consent
+  // Date: 2026-07-22
+  // Bug: a direct API client could start transcription without the
+  //      consent disclosure accepted in the browser.
+  // Fix: production validates, persists, and audits the consent server-side.
+  // -----------------------------------------------------------------
+  it('Regression: Issue #1511 — rejects a production transcription without consent', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_consent_required',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'failed',
+    });
+
+    const res = await app.request('/media/recordings/rec_consent_required/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: 'ws_1' }),
+    });
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({
+      code: 'recording_consent_invalid',
+      recordingId: 'rec_consent_required',
+    });
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+    expect(mockTranscriptionService.ensureTranscriptionJob).not.toHaveBeenCalled();
+  });
+
+  it('Regression: Issue #1511 — rejects consent issued for another workspace', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_consent_workspace',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'failed',
+    });
+
+    const res = await app.request('/media/recordings/rec_consent_workspace/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId: 'ws_1',
+        recordingConsent: validRecordingConsent({ workspaceId: 'ws_other' }),
+      }),
+    });
+
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toMatchObject({ code: 'recording_consent_invalid' });
+    expect(mockTranscriptionService.queueTranscription).not.toHaveBeenCalled();
+  });
+
+  it('Regression: Issue #1511 — persists and audits valid production consent without transcript data', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_consent_valid',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: '/tmp/fake.webm',
+      content_type: 'audio/webm',
+      size_bytes: 1024,
+      transcription_status: 'failed',
+    });
+    mockTranscriptionService.queueTranscription.mockResolvedValue(undefined);
+    mockTranscriptionService.ensureTranscriptionJob.mockResolvedValue({
+      id: 'rec_consent_valid',
+      transcription_status: 'queued',
+      transcript_json: '[]',
+      diarization_json: '{}',
+    });
+
+    const res = await app.request('/media/recordings/rec_consent_valid/transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workspaceId: 'ws_1',
+        recordingConsent: validRecordingConsent(),
+      }),
+    });
+
+    expect(res.status).toBe(202);
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
+      'rec_consent_valid',
+      expect.objectContaining({
+        recordingConsent: expect.objectContaining({
+          workspaceId: 'ws_1',
+          actorUserId: 'user_1',
+          policyVersion: 'recording-consent-v1',
+        }),
+      })
+    );
+    expect(mockTranscriptionService.writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'recording.transcription.consent_recorded',
+        metadata: expect.objectContaining({
+          policyVersion: 'recording-consent-v1',
+          providerCategories: ['stt'],
+        }),
+      })
+    );
+    const auditMetadata = mockTranscriptionService.writeAuditLog.mock.calls[0][0].metadata;
+    expect(auditMetadata).not.toHaveProperty('transcript');
+    expect(auditMetadata).not.toHaveProperty('audioPath');
+    expect(JSON.stringify(auditMetadata)).not.toContain('audio/webm');
+  });
+
+  it('Regression: Issue #1511 — retry reuses the persisted consent and rejects legacy recordings', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const storedConsent = { ...validRecordingConsent(), actorUserId: 'user_original' };
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_retry_consent',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: '/tmp/retry-consent.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'failed',
+      transcript_json: '[]',
+      diarization_json: JSON.stringify({ recordingConsent: storedConsent }),
+    });
+    mockTranscriptionService.queueTranscription.mockResolvedValue(undefined);
+    mockTranscriptionService.ensureTranscriptionJob.mockResolvedValue({
+      id: 'rec_retry_consent',
+      transcription_status: 'queued',
+      transcript_json: '[]',
+      diarization_json: '{}',
+    });
+
+    const retry = await app.request('/media/recordings/rec_retry_consent/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+
+    expect(retry.status).toBe(202);
+    expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
+      'rec_retry_consent',
+      expect.objectContaining({
+        recordingConsent: expect.objectContaining({ actorUserId: 'user_original' }),
+      })
+    );
+
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_legacy_without_consent',
+      workspace_id: 'ws_1',
+      meeting_id: 'meeting_1',
+      file_path: '/tmp/legacy.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'failed',
+      transcript_json: '[]',
+      diarization_json: '{}',
+    });
+
+    const legacyRetry = await app.request(
+      '/media/recordings/rec_legacy_without_consent/retry-transcribe',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }
+    );
+
+    expect(legacyRetry.status).toBe(422);
+    await expect(legacyRetry.json()).resolves.toMatchObject({
+      code: 'recording_consent_invalid',
+      recordingId: 'rec_legacy_without_consent',
+    });
   });
 
   it('Issue #1262 - blocks STT start before provider quota when workspace STT is disabled', async () => {
