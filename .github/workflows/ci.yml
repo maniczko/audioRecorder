@@ -61,6 +61,11 @@ jobs:
       - name: Repo hygiene audit
         run: pnpm run audit:repo-hygiene
 
+      - name: Bundle workflow checkout regression
+        run: |
+          pnpm exec vitest run -c vitest.scripts.config.ts scripts/bundle-workflow-checkout-regression.test.ts --coverage.enabled=false
+          node scripts/validate-github-workflows.mjs
+
       - name: UI action contract audit
         run: pnpm run test:ui-actions:contract
 
