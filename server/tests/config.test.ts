@@ -154,6 +154,58 @@ describe('config.ts — validateRequiredApiKeys', () => {
     expect(config).toHaveProperty('VOICELOG_PROCESSING_MODE_DEFAULT');
   });
 
+  // ----------------------------------------------------------------
+  // Issue #1510 — production must never fall back to SQLite
+  // Date: 2026-07-21
+  // Bug: a Railway deployment without a usable PostgreSQL URL could
+  //      initialize local SQLite and silently lose data on redeploy.
+  // Fix: one production predicate and a fail-closed URL validator are
+  //      shared by startup validation and database initialization.
+  // ----------------------------------------------------------------
+  test('rejects missing and malformed PostgreSQL configuration for production deployments', async () => {
+    const { getProductionDatabaseConfigurationError, isProductionDeployment } =
+      await import('../config.js');
+
+    expect(isProductionDeployment({ NODE_ENV: 'production' })).toBe(true);
+    expect(isProductionDeployment({ RAILWAY_PROJECT_ID: 'railway-project-test' })).toBe(true);
+    expect(
+      isProductionDeployment({ NODE_ENV: 'test', RAILWAY_PROJECT_ID: 'railway-project-test' })
+    ).toBe(false);
+    expect(getProductionDatabaseConfigurationError({ NODE_ENV: 'production' })).toContain(
+      'Missing PostgreSQL database URL'
+    );
+    expect(
+      getProductionDatabaseConfigurationError({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'https://db.example.com/not-postgres',
+      })
+    ).toContain('postgresql://');
+    expect(
+      getProductionDatabaseConfigurationError({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://postgres:secret@postgres.project-ref:5432/postgres',
+      })
+    ).toContain('complete resolvable Supabase host');
+  });
+
+  test('accepts direct and pooler PostgreSQL URLs in production without exposing credentials', async () => {
+    const { getProductionDatabaseConfigurationError } = await import('../config.js');
+
+    expect(
+      getProductionDatabaseConfigurationError({
+        NODE_ENV: 'production',
+        DATABASE_URL: 'postgresql://postgres:super-secret@db.project-ref.supabase.co:5432/postgres',
+      })
+    ).toBeNull();
+    expect(
+      getProductionDatabaseConfigurationError({
+        RAILWAY_PROJECT_ID: 'railway-project-test',
+        VOICELOG_DATABASE_URL:
+          'postgresql://postgres.project-ref:super-secret@aws-0-eu-central-1.pooler.supabase.com:6543/postgres',
+      })
+    ).toBeNull();
+  });
+
   test('defaults production-quality STT to OpenAI premium mode', async () => {
     const previousProvider = process.env.VOICELOG_STT_PROVIDER;
     const previousPolicy = process.env.VOICELOG_STT_POLICY;

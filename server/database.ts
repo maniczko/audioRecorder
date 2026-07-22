@@ -6,7 +6,12 @@ import { Pool } from 'pg';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import { logger } from './logger.ts';
-import { config } from './config.ts';
+import {
+  config,
+  getConfiguredDatabaseUrl,
+  getProductionDatabaseConfigurationError,
+  validatePostgresDatabaseUrl,
+} from './config.ts';
 import { resolveBuildMetadata } from './runtime.ts';
 import { isCreatedAtExpiredByRetention } from './lib/retentionPolicy.ts';
 import { requireVoiceProfileEmbedding } from './lib/voiceProfileEmbedding.ts';
@@ -4456,6 +4461,33 @@ export function initDatabase(dbConfig?: any): Database {
   return defaultInstance;
 }
 
+export function resolveDatabaseAdapter({
+  isTest,
+  connectionString,
+  productionDatabaseError,
+}: {
+  isTest: boolean;
+  connectionString: string | null;
+  productionDatabaseError: string | null;
+}): 'postgres' | 'sqlite' {
+  if (productionDatabaseError) {
+    throw new Error(`[database] Production startup blocked: ${productionDatabaseError}`);
+  }
+
+  if (isTest) {
+    return 'sqlite';
+  }
+
+  const configuredDatabaseError = connectionString
+    ? validatePostgresDatabaseUrl(connectionString)
+    : null;
+  if (configuredDatabaseError) {
+    throw new Error(`[database] Invalid configured PostgreSQL URL: ${configuredDatabaseError}`);
+  }
+
+  return connectionString ? 'postgres' : 'sqlite';
+}
+
 export function getDatabase() {
   if (!defaultInstance) {
     const DATA_DIR = path.resolve(__dirname, 'data');
@@ -4467,10 +4499,16 @@ export function getDatabase() {
       : path.join(DATA_DIR, 'uploads');
     const SESSION_TTL_HOURS = Math.max(1, config.VOICELOG_SESSION_TTL_HOURS || 24 * 30);
     const IS_TEST = process.env.NODE_ENV === 'test' || config.NODE_ENV === 'test';
-    const CONNECTION_STRING = !IS_TEST ? config.VOICELOG_DATABASE_URL || config.DATABASE_URL : null;
+    const CONNECTION_STRING = !IS_TEST ? getConfiguredDatabaseUrl() : null;
+    const productionDatabaseError = getProductionDatabaseConfigurationError();
+    const adapter = resolveDatabaseAdapter({
+      isTest: IS_TEST,
+      connectionString: CONNECTION_STRING,
+      productionDatabaseError,
+    });
 
     return initDatabase({
-      type: CONNECTION_STRING ? 'postgres' : 'sqlite',
+      type: adapter,
       dbPath: IS_TEST ? ':memory:' : DB_PATH,
       uploadDir: UPLOAD_DIR,
       sessionTtlHours: SESSION_TTL_HOURS,
