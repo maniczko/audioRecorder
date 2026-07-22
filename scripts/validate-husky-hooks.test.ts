@@ -18,7 +18,16 @@ describe('husky hooks', () => {
 
     expect(content).toContain("grep -E '\\.(ts|tsx|js|jsx)$' || true");
     expect(content).toContain("grep -E '\\.(css|scss)$' || true");
-    expect(content).toContain("grep -E '\\.(ts|tsx|js|jsx|css|scss|json|md|yml|yaml)$' || true");
+    expect(content).toContain(
+      "grep -E '\\.(ts|tsx|js|jsx|css|scss|json|md|yml|yaml)$' | grep -v '^pnpm-lock\\.yaml$' || true"
+    );
+  });
+
+  it('does not reformat pnpm lockfiles during a staged commit', () => {
+    const hookPath = path.resolve('.husky/pre-commit');
+    const content = readFileSync(hookPath, 'utf8');
+
+    expect(content).toContain("grep -v '^pnpm-lock\\.yaml$'");
   });
 
   it('runs stylelint for staged css files before commit', () => {
