@@ -57,6 +57,12 @@ import { addPipelineBreadcrumb, capturePipelineException } from '../sentry.ts';
 import { withAudioSpan } from '../tracing.ts';
 import { logger } from '../logger.ts';
 import { MetricsService } from '../services/MetricsService.ts';
+import { isProductionDeployment } from '../config.ts';
+import {
+  readRecordingConsentFromAsset,
+  validateRecordingConsent,
+  type ValidatedRecordingConsent,
+} from '../lib/recordingConsent.ts';
 
 const AUDIO_CONTENT_TYPE_EXTENSIONS: Record<string, string[]> = {
   'audio/webm': ['.webm'],
@@ -826,6 +832,48 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
     });
   }
 
+  function getSessionActorUserId(c: any): string {
+    const session = c.get('session') as any;
+    return String(session?.user_id || session?.userId || '').trim();
+  }
+
+  function recordingConsentInvalidResponse(c: any, recordingId: string) {
+    return c.json(
+      {
+        code: 'recording_consent_invalid',
+        message: 'Brak aktualnej zgody na przetwarzanie nagrania.',
+        recordingId,
+      },
+      422
+    );
+  }
+
+  function validateProductionRecordingConsent(
+    c: any,
+    recordingId: string,
+    workspaceId: string,
+    input: unknown,
+    preserveRecordedActor = false
+  ): ValidatedRecordingConsent | null | Response {
+    if (!isProductionDeployment()) return null;
+    const validation = validateRecordingConsent(input, {
+      workspaceId,
+      actorUserId: getSessionActorUserId(c),
+      preserveRecordedActor,
+    });
+    return validation.valid ? validation.consent : recordingConsentInvalidResponse(c, recordingId);
+  }
+
+  async function recordConsentAuditEvent(c: any, asset: any, consent: ValidatedRecordingConsent) {
+    await writeRecordingAuditEvent(c, asset, 'recording.transcription.consent_recorded', {
+      policyVersion: consent.policyVersion,
+      acceptedAt: consent.acceptedAt,
+      providerCategories: consent.providers
+        .filter((provider) => provider.enabled)
+        .map((provider) => provider.id),
+    });
+  }
+
   function resolveProcessingMode(input: any) {
     return input === 'full' || input === 'fast'
       ? input
@@ -1483,7 +1531,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const body = bodyValidation.data;
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
-      const workspaceId = body.workspaceId || asset.workspace_id;
+      const workspaceId = asset.workspace_id;
+      if (body.workspaceId && body.workspaceId !== workspaceId) {
+        return recordingConsentInvalidResponse(c, recordingId);
+      }
       const membership = await ensureWorkspaceAccess(c, workspaceId);
       if (!workspaceMembershipCan(membership, 'recordings:process')) {
         return c.json({ message: 'Nie masz uprawnien do przetwarzania nagran.' }, 403);
@@ -1510,6 +1561,14 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           202
         );
       }
+
+      const validatedConsent = validateProductionRecordingConsent(
+        c,
+        recordingId,
+        workspaceId,
+        body.recordingConsent
+      );
+      if (validatedConsent instanceof Response) return validatedConsent;
 
       const quotaResponse = await enforceProviderQuota(c, {
         kind: 'stt',
@@ -1551,10 +1610,16 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           () =>
             startTranscriptionPipeline(recordingId, asset, {
               ...body,
+              workspaceId,
+              recordingConsent: validatedConsent || body.recordingConsent,
               processingMode: resolveProcessingMode(body.processingMode),
               requestId: c.get('reqId'),
             })
         );
+
+        if (validatedConsent) {
+          await recordConsentAuditEvent(c, { ...asset, id: recordingId }, validatedConsent);
+        }
 
         return c.json(
           withIdempotencyMetadata(
@@ -1603,6 +1668,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const asset = await transcriptionService.getMediaAsset(recordingId);
       if (!asset) return c.json({ message: 'Nie znaleziono nagrania.' }, 404);
       await ensureWorkspaceAccess(c, asset.workspace_id);
+      const storedConsent = readRecordingConsentFromAsset(asset);
+      const validatedConsent = validateProductionRecordingConsent(
+        c,
+        recordingId,
+        asset.workspace_id,
+        storedConsent,
+        true
+      );
+      if (validatedConsent instanceof Response) return validatedConsent;
       const featureFlags = await getWorkspaceFeatureFlags(workspaceService, asset.workspace_id);
       if (featureFlags.sttProvider === 'disabled') {
         return c.json(
@@ -1656,6 +1730,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             workspaceId: asset.workspace_id,
             meetingId: asset.meeting_id,
             contentType: asset.content_type,
+            recordingConsent: validatedConsent || storedConsent,
             processingMode,
             requestId: c.get('reqId'),
           }
@@ -1732,6 +1807,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
               workspaceId: asset.workspace_id,
               meetingId: asset.meeting_id,
               contentType: asset.content_type,
+              recordingConsent: validatedConsent || storedConsent,
               processingMode,
               requestId: c.get('reqId'),
             })

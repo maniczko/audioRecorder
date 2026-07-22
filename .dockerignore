@@ -6,6 +6,7 @@ build
 dist
 dist-server
 src
+!src/lib/
 !src/shared/
 public
 .env

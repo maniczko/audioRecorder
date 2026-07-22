@@ -3740,6 +3740,7 @@ export class Database {
             acceptedAt: this._clean(updates.recordingConsent.acceptedAt),
             workspaceId: this._clean(updates.recordingConsent.workspaceId),
             policyVersion: this._clean(updates.recordingConsent.policyVersion),
+            actorUserId: this._clean(updates.recordingConsent.actorUserId),
             disclosureTitle: this._clean(updates.recordingConsent.disclosureTitle),
             providerNotice: this._clean(updates.recordingConsent.providerNotice),
             providers: Array.isArray(updates.recordingConsent.providers)
@@ -3761,7 +3762,12 @@ export class Database {
       typeof existingDiarization.qualityMetrics === 'object'
         ? { qualityMetrics: this._normalizeQualityMetrics(existingDiarization.qualityMetrics) }
         : {}),
-      ...(recordingConsent ? { recordingConsent } : {}),
+      ...(recordingConsent
+        ? { recordingConsent }
+        : existingDiarization?.recordingConsent &&
+            typeof existingDiarization.recordingConsent === 'object'
+          ? { recordingConsent: existingDiarization.recordingConsent }
+          : {}),
     };
     await this._execute(
       "UPDATE media_assets SET workspace_id = ?, meeting_id = ?, content_type = ?, transcription_status = 'queued', transcript_json = '[]', diarization_json = ?, updated_at = ? WHERE id = ?",
