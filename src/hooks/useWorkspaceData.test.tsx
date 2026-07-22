@@ -478,6 +478,30 @@ describe('useWorkspaceData', () => {
     unmount();
   });
 
+  test('Regression: #1549 — stops remote bootstrap polling after a controlled 401', async () => {
+    vi.useFakeTimers();
+    stateServiceMock.mode = 'remote';
+    workspaceState.session = { token: 'expired-token', userId: 'u1', workspaceId: 'ws1' };
+    const unauthorized = Object.assign(new Error('Sesja wygasła.'), { status: 401 });
+    stateServiceMock.bootstrap.mockRejectedValue(unauthorized);
+
+    const { unmount } = renderHook(() => useWorkspaceData());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+
+    expect(stateServiceMock.bootstrap).toHaveBeenCalledTimes(1);
+    expect(meetingsState.setWorkspaceMessage).not.toHaveBeenCalledWith('Sesja wygasła.');
+    unmount();
+  });
+
   test('blocks first remote bootstrap on hosted preview when health probe fails', async () => {
     vi.useFakeTimers();
     stateServiceMock.mode = 'remote';

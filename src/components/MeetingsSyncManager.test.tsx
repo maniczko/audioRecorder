@@ -1,12 +1,19 @@
 import { describe, test, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import MeetingsSyncManager from './MeetingsSyncManager';
+import useWorkspaceData from '../hooks/useWorkspaceData';
 
 vi.mock('../hooks/useWorkspaceData', () => ({
   default: vi.fn(),
 }));
 
 describe('MeetingsSyncManager', () => {
+  test('Regression: #1549 — does not create a second workspace synchronization owner', () => {
+    render(<MeetingsSyncManager />);
+
+    expect(useWorkspaceData).not.toHaveBeenCalled();
+  });
+
   test('renders children when provided', () => {
     render(
       <MeetingsSyncManager>

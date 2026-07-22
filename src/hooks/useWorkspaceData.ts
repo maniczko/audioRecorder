@@ -32,6 +32,14 @@ type PendingRemoteSync = {
   state: NormalizedWorkspaceState;
   snapshot: string;
 };
+type StateService = ReturnType<typeof createStateService>;
+type BootstrapPromise = ReturnType<StateService['bootstrap']>;
+type PendingRemoteBootstrap = {
+  key: string;
+  promise: BootstrapPromise;
+};
+
+let pendingRemoteBootstrap: PendingRemoteBootstrap | null = null;
 
 function isBackendUnavailableMessage(message = '') {
   return (
@@ -46,6 +54,33 @@ function isBackendUnavailableMessage(message = '') {
       .includes('browser offline') ||
     isTransportErrorMessage(message)
   );
+}
+
+function isUnauthorizedError(error: unknown) {
+  const details = error as { status?: unknown; statusCode?: unknown } | null | undefined;
+  return Number(details?.status || details?.statusCode || 0) === 401;
+}
+
+function requestRemoteWorkspaceBootstrap(
+  stateService: StateService,
+  workspaceId: string,
+  sessionToken: string
+): BootstrapPromise {
+  const key = `${workspaceId}:${sessionToken}`;
+  if (pendingRemoteBootstrap?.key === key) {
+    return pendingRemoteBootstrap.promise;
+  }
+
+  const promise = stateService.bootstrap(workspaceId);
+  pendingRemoteBootstrap = { key, promise };
+  void promise
+    .finally(() => {
+      if (pendingRemoteBootstrap?.promise === promise) {
+        pendingRemoteBootstrap = null;
+      }
+    })
+    .catch(() => undefined);
+  return promise;
 }
 
 export default function useWorkspaceData() {
@@ -97,14 +132,42 @@ export default function useWorkspaceData() {
   const pendingRemoteSyncRef = useRef<PendingRemoteSync | null>(null);
   const migrationAppliedRef = useRef<string | null>(null);
   const skipRemotePullCooldownOnceRef = useRef(false);
+  const sessionInvalidatedRef = useRef(false);
+  const activeSessionTokenRef = useRef('');
 
   const [isHydratingRemoteState, setIsHydratingRemoteState] = useState(
     stateService?.mode === 'remote' && Boolean(session?.token)
   );
 
+  const stopRemoteWorkForInvalidSession = useCallback(() => {
+    sessionInvalidatedRef.current = true;
+    remotePullCooldownUntilRef.current = Number.POSITIVE_INFINITY;
+    pendingRemoteSyncRef.current = null;
+
+    if (syncTimerRef.current !== null) {
+      window.clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+    if (remotePollTimerRef.current !== null) {
+      window.clearTimeout(remotePollTimerRef.current);
+      remotePollTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const nextToken = String(session?.token || '');
+    if (nextToken && nextToken !== activeSessionTokenRef.current) {
+      sessionInvalidatedRef.current = false;
+      remotePullCooldownUntilRef.current = 0;
+      hydratedWorkspaceIdRef.current = '';
+      remoteSnapshotRef.current = '';
+    }
+    activeSessionTokenRef.current = nextToken;
+  }, [session?.token]);
+
   const applyRemoteWorkspaceState = useCallback(
     (result: any) => {
-      if (!result) return;
+      if (!result || sessionInvalidatedRef.current) return;
 
       if (Array.isArray(result.users)) {
         setUsers(result.users);
@@ -227,7 +290,7 @@ export default function useWorkspaceData() {
 
   const flushRemoteWorkspaceState = useCallback(
     async (requestedState: NormalizedWorkspaceState, requestedSnapshot: string) => {
-      if (!currentWorkspaceId) {
+      if (!currentWorkspaceId || sessionInvalidatedRef.current) {
         return;
       }
 
@@ -245,6 +308,9 @@ export default function useWorkspaceData() {
 
       try {
         while (stateToSync) {
+          if (sessionInvalidatedRef.current) {
+            break;
+          }
           pendingRemoteSyncRef.current = null;
           const delta = buildWorkspaceStateDelta(remoteStateRef.current, stateToSync);
           if (Object.keys(delta).length > 0) {
@@ -325,9 +391,17 @@ export default function useWorkspaceData() {
       return undefined;
     }
 
-    if (!session?.token || !session?.userId) {
+    if (!session?.token || !session?.userId || sessionInvalidatedRef.current) {
       setPreviewRuntimeStatus('unknown');
       hydratedWorkspaceIdRef.current = '';
+      setIsHydratingRemoteState(false);
+      return undefined;
+    }
+
+    if (
+      hydratedWorkspaceIdRef.current === session.workspaceId &&
+      remoteSnapshotRef.current.length > 0
+    ) {
       setIsHydratingRemoteState(false);
       return undefined;
     }
@@ -336,6 +410,9 @@ export default function useWorkspaceData() {
     setIsHydratingRemoteState(true);
 
     const attemptBootstrap = async (recoveryAttempt = 0) => {
+      if (cancelled || sessionInvalidatedRef.current) {
+        return;
+      }
       const canConnect = await ensureHostedPreviewConnectivity();
       if (cancelled || !canConnect) {
         if (!cancelled) {
@@ -350,13 +427,22 @@ export default function useWorkspaceData() {
 
       isBootstrappingRef.current = true;
       try {
-        const result = await stateService.bootstrap(session.workspaceId);
+        const result = await requestRemoteWorkspaceBootstrap(
+          stateService,
+          session.workspaceId,
+          session.token
+        );
         if (cancelled || !result) {
           return;
         }
         applyRemoteWorkspaceState(result);
       } catch (error: any) {
         if (cancelled) {
+          return;
+        }
+
+        if (isUnauthorizedError(error)) {
+          stopRemoteWorkForInvalidSession();
           return;
         }
         applyRemoteTransportCooldown(error);
@@ -397,6 +483,7 @@ export default function useWorkspaceData() {
     session?.userId,
     session?.workspaceId,
     stateService,
+    stopRemoteWorkForInvalidSession,
   ]);
 
   useEffect(() => {
@@ -404,7 +491,12 @@ export default function useWorkspaceData() {
       return undefined;
     }
 
-    if (!session?.token || !currentWorkspaceId || isHydratingRemoteState) {
+    if (
+      !session?.token ||
+      !currentWorkspaceId ||
+      isHydratingRemoteState ||
+      sessionInvalidatedRef.current
+    ) {
       return undefined;
     }
 
@@ -470,7 +562,12 @@ export default function useWorkspaceData() {
       return undefined;
     }
 
-    if (!session?.token || !currentWorkspaceId || isHydratingRemoteState) {
+    if (
+      !session?.token ||
+      !currentWorkspaceId ||
+      isHydratingRemoteState ||
+      sessionInvalidatedRef.current
+    ) {
       return undefined;
     }
 
@@ -491,7 +588,7 @@ export default function useWorkspaceData() {
     };
 
     const pullRemoteWorkspaceState = () => {
-      if (cancelled) return;
+      if (cancelled || sessionInvalidatedRef.current) return;
 
       // Skip when hidden, offline, or circuit breaker is open
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
@@ -527,7 +624,11 @@ export default function useWorkspaceData() {
             return;
           }
 
-          const result = await stateService.bootstrap(currentWorkspaceId);
+          const result = await requestRemoteWorkspaceBootstrap(
+            stateService,
+            currentWorkspaceId,
+            String(session?.token || '')
+          );
           if (cancelled || !result?.state) {
             consecutivePollFailures = 0;
             return;
@@ -541,6 +642,11 @@ export default function useWorkspaceData() {
 
           consecutivePollFailures = 0;
         } catch (error) {
+          if (isUnauthorizedError(error)) {
+            stopRemoteWorkForInvalidSession();
+            cancelled = true;
+            return;
+          }
           consecutivePollFailures += 1;
           applyRemoteTransportCooldown(error);
           logRemoteErrorOnce('Remote workspace pull failed.', error);
@@ -576,6 +682,7 @@ export default function useWorkspaceData() {
     pushWorkspaceMessage,
     session?.token,
     stateService,
+    stopRemoteWorkForInvalidSession,
   ]);
 
   const userMeetings = useMemo(
