@@ -46,6 +46,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: Preserve repository-owned setup action
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/setup-node-pnpm-action"
+          mkdir -p "$RUNNER_TEMP/setup-node-pnpm-action"
+          cp -R .github/actions/setup-node-pnpm/. "$RUNNER_TEMP/setup-node-pnpm-action/"
+
       - uses: ./.github/actions/setup-node-pnpm
         with:
           install-profile: native
@@ -57,12 +66,21 @@ jobs:
           build-script: 'pnpm run build'
 
       # compressed-size-action checks out main to compare bundle output. Restore
-      # the PR tree so the post step of the local setup action can load action.yml.
+      # the PR tree before the composite action's nested post steps run.
       - name: Restore pull request checkout for action cleanup
         if: always()
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Restore repository-owned setup action for post steps
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$RUNNER_TEMP/setup-node-pnpm-action/action.yml"
+          mkdir -p .github/actions/setup-node-pnpm
+          cp -R "$RUNNER_TEMP/setup-node-pnpm-action/." .github/actions/setup-node-pnpm/
 
   security-scan:
     runs-on: ubuntu-latest
