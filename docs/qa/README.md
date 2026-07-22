@@ -23,6 +23,19 @@ This directory is the source of truth for repeatable browser scenarios executed 
 
 The premium coverage plan is the complete target model. The scenario index lists scenarios that have been fully written and are ready to execute. A catalogue entry is not considered executable until it has a detailed scenario file following `TEST_SCENARIO_STANDARD.md`.
 
+## Implementation queue
+
+Scenario documentation and automated implementation are delivered separately:
+
+1. Merge the reviewed scenario definition and coverage contract.
+2. Create one implementation issue for one coherent scenario package.
+3. Use one branch and one pull request for that package.
+4. Keep the scenario status as `ready` or `partial` until green CI evidence exists.
+5. Change the status to `automated` only when the linked test is maintained and release-relevant checks pass.
+6. Do not weaken product behavior or assertions to make a scenario pass; open a defect issue when the application violates the documented contract.
+
+The first implementation package is tracked by `#1538` for `AUTH-001` through `AUTH-004`.
+
 ## Execution result template
 
 ```markdown
