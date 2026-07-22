@@ -130,6 +130,66 @@ if (!_env.success) {
 export const config = _env.data;
 export type Config = z.infer<typeof envSchema>;
 
+export interface DeploymentEnvironment {
+  NODE_ENV?: string;
+  RAILWAY_ENVIRONMENT_NAME?: string;
+  RAILWAY_PROJECT_ID?: string;
+  DATABASE_URL?: string;
+  VOICELOG_DATABASE_URL?: string;
+}
+
+export function isProductionDeployment(env: DeploymentEnvironment = process.env): boolean {
+  if (env.NODE_ENV === 'test') {
+    return false;
+  }
+  return Boolean(
+    env.NODE_ENV === 'production' || env.RAILWAY_ENVIRONMENT_NAME || env.RAILWAY_PROJECT_ID
+  );
+}
+
+export function getConfiguredDatabaseUrl(env: DeploymentEnvironment = process.env): string | null {
+  const value = env.VOICELOG_DATABASE_URL || env.DATABASE_URL;
+  const normalized = value?.trim();
+  return normalized || null;
+}
+
+function hasIncompleteSupabasePostgresHost(hostname: string): boolean {
+  const labels = hostname.split('.').filter(Boolean);
+  return labels.length === 2 && ['db', 'postgres'].includes(labels[0]);
+}
+
+export function validatePostgresDatabaseUrl(value: string | null | undefined): string | null {
+  if (!value) {
+    return 'Missing PostgreSQL database URL. Set VOICELOG_DATABASE_URL or DATABASE_URL.';
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
+      return 'Database URL must use the postgres:// or postgresql:// protocol.';
+    }
+    if (!parsed.hostname) {
+      return 'PostgreSQL database URL must include a host.';
+    }
+    if (hasIncompleteSupabasePostgresHost(parsed.hostname)) {
+      return 'PostgreSQL database URL must include a complete resolvable Supabase host.';
+    }
+  } catch {
+    return 'PostgreSQL database URL is malformed.';
+  }
+
+  return null;
+}
+
+export function getProductionDatabaseConfigurationError(
+  env: DeploymentEnvironment = process.env
+): string | null {
+  if (!isProductionDeployment(env)) {
+    return null;
+  }
+  return validatePostgresDatabaseUrl(getConfiguredDatabaseUrl(env));
+}
+
 function isValidSupabaseProjectUrl(value?: string) {
   if (!value) return false;
   try {
@@ -177,14 +237,6 @@ function logCorsStartupConfig(allowedOrigins: string, allowVercelPreviews: boole
   });
 }
 
-function isProductionDeployment() {
-  return Boolean(
-    config.NODE_ENV === 'production' ||
-    process.env.RAILWAY_ENVIRONMENT_NAME ||
-    process.env.RAILWAY_PROJECT_ID
-  );
-}
-
 export function validateRequiredApiKeys() {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -194,6 +246,11 @@ export function validateRequiredApiKeys() {
   logCorsStartupConfig(allowedOrigins, allowVercelPreviews);
 
   if (isProductionDeployment()) {
+    const databaseConfigError = getProductionDatabaseConfigurationError();
+    if (databaseConfigError) {
+      errors.push(databaseConfigError);
+    }
+
     if (splitAllowedOrigins(allowedOrigins).includes('*')) {
       errors.push(
         'Production CORS cannot use VOICELOG_ALLOWED_ORIGINS=*.\n' +

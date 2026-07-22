@@ -66,6 +66,29 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
     expect(report.errors.map((entry) => entry.name)).not.toContain('STT_PROVIDER');
   });
 
+  // ----------------------------------------------------------------
+  // Issue #1510 — production PostgreSQL is mandatory
+  // Date: 2026-07-21
+  // Bug: the standalone configuration validator only warned when the
+  //      production database URL was missing.
+  // Fix: missing production PostgreSQL configuration is a blocking error.
+  // ----------------------------------------------------------------
+  it('blocks production when PostgreSQL configuration is missing', () => {
+    const report = validateEnvironmentSnapshot(
+      createBaseEnv({
+        NODE_ENV: 'production',
+        VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
+        SUPABASE_URL: 'https://project-ref.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+        DATABASE_URL: undefined,
+        VOICELOG_DATABASE_URL: undefined,
+      })
+    );
+
+    expect(report.blocking).toBe(true);
+    expect(report.errors.map((entry) => entry.name)).toContain('DATABASE_URL');
+  });
+
   it('accepts the default GitHub Actions token format', () => {
     const report = validateEnvironmentSnapshot(
       createBaseEnv({
@@ -120,6 +143,7 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
         VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
         SUPABASE_URL: 'https://test.supabase.co',
         SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
+        DATABASE_URL: 'postgresql://postgres:secret@db.project-ref.supabase.co:5432/postgres',
       })
     );
 
@@ -153,6 +177,7 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
         VOICELOG_ALLOW_VERCEL_PREVIEWS: 'true',
         SUPABASE_URL: 'https://test.supabase.co',
         SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+        DATABASE_URL: 'postgresql://postgres:secret@db.project-ref.supabase.co:5432/postgres',
       })
     );
 
@@ -167,6 +192,7 @@ describe('Regression: Issue #0 - validate-env should not fail on optional integr
         VOICELOG_ALLOWED_ORIGINS: 'https://voicelog.example.com',
         SUPABASE_URL: 'https://test.supabase.co',
         SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_test_key',
+        DATABASE_URL: 'postgresql://postgres:secret@db.project-ref.supabase.co:5432/postgres',
       })
     );
 
