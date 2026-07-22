@@ -18,11 +18,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - name: Checkout code (dependabot)
         uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
+
+      # A pull request may predate the repository-owned composite action. The
+      # default pull_request checkout uses the synthetic merge commit, so the
+      # current main-branch action is available without executing an explicit
+      # stale PR-head checkout.
+      - name: Preserve repository-owned setup action
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/setup-node-pnpm-action"
+          mkdir -p "$RUNNER_TEMP/setup-node-pnpm-action"
+          cp -R .github/actions/setup-node-pnpm/. "$RUNNER_TEMP/setup-node-pnpm-action/"
+
       - uses: ./.github/actions/setup-node-pnpm
         with:
           install-profile: native
@@ -141,9 +152,18 @@ jobs:
             }
 
       # compressed-size-action checks out main to compare bundle output. Restore
-      # the PR tree so the post step of the local setup action can load action.yml.
+      # the PR tree before the composite action's nested post steps run.
       - name: Restore pull request checkout for action cleanup
         if: always() && github.event_name == 'pull_request'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Restore repository-owned setup action for post steps
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$RUNNER_TEMP/setup-node-pnpm-action/action.yml"
+          mkdir -p .github/actions/setup-node-pnpm
+          cp -R "$RUNNER_TEMP/setup-node-pnpm-action/." .github/actions/setup-node-pnpm/
