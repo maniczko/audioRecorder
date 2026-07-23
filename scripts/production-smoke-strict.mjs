@@ -2,6 +2,8 @@ import { runProductionSmoke } from './production-smoke.mjs';
 
 process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE = 'true';
 process.env.PRODUCTION_REQUIRE_KNOWN_GIT_SHA = 'true';
+process.env.PRODUCTION_EXPECTED_GIT_SHA =
+  process.env.PRODUCTION_EXPECTED_GIT_SHA || process.env.GITHUB_SHA || '';
 process.env.PRODUCTION_REQUIRE_SENTRY_DSN = 'true';
 process.env.PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE = 'true';
 process.env.PRODUCTION_REQUIRE_VOICE_PROFILE_SMOKE = 'true';

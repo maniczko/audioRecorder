@@ -43,9 +43,27 @@ describe('audio production smoke', () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const pathName = new URL(url).pathname;
 
+      if (pathName === '/health/live') {
+        return jsonResponse({
+          ok: true,
+          check: 'liveness',
+          gitSha: 'abc123',
+        });
+      }
+
       if (pathName === '/health') {
         return jsonResponse({
           ok: true,
+          gitSha: 'abc123',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/ready') {
+        return jsonResponse({
+          ok: true,
+          status: 'ok',
           supabaseRemote: true,
           supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
         });
@@ -85,6 +103,17 @@ describe('audio production smoke', () => {
             provider: 'openai',
             model: 'gpt-4o-transcribe',
           },
+        });
+      }
+
+      if (
+        pathName === '/media/recordings/smoke_1780000000000' &&
+        (!init?.method || init.method === 'GET')
+      ) {
+        return jsonResponse({
+          id: 'smoke_1780000000000',
+          workspaceId: 'workspace_1',
+          durationMs: 500,
         });
       }
 
@@ -145,11 +174,36 @@ describe('audio production smoke', () => {
     expect(persisted.steps.map((step: any) => step.name)).toContain(
       'transcript persisted or empty transcript reported'
     );
+    expect(persisted.steps.map((step: any) => step.name)).toContain('audio download works');
+    expect(persisted.steps.map((step: any) => step.name)).toContain(
+      'reload recording and verify persistence'
+    );
     expect(persisted.steps.map((step: any) => step.name)).toContain('cleanup smoke recording');
     expect(persisted.smokeData).toMatchObject({
       prefix: 'smoke_',
       cleanupRequested: true,
       identifiable: true,
+    });
+    expect(
+      persisted.steps.find(
+        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+      )
+    ).toMatchObject({
+      ok: true,
+      details: {
+        transcriptState: 'completed',
+        transcriptNote: 'transcript persisted',
+        segmentCount: 1,
+      },
+    });
+    expect(
+      persisted.steps.find((step: any) => step.name === 'reload recording and verify persistence')
+    ).toMatchObject({
+      ok: true,
+      details: {
+        recordingId: 'smoke_1780000000000',
+        workspaceId: 'workspace_1',
+      },
     });
   });
 
@@ -167,9 +221,27 @@ describe('audio production smoke', () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const pathName = new URL(url).pathname;
 
+      if (pathName === '/health/live') {
+        return jsonResponse({
+          ok: true,
+          check: 'liveness',
+          gitSha: 'abc123',
+        });
+      }
+
       if (pathName === '/health') {
         return jsonResponse({
           ok: true,
+          gitSha: 'abc123',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/ready') {
+        return jsonResponse({
+          ok: true,
+          status: 'ok',
           supabaseRemote: true,
           supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
         });
@@ -186,6 +258,16 @@ describe('audio production smoke', () => {
           transcriptOutcome: 'empty',
           emptyReason: 'fixture silence',
           segments: [],
+        });
+      }
+
+      if (
+        pathName === '/media/recordings/smoke_1780000000000' &&
+        (!init?.method || init.method === 'GET')
+      ) {
+        return jsonResponse({
+          id: 'smoke_1780000000000',
+          workspaceId: 'workspace_1',
         });
       }
 
@@ -217,6 +299,17 @@ describe('audio production smoke', () => {
         ok: true,
       })
     );
+    expect(
+      report.steps.find(
+        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+      )
+    ).toMatchObject({
+      ok: true,
+      details: {
+        transcriptState: 'empty',
+        transcriptNote: 'transcript intentionally empty',
+      },
+    });
     expect(fetchMock).not.toHaveBeenCalledWith(
       'https://api.example.com/media/recordings/smoke_1780000000000',
       expect.objectContaining({ method: 'DELETE' })
@@ -225,20 +318,125 @@ describe('audio production smoke', () => {
 
   it('reads cleanup and staging smoke credentials from environment', () => {
     const options = optionsFromEnv({
-      VOICELOG_SMOKE_BASE_URL: 'https://staging.example.com/',
-      VOICELOG_SMOKE_TOKEN: 'secret-token',
-      VOICELOG_SMOKE_WORKSPACE_ID: 'workspace_smoke',
-      VOICELOG_SMOKE_CLEANUP: 'true',
-      VOICELOG_SMOKE_REPORT: 'reports/custom.json',
+      PRODUCTION_SMOKE_BASE_URL: 'https://staging.example.com/',
+      PRODUCTION_SMOKE_AUTH_TOKEN: 'secret-token',
+      PRODUCTION_SMOKE_WORKSPACE_ID: 'workspace_smoke',
+      PRODUCTION_EXPECTED_GIT_SHA: 'abc123',
+      PRODUCTION_SMOKE_CLEANUP: 'true',
+      PRODUCTION_SMOKE_REPORT: 'reports/custom.json',
     } as any);
 
     expect(options).toMatchObject({
       baseUrl: 'https://staging.example.com',
       token: 'secret-token',
+      expectedGitSha: 'abc123',
       workspaceId: 'workspace_smoke',
       cleanup: true,
       reportPath: 'reports/custom.json',
     });
+  });
+
+  it('treats failed transcript outcome as hard-failure while keeping transcript data sanitized', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-prod-smoke-failed-'));
+    const reportPath = path.join(tempDir, 'report.json');
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const pathName = new URL(url).pathname;
+
+      if (pathName === '/health/live') {
+        return jsonResponse({
+          ok: true,
+          check: 'liveness',
+          gitSha: 'abc123',
+        });
+      }
+
+      if (pathName === '/health') {
+        return jsonResponse({
+          ok: true,
+          gitSha: 'abc123',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/ready') {
+        return jsonResponse({
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method === 'PUT') {
+        return jsonResponse({ id: 'smoke_1780000000000' }, 201);
+      }
+
+      if (
+        pathName === '/media/recordings/smoke_1780000000000/transcribe' &&
+        init?.method === 'POST'
+      ) {
+        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'queued' }, 202);
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/transcribe') {
+        return jsonResponse({
+          recordingId: 'smoke_1780000000000',
+          pipelineStatus: 'failed',
+          transcriptOutcome: 'failed',
+          errorCode: 'timeout',
+          segments: [{ text: 'do-not-leak-this-transcript' }],
+        });
+      }
+
+      if (
+        pathName === '/media/recordings/smoke_1780000000000' &&
+        (!init?.method || init.method === 'GET')
+      ) {
+        return jsonResponse({
+          id: 'smoke_1780000000000',
+          workspaceId: 'workspace_1',
+        });
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method !== 'PUT') {
+        return binaryResponse(new Uint8Array([1, 2, 3, 4]));
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000/retry-transcribe') {
+        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'failed' }, 200);
+      }
+
+      if (pathName === '/media/recordings/smoke_1780000000000' && init?.method === 'DELETE') {
+        return jsonResponse({ deleted: true });
+      }
+
+      throw new Error(`Unexpected smoke request: ${init?.method || 'GET'} ${pathName}`);
+    });
+
+    const report = await runAudioProdSmoke({
+      baseUrl: 'https://api.example.com',
+      token: 'smoke-token',
+      workspaceId: 'workspace_1',
+      reportPath,
+      fetchImpl: fetchMock as any,
+      now: () => 1780000000000,
+      sleepMs: async () => {},
+      maxPollAttempts: 1,
+      cleanup: true,
+    });
+
+    const persisted = JSON.parse(await fs.readFile(reportPath, 'utf8'));
+    expect(
+      report.steps.find(
+        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+      )
+    ).toMatchObject({
+      ok: false,
+      details: { transcriptState: 'failed', transcriptOutcome: 'failed' },
+    });
+    expect(report.steps.every((step) => step.ok)).toBe(false);
+    expect(JSON.stringify(persisted)).not.toContain('do-not-leak-this-transcript');
   });
 
   it('stops before upload when auth or workspace evidence is missing', async () => {
@@ -264,7 +462,7 @@ describe('audio production smoke', () => {
     expect(report.steps.some((step) => step.name === 'preflight credentials' && !step.ok)).toBe(
       true
     );
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('Regression: CLI result reports the same JSON path that was written', async () => {
@@ -303,7 +501,7 @@ describe('audio production smoke', () => {
       now: () => 1780000000000,
     });
 
-    const healthStep = report.steps.find((step) => step.name === '/health ok');
+    const healthStep = report.steps.find((step) => step.name === '/health and backend git SHA');
     expect(healthStep).toMatchObject({
       ok: false,
       error: 'fetch failed',
@@ -352,6 +550,6 @@ describe('audio production smoke', () => {
       },
     });
     expect(JSON.stringify(supabaseStep?.details)).toContain('Supabase');
-    expect(JSON.stringify(supabaseStep?.details)).toContain('VOICELOG');
+    expect(JSON.stringify(supabaseStep?.details)).toContain('SUPABASE');
   });
 });

@@ -6,12 +6,6 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
-    inputs:
-      run_audio_smoke:
-        description: 'Run the seeded audio upload/transcription smoke after the health smoke'
-        required: false
-        default: false
-        type: boolean
 
 concurrency:
   group: backend-production-smoke-${{ github.ref }}
@@ -26,12 +20,13 @@ jobs:
       contents: read
       issues: write
     env:
-      VOICELOG_SMOKE_BASE_URL: ${{ secrets.VOICELOG_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
-      VOICELOG_SMOKE_TOKEN: ${{ secrets.VOICELOG_SMOKE_TOKEN }}
-      VOICELOG_SMOKE_EMAIL: ${{ secrets.VOICELOG_SMOKE_EMAIL }}
-      VOICELOG_SMOKE_PASSWORD: ${{ secrets.VOICELOG_SMOKE_PASSWORD }}
-      VOICELOG_SMOKE_WORKSPACE_ID: ${{ secrets.VOICELOG_SMOKE_WORKSPACE_ID }}
-      VOICELOG_SMOKE_CLEANUP: 'true'
+      PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
+      PRODUCTION_SMOKE_AUTH_TOKEN: ${{ secrets.PRODUCTION_SMOKE_AUTH_TOKEN }}
+      PRODUCTION_SMOKE_EMAIL: ${{ secrets.PRODUCTION_SMOKE_EMAIL }}
+      PRODUCTION_SMOKE_PASSWORD: ${{ secrets.PRODUCTION_SMOKE_PASSWORD }}
+      PRODUCTION_SMOKE_WORKSPACE_ID: ${{ secrets.PRODUCTION_SMOKE_WORKSPACE_ID }}
+      PRODUCTION_EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      PRODUCTION_SMOKE_CLEANUP: 'true'
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v7
@@ -66,13 +61,12 @@ jobs:
           SMOKE_WAIT_MS: '10000'
 
       - name: Validate audio smoke secrets
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_audio_smoke == true }}
         shell: bash
         run: |
           missing=()
-          [[ -n "$VOICELOG_SMOKE_WORKSPACE_ID" ]] || missing+=("VOICELOG_SMOKE_WORKSPACE_ID")
-          if [[ -z "$VOICELOG_SMOKE_TOKEN" && ( -z "$VOICELOG_SMOKE_EMAIL" || -z "$VOICELOG_SMOKE_PASSWORD" ) ]]; then
-            missing+=("VOICELOG_SMOKE_TOKEN or VOICELOG_SMOKE_EMAIL/VOICELOG_SMOKE_PASSWORD")
+          [[ -n "$PRODUCTION_SMOKE_WORKSPACE_ID" ]] || missing+=("PRODUCTION_SMOKE_WORKSPACE_ID")
+          if [[ -z "$PRODUCTION_SMOKE_AUTH_TOKEN" && ( -z "$PRODUCTION_SMOKE_EMAIL" || -z "$PRODUCTION_SMOKE_PASSWORD" ) ]]; then
+            missing+=("PRODUCTION_SMOKE_AUTH_TOKEN or PRODUCTION_SMOKE_EMAIL/PRODUCTION_SMOKE_PASSWORD")
           fi
 
           if [ ${#missing[@]} -gt 0 ]; then
@@ -86,10 +80,9 @@ jobs:
 
       - name: Seeded audio upload and transcription smoke
         id: audio-smoke
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_audio_smoke == true) || (github.event_name == 'workflow_run' && env.VOICELOG_SMOKE_WORKSPACE_ID != '' && (env.VOICELOG_SMOKE_TOKEN != '' || (env.VOICELOG_SMOKE_EMAIL != '' && env.VOICELOG_SMOKE_PASSWORD != ''))) }}
         shell: bash
         run: |
-          echo "Running seeded audio smoke against ${VOICELOG_SMOKE_BASE_URL}"
+          echo "Running seeded audio smoke against ${PRODUCTION_SMOKE_BASE_URL}"
           pnpm run release:audio-prod-smoke
 
       - name: Upload audio smoke report

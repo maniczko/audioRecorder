@@ -185,7 +185,7 @@ describe('release readiness gates', () => {
     ).toContain('health stt.provider must be openai, received groq');
   });
 
-  it('can require a known backend git SHA for production release evidence', () => {
+  it('can require exact or known backend git SHA for production release evidence', () => {
     expect(
       evaluateHealthPayload(
         {
@@ -208,6 +208,31 @@ describe('release readiness gates', () => {
           gitSha: 'abc123',
         },
         { requireKnownGitSha: true, requirePremiumStt: false }
+      )
+    ).toEqual([]);
+
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'def456',
+        },
+        { requireKnownGitSha: false, requirePremiumStt: false, expectedGitSha: 'abc123' }
+      )
+    ).toContain('backend health gitSha mismatch (expected abc123, received def456)');
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
+        { requireKnownGitSha: false, requirePremiumStt: false, expectedGitSha: 'abc123' }
       )
     ).toEqual([]);
   });
@@ -844,6 +869,9 @@ describe('release readiness gates', () => {
     expect(backendSmokeWorkflow).toContain("workflows: ['Railway Build Metadata']");
     expect(backendSmokeWorkflow).toContain("REQUIRE_EXACT_GIT_SHA: 'true'");
     expect(vercelWorkflow).toContain("workflows: ['Railway Build Metadata']");
+    expect(vercelWorkflow).toContain(
+      'PRODUCTION_EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}'
+    );
   });
 
   it('keeps Railway storage secrets synchronized with the production database', () => {

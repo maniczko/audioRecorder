@@ -79,6 +79,7 @@ jobs:
           PRODUCTION_API_BASE_URL: ${{ steps.vercel_deploy.outputs.production_url }}
           PRODUCTION_REQUIRE_SUPABASE_REMOTE: 'true'
           PRODUCTION_REQUIRE_KNOWN_GIT_SHA: 'true'
+          PRODUCTION_EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
           PRODUCTION_REQUIRE_SENTRY_DSN: 'true'
           PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE: 'true'
           PRODUCTION_REQUIRE_STALE_RECORDING_SMOKE: 'true'

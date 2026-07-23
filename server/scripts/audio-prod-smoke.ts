@@ -17,6 +17,7 @@ export type AudioProdSmokeOptions = {
   password?: string;
   token?: string;
   workspaceId: string;
+  expectedGitSha?: string;
   reportPath: string;
   cleanup?: boolean;
   fetchImpl?: typeof fetch;
@@ -48,13 +49,16 @@ function defaultReportPath() {
 
 export function optionsFromEnv(env = process.env): AudioProdSmokeOptions {
   return {
-    baseUrl: String(env.VOICELOG_SMOKE_BASE_URL || 'http://localhost:4001').replace(/\/$/, ''),
-    email: String(env.VOICELOG_SMOKE_EMAIL || ''),
-    password: String(env.VOICELOG_SMOKE_PASSWORD || ''),
-    token: String(env.VOICELOG_SMOKE_TOKEN || ''),
-    workspaceId: String(env.VOICELOG_SMOKE_WORKSPACE_ID || ''),
-    reportPath: String(env.VOICELOG_SMOKE_REPORT || defaultReportPath()),
-    cleanup: String(env.VOICELOG_SMOKE_CLEANUP || '').toLowerCase() === 'true',
+    baseUrl: String(
+      env.PRODUCTION_SMOKE_BASE_URL || env.PRODUCTION_API_BASE_URL || 'http://localhost:4001'
+    ).replace(/\/$/, ''),
+    email: String(env.PRODUCTION_SMOKE_EMAIL || ''),
+    password: String(env.PRODUCTION_SMOKE_PASSWORD || ''),
+    token: String(env.PRODUCTION_SMOKE_AUTH_TOKEN || ''),
+    workspaceId: String(env.PRODUCTION_SMOKE_WORKSPACE_ID || ''),
+    expectedGitSha: String(env.PRODUCTION_EXPECTED_GIT_SHA || env.GITHUB_SHA || ''),
+    reportPath: String(env.PRODUCTION_SMOKE_REPORT || defaultReportPath()),
+    cleanup: String(env.PRODUCTION_SMOKE_CLEANUP || '').toLowerCase() === 'true',
   };
 }
 
@@ -125,17 +129,82 @@ function isTerminalTranscriptionStatus(payload: JsonObject) {
   );
 }
 
-function hasPersistedOrControlledEmptyTranscript(payload: JsonObject) {
+function compareExpectedGitSha(details: JsonObject, expectedGitSha = '') {
+  const actual = String(details.gitSha || '').trim();
+  const expected = String(expectedGitSha || '')
+    .trim()
+    .toLowerCase();
+
+  if (!expected) {
+    return { ok: true };
+  }
+
+  if (!actual) {
+    return { ok: false, message: 'health did not return gitSha for SHA verification' };
+  }
+
+  if (actual.toLowerCase() !== expected.toLowerCase()) {
+    return {
+      ok: false,
+      message: `backend git SHA mismatch (expected ${expected}, received ${actual})`,
+    };
+  }
+
+  return { ok: true };
+}
+
+function classifyTranscriptFinalState(payload: JsonObject) {
   const segments = Array.isArray(payload.segments) ? payload.segments : [];
   const transcriptOutcome = String(payload.transcriptOutcome || '').toLowerCase();
   const pipelineStatus = String(payload.pipelineStatus || payload.status || '').toLowerCase();
-  return (
-    segments.length > 0 ||
-    transcriptOutcome === 'empty' ||
+  const isFailed =
+    pipelineStatus === 'failed' ||
     transcriptOutcome === 'failed' ||
-    transcriptOutcome === 'failed_permanent' ||
-    pipelineStatus === 'failed'
-  );
+    transcriptOutcome === 'failed_permanent';
+  const isEmptyOutcome = transcriptOutcome === 'empty';
+  const hasText = segments.length > 0;
+
+  if (isFailed) {
+    return {
+      ok: false,
+      state: 'failed',
+      segmentCount: segments.length,
+      transcriptOutcome,
+      emptyReason: payload.emptyReason || null,
+      note: `transcription failed with outcome ${transcriptOutcome || pipelineStatus || 'unknown'}`,
+    };
+  }
+
+  if (isEmptyOutcome) {
+    return {
+      ok: true,
+      state: 'empty',
+      segmentCount: segments.length,
+      transcriptOutcome,
+      emptyReason: payload.emptyReason || null,
+      note: 'transcript intentionally empty',
+    };
+  }
+
+  if (pipelineStatus === 'done' && !isFailed && !isEmptyOutcome && hasText) {
+    return {
+      ok: true,
+      state: 'completed',
+      segmentCount: segments.length,
+      transcriptOutcome,
+      emptyReason: null,
+      note: 'transcript persisted',
+    };
+  }
+
+  return {
+    ok: false,
+    state: 'not-persisted',
+    segmentCount: segments.length,
+    transcriptOutcome,
+    emptyReason: payload.emptyReason || null,
+    note: 'transcript not in a completed successful state',
+  };
 }
 
 async function smokeRequest(
@@ -217,16 +286,36 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
   let token = input.token || '';
   let recordingId = `${SMOKE_RECORDING_PREFIX}${now()}`;
   let lastTranscriptionStatus: JsonObject = {};
+  const expectedGitSha = input.expectedGitSha || '';
 
   report.steps.push(
-    await step('/health ok', async () => {
-      const res = await smokeRequest(requestOptions, '/health');
+    await step('/health/live', async () => {
+      const res = await smokeRequest(requestOptions, '/health/live');
       const body = await readJson(res);
       return {
         ok: res.ok,
         status: res.status,
         requestId: headerValue(res.headers, 'x-request-id'),
         details: sanitizeDetails(body),
+      };
+    })
+  );
+
+  report.steps.push(
+    await step('/health and backend git SHA', async () => {
+      const res = await smokeRequest(requestOptions, '/health');
+      const body = await readJson(res);
+      const healthShaCheck = compareExpectedGitSha(body, expectedGitSha);
+      return {
+        ok: res.ok && healthShaCheck.ok,
+        status: res.status,
+        requestId: headerValue(res.headers, 'x-request-id'),
+        details: {
+          ...sanitizeDetails(body),
+          expectedGitSha: expectedGitSha || undefined,
+          actualGitSha: body?.gitSha || undefined,
+          gitShaMismatch: healthShaCheck.ok ? undefined : healthShaCheck.message,
+        },
       };
     })
   );
@@ -254,6 +343,19 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
               ? undefined
               : 'Supabase storage is not production-ready; verify VOICELOG_SUPABASE_URL, VOICELOG_SUPABASE_SERVICE_ROLE_KEY, VOICELOG_SUPABASE_STORAGE_BUCKET and bucket read/write permissions.',
         },
+      };
+    })
+  );
+
+  report.steps.push(
+    await step('/ready', async () => {
+      const res = await smokeRequest(requestOptions, '/ready');
+      const body = await readJson(res);
+      return {
+        ok: res.ok,
+        status: res.status,
+        requestId: headerValue(res.headers, 'x-request-id'),
+        details: sanitizeDetails(body),
       };
     })
   );
@@ -351,7 +453,7 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
   );
 
   report.steps.push(
-    await step('poll to terminal status with diagnostics', async () => {
+    await step('poll transcription to terminal status', async () => {
       for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
         const res = await smokeRequest(
           requestOptions,
@@ -377,6 +479,25 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
   );
 
   report.steps.push(
+    await step('reload recording and verify persistence', async () => {
+      const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
+        headers: authHeaders(token, workspaceId),
+      });
+      const body = await readJson(res);
+      const bodyId = String(body.id || body.recordingId || '');
+      return {
+        ok: res.ok && bodyId === recordingId,
+        status: res.status,
+        requestId: headerValue(res.headers, 'x-request-id'),
+        details: {
+          recordingId: body.id || body.recordingId,
+          workspaceId: body.workspaceId || body.workspace_id || body.workspace?.id,
+        },
+      };
+    })
+  );
+
+  report.steps.push(
     await step('transcript persisted or empty transcript reported', async () => {
       const res = await smokeRequest(
         requestOptions,
@@ -387,11 +508,18 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
       );
       const body = await readJson(res);
       lastTranscriptionStatus = body;
+      const classification = classifyTranscriptFinalState(body);
       return {
-        ok: res.ok && hasPersistedOrControlledEmptyTranscript(body),
+        ok: res.ok && classification.ok,
         status: res.status,
         requestId: headerValue(res.headers, 'x-request-id'),
-        details: sanitizeDetails(body),
+        details: {
+          ...sanitizeDetails(body),
+          transcriptState: classification.state,
+          transcriptNote: classification.note,
+          emptyReason: classification.emptyReason,
+          segmentCount: classification.segmentCount,
+        },
       };
     })
   );

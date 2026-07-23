@@ -705,6 +705,7 @@ export function evaluateHealthPayload(
   {
     requireSupabaseRemote = true,
     requireKnownGitSha = false,
+    expectedGitSha = '',
     requirePremiumStt = process.env.PRODUCTION_REQUIRE_PREMIUM_STT !== 'false',
   } = {}
 ) {
@@ -744,6 +745,16 @@ export function evaluateHealthPayload(
     .toLowerCase();
   if (requireKnownGitSha && (!gitSha || gitSha === 'unknown')) {
     failures.push('health gitSha must be configured and cannot be unknown in production');
+    return failures;
+  }
+
+  const normalizedExpectedGitSha = String(expectedGitSha || '')
+    .trim()
+    .toLowerCase();
+  if (normalizedExpectedGitSha && (!gitSha || gitSha !== normalizedExpectedGitSha)) {
+    failures.push(
+      `backend health gitSha mismatch (expected ${normalizedExpectedGitSha}, received ${gitSha || 'unknown'})`
+    );
   }
 
   if (requirePremiumStt) {
@@ -770,6 +781,7 @@ export async function runProductionSmoke({
   apiBaseUrl = process.env.PRODUCTION_API_BASE_URL || frontendUrl,
   requireSupabaseRemote = process.env.PRODUCTION_REQUIRE_SUPABASE_REMOTE !== 'false',
   requireKnownGitSha = process.env.PRODUCTION_REQUIRE_KNOWN_GIT_SHA === 'true',
+  expectedGitSha = process.env.PRODUCTION_EXPECTED_GIT_SHA || process.env.GITHUB_SHA || '',
   requirePremiumStt = process.env.PRODUCTION_REQUIRE_PREMIUM_STT !== 'false',
   requireSentryDsn = process.env.PRODUCTION_REQUIRE_SENTRY_DSN === 'true',
   requireAudioUploadSmoke = process.env.PRODUCTION_REQUIRE_AUDIO_UPLOAD_SMOKE === 'true',
@@ -811,6 +823,7 @@ export async function runProductionSmoke({
   const healthFailures = evaluateHealthPayload(healthPayload, {
     requireSupabaseRemote,
     requireKnownGitSha,
+    expectedGitSha,
     requirePremiumStt,
   });
   if (healthFailures.length > 0) {

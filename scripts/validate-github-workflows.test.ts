@@ -473,23 +473,31 @@ describe('GitHub workflows validation', () => {
     const artifactStep = steps.find((step) => step.name === 'Upload audio smoke report');
     const expression = (value: string) => ['$', '{{ ', value, ' }}'].join('');
 
-    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('run_audio_smoke');
-    expect(job?.env?.VOICELOG_SMOKE_BASE_URL).toContain('secrets.VOICELOG_SMOKE_BASE_URL');
-    expect(job?.env?.VOICELOG_SMOKE_TOKEN).toBe(expression('secrets.VOICELOG_SMOKE_TOKEN'));
-    expect(job?.env?.VOICELOG_SMOKE_EMAIL).toBe(expression('secrets.VOICELOG_SMOKE_EMAIL'));
-    expect(job?.env?.VOICELOG_SMOKE_PASSWORD).toBe(expression('secrets.VOICELOG_SMOKE_PASSWORD'));
-    expect(job?.env?.VOICELOG_SMOKE_WORKSPACE_ID).toBe(
-      expression('secrets.VOICELOG_SMOKE_WORKSPACE_ID')
+    expect(parsed?.on?.workflow_dispatch).toBeNull();
+    expect(job?.env?.PRODUCTION_SMOKE_BASE_URL).toContain('secrets.PRODUCTION_SMOKE_BASE_URL');
+    expect(job?.env?.PRODUCTION_SMOKE_AUTH_TOKEN).toBe(
+      expression('secrets.PRODUCTION_SMOKE_AUTH_TOKEN')
     );
-    expect(job?.env?.VOICELOG_SMOKE_CLEANUP).toBe('true');
-    expect(validateStep?.run).toContain('VOICELOG_SMOKE_WORKSPACE_ID');
-    expect(validateStep?.run).toContain('VOICELOG_SMOKE_TOKEN or VOICELOG_SMOKE_EMAIL');
+    expect(job?.env?.PRODUCTION_SMOKE_EMAIL).toBe(expression('secrets.PRODUCTION_SMOKE_EMAIL'));
+    expect(job?.env?.PRODUCTION_SMOKE_PASSWORD).toBe(
+      expression('secrets.PRODUCTION_SMOKE_PASSWORD')
+    );
+    expect(job?.env?.PRODUCTION_SMOKE_WORKSPACE_ID).toBe(
+      expression('secrets.PRODUCTION_SMOKE_WORKSPACE_ID')
+    );
+    expect(job?.env?.PRODUCTION_EXPECTED_GIT_SHA).toBe(
+      '${{ github.event.workflow_run.head_sha || github.sha }}'
+    );
+    expect(job?.env?.PRODUCTION_SMOKE_CLEANUP).toBe('true');
+    expect(validateStep?.run).toContain('PRODUCTION_SMOKE_WORKSPACE_ID');
+    expect(validateStep?.run).toContain('PRODUCTION_SMOKE_AUTH_TOKEN or PRODUCTION_SMOKE_EMAIL');
     expect(audioSmokeStep?.run).toContain('pnpm run release:audio-prod-smoke');
-    expect(audioSmokeStep?.if).toContain('inputs.run_audio_smoke == true');
-    expect(audioSmokeStep?.if).toContain("env.VOICELOG_SMOKE_WORKSPACE_ID != ''");
+    expect(audioSmokeStep?.if).toBeUndefined();
     expect(artifactStep?.uses).toBe('actions/upload-artifact@v4');
     expect(artifactStep?.with?.path).toBe('reports/audio-prod-smoke-*.json');
     expect(content).not.toContain('echo "$VOICELOG_SMOKE_PASSWORD"');
+    expect(content).not.toContain('run_audio_smoke');
+    expect(content).not.toContain('VOICELOG_SMOKE');
   });
 
   it('deploys Railway after CI and deploys Vercel only after Railway verification', () => {
