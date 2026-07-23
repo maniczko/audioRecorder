@@ -104,4 +104,5 @@ jobs:
             reports/ui-action-inventory/
             reports/production-action-crawler/
             reports/supabase-workspace-consistency/
+            reports/audio-prod-smoke-*.json
           if-no-files-found: ignore

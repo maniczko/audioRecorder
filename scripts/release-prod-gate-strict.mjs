@@ -20,6 +20,7 @@ export const productionGateCommands = [
   ['pnpm', ['run', 'test:e2e:production-actions']],
   ['pnpm', ['run', 'test:e2e:production-persistence']],
   ['pnpm', ['run', 'release:prod-smoke:strict']],
+  ['pnpm', ['run', 'release:audio-prod-smoke']],
   ['pnpm', ['run', 'verify:supabase:workspace']],
   ['pnpm', ['run', 'sentry:release-health']],
 ];
