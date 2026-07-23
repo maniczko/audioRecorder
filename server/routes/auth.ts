@@ -4,6 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { AppServices, AppMiddlewares } from './middleware.ts';
 import { corsHeaders } from '../lib/serverUtils.ts';
 import { verifyGoogleIdToken } from '../lib/googleIdToken.ts';
+import { isSmtpConfigured } from '../lib/smtp.ts';
 
 export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewares) {
   const router = new Hono<{ Variables: { session: any; user: any } }>();
@@ -31,6 +32,10 @@ export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewa
       },
     });
   });
+
+  const shouldDisablePasswordReset = () =>
+    (services.config?.NODE_ENV || process.env.NODE_ENV) === 'production' &&
+    !isSmtpConfigured(process.env);
 
   const registerSchema = z.object({
     email: z.string().email(),
@@ -75,6 +80,17 @@ export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewa
     applyRateLimit('auth'),
     zValidator('json', resetReqSchema),
     async (c) => {
+      if (shouldDisablePasswordReset()) {
+        return c.json(
+          {
+            code: 'password_reset_not_configured',
+            message:
+              'Reset hasła jest tymczasowo wyłączony. Skontaktuj się z administratorem w celu ręcznego odzyskania konta.',
+          },
+          503
+        );
+      }
+
       const data = c.req.valid('json');
       const result = await authService.requestPasswordReset(data);
       return c.json(result, 200);
@@ -92,6 +108,17 @@ export function createAuthRoutes(services: AppServices, middlewares: AppMiddlewa
     applyRateLimit('auth'),
     zValidator('json', resetConfirmSchema),
     async (c) => {
+      if (shouldDisablePasswordReset()) {
+        return c.json(
+          {
+            code: 'password_reset_not_configured',
+            message:
+              'Reset hasła jest tymczasowo wyłączony. Skontaktuj się z administratorem w celu ręcznego odzyskania konta.',
+          },
+          503
+        );
+      }
+
       const data = c.req.valid('json');
       const result = await authService.resetPasswordWithCode(data);
       return c.json(result, 200);

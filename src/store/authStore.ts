@@ -123,6 +123,13 @@ export const useAuthStore = create<any>((set, get) => ({
         resetMessage: 'Kod resetu jest gotowy. Ustaw nowe haslo ponizej.',
       });
     } catch (error: any) {
+      if (error?.code === 'password_reset_not_configured') {
+        set({
+          authError:
+            'Reset hasła jest tymczasowo wyłączony. Skontaktuj się z administratorem w celu ręcznego odzyskania hasła.',
+        });
+        return;
+      }
       set({ authError: normalizeAuthErrorMessage(error) });
     }
   },

@@ -113,4 +113,53 @@ describe('Auth Routes Extended', () => {
     expect(await res.json()).toEqual({ user: { id: 'u1' }, workspaces: [] });
     expect(mockAuthService.buildSessionPayload).toHaveBeenCalledWith('u1', 'ws1');
   });
+
+  it('returns stable disabled code when password reset is requested without SMTP in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VOICELOG_SMTP_HOST', '');
+    vi.stubEnv('VOICELOG_SMTP_USER', '');
+    vi.stubEnv('VOICELOG_SMTP_PASS', '');
+
+    const res = await app.request('/auth/password/reset/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'test@example.com' }),
+    });
+    const payload = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(payload).toMatchObject({
+      code: 'password_reset_not_configured',
+      message: expect.stringContaining('wyłączony'),
+    });
+    expect(mockAuthService.requestPasswordReset).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('returns stable disabled code when password reset confirmation is requested without SMTP in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VOICELOG_SMTP_HOST', '');
+    vi.stubEnv('VOICELOG_SMTP_USER', '');
+    vi.stubEnv('VOICELOG_SMTP_PASS', '');
+
+    const res = await app.request('/auth/password/reset/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'test@example.com',
+        code: '123456',
+        newPassword: 'secret123',
+        confirmPassword: 'secret123',
+      }),
+    });
+    const payload = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(payload).toMatchObject({
+      code: 'password_reset_not_configured',
+      message: expect.stringContaining('wyłączony'),
+    });
+    expect(mockAuthService.resetPasswordWithCode).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
 });

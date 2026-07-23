@@ -142,6 +142,18 @@ describe('authStore', () => {
     });
   });
 
+  test('requestResetCode shows configuration error when reset is disabled in production', async () => {
+    const disabledError = Object.assign(new Error('Password reset is disabled in production.'), {
+      code: 'password_reset_not_configured',
+    });
+    mocks.requestPasswordReset.mockRejectedValue(disabledError);
+
+    useAuthStore.getState().setResetDraft({ email: 'a@example.com' });
+    await useAuthStore.getState().requestResetCode();
+
+    expect(useAuthStore.getState().authError).toContain('tymczasowo wyłączony');
+  });
+
   test('updatePassword does nothing without a current user', async () => {
     await useAuthStore.getState().updatePassword(null);
 
