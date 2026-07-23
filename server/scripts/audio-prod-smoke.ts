@@ -19,6 +19,7 @@ export type AudioProdSmokeOptions = {
   workspaceId: string;
   expectedGitSha?: string;
   reportPath: string;
+  uploadModes?: ('chunked' | 'single')[];
   cleanup?: boolean;
   fetchImpl?: typeof fetch;
   now?: () => number;
@@ -26,6 +27,8 @@ export type AudioProdSmokeOptions = {
   maxPollAttempts?: number;
   pollIntervalMs?: number;
 };
+
+type AudioUploadMode = 'chunked' | 'single';
 
 type JsonObject = Record<string, unknown>;
 
@@ -47,6 +50,24 @@ function defaultReportPath() {
   return path.join(process.cwd(), 'reports', `audio-prod-smoke-${Date.now()}.json`);
 }
 
+function parseUploadModes(raw: string): AudioUploadMode[] {
+  const parsed = String(raw || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  const allowed = new Set<AudioUploadMode>(['single', 'chunked']);
+  const result: AudioUploadMode[] = [];
+
+  for (const value of parsed) {
+    if (allowed.has(value as AudioUploadMode) && !result.includes(value as AudioUploadMode)) {
+      result.push(value as AudioUploadMode);
+    }
+  }
+
+  return result.length > 0 ? result : ['single', 'chunked'];
+}
+
 export function optionsFromEnv(env = process.env): AudioProdSmokeOptions {
   return {
     baseUrl: String(
@@ -58,6 +79,7 @@ export function optionsFromEnv(env = process.env): AudioProdSmokeOptions {
     workspaceId: String(env.PRODUCTION_SMOKE_WORKSPACE_ID || ''),
     expectedGitSha: String(env.PRODUCTION_EXPECTED_GIT_SHA || env.GITHUB_SHA || ''),
     reportPath: String(env.PRODUCTION_SMOKE_REPORT || defaultReportPath()),
+    uploadModes: parseUploadModes(env.PRODUCTION_SMOKE_AUDIO_UPLOAD_MODES || 'single,chunked'),
     cleanup: String(env.PRODUCTION_SMOKE_CLEANUP || '').toLowerCase() === 'true',
   };
 }
@@ -89,7 +111,7 @@ async function readJson(res: Response): Promise<JsonObject> {
   }
 }
 
-function sanitizeDetails(value: unknown): unknown {
+function sanitizeDetails(value: unknown): JsonObject {
   const source = asObject(value);
   const segments = Array.isArray(source.segments) ? source.segments : [];
   const diagnostics = asObject(source.transcriptionDiagnostics);
@@ -250,6 +272,108 @@ function authHeaders(token: string, workspaceId = '') {
   };
 }
 
+async function uploadRecordingChunked(
+  requestOptions: { baseUrl: string; fetchImpl: typeof fetch },
+  recordingId: string,
+  token: string,
+  workspaceId: string,
+  audioFixture: Buffer,
+  smokeHeaders: (token: string, workspaceId: string) => Record<string, string>
+) {
+  const chunkCount = 2;
+  const chunkSize = Math.ceil(audioFixture.byteLength / chunkCount);
+
+  for (let index = 0; index < chunkCount; index += 1) {
+    const chunk = audioFixture.subarray(index * chunkSize, (index + 1) * chunkSize);
+    const res = await smokeRequest(
+      requestOptions,
+      `/media/recordings/${recordingId}/audio/chunk?index=${index}&total=${chunkCount}`,
+      {
+        method: 'PUT',
+        headers: {
+          ...smokeHeaders(token, workspaceId),
+          'Content-Type': 'audio/wav',
+        },
+        body: chunk as unknown as BodyInit,
+      }
+    );
+    if (!res.ok) {
+      const details = await readJson(res);
+      throw new Error(
+        `Chunk upload failed with status ${res.status}: ${String(details.message || '')}`
+      );
+    }
+  }
+
+  const finalizeResponse = await smokeRequest(
+    requestOptions,
+    `/media/recordings/${recordingId}/audio/finalize`,
+    {
+      method: 'POST',
+      headers: {
+        ...smokeHeaders(token, workspaceId),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId, total: chunkCount, contentType: 'audio/wav' }),
+    }
+  );
+
+  return {
+    uploadResponse: finalizeResponse,
+    uploadMode: 'chunked',
+  } as const;
+}
+
+async function uploadRecordingSingle(
+  requestOptions: { baseUrl: string; fetchImpl: typeof fetch },
+  recordingId: string,
+  token: string,
+  workspaceId: string,
+  audioFixture: Buffer,
+  smokeHeaders: (token: string, workspaceId: string) => Record<string, string>
+) {
+  const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
+    method: 'PUT',
+    headers: {
+      ...smokeHeaders(token, workspaceId),
+      'Content-Type': 'audio/wav',
+    },
+    body: audioFixture as unknown as BodyInit,
+  });
+
+  return {
+    uploadResponse: res,
+    uploadMode: 'single',
+  } as const;
+}
+
+async function waitForTerminalTranscription(
+  requestOptions: { baseUrl: string; fetchImpl: typeof fetch },
+  recordingId: string,
+  token: string,
+  workspaceId: string,
+  authHeaders: (token: string, workspaceId: string) => Record<string, string>,
+  sleepMs: (ms: number) => Promise<void>,
+  maxPollAttempts: number,
+  pollIntervalMs: number
+) {
+  let lastTranscriptionStatus: JsonObject = {};
+
+  for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+    const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/transcribe`, {
+      headers: authHeaders(token, workspaceId),
+    });
+    const body = await readJson(res);
+    lastTranscriptionStatus = body;
+    if (isTerminalTranscriptionStatus(body)) {
+      return { done: true, status: res.status, response: body };
+    }
+    await sleepMs(pollIntervalMs);
+  }
+
+  return { done: false, status: 408, response: lastTranscriptionStatus };
+}
+
 export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
   const fetchImpl = input.fetchImpl || fetch;
   const sleepMs =
@@ -270,6 +394,8 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
       prefix: string;
       cleanupRequested: boolean;
       identifiable: boolean;
+      recordingIds: string[];
+      uploadModes: AudioUploadMode[];
     };
     steps: SmokeStep[];
   } = {
@@ -279,13 +405,21 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
       prefix: SMOKE_RECORDING_PREFIX,
       cleanupRequested: Boolean(input.cleanup),
       identifiable: true,
+      recordingIds: [],
+      uploadModes: input.uploadModes || ['single', 'chunked'],
     },
     steps: [],
   };
 
   let token = input.token || '';
-  let recordingId = `${SMOKE_RECORDING_PREFIX}${now()}`;
-  let lastTranscriptionStatus: JsonObject = {};
+  const baseRecordingId = `${SMOKE_RECORDING_PREFIX}${now()}`;
+  const uploadModes: AudioUploadMode[] = input.uploadModes?.length
+    ? input.uploadModes
+    : ['single', 'chunked'];
+  const uploaders = {
+    chunked: uploadRecordingChunked,
+    single: uploadRecordingSingle,
+  };
   const expectedGitSha = input.expectedGitSha || '';
 
   report.steps.push(
@@ -404,57 +538,105 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
     return report;
   }
 
-  report.steps.push(
-    await step('upload short audio fixture', async () => {
-      const audioFixture = await loadSmokeAudioFixture();
-      const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
-        method: 'PUT',
-        headers: {
-          ...authHeaders(token, workspaceId),
-          'Content-Type': 'audio/wav',
-        },
-        body: audioFixture,
-      });
-      const body = await readJson(res);
-      recordingId = String(body.id || body.recordingId || recordingId);
-      report.recordingId = recordingId;
-      return {
-        ok: res.ok,
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: sanitizeDetails(body),
-      };
-    })
-  );
+  const audioFixture = await loadSmokeAudioFixture();
 
-  report.steps.push(
-    await step('start transcribe', async () => {
-      const res = await smokeRequest(
-        requestOptions,
-        `/media/recordings/${recordingId}/transcribe`,
-        {
-          method: 'POST',
-          headers: {
-            ...authHeaders(token, workspaceId),
-            'Content-Type': 'application/json',
+  for (const mode of uploadModes) {
+    let recordingId = `${baseRecordingId}_${mode}`;
+    const upload = uploaders[mode];
+
+    report.steps.push(
+      await step(`upload short audio fixture (${mode})`, async () => {
+        const { uploadResponse } = await upload(
+          requestOptions,
+          recordingId,
+          token,
+          workspaceId,
+          audioFixture,
+          authHeaders
+        );
+        const body = await readJson(uploadResponse);
+        recordingId = String(body.id || body.recordingId || recordingId);
+        report.recordingId = recordingId;
+        report.smokeData.recordingIds.push(recordingId);
+        return {
+          ok: uploadResponse.ok,
+          status: uploadResponse.status,
+          requestId: headerValue(uploadResponse.headers, 'x-request-id'),
+          details: sanitizeDetails(body),
+        };
+      })
+    );
+
+    report.steps.push(
+      await step(`start transcribe (${mode})`, async () => {
+        const res = await smokeRequest(
+          requestOptions,
+          `/media/recordings/${recordingId}/transcribe`,
+          {
+            method: 'POST',
+            headers: {
+              ...authHeaders(token, workspaceId),
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ workspaceId }),
+          }
+        );
+        const body = await readJson(res);
+        return {
+          ok: res.ok,
+          status: res.status,
+          requestId: headerValue(res.headers, 'x-request-id'),
+          details: sanitizeDetails(body),
+        };
+      })
+    );
+
+    report.steps.push(
+      await step(`poll transcription to terminal status (${mode})`, async () => {
+        const result = await waitForTerminalTranscription(
+          requestOptions,
+          recordingId,
+          token,
+          workspaceId,
+          authHeaders,
+          sleepMs,
+          maxPollAttempts,
+          pollIntervalMs
+        );
+        return {
+          ok: result.done,
+          status: result.status,
+          details: sanitizeDetails(result.response),
+        };
+      })
+    );
+
+    report.steps.push(
+      await step(`reload recording and verify persistence (${mode})`, async () => {
+        const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
+          headers: authHeaders(token, workspaceId),
+        });
+        const body = await readJson(res);
+        const bodyId = String(body.id || body.recordingId || '');
+        return {
+          ok: res.ok && bodyId === recordingId,
+          status: res.status,
+          requestId: headerValue(res.headers, 'x-request-id'),
+          details: {
+            recordingId: body.id || body.recordingId,
+            workspaceId:
+              body.workspaceId ||
+              body.workspace_id ||
+              asObject(body.workspace).id ||
+              asObject(body.workspace)?.id,
+            requestMode: mode,
           },
-          body: JSON.stringify({ workspaceId }),
-        }
-      );
-      const body = await readJson(res);
-      lastTranscriptionStatus = body;
-      return {
-        ok: res.ok,
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: sanitizeDetails(body),
-      };
-    })
-  );
+        };
+      })
+    );
 
-  report.steps.push(
-    await step('poll transcription to terminal status', async () => {
-      for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+    report.steps.push(
+      await step(`transcript persisted or empty transcript reported (${mode})`, async () => {
         const res = await smokeRequest(
           requestOptions,
           `/media/recordings/${recordingId}/transcribe`,
@@ -463,133 +645,118 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
           }
         );
         const body = await readJson(res);
-        lastTranscriptionStatus = body;
-        if (isTerminalTranscriptionStatus(body)) {
-          return {
-            ok: true,
-            status: res.status,
-            requestId: headerValue(res.headers, 'x-request-id'),
-            details: sanitizeDetails(body),
-          };
-        }
-        await sleepMs(pollIntervalMs);
-      }
-      return { ok: false, details: sanitizeDetails(lastTranscriptionStatus) };
-    })
-  );
-
-  report.steps.push(
-    await step('reload recording and verify persistence', async () => {
-      const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
-        headers: authHeaders(token, workspaceId),
-      });
-      const body = await readJson(res);
-      const bodyId = String(body.id || body.recordingId || '');
-      return {
-        ok: res.ok && bodyId === recordingId,
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: {
-          recordingId: body.id || body.recordingId,
-          workspaceId: body.workspaceId || body.workspace_id || body.workspace?.id,
-        },
-      };
-    })
-  );
-
-  report.steps.push(
-    await step('transcript persisted or empty transcript reported', async () => {
-      const res = await smokeRequest(
-        requestOptions,
-        `/media/recordings/${recordingId}/transcribe`,
-        {
-          headers: authHeaders(token, workspaceId),
-        }
-      );
-      const body = await readJson(res);
-      lastTranscriptionStatus = body;
-      const classification = classifyTranscriptFinalState(body);
-      return {
-        ok: res.ok && classification.ok,
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: {
-          ...sanitizeDetails(body),
-          transcriptState: classification.state,
-          transcriptNote: classification.note,
-          emptyReason: classification.emptyReason,
-          segmentCount: classification.segmentCount,
-        },
-      };
-    })
-  );
-
-  report.steps.push(
-    await step('audio download works', async () => {
-      const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
-        headers: authHeaders(token, workspaceId),
-      });
-      const contentLength = Number(res.headers.get('content-length') || 0);
-      const body = contentLength > 0 ? null : await res.arrayBuffer().catch(() => null);
-      return {
-        ok: res.ok && (contentLength > 0 || Boolean(body && body.byteLength > 0)),
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: { contentLength: contentLength || body?.byteLength || 0 },
-      };
-    })
-  );
-
-  report.steps.push(
-    await step('retry-transcribe path responds', async () => {
-      const res = await smokeRequest(
-        requestOptions,
-        `/media/recordings/${recordingId}/retry-transcribe`,
-        {
-          method: 'POST',
-          headers: {
-            ...authHeaders(token, workspaceId),
-            'Content-Type': 'application/json',
+        const classification = classifyTranscriptFinalState(body);
+        return {
+          ok: res.ok && classification.ok,
+          status: res.status,
+          requestId: headerValue(res.headers, 'x-request-id'),
+          details: {
+            ...sanitizeDetails(body),
+            transcriptState: classification.state,
+            transcriptNote: classification.note,
+            emptyReason: classification.emptyReason,
+            segmentCount: classification.segmentCount,
           },
-          body: JSON.stringify({ workspaceId }),
-        }
-      );
-      const body = await readJson(res);
-      return {
-        ok: [200, 202, 409].includes(res.status),
-        status: res.status,
-        requestId: headerValue(res.headers, 'x-request-id'),
-        details: sanitizeDetails(body),
-      };
-    })
-  );
+        };
+      })
+    );
 
-  if (input.cleanup) {
     report.steps.push(
-      await step('cleanup smoke recording', async () => {
-        const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
-          method: 'DELETE',
+      await step(`audio download works (${mode})`, async () => {
+        const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
           headers: authHeaders(token, workspaceId),
         });
+        const contentLength = Number(res.headers.get('content-length') || 0);
+        const body = contentLength > 0 ? null : await res.arrayBuffer().catch(() => null);
+        return {
+          ok: res.ok && (contentLength > 0 || Boolean(body && body.byteLength > 0)),
+          status: res.status,
+          requestId: headerValue(res.headers, 'x-request-id'),
+          details: { contentLength: contentLength || body?.byteLength || 0 },
+        };
+      })
+    );
+
+    report.steps.push(
+      await step(`retry-transcribe path responds (${mode})`, async () => {
+        const res = await smokeRequest(
+          requestOptions,
+          `/media/recordings/${recordingId}/retry-transcribe`,
+          {
+            method: 'POST',
+            headers: {
+              ...authHeaders(token, workspaceId),
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ workspaceId }),
+          }
+        );
         const body = await readJson(res);
         return {
-          ok: res.ok || res.status === 404,
+          ok: [200, 202, 409].includes(res.status),
           status: res.status,
           requestId: headerValue(res.headers, 'x-request-id'),
           details: sanitizeDetails(body),
         };
       })
     );
-  } else {
-    report.steps.push({
-      name: 'smoke data marked as test data',
-      ok: recordingId.startsWith(SMOKE_RECORDING_PREFIX),
-      details: {
-        recordingId,
-        prefix: SMOKE_RECORDING_PREFIX,
-        cleanupRequested: false,
-      },
-    });
+
+    if (input.cleanup) {
+      report.steps.push(
+        await step(`cleanup smoke recording (${mode})`, async () => {
+          const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
+            method: 'DELETE',
+            headers: authHeaders(token, workspaceId),
+          });
+          return {
+            ok: res.status === 204 || res.status === 404 || res.ok,
+            status: res.status,
+            requestId: headerValue(res.headers, 'x-request-id'),
+            details: sanitizeDetails(await readJson(res)),
+          };
+        })
+      );
+
+      report.steps.push(
+        await step(`verify recording deletion (${mode})`, async () => {
+          const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}`, {
+            headers: authHeaders(token, workspaceId),
+          });
+          const body = await readJson(res);
+          return {
+            ok: res.status === 404,
+            status: res.status,
+            requestId: headerValue(res.headers, 'x-request-id'),
+            details: sanitizeDetails(body),
+          };
+        })
+      );
+
+      report.steps.push(
+        await step(`verify audio object deletion (${mode})`, async () => {
+          const res = await smokeRequest(requestOptions, `/media/recordings/${recordingId}/audio`, {
+            headers: authHeaders(token, workspaceId),
+          });
+          const body = await readJson(res);
+          return {
+            ok: res.status === 404,
+            status: res.status,
+            requestId: headerValue(res.headers, 'x-request-id'),
+            details: sanitizeDetails(body),
+          };
+        })
+      );
+    } else {
+      report.steps.push({
+        name: `smoke data marked as test data (${mode})`,
+        ok: recordingId.startsWith(SMOKE_RECORDING_PREFIX),
+        details: {
+          recordingId,
+          prefix: SMOKE_RECORDING_PREFIX,
+          cleanupRequested: false,
+        },
+      });
+    }
   }
 
   report.finishedAt = new Date(now()).toISOString();

@@ -40,6 +40,8 @@ describe('audio production smoke', () => {
   it('runs the audio release smoke with sanitized JSON report and current media route contract', async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-prod-smoke-'));
     const reportPath = path.join(tempDir, 'report.json');
+    const deleted = new Set<string>();
+
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const pathName = new URL(url).pathname;
 
@@ -69,7 +71,10 @@ describe('audio production smoke', () => {
         });
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method === 'PUT') {
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method === 'PUT'
+      ) {
         expect(init.headers).toMatchObject({
           Authorization: 'Bearer smoke-token',
           'Content-Type': 'audio/wav',
@@ -78,22 +83,28 @@ describe('audio production smoke', () => {
         const body = init.body as Buffer;
         expect(Buffer.isBuffer(body)).toBe(true);
         expect(body.toString('ascii', 0, 4)).toBe('RIFF');
-        return jsonResponse({ id: 'smoke_1780000000000', recordingId: 'smoke_1780000000000' }, 201);
+        return jsonResponse(
+          { id: 'smoke_1780000000000_single', recordingId: 'smoke_1780000000000_single' },
+          201
+        );
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000/transcribe' &&
+        pathName === '/media/recordings/smoke_1780000000000_single/transcribe' &&
         init?.method === 'POST'
       ) {
-        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'queued' }, 202);
+        return jsonResponse(
+          { recordingId: 'smoke_1780000000000_single', pipelineStatus: 'queued' },
+          202
+        );
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000/transcribe' &&
+        pathName === '/media/recordings/smoke_1780000000000_single/transcribe' &&
         (!init?.method || init.method === 'GET')
       ) {
         return jsonResponse({
-          recordingId: 'smoke_1780000000000',
+          recordingId: 'smoke_1780000000000_single',
           pipelineStatus: 'done',
           transcriptOutcome: 'normal',
           segments: [{ text: 'Sensitive transcript text should not be reported.' }],
@@ -107,24 +118,33 @@ describe('audio production smoke', () => {
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000' &&
+        pathName === '/media/recordings/smoke_1780000000000_single' &&
         (!init?.method || init.method === 'GET')
       ) {
-        return jsonResponse({
-          id: 'smoke_1780000000000',
-          workspaceId: 'workspace_1',
-          durationMs: 500,
-        });
+        if (!deleted.has('smoke_1780000000000_single')) {
+          return jsonResponse({
+            id: 'smoke_1780000000000_single',
+            workspaceId: 'workspace_1',
+            durationMs: 500,
+          });
+        }
+        return jsonResponse({ error: 'not found' }, 404);
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method !== 'PUT') {
-        return binaryResponse(new Uint8Array([1, 2, 3, 4]));
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method !== 'PUT'
+      ) {
+        if (!deleted.has('smoke_1780000000000_single')) {
+          return binaryResponse(new Uint8Array([1, 2, 3, 4]));
+        }
+        return jsonResponse({ error: 'not found' }, 404);
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/retry-transcribe') {
+      if (pathName === '/media/recordings/smoke_1780000000000_single/retry-transcribe') {
         return jsonResponse(
           {
-            recordingId: 'smoke_1780000000000',
+            recordingId: 'smoke_1780000000000_single',
             pipelineStatus: 'done',
             transcriptOutcome: 'normal',
           },
@@ -132,7 +152,11 @@ describe('audio production smoke', () => {
         );
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000' && init?.method === 'DELETE') {
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single' &&
+        init?.method === 'DELETE'
+      ) {
+        deleted.add('smoke_1780000000000_single');
         return jsonResponse({ deleted: true });
       }
 
@@ -144,6 +168,7 @@ describe('audio production smoke', () => {
       token: 'smoke-token',
       workspaceId: 'workspace_1',
       reportPath,
+      uploadModes: ['single'],
       fetchImpl: fetchMock as any,
       now: () => 1780000000000,
       sleepMs: async () => {},
@@ -153,7 +178,16 @@ describe('audio production smoke', () => {
 
     expect(report.steps.every((step) => step.ok)).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.example.com/media/recordings/smoke_1780000000000/transcribe',
+      'https://api.example.com/media/recordings/smoke_1780000000000_single/audio',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer smoke-token',
+          'X-Workspace-Id': 'workspace_1',
+        }),
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/media/recordings/smoke_1780000000000_single/transcribe',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer smoke-token',
@@ -172,21 +206,27 @@ describe('audio production smoke', () => {
     expect(reportText).toContain('segmentCount');
     expect(reportText).not.toContain('Sensitive transcript text');
     expect(persisted.steps.map((step: any) => step.name)).toContain(
-      'transcript persisted or empty transcript reported'
+      'transcript persisted or empty transcript reported (single)'
     );
-    expect(persisted.steps.map((step: any) => step.name)).toContain('audio download works');
     expect(persisted.steps.map((step: any) => step.name)).toContain(
-      'reload recording and verify persistence'
+      'audio download works (single)'
     );
-    expect(persisted.steps.map((step: any) => step.name)).toContain('cleanup smoke recording');
+    expect(persisted.steps.map((step: any) => step.name)).toContain(
+      'reload recording and verify persistence (single)'
+    );
+    expect(persisted.steps.map((step: any) => step.name)).toContain(
+      'cleanup smoke recording (single)'
+    );
     expect(persisted.smokeData).toMatchObject({
       prefix: 'smoke_',
       cleanupRequested: true,
       identifiable: true,
+      uploadModes: ['single'],
+      recordingIds: ['smoke_1780000000000_single'],
     });
     expect(
       persisted.steps.find(
-        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+        (step: any) => step.name === 'transcript persisted or empty transcript reported (single)'
       )
     ).toMatchObject({
       ok: true,
@@ -197,11 +237,13 @@ describe('audio production smoke', () => {
       },
     });
     expect(
-      persisted.steps.find((step: any) => step.name === 'reload recording and verify persistence')
+      persisted.steps.find(
+        (step: any) => step.name === 'reload recording and verify persistence (single)'
+      )
     ).toMatchObject({
       ok: true,
       details: {
-        recordingId: 'smoke_1780000000000',
+        recordingId: 'smoke_1780000000000_single',
         workspaceId: 'workspace_1',
       },
     });
@@ -247,13 +289,16 @@ describe('audio production smoke', () => {
         });
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method === 'PUT') {
-        return jsonResponse({ recordingId: 'smoke_1780000000000' }, 201);
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method === 'PUT'
+      ) {
+        return jsonResponse({ recordingId: 'smoke_1780000000000_single' }, 201);
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/transcribe') {
+      if (pathName === '/media/recordings/smoke_1780000000000_single/transcribe') {
         return jsonResponse({
-          recordingId: 'smoke_1780000000000',
+          recordingId: 'smoke_1780000000000_single',
           pipelineStatus: init?.method === 'POST' ? 'queued' : 'done',
           transcriptOutcome: 'empty',
           emptyReason: 'fixture silence',
@@ -262,21 +307,27 @@ describe('audio production smoke', () => {
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000' &&
+        pathName === '/media/recordings/smoke_1780000000000_single' &&
         (!init?.method || init.method === 'GET')
       ) {
         return jsonResponse({
-          id: 'smoke_1780000000000',
+          id: 'smoke_1780000000000_single',
           workspaceId: 'workspace_1',
         });
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio') {
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method !== 'PUT'
+      ) {
         return binaryResponse(new Uint8Array([1, 2, 3, 4]));
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/retry-transcribe') {
-        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'done' }, 409);
+      if (pathName === '/media/recordings/smoke_1780000000000_single/retry-transcribe') {
+        return jsonResponse(
+          { recordingId: 'smoke_1780000000000_single', pipelineStatus: 'done' },
+          409
+        );
       }
 
       throw new Error(`Unexpected smoke request: ${init?.method || 'GET'} ${pathName}`);
@@ -287,6 +338,7 @@ describe('audio production smoke', () => {
       token: 'smoke-token',
       workspaceId: 'workspace_1',
       reportPath,
+      uploadModes: ['single'],
       fetchImpl: fetchMock as any,
       now: () => 1780000000000,
       sleepMs: async () => {},
@@ -295,13 +347,13 @@ describe('audio production smoke', () => {
 
     expect(report.steps).toContainEqual(
       expect.objectContaining({
-        name: 'smoke data marked as test data',
+        name: 'smoke data marked as test data (single)',
         ok: true,
       })
     );
     expect(
       report.steps.find(
-        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+        (step: any) => step.name === 'transcript persisted or empty transcript reported (single)'
       )
     ).toMatchObject({
       ok: true,
@@ -311,7 +363,7 @@ describe('audio production smoke', () => {
       },
     });
     expect(fetchMock).not.toHaveBeenCalledWith(
-      'https://api.example.com/media/recordings/smoke_1780000000000',
+      'https://api.example.com/media/recordings/smoke_1780000000000_single',
       expect.objectContaining({ method: 'DELETE' })
     );
   });
@@ -334,6 +386,191 @@ describe('audio production smoke', () => {
       cleanup: true,
       reportPath: 'reports/custom.json',
     });
+  });
+
+  it('parses PRODUCTION_SMOKE_AUDIO_UPLOAD_MODES with validation and fallback', () => {
+    const bothModes = optionsFromEnv({
+      PRODUCTION_SMOKE_AUDIO_UPLOAD_MODES: 'single,chunked,single,invalid',
+      PRODUCTION_SMOKE_WORKSPACE_ID: 'w',
+      PRODUCTION_SMOKE_AUTH_TOKEN: 't',
+    } as any);
+    const spaced = optionsFromEnv({
+      PRODUCTION_SMOKE_AUDIO_UPLOAD_MODES: ' chunked , single ',
+      PRODUCTION_SMOKE_WORKSPACE_ID: 'w',
+      PRODUCTION_SMOKE_AUTH_TOKEN: 't',
+    } as any);
+    const fallback = optionsFromEnv({
+      PRODUCTION_SMOKE_WORKSPACE_ID: 'w',
+      PRODUCTION_SMOKE_AUTH_TOKEN: 't',
+    } as any);
+    const invalidOnly = optionsFromEnv({
+      PRODUCTION_SMOKE_AUDIO_UPLOAD_MODES: 'foo,bar',
+      PRODUCTION_SMOKE_WORKSPACE_ID: 'w',
+      PRODUCTION_SMOKE_AUTH_TOKEN: 't',
+    } as any);
+
+    expect(bothModes.uploadModes).toEqual(['single', 'chunked']);
+    expect(spaced.uploadModes).toEqual(['chunked', 'single']);
+    expect(invalidOnly.uploadModes).toEqual(['single', 'chunked']);
+    expect(fallback.uploadModes).toEqual(['single', 'chunked']);
+  });
+
+  it('executes both chunked and single upload modes with cleanup verification for each', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-prod-smoke-both-modes-'));
+    const reportPath = path.join(tempDir, 'report.json');
+    const deleted = new Set<string>();
+    const requestCounts = {
+      chunkedChunkRequests: 0,
+      chunkedFinalizeRequests: 0,
+      singleUploadRequests: 0,
+    };
+
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const requestUrl = new URL(url);
+      const pathName = requestUrl.pathname;
+      const method = (init?.method || 'GET').toUpperCase();
+      const search = requestUrl.searchParams;
+
+      if (pathName === '/health/live') {
+        return jsonResponse({ ok: true, check: 'liveness', gitSha: 'abc123' });
+      }
+
+      if (pathName === '/health') {
+        return jsonResponse({
+          ok: true,
+          gitSha: 'abc123',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/ready') {
+        return jsonResponse({
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName.includes('/audio/chunk')) {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/audio\/chunk$/);
+        if (match) {
+          const recordingId = match[1];
+          expect(recordingId.endsWith('_chunked')).toBe(true);
+          expect(search.get('total')).toBe('2');
+          expect(search.get('index')).toMatch(/^[01]$/);
+          requestCounts.chunkedChunkRequests += 1;
+          return jsonResponse({ id: recordingId, recordingId });
+        }
+      }
+
+      if (pathName.endsWith('/audio/finalize')) {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/audio\/finalize$/);
+        if (match) {
+          const recordingId = match[1];
+          expect(recordingId.endsWith('_chunked')).toBe(true);
+          requestCounts.chunkedFinalizeRequests += 1;
+          return jsonResponse({ id: recordingId, recordingId, workspaceId: 'workspace_1' });
+        }
+      }
+
+      if (pathName.endsWith('/audio') && method === 'PUT') {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/audio$/);
+        if (match) {
+          const recordingId = match[1];
+          expect(recordingId.endsWith('_single')).toBe(true);
+          requestCounts.singleUploadRequests += 1;
+          return jsonResponse({ id: recordingId, recordingId }, 201);
+        }
+      }
+
+      if (pathName.includes('/transcribe') && method === 'POST') {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/transcribe$/);
+        if (match) {
+          const recordingId = match[1];
+          return jsonResponse({ recordingId, pipelineStatus: 'queued' }, 202);
+        }
+      }
+
+      if (pathName.includes('/transcribe') && method === 'GET') {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/transcribe$/);
+        if (match) {
+          const recordingId = match[1];
+          return jsonResponse({
+            recordingId,
+            pipelineStatus: 'done',
+            transcriptOutcome: 'normal',
+            segments: [{ text: 'segment' }],
+          });
+        }
+      }
+
+      if (pathName.endsWith('/retry-transcribe')) {
+        const match = pathName.match(/\/media\/recordings\/([^/]+)\/retry-transcribe$/);
+        if (match) {
+          return jsonResponse({ recordingId: match[1], pipelineStatus: 'done' }, 409);
+        }
+      }
+
+      const recordingMatch = pathName.match(/^\/media\/recordings\/([^/]+)(?:\/audio)?$/);
+      if (recordingMatch) {
+        const recordingId = recordingMatch[1];
+        const isAudio = pathName.endsWith('/audio');
+
+        if (method === 'DELETE') {
+          deleted.add(recordingId);
+          return jsonResponse({ deleted: true });
+        }
+
+        if (deleted.has(recordingId)) {
+          return jsonResponse({ error: 'not found' }, 404);
+        }
+
+        if (isAudio) {
+          return binaryResponse(new Uint8Array([1, 2, 3, 4]));
+        }
+
+        return jsonResponse({ id: recordingId, workspaceId: 'workspace_1' });
+      }
+
+      throw new Error(`Unexpected smoke request: ${method} ${pathName}`);
+    });
+
+    const report = await runAudioProdSmoke({
+      baseUrl: 'https://api.example.com',
+      token: 'smoke-token',
+      workspaceId: 'workspace_1',
+      reportPath,
+      uploadModes: ['chunked', 'single'],
+      fetchImpl: fetchMock as any,
+      now: () => 1780000000000,
+      sleepMs: async () => {},
+      maxPollAttempts: 1,
+      cleanup: true,
+    });
+
+    expect(requestCounts.chunkedChunkRequests).toBe(2);
+    expect(requestCounts.chunkedFinalizeRequests).toBe(1);
+    expect(requestCounts.singleUploadRequests).toBe(1);
+    expect(report.steps.every((step) => step.ok)).toBe(true);
+    expect(report.smokeData.uploadModes).toEqual(['chunked', 'single']);
+    expect(report.smokeData.recordingIds).toEqual([
+      'smoke_1780000000000_chunked',
+      'smoke_1780000000000_single',
+    ]);
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({ name: 'verify recording deletion (chunked)' })
+    );
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({ name: 'verify audio object deletion (chunked)' })
+    );
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({ name: 'verify recording deletion (single)' })
+    );
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({ name: 'verify audio object deletion (single)' })
+    );
   });
 
   it('treats failed transcript outcome as hard-failure while keeping transcript data sanitized', async () => {
@@ -368,20 +605,26 @@ describe('audio production smoke', () => {
         });
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method === 'PUT') {
-        return jsonResponse({ id: 'smoke_1780000000000' }, 201);
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method === 'PUT'
+      ) {
+        return jsonResponse({ id: 'smoke_1780000000000_single' }, 201);
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000/transcribe' &&
+        pathName === '/media/recordings/smoke_1780000000000_single/transcribe' &&
         init?.method === 'POST'
       ) {
-        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'queued' }, 202);
+        return jsonResponse(
+          { recordingId: 'smoke_1780000000000_single', pipelineStatus: 'queued' },
+          202
+        );
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/transcribe') {
+      if (pathName === '/media/recordings/smoke_1780000000000_single/transcribe') {
         return jsonResponse({
-          recordingId: 'smoke_1780000000000',
+          recordingId: 'smoke_1780000000000_single',
           pipelineStatus: 'failed',
           transcriptOutcome: 'failed',
           errorCode: 'timeout',
@@ -390,24 +633,33 @@ describe('audio production smoke', () => {
       }
 
       if (
-        pathName === '/media/recordings/smoke_1780000000000' &&
+        pathName === '/media/recordings/smoke_1780000000000_single' &&
         (!init?.method || init.method === 'GET')
       ) {
         return jsonResponse({
-          id: 'smoke_1780000000000',
+          id: 'smoke_1780000000000_single',
           workspaceId: 'workspace_1',
         });
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/audio' && init?.method !== 'PUT') {
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single/audio' &&
+        init?.method !== 'PUT'
+      ) {
         return binaryResponse(new Uint8Array([1, 2, 3, 4]));
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000/retry-transcribe') {
-        return jsonResponse({ recordingId: 'smoke_1780000000000', pipelineStatus: 'failed' }, 200);
+      if (pathName === '/media/recordings/smoke_1780000000000_single/retry-transcribe') {
+        return jsonResponse(
+          { recordingId: 'smoke_1780000000000_single', pipelineStatus: 'failed' },
+          200
+        );
       }
 
-      if (pathName === '/media/recordings/smoke_1780000000000' && init?.method === 'DELETE') {
+      if (
+        pathName === '/media/recordings/smoke_1780000000000_single' &&
+        init?.method === 'DELETE'
+      ) {
         return jsonResponse({ deleted: true });
       }
 
@@ -419,6 +671,7 @@ describe('audio production smoke', () => {
       token: 'smoke-token',
       workspaceId: 'workspace_1',
       reportPath,
+      uploadModes: ['single'],
       fetchImpl: fetchMock as any,
       now: () => 1780000000000,
       sleepMs: async () => {},
@@ -429,7 +682,7 @@ describe('audio production smoke', () => {
     const persisted = JSON.parse(await fs.readFile(reportPath, 'utf8'));
     expect(
       report.steps.find(
-        (step: any) => step.name === 'transcript persisted or empty transcript reported'
+        (step: any) => step.name === 'transcript persisted or empty transcript reported (single)'
       )
     ).toMatchObject({
       ok: false,
