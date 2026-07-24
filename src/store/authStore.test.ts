@@ -181,4 +181,53 @@ describe('authStore', () => {
     expect(useAuthStore.getState().profileError).toBe('Nie udało się zapisać profilu.');
     expect(useAuthStore.getState().securityMessage).toBe('');
   });
+
+  test('saveProfile updates profileDraft with returned user data after successful save', async () => {
+    useWorkspaceStore.setState({
+      users: [{ id: 'u1', name: 'Stara nazwa', role: 'Stary', company: 'Firma' }],
+      workspaces: [],
+      session: { userId: 'u1', workspaceId: 'ws1', token: 'token-1' },
+    });
+    useAuthStore.setState({
+      profileDraft: {
+        name: 'Nowa nazwa',
+        role: 'Nowa rola',
+        company: 'Nowa firma',
+        timezone: 'Europe/Warsaw',
+        googleEmail: 'a@example.com',
+        phone: '',
+        location: '',
+        team: '',
+        bio: '',
+        avatarUrl: '',
+        preferredInsights: '',
+        notifyDailyDigest: true,
+        autoTaskCapture: true,
+        autoLearnSpeakerProfiles: false,
+        preferredTaskView: 'list',
+      },
+      profileMessage: '',
+      profileError: '',
+    });
+
+    mocks.updateProfile.mockResolvedValue({
+      users: [{ id: 'u1', name: 'Nowa nazwa', role: 'Nowa rola', company: 'Nowa firma' }],
+      user: { id: 'u1', name: 'Nowa nazwa', role: 'Nowa rola', company: 'Nowa firma' },
+    });
+
+    await useAuthStore.getState().saveProfile({ id: 'u1' });
+
+    expect(useWorkspaceStore.getState().users[0]).toMatchObject({
+      id: 'u1',
+      name: 'Nowa nazwa',
+      role: 'Nowa rola',
+      company: 'Nowa firma',
+    });
+    expect(useAuthStore.getState().profileDraft).toMatchObject({
+      name: 'Nowa nazwa',
+      role: 'Nowa rola',
+      company: 'Nowa firma',
+    });
+    expect(useAuthStore.getState().profileMessage).toBe('Profil zapisany.');
+  });
 });

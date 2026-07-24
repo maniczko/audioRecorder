@@ -187,9 +187,27 @@ export const useAuthStore = create<any>((set, get) => ({
         userId: currentUser.id,
         updates: profileDraft,
       });
-      if (Array.isArray(result)) setUsers(result);
+      let updatedUsers = Array.isArray(result) ? result : null;
+      let updatedUser = result?.user;
+      if (!updatedUser && Array.isArray(updatedUsers)) {
+        updatedUser = updatedUsers.find((user) => user?.id === currentUser.id);
+      }
+      if (!updatedUser && Array.isArray(result?.users)) {
+        updatedUser = result.users.find((user) => user?.id === currentUser.id);
+      }
+      if (updatedUsers) setUsers(updatedUsers);
       else if (Array.isArray(result?.users)) setUsers(result.users);
-      else if (result?.user) setUsers((prev) => mergeUserIntoCollection(prev, result.user));
+      else if (updatedUser) setUsers((prev) => mergeUserIntoCollection(prev, updatedUser));
+
+      if (updatedUser) {
+        set({
+          profileMessage: 'Profil zapisany.',
+          profileError: '',
+          profileDraft: buildProfileDraft(updatedUser),
+        });
+        return;
+      }
+
       set({ profileMessage: 'Profil zapisany.', profileError: '' });
     } catch (error: any) {
       set({ profileError: normalizeAuthErrorMessage(error) });
