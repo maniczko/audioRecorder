@@ -630,6 +630,22 @@ async function resolveVoiceProfileAudioSource(
   }
 }
 
+function isProductionRemoteAudioSource() {
+  return isProductionDeployment();
+}
+
+function buildRemoteAudioDownloadErrorBody(statusCode: number, recordingId: string, errorMessage: string) {
+  const shouldTreatAsMissing = statusCode === 404;
+  const message = shouldTreatAsMissing
+    ? 'Brak nagrania audio w zdalnym storage.'
+    : 'Błąd podczas pobierania nagrania z remote storage.';
+  return {
+    message,
+    recordingId,
+    error: errorMessage,
+  };
+}
+
 /**
  * Checks available disk space and returns true if there's enough space.
  * Returns false if disk space is critically low for accepting new uploads.
@@ -1334,6 +1350,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
       const safeType = ALLOWED.has(String(asset.content_type || '').toLowerCase())
         ? asset.content_type
         : 'application/octet-stream';
+      const productionRemoteOnly = isProductionRemoteAudioSource();
 
       if (asset.storage_mode === 'segmented') {
         try {
@@ -1373,6 +1390,49 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             error: err.message,
           });
           return c.json({ message: 'Nie udalo sie przygotowac nagrania do odtworzenia.' }, 500);
+        }
+      }
+
+      // Production requires strict remote audio delivery for non-segmented recordings.
+      if (productionRemoteOnly) {
+        try {
+          const { arrayBuffer, storagePath } = await downloadAudioFromStorageCandidates(
+            recordingId,
+            asset
+          );
+
+          c.header('Content-Type', safeType);
+          c.header('Content-Length', String(arrayBuffer.byteLength));
+          c.header('Content-Disposition', 'attachment');
+          if (storagePath !== asset.file_path) {
+            console.info('[media] Served audio from reconstructed Supabase key', {
+              recordingId,
+              requestedPath: asset.file_path,
+              resolvedPath: storagePath,
+            });
+          }
+          await writeRecordingAuditEvent(
+            c,
+            { ...asset, id: recordingId },
+            'recording.audio.downloaded',
+            {
+              contentType: safeType,
+              storageMode: String(asset.storage_mode || 'single'),
+              sizeBytes: arrayBuffer.byteLength,
+              delivery: storagePath === asset.file_path ? 'remote' : 'remote-fallback',
+            }
+          );
+          return c.body(arrayBuffer as any, 200);
+        } catch (err: any) {
+          console.error('[media] Supabase download failed', {
+            recordingId,
+            filePath: asset.file_path,
+            error: err.message,
+          });
+          return c.json(
+            buildRemoteAudioDownloadErrorBody(404, recordingId, err.message),
+            404
+          );
         }
       }
 
@@ -1713,6 +1773,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         return c.json({ message: 'Brak \u015Bcie\u017Cki pliku do ponownego przetworzenia.' }, 409);
       }
 
+      const productionRemoteOnly = isProductionRemoteAudioSource();
       const status = String(asset.transcription_status || '').trim();
       const processingMode = resolveProcessingMode(body.processingMode);
       if (['queued', 'processing', 'diarization'].includes(status)) {
@@ -1763,12 +1824,10 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
         workspaceId: asset.workspace_id,
       });
       if (quotaResponse) return quotaResponse;
-      // If the local file is gone (e.g. after Railway redeploy), try the same
-      // reconstructed remote candidates as the audio download endpoint.
-      if (
-        (asset.file_path.includes('/') || asset.file_path.includes('\\')) &&
-        !existsSync(asset.file_path)
-      ) {
+      // In production we must resolve remote storage and ignore local filesystem
+      // candidates for retriable transcription.
+      const hasLocalPathStyle = asset.file_path.includes('/') || asset.file_path.includes('\\');
+      if (productionRemoteOnly || (hasLocalPathStyle && !existsSync(asset.file_path))) {
         try {
           const { storagePath } = await downloadAudioFromStorageCandidates(recordingId, asset);
           console.info('[retry-transcribe] Local file missing, using Supabase fallback', {
@@ -1778,8 +1837,15 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
           });
           // Update asset to use the resolved Supabase key so pipeline downloads it.
           asset.file_path = storagePath;
-        } catch {
-          return c.json({ message: 'Lokalny plik audio nie istnieje.' }, 409);
+        } catch (err: any) {
+          return c.json(
+            {
+              recordingId,
+              message: 'Brak nagrania audio w zdalnym storage.',
+              error: err?.message || 'Nie udało się pobrać nagrania z zdalnego storage.',
+            },
+            409
+          );
         }
       }
 

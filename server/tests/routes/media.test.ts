@@ -530,6 +530,10 @@ describe('Media Routes', () => {
 
   it('Regression: Issue #1511 — retry reuses the persisted consent and rejects legacy recordings', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const downloadSpy = vi
+      .spyOn(storageModule, 'downloadAudioFromStorage')
+      .mockResolvedValue(new TextEncoder().encode('audio-data').buffer);
     const storedConsent = { ...validRecordingConsent(), actorUserId: 'user_original' };
     mockTranscriptionService.getMediaAsset.mockResolvedValue({
       id: 'rec_retry_consent',
@@ -556,6 +560,7 @@ describe('Media Routes', () => {
     });
 
     expect(retry.status).toBe(202);
+    expect(downloadSpy).toHaveBeenCalled();
     expect(mockTranscriptionService.queueTranscription).toHaveBeenCalledWith(
       'rec_retry_consent',
       expect.objectContaining({
@@ -1157,6 +1162,92 @@ describe('Media Routes', () => {
     );
   });
 
+  it('POST /media/recordings/:recordingId/retry-transcribe - production resolves remote key even when local file exists', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const storedConsent = validRecordingConsent({ actorUserId: 'user_1' });
+
+    mockTranscriptionService.getMediaAsset
+      .mockResolvedValueOnce({
+        id: 'rec_retry_prod_remote',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: '/tmp/archive/legacy-prod.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'failed',
+        diarization_json: JSON.stringify({ recordingConsent: storedConsent }),
+        transcript_json: '[]',
+      })
+      .mockResolvedValueOnce({
+        id: 'rec_retry_prod_remote',
+        workspace_id: 'ws_1',
+        meeting_id: 'm_1',
+        file_path: 'rec_retry_prod_remote.webm',
+        content_type: 'audio/webm',
+        transcription_status: 'queued',
+        diarization_json: JSON.stringify({ recordingConsent: storedConsent }),
+        transcript_json: '[]',
+      });
+
+    setFsState({ existsSync: true });
+
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const downloadSpy = vi
+      .spyOn(storageModule, 'downloadAudioFromStorage')
+      .mockResolvedValue(new TextEncoder().encode('audio-data').buffer);
+
+    const res = await app.request('/media/recordings/rec_retry_prod_remote/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(202);
+    expect(downloadSpy).toHaveBeenCalledWith('legacy-prod.webm');
+    expect(mockTranscriptionService.ensureTranscriptionJob).toHaveBeenCalledWith(
+      'rec_retry_prod_remote',
+      expect.objectContaining({
+        file_path: 'legacy-prod.webm',
+      }),
+      expect.objectContaining({
+        workspaceId: 'ws_1',
+        meetingId: 'm_1',
+        contentType: 'audio/webm',
+      })
+    );
+  });
+
+  it('POST /media/recordings/:recordingId/retry-transcribe - production rejects when remote storage is unavailable', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const storedConsent = validRecordingConsent({ actorUserId: 'user_1' });
+
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_retry_prod_remote_missing',
+      workspace_id: 'ws_1',
+      meeting_id: 'm_1',
+      file_path: '/tmp/archive/missing-prod.webm',
+      content_type: 'audio/webm',
+      transcription_status: 'failed',
+      diarization_json: JSON.stringify({ recordingConsent: storedConsent }),
+      transcript_json: '[]',
+    });
+
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    vi.spyOn(storageModule, 'downloadAudioFromStorage').mockRejectedValue(
+      new Error('bucket unavailable')
+    );
+
+    const res = await app.request('/media/recordings/rec_retry_prod_remote_missing/retry-transcribe', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({
+      message: 'Brak nagrania audio w zdalnym storage.',
+      error: 'bucket unavailable',
+      recordingId: 'rec_retry_prod_remote_missing',
+    });
+  });
+
   it('POST /media/recordings/:recordingId/transcribe - returns stt_quota_exceeded with Retry-After', async () => {
     vi.stubEnv('VOICELOG_STT_USER_QUOTA_PER_HOUR', '1');
     mockTranscriptionService.getMediaAsset.mockImplementation(async (recordingId: string) => ({
@@ -1698,6 +1789,64 @@ describe('Media Routes', () => {
     expect(res.headers.get('Content-Disposition')).toBe('attachment');
     expect(downloadSpy).toHaveBeenNthCalledWith(1, 'legacy-name.webm');
     expect(downloadSpy).toHaveBeenNthCalledWith(2, 'rec_stream.webm');
+  });
+
+  it('GET /media/recordings/:recordingId/audio - production serves from remote storage even when local file exists', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_prod_remote',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/local-cache/production-remote.webm',
+      content_type: 'audio/webm',
+    });
+
+    const fsModule = await import('node:fs');
+    const createReadStreamSpy = vi.spyOn(fsModule, 'createReadStream');
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    const downloadSpy = vi
+      .spyOn(storageModule, 'downloadAudioFromStorage')
+      .mockResolvedValue(new TextEncoder().encode('audio-data').buffer);
+
+    const res = await app.request('/media/recordings/rec_prod_remote/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(200);
+    expect(downloadSpy).toHaveBeenCalledWith('production-remote.webm');
+    expect(createReadStreamSpy).not.toHaveBeenCalled();
+    expect(res.headers.get('Content-Type')).toBe('audio/webm');
+    expect(await res.text()).toBe('audio-data');
+  });
+
+  it('GET /media/recordings/:recordingId/audio - production returns storage miss when remote audio is unavailable', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mockTranscriptionService.getMediaAsset.mockResolvedValue({
+      id: 'rec_prod_remote_miss',
+      workspace_id: 'ws_1',
+      file_path: '/tmp/local-cache/production-miss.webm',
+      content_type: 'audio/webm',
+    });
+
+    const fsModule = await import('node:fs');
+    const createReadStreamSpy = vi.spyOn(fsModule, 'createReadStream');
+    const storageModule = await import('../../lib/supabaseStorage.ts');
+    vi.spyOn(storageModule, 'downloadAudioFromStorage').mockRejectedValue(
+      new Error('missing in remote storage')
+    );
+
+    const res = await app.request('/media/recordings/rec_prod_remote_miss/audio', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer fake_token' },
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({
+      message: 'Brak nagrania audio w zdalnym storage.',
+      recordingId: 'rec_prod_remote_miss',
+      error: 'missing in remote storage',
+    });
+    expect(createReadStreamSpy).not.toHaveBeenCalled();
   });
 
   it('GET /media/recordings/:recordingId/audio - writes a sanitized download audit event', async () => {
