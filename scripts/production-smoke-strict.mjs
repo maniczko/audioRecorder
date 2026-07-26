@@ -18,6 +18,7 @@ runProductionSmoke()
           api: result.api,
           supabaseRemote: result.supabaseRemote,
           gitSha: result.gitSha,
+          frontendBuildId: result.frontendBuildId,
           audioUploadChecked: result.audioUploadChecked,
           audioPersistenceChecked: result.audioPersistenceChecked,
           staleRecordingChecked: result.staleRecordingChecked,

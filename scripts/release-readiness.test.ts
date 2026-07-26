@@ -8,6 +8,7 @@ import { findBuildWarnings } from './audit-build-warnings.mjs';
 import { findMojibakeIssues } from './audit-mojibake.mjs';
 import {
   collectFrontendAssetUrls,
+  extractFrontendBuildId,
   evaluateHealthPayload,
   findMojibake,
   runProductionSmoke,
@@ -223,7 +224,25 @@ describe('release readiness gates', () => {
           supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
           gitSha: 'abc123',
         },
-        { requireKnownGitSha: true, requirePremiumStt: false }
+        { requireKnownGitSha: true, requirePremiumStt: false, frontendBuildId: 'abc123' }
+      )
+    ).toEqual([]);
+
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
+        {
+          requireKnownGitSha: true,
+          requirePremiumStt: false,
+          frontendBuildId: 'abc123',
+          expectedGitSha: 'abc123',
+        }
       )
     ).toEqual([]);
 
@@ -239,6 +258,7 @@ describe('release readiness gates', () => {
         { requireKnownGitSha: false, requirePremiumStt: false, expectedGitSha: 'abc123' }
       )
     ).toContain('backend health gitSha mismatch (expected abc123, received def456)');
+
     expect(
       evaluateHealthPayload(
         {
@@ -248,9 +268,166 @@ describe('release readiness gates', () => {
           supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
           gitSha: 'abc123',
         },
-        { requireKnownGitSha: false, requirePremiumStt: false, expectedGitSha: 'abc123' }
+        {
+          requireKnownGitSha: true,
+          requirePremiumStt: false,
+          frontendBuildId: 'def456',
+          expectedGitSha: 'abc123',
+        }
+      )
+    ).toContain('frontend build id mismatch (expected abc123, received def456)');
+
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
+        {
+          requireKnownGitSha: true,
+          requirePremiumStt: false,
+        }
+      )
+    ).toContain('frontend build id must be configured and cannot be empty in production');
+
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
+        {
+          requireKnownGitSha: false,
+          requirePremiumStt: false,
+          frontendBuildId: 'def456',
+        }
+      )
+    ).toContain('frontend/backend gitSha mismatch (def456 vs abc123)');
+
+    expect(
+      evaluateHealthPayload(
+        {
+          ok: true,
+          status: 'ok',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+          gitSha: 'abc123',
+        },
+        {
+          requireKnownGitSha: false,
+          requirePremiumStt: false,
+          expectedGitSha: 'abc123',
+          frontendBuildId: 'abc123',
+        }
       )
     ).toEqual([]);
+  });
+
+  it('extracts frontend build id from HTML smoke payload', () => {
+    expect(
+      extractFrontendBuildId(
+        '<html><body><script type="module">window.__VOICELOG_FRONTEND_BUILD_ID__ = "abc123"</script><div id="root"></div></body></html>'
+      )
+    ).toBe('abc123');
+    expect(
+      extractFrontendBuildId(
+        '<script data-voicelog-build-id="def456"></script><div id="root"></div>'
+      )
+    ).toBe('def456');
+    expect(extractFrontendBuildId('<div id="root"></div>')).toBe('');
+  });
+
+  it('verifies frontend/backend git SHA parity during production smoke when expected SHA is set', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === 'https://voicelog.example.com') {
+          return {
+            ok: true,
+            status: 200,
+            text: async () =>
+              '<!doctype html><script>window.__VOICELOG_FRONTEND_BUILD_ID__ = "abc123"</script><div id="root">VoiceLog</div>',
+            headers: new Headers({ 'content-type': 'text/html' }),
+          };
+        }
+        if (url === 'https://api.example.com/health') {
+          return {
+            ok: true,
+            status: 200,
+            text: async () =>
+              JSON.stringify({
+                ok: true,
+                status: 'ok',
+                supabaseRemote: true,
+                supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+                gitSha: 'abc123',
+              }),
+            headers: new Headers({ 'content-type': 'application/json' }),
+          };
+        }
+        throw new Error(`Unexpected fetch in production smoke SHA parity test: ${url}`);
+      })
+    );
+
+    const result = await runProductionSmoke({
+      frontendUrl: 'https://voicelog.example.com',
+      apiBaseUrl: 'https://api.example.com',
+      requirePremiumStt: false,
+      requireKnownGitSha: false,
+      expectedGitSha: 'abc123',
+    });
+
+    expect(result.frontendBuildId).toBe('abc123');
+    expect(result.gitSha).toBe('abc123');
+  });
+
+  it('fails production smoke when frontend build id does not match expected SHA', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === 'https://voicelog.example.com') {
+          return {
+            ok: true,
+            status: 200,
+            text: async () =>
+              '<!doctype html><script>window.__VOICELOG_FRONTEND_BUILD_ID__ = "def456"</script><div id="root">VoiceLog</div>',
+            headers: new Headers({ 'content-type': 'text/html' }),
+          };
+        }
+        if (url === 'https://api.example.com/health') {
+          return {
+            ok: true,
+            status: 200,
+            text: async () =>
+              JSON.stringify({
+                ok: true,
+                status: 'ok',
+                supabaseRemote: true,
+                supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+                gitSha: 'abc123',
+              }),
+            headers: new Headers({ 'content-type': 'application/json' }),
+          };
+        }
+        throw new Error(`Unexpected fetch in production smoke SHA parity fail test: ${url}`);
+      })
+    );
+
+    await expect(
+      runProductionSmoke({
+        frontendUrl: 'https://voicelog.example.com',
+        apiBaseUrl: 'https://api.example.com',
+        requirePremiumStt: false,
+        requireKnownGitSha: false,
+        expectedGitSha: 'abc123',
+      })
+    ).rejects.toThrow('frontend build id mismatch (expected abc123, received def456)');
   });
 
   it('detects mojibake in production frontend text and assets', () => {

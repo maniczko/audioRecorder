@@ -45,6 +45,24 @@ function parseNonNegativeInteger(value, fallback) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+export function extractFrontendBuildId(html) {
+  const text = String(html || '');
+
+  const inlineScriptMatch = text.match(
+    /window\.__VOICELOG_FRONTEND_BUILD_ID__\s*=\s*["']([a-fA-F0-9]+)["']/m
+  );
+  if (inlineScriptMatch?.[1]) {
+    return inlineScriptMatch[1].toLowerCase();
+  }
+
+  const fallbackMatch = text.match(/data-voicelog-build-id=(["'])([a-fA-F0-9]+)\1/i);
+  if (fallbackMatch?.[2]) {
+    return fallbackMatch[2].toLowerCase();
+  }
+
+  return '';
+}
+
 async function fetchWithTransientRetry(
   url,
   init,
@@ -706,6 +724,7 @@ export function evaluateHealthPayload(
     requireSupabaseRemote = true,
     requireKnownGitSha = false,
     expectedGitSha = '',
+    frontendBuildId = '',
     requirePremiumStt = process.env.PRODUCTION_REQUIRE_PREMIUM_STT !== 'false',
   } = {}
 ) {
@@ -743,9 +762,14 @@ export function evaluateHealthPayload(
   const gitSha = String(payload.gitSha || '')
     .trim()
     .toLowerCase();
+  const normalizedFrontendBuildId = String(frontendBuildId || '')
+    .trim()
+    .toLowerCase();
   if (requireKnownGitSha && (!gitSha || gitSha === 'unknown')) {
     failures.push('health gitSha must be configured and cannot be unknown in production');
-    return failures;
+  }
+  if (requireKnownGitSha && !normalizedFrontendBuildId) {
+    failures.push('frontend build id must be configured and cannot be empty in production');
   }
 
   const normalizedExpectedGitSha = String(expectedGitSha || '')
@@ -755,6 +779,22 @@ export function evaluateHealthPayload(
     failures.push(
       `backend health gitSha mismatch (expected ${normalizedExpectedGitSha}, received ${gitSha || 'unknown'})`
     );
+  }
+  if (
+    normalizedExpectedGitSha &&
+    (!normalizedFrontendBuildId || normalizedFrontendBuildId !== normalizedExpectedGitSha)
+  ) {
+    failures.push(
+      `frontend build id mismatch (expected ${normalizedExpectedGitSha}, received ${normalizedFrontendBuildId || 'unknown'})`
+    );
+  }
+  if (
+    !normalizedExpectedGitSha &&
+    gitSha &&
+    normalizedFrontendBuildId &&
+    gitSha !== normalizedFrontendBuildId
+  ) {
+    failures.push(`frontend/backend gitSha mismatch (${normalizedFrontendBuildId} vs ${gitSha})`);
   }
 
   if (requirePremiumStt) {
@@ -799,6 +839,7 @@ export async function runProductionSmoke({
   if (!/id=["']root["']|VoiceLog/i.test(frontendResult.text)) {
     throw new Error('Frontend smoke failed: app shell marker not found.');
   }
+  const frontendBuildId = extractFrontendBuildId(frontendResult.text);
   await assertNoFrontendMojibake(frontend, frontendResult.text);
 
   if (
@@ -825,6 +866,7 @@ export async function runProductionSmoke({
     requireKnownGitSha,
     expectedGitSha,
     requirePremiumStt,
+    frontendBuildId,
   });
   if (healthFailures.length > 0) {
     throw new Error(`Health smoke failed:\n- ${healthFailures.join('\n- ')}`);
@@ -869,6 +911,7 @@ export async function runProductionSmoke({
     api,
     supabaseRemote: Boolean(healthPayload.supabaseRemote),
     gitSha: String(healthPayload.gitSha || ''),
+    frontendBuildId,
     audioUploadChecked,
     audioPersistenceChecked,
     staleRecordingChecked,
