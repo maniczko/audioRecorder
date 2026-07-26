@@ -26,7 +26,10 @@ Use this checklist for monthly drills and after any backup tooling change.
 6. Set these GitHub secrets for the restore verification workflow:
    - `STAGING_SUPABASE_URL`
    - `STAGING_SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_URL` (reference production project URL for sanity check)
    - `RESTORE_VERIFY_WORKSPACE_ID`
+   - optional `RESTORE_VERIFY_BACKUP_ID`
+   - optional `RESTORE_VERIFY_RESTORE_ID`
    - optional `RESTORE_VERIFY_EXPECTED_RECORDING_IDS`
    - optional `RESTORE_VERIFY_STORAGE_BUCKET`
 7. Run **Production Data Maintenance** with `run_restore_verification=true` or wait for the scheduled weekly verification.
@@ -43,9 +46,13 @@ RESTORE_VERIFY_ENVIRONMENT=staging \
 SUPABASE_URL=https://project.supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=... \
 RESTORE_VERIFY_WORKSPACE_ID=workspace_restore \
+RESTORE_VERIFY_REFERENCE_URL=https://production.supabase.co \
 RESTORE_VERIFY_EXPECTED_RECORDING_IDS=recording_1,recording_2 \
 pnpm run verify:backup-restore
 ```
+
+Verifier now refuses to run if `SUPABASE_URL` and `RESTORE_VERIFY_REFERENCE_URL` point to the same
+Supabase project (this catches accidental self-restore / identical-project verification).
 
 The verifier is read-only. It checks:
 

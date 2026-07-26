@@ -475,7 +475,7 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
           hint:
             supabaseRemote && storage.ready !== false
               ? undefined
-              : 'Supabase storage is not production-ready; verify VOICELOG_SUPABASE_URL, VOICELOG_SUPABASE_SERVICE_ROLE_KEY, VOICELOG_SUPABASE_STORAGE_BUCKET and bucket read/write permissions.',
+              : 'Supabase storage is not production-ready; verify SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET and bucket read/write permissions.',
         },
       };
     })

@@ -383,6 +383,8 @@ describe('GitHub workflows validation', () => {
     expect(parsed?.on?.schedule).toBeTruthy();
     expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('run_restore_verification');
     expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('restore_workspace_id');
+    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('backup_id');
+    expect(parsed?.on?.workflow_dispatch?.inputs).toHaveProperty('restore_id');
     expect(repairJob?.if).toBe("${{ github.event_name == 'workflow_dispatch' }}");
     expect(job?.if).toContain("github.event_name == 'schedule'");
     expect(job?.if).toContain("inputs.run_restore_verification == 'true'");
@@ -390,8 +392,13 @@ describe('GitHub workflows validation', () => {
     expect(job?.env?.SUPABASE_SERVICE_ROLE_KEY).toBe(
       '${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}'
     );
+    expect(job?.env?.RESTORE_VERIFY_REFERENCE_URL).toBe('${{ secrets.SUPABASE_URL }}');
     expect(job?.env?.RESTORE_VERIFY_ENVIRONMENT).toContain('staging');
     expect(content).toContain('RESTORE_VERIFY_ENVIRONMENT must be staging or sandbox');
+    expect(content).toContain('RESTORE_VERIFY_REFERENCE_URL');
+    expect(content).toContain(
+      'Restore verification target and reference Supabase project URLs are identical'
+    );
     expect(steps.some((step) => step.run === 'pnpm run verify:backup-restore')).toBe(true);
     expect(steps.some((step) => step.with?.path === 'reports/backup-restore-verification/')).toBe(
       true

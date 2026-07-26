@@ -13,6 +13,12 @@ const validEnv = {
   RESTORE_VERIFY_ENVIRONMENT: 'staging',
 };
 
+const workspaceWithReferenceEnv = {
+  ...validEnv,
+  SUPABASE_URL: 'https://staging-project.supabase.co',
+  RESTORE_VERIFY_REFERENCE_URL: 'https://reference-project.supabase.co',
+};
+
 describe('backup restore verifier', () => {
   it('reports a healthy staging restore with transcript metadata and audio availability', () => {
     const report = buildBackupRestoreVerificationReport({
@@ -21,6 +27,7 @@ describe('backup restore verifier', () => {
       storageChecked: true,
       expectedRecordingIds: ['recording_restore_1'],
       backupMetadata: { backupId: 'backup-2026-07-04' },
+      workspaceSupabaseUrl: 'https://staging-project.supabase.co',
       storageStatusByPath: {
         'recording_restore_1.webm': { exists: true },
       },
@@ -60,6 +67,57 @@ describe('backup restore verifier', () => {
       storageChecked: true,
     });
     expect(report.issues).toEqual([]);
+  });
+
+  it('detects restoration configured against the same reference project and blocks', () => {
+    const report = buildBackupRestoreVerificationReport({
+      workspaceId: 'workspace_restore',
+      restoreEnvironment: 'staging',
+      storageChecked: true,
+      expectedRecordingIds: ['recording_restore_1'],
+      workspaceSupabaseUrl: 'https://staging-project.supabase.co',
+      backupMetadata: { backupId: 'backup-2026-07-04' },
+      restoreReferenceUrl: 'https://staging-project.supabase.co',
+      storageStatusByPath: {
+        'recording_restore_1.webm': { exists: true },
+      },
+      workspaceRow: {
+        workspace_id: 'workspace_restore',
+        calendar_meta_json: '{}',
+        meetings_json: JSON.stringify([
+          {
+            id: 'meeting_restore_1',
+            latestRecordingId: 'recording_restore_1',
+            recordings: [
+              {
+                id: 'recording_restore_1',
+                transcript: [{ text: 'Restored transcript visible in workspace state' }],
+              },
+            ],
+          },
+        ]),
+      },
+      mediaAssets: [
+        {
+          id: 'recording_restore_1',
+          workspace_id: 'workspace_restore',
+          meeting_id: 'meeting_restore_1',
+          file_path: 'recording_restore_1.webm',
+          transcription_status: 'completed',
+          transcript_json: JSON.stringify([{ text: 'Restored transcript visible in media asset' }]),
+        },
+      ],
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'restore_reference_project_matches_workspace_project',
+          severity: 'P0',
+        }),
+      ])
+    );
   });
 
   it('detects missing expected recordings, transcript metadata, and audio objects', () => {
@@ -125,6 +183,12 @@ describe('backup restore verifier', () => {
         RESTORE_VERIFY_ALLOW_PRODUCTION: 'true',
       })
     ).not.toThrow();
+    expect(() =>
+      validateBackupRestoreVerifierEnv({
+        ...validEnv,
+        RESTORE_VERIFY_REFERENCE_URL: 'not-a-valid-url',
+      })
+    ).toThrow('RESTORE_VERIFY_REFERENCE_URL');
   });
 
   it('runs against mocked restored DB and storage inputs without touching production', async () => {
@@ -171,5 +235,49 @@ describe('backup restore verifier', () => {
       bucket: 'recordings',
       checkStorage: true,
     });
+  });
+
+  it('runs with explicit reference URL override in env', async () => {
+    const fetchInputs = vi.fn().mockResolvedValue({
+      storageChecked: true,
+      storageStatusByPath: {
+        'recording_restore_1.webm': { exists: true },
+      },
+      workspaceRow: {
+        workspace_id: 'workspace_restore',
+        calendar_meta_json: '{}',
+        meetings_json: JSON.stringify([
+          {
+            id: 'meeting_restore_1',
+            latestRecordingId: 'recording_restore_1',
+            recordings: [{ id: 'recording_restore_1', transcript: [{ text: 'ok' }] }],
+          },
+        ]),
+      },
+      mediaAssets: [
+        {
+          id: 'recording_restore_1',
+          workspace_id: 'workspace_restore',
+          meeting_id: 'meeting_restore_1',
+          file_path: 'recording_restore_1.webm',
+          transcription_status: 'completed',
+          transcript_json: JSON.stringify([{ text: 'ok' }]),
+        },
+      ],
+    });
+
+    const report = await runBackupRestoreVerification({
+      env: workspaceWithReferenceEnv,
+      workspaceId: 'workspace_restore',
+      expectedRecordingIds: ['recording_restore_1'],
+      backupMetadata: { backupId: 'backup-2026-07-04' },
+      fetchInputs,
+      writeReportFile: false,
+      restoreReferenceUrl: 'https://reference-project.supabase.co',
+    });
+
+    expect(report.ok).toBe(true);
+    expect(report.referenceInputProject).toBe('reference-project');
+    expect(report.referenceProject).toBe('staging-project');
   });
 });

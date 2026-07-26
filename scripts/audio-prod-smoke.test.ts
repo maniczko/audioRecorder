@@ -804,5 +804,6 @@ describe('audio production smoke', () => {
     });
     expect(JSON.stringify(supabaseStep?.details)).toContain('Supabase');
     expect(JSON.stringify(supabaseStep?.details)).toContain('SUPABASE');
+    expect(JSON.stringify(supabaseStep?.details)).toContain('SUPABASE_URL');
   });
 });

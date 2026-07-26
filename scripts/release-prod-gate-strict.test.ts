@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  parsePositiveInteger,
   productionGateCommands,
   productionGateRequiredEnv,
   runProductionGate,
   validateProductionGateEnv,
+  verifyConsecutiveProductionGateRuns,
 } from './release-prod-gate-strict.mjs';
 
 function createStrictEnv(overrides: Record<string, string> = {}) {
@@ -16,9 +18,88 @@ function createStrictEnv(overrides: Record<string, string> = {}) {
       }),
       {}
     ),
+    GITHUB_TOKEN: 'ghs_1234567890',
+    GITHUB_REPOSITORY: 'owner/example',
+    GITHUB_RUN_ID: '4242',
+    GITHUB_WORKFLOW_REF:
+      'owner/example/.github/workflows/production-system-audit.yml@refs/heads/main',
     ...overrides,
   };
 }
+
+function createMockResponse(body: unknown, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+  };
+}
+
+describe('release:prod-gate:strict consecutive run guard', () => {
+  it('accepts consecutive successful run history', async () => {
+    const fetchMock = vi.fn(async () =>
+      createMockResponse({
+        workflow_runs: [
+          { id: '201', conclusion: 'success' },
+          { id: '200', conclusion: 'success' },
+        ],
+      })
+    );
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv(),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toBe(true);
+
+    const calledUrl = String(fetchMock.mock.calls[0]?.[0]);
+    expect(calledUrl).toContain(
+      '/repos/owner/example/actions/workflows/production-system-audit.yml/runs'
+    );
+    expect(calledUrl).toContain('status=completed');
+  });
+
+  it('rejects when recent history contains failures', async () => {
+    const fetchMock = vi.fn(async () =>
+      createMockResponse({
+        workflow_runs: [
+          { id: '201', conclusion: 'failure' },
+          { id: '200', conclusion: 'success' },
+        ],
+      })
+    );
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv(),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).rejects.toThrow('consecutive successful');
+  });
+
+  it('rejects when consecutive history is too short', async () => {
+    const fetchMock = vi.fn(async () =>
+      createMockResponse({
+        workflow_runs: [{ id: '201', conclusion: 'success' }],
+      })
+    );
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv(),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).rejects.toThrow('only found 1 completed run');
+  });
+
+  it('validates parsePositiveInteger defaults', () => {
+    expect(parsePositiveInteger('3', 5)).toBe(3);
+    expect(parsePositiveInteger('0', 5)).toBe(5);
+    expect(parsePositiveInteger('', 7)).toBe(7);
+  });
+});
 
 describe('release:prod-gate:strict', () => {
   it('validates required environment variables', () => {
@@ -53,14 +134,16 @@ describe('release:prod-gate:strict', () => {
       }
     );
 
+    const verifyConsecutiveRuns = vi.fn(async () => true);
     const env = createStrictEnv({
       PRODUCTION_FRONTEND_URL: 'https://frontend.internal',
       PRODUCTION_API_BASE_URL: 'https://api.internal',
     });
 
-    const code = await runProductionGate({ run, env });
+    const code = await runProductionGate({ run, env, verifyConsecutiveRuns });
 
     expect(code).toBe(0);
+    expect(verifyConsecutiveRuns).toHaveBeenCalledTimes(1);
     expect(run).toHaveBeenCalledTimes(productionGateCommands.length);
     expect(seen).toEqual(
       productionGateCommands.map(([command, args]) => `${command} ${args.join(' ')}`)
@@ -76,8 +159,10 @@ describe('release:prod-gate:strict', () => {
       return 0;
     });
 
+    const verifyConsecutiveRuns = vi.fn(async () => true);
     const code = await runProductionGate({
       run,
+      verifyConsecutiveRuns,
       commands: [
         ['pnpm', ['run', 'test:e2e:production-actions']],
         ['pnpm', ['run', 'test:e2e:production-persistence']],
@@ -90,11 +175,13 @@ describe('release:prod-gate:strict', () => {
     });
 
     expect(code).toBe(3);
+    expect(verifyConsecutiveRuns).toHaveBeenCalledTimes(1);
     expect(run).toHaveBeenCalledTimes(2);
   });
 
   it('runs the production smoke command and workspace verification after e2e checks', () => {
     const run = vi.fn(async () => 0);
+    const verifyConsecutiveRuns = vi.fn(async () => true);
 
     const hasSmokeCommands = productionGateCommands.some(
       ([command, args]) =>
@@ -110,6 +197,7 @@ describe('release:prod-gate:strict', () => {
 
     return runProductionGate({
       run,
+      verifyConsecutiveRuns,
       env: createStrictEnv({
         PRODUCTION_FRONTEND_URL: 'https://frontend.internal',
         PRODUCTION_API_BASE_URL: 'https://api.internal',
@@ -119,6 +207,7 @@ describe('release:prod-gate:strict', () => {
         .map((entry) => `${entry[0]} ${entry[1].join(' ')}`)
         .join(' | ');
       expect(code).toBe(0);
+      expect(verifyConsecutiveRuns).toHaveBeenCalledTimes(1);
       expect(summary).toContain('test:e2e:production-actions');
       expect(summary).toContain('test:e2e:production-persistence');
       expect(summary).toContain('release:prod-smoke:strict');

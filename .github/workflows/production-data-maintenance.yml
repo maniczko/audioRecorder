@@ -37,6 +37,14 @@ on:
         options:
           - 'staging'
           - 'sandbox'
+      backup_id:
+        description: 'Backup identifier to include in restore verification report.'
+        required: false
+        default: ''
+      restore_id:
+        description: 'Restore identifier to include in restore verification report.'
+        required: false
+        default: ''
       expected_recording_ids:
         description: 'Comma-separated restored recording ids to verify.'
         required: false
@@ -117,7 +125,10 @@ jobs:
       WORKSPACE_ID: ${{ inputs.restore_workspace_id || secrets.RESTORE_VERIFY_WORKSPACE_ID }}
       RESTORE_VERIFY_ENVIRONMENT: ${{ inputs.restore_environment || 'staging' }}
       RESTORE_VERIFY_EXPECTED_RECORDING_IDS: ${{ inputs.expected_recording_ids || secrets.RESTORE_VERIFY_EXPECTED_RECORDING_IDS }}
+      RESTORE_VERIFY_BACKUP_ID: ${{ inputs.backup_id || secrets.RESTORE_VERIFY_BACKUP_ID }}
+      RESTORE_VERIFY_RESTORE_ID: ${{ inputs.restore_id || secrets.RESTORE_VERIFY_RESTORE_ID }}
       SUPABASE_STORAGE_BUCKET: ${{ secrets.RESTORE_VERIFY_STORAGE_BUCKET || 'recordings' }}
+      RESTORE_VERIFY_REFERENCE_URL: ${{ secrets.SUPABASE_URL }}
 
     steps:
       - uses: actions/checkout@v6
@@ -133,6 +144,7 @@ jobs:
           for secret in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY WORKSPACE_ID; do
             [[ -n "${!secret}" ]] || missing+=("${secret}")
           done
+          [[ -n "${RESTORE_VERIFY_REFERENCE_URL}" ]] || missing+=("RESTORE_VERIFY_REFERENCE_URL")
 
           if [ "${RESTORE_VERIFY_ENVIRONMENT}" = "production" ]; then
             missing+=("RESTORE_VERIFY_ENVIRONMENT must be staging or sandbox")
@@ -144,6 +156,13 @@ jobs:
               echo "- ${secret}" >> "$GITHUB_STEP_SUMMARY"
               echo "::error::Missing required restore verification setting: ${secret}"
             done
+            exit 1
+          fi
+
+          if [ "${RESTORE_VERIFY_REFERENCE_URL%/}" = "${SUPABASE_URL%/}" ]; then
+            echo "## Restore reference misconfiguration" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Restore verification target and reference Supabase project URLs are identical." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::RESTORE_VERIFY_REFERENCE_URL must point to a different project than SUPABASE_URL."
             exit 1
           fi
 

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { parse } from 'yaml';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -91,8 +92,20 @@ describe('release readiness gates', () => {
         'SENTRY_AUTH_TOKEN',
         'SENTRY_ORG',
         'SENTRY_PROJECT',
+        'GITHUB_TOKEN',
+        'GITHUB_REPOSITORY',
       ])
     );
+  });
+
+  it('enforces minimum production-system-audit workflow permissions', () => {
+    const parsed = parse(read('.github/workflows/production-system-audit.yml')) as {
+      permissions?: Record<string, string>;
+    } | null;
+
+    expect(parsed?.permissions).toBeTruthy();
+    expect(parsed?.permissions?.contents).toBe('read');
+    expect(parsed?.permissions?.actions).toBe('read');
   });
 
   it('keeps production persistence retries within the production audit timeout budget', () => {
@@ -119,6 +132,8 @@ describe('release readiness gates', () => {
         SENTRY_AUTH_TOKEN: 'sentry',
         SENTRY_ORG: 'org',
         SENTRY_PROJECT: 'project',
+        GITHUB_TOKEN: 'ghs_1234567890',
+        GITHUB_REPOSITORY: 'owner/example',
       })
     ).not.toThrow();
   });

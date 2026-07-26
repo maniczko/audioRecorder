@@ -39,6 +39,23 @@ function isLikelyLocalAudioPath(value) {
   );
 }
 
+function parseSupabaseProjectRef(value) {
+  const raw = clean(value);
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.toLowerCase();
+    if (!host.endsWith('.supabase.co')) return '';
+    return host.split('.').shift() || '';
+  } catch {
+    return '';
+  }
+}
+
+function normalizeSupabaseProjectRef(value) {
+  return clean(parseSupabaseProjectRef(value));
+}
+
 function safeJsonParse(value, fallback) {
   if (value === null || value === undefined || value === '') return fallback;
   if (typeof value === 'object') return value;
@@ -121,6 +138,47 @@ export function validateBackupRestoreVerifierEnv(env = process.env) {
       'Backup restore verification requires SUPABASE_URL to be the Supabase project API URL.'
     );
   }
+
+  if (env.RESTORE_VERIFY_REFERENCE_URL) {
+    try {
+      const parsed = new URL(clean(env.RESTORE_VERIFY_REFERENCE_URL));
+      if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('.supabase.co')) {
+        throw new Error();
+      }
+    } catch {
+      throw new Error(
+        'Backup restore verification requires RESTORE_VERIFY_REFERENCE_URL to be the Supabase project API URL.'
+      );
+    }
+  }
+}
+
+function buildProjectDivergenceIssue({ workspaceId, restoreReferenceUrl, workspaceUrl, environment }) {
+  const restoreRef = normalizeSupabaseProjectRef(workspaceUrl);
+  const referenceRef = normalizeSupabaseProjectRef(restoreReferenceUrl);
+
+  if (!restoreRef || !referenceRef) {
+    return null;
+  }
+
+  if (environment.toLowerCase() === 'production') {
+    return null;
+  }
+
+  if (restoreRef === referenceRef) {
+    return issue(
+      'P0',
+      'restore_reference_project_matches_workspace_project',
+      'Restore target environment resolves to the same Supabase project as the reference project.',
+      {
+        workspaceId,
+        workspaceProjectRef: restoreRef,
+        referenceProjectRef: referenceRef,
+      }
+    );
+  }
+
+  return null;
 }
 
 export function buildBackupRestoreVerificationReport({
@@ -134,6 +192,8 @@ export function buildBackupRestoreVerificationReport({
   minCompletedRecordings = 1,
   restoreEnvironment = 'staging',
   backupMetadata = {},
+  restoreReferenceUrl = '',
+  workspaceSupabaseUrl = '',
 } = {}) {
   const assets = Array.isArray(mediaAssets) ? mediaAssets : [];
   const expectedIds = Array.isArray(expectedRecordingIds)
@@ -174,6 +234,16 @@ export function buildBackupRestoreVerificationReport({
         workspaceId,
       })
     );
+  }
+
+  const referenceIssue = buildProjectDivergenceIssue({
+    workspaceId,
+    restoreReferenceUrl,
+    workspaceUrl: clean(workspaceSupabaseUrl),
+    environment: restoreEnvironment,
+  });
+  if (referenceIssue) {
+    issues.push(referenceIssue);
   }
 
   if (assets.length === 0) {
@@ -297,6 +367,8 @@ export function buildBackupRestoreVerificationReport({
     workspaceId: clean(workspaceId),
     restoreEnvironment: clean(restoreEnvironment) || 'staging',
     bucket,
+    referenceProject: normalizeSupabaseProjectRef(workspaceSupabaseUrl),
+    referenceInputProject: normalizeSupabaseProjectRef(restoreReferenceUrl),
     checkedAt: new Date().toISOString(),
     backupMetadata,
     summary: {
@@ -336,6 +408,7 @@ export async function runBackupRestoreVerification({
     backupId: readArg('backup-id') || env.RESTORE_VERIFY_BACKUP_ID || '',
     restoreId: readArg('restore-id') || env.RESTORE_VERIFY_RESTORE_ID || '',
   },
+  restoreReferenceUrl = readArg('reference-url') || env.RESTORE_VERIFY_REFERENCE_URL || '',
   checkStorage = !process.argv.includes('--skip-storage'),
   writeReportFile = process.argv.includes('--write-report') || env.CI === 'true',
   fetchInputs,
@@ -374,6 +447,8 @@ export async function runBackupRestoreVerification({
     restoreEnvironment,
     expectedRecordingIds,
     minCompletedRecordings,
+    workspaceSupabaseUrl: clean(env.SUPABASE_URL),
+    restoreReferenceUrl,
     backupMetadata,
     ...inputs,
   });

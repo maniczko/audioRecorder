@@ -11,6 +11,10 @@ concurrency:
   group: production-system-audit
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   production-system-audit:
     runs-on: ubuntu-latest
