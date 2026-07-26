@@ -1235,10 +1235,13 @@ describe('Media Routes', () => {
       new Error('bucket unavailable')
     );
 
-    const res = await app.request('/media/recordings/rec_retry_prod_remote_missing/retry-transcribe', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer fake_token' },
-    });
+    const res = await app.request(
+      '/media/recordings/rec_retry_prod_remote_missing/retry-transcribe',
+      {
+        method: 'POST',
+        headers: { Authorization: 'Bearer fake_token' },
+      }
+    );
 
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({

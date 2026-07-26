@@ -634,7 +634,11 @@ function isProductionRemoteAudioSource() {
   return isProductionDeployment();
 }
 
-function buildRemoteAudioDownloadErrorBody(statusCode: number, recordingId: string, errorMessage: string) {
+function buildRemoteAudioDownloadErrorBody(
+  statusCode: number,
+  recordingId: string,
+  errorMessage: string
+) {
   const shouldTreatAsMissing = statusCode === 404;
   const message = shouldTreatAsMissing
     ? 'Brak nagrania audio w zdalnym storage.'
@@ -1429,10 +1433,7 @@ export function createMediaRoutes(services: AppServices, middlewares: AppMiddlew
             filePath: asset.file_path,
             error: err.message,
           });
-          return c.json(
-            buildRemoteAudioDownloadErrorBody(404, recordingId, err.message),
-            404
-          );
+          return c.json(buildRemoteAudioDownloadErrorBody(404, recordingId, err.message), 404);
         }
       }
 
