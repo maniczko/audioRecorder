@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +23,35 @@ export const productionGateRequiredEnv = [
 
 function resolveGithubToken(env) {
   return String(env.GITHUB_TOKEN || env.GH_TOKEN || env.GH_PAT || '').trim();
+}
+
+async function resolveWorkflowEventName(env = process.env) {
+  const eventPath = String(env.GITHUB_EVENT_PATH || '').trim();
+  let eventPayload = null;
+
+  if (eventPath) {
+    try {
+      eventPayload = JSON.parse(await readFile(eventPath, 'utf8'));
+    } catch (error) {
+      console.log('[release:prod-gate:strict] Unable to read GITHUB_EVENT_PATH for workflow event detection:', error);
+    }
+  }
+
+  const explicit = String(env.GITHUB_EVENT_NAME || '').trim();
+  if (explicit) {
+    const normalized = explicit.toLowerCase();
+    if (normalized === 'workflow_run') {
+      return eventPayload && eventPayload.workflow_run ? 'workflow_run' : '';
+    }
+
+    return normalized;
+  }
+
+  if (eventPayload && eventPayload.workflow_run) {
+    return 'workflow_run';
+  }
+
+  return '';
 }
 
 export const productionGateCommands = [
@@ -106,6 +136,18 @@ export async function verifyConsecutiveProductionGateRuns({
   ),
 } = {}) {
   const consecutive = parsePositiveInteger(requiredRuns, REQUIRED_CONSECUTIVE_RUNS);
+  const eventName = await resolveWorkflowEventName(env);
+  const explicitRefName = String(env.GITHUB_REF_NAME || '').trim();
+  const fullRefName = String(env.GITHUB_REF || '').trim();
+  const isMainBranch = explicitRefName === 'main' || /\/main$/.test(fullRefName);
+
+  if (eventName !== 'workflow_run' || !isMainBranch) {
+    console.log(
+      `[release:prod-gate:strict] Skipping consecutive run check for trigger "${eventName || 'unknown'}" on ref "${explicitRefName || fullRefName || 'unknown'}"; required only for workflow_run on main.`
+    );
+    return true;
+  }
+
   if (consecutive <= 1) {
     console.log('[release:prod-gate:strict] Consecutive runs requirement disabled.');
     return true;

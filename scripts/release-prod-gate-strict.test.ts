@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import {
   parsePositiveInteger,
@@ -8,6 +11,15 @@ import {
   validateProductionGateEnv,
   verifyConsecutiveProductionGateRuns,
 } from './release-prod-gate-strict.mjs';
+
+const workflowRunEventPath = path.join(
+  tmpdir(),
+  `voicelog-release-prod-gate-event-${Date.now()}.json`
+);
+writeFileSync(
+  workflowRunEventPath,
+  JSON.stringify({ workflow_run: { id: 'manual-test-workflow-run' } })
+);
 
 function createStrictEnv(overrides: Record<string, string> = {}) {
   return {
@@ -19,6 +31,9 @@ function createStrictEnv(overrides: Record<string, string> = {}) {
       {}
     ),
     GITHUB_TOKEN: 'ghs_1234567890',
+    GITHUB_EVENT_NAME: 'workflow_run',
+    GITHUB_EVENT_PATH: workflowRunEventPath,
+    GITHUB_REF_NAME: 'main',
     GITHUB_REPOSITORY: 'owner/example',
     GITHUB_RUN_ID: '4242',
     GITHUB_WORKFLOW_REF:
@@ -37,6 +52,51 @@ function createMockResponse(body: unknown, status = 200) {
 }
 
 describe('release:prod-gate:strict consecutive run guard', () => {
+  it('does not enforce consecutive-success window for workflow dispatch triggers', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error('should not query api');
+    });
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv({ GITHUB_EVENT_NAME: 'workflow_dispatch' }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not enforce consecutive-success window for non-main branches', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error('should not query api');
+    });
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv({ GITHUB_REF_NAME: 'feature/beta' }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not enforce consecutive-success window when workflow event is missing (safety fallback)', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error('should not query api');
+    });
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv({ GITHUB_EVENT_NAME: '', GITHUB_EVENT_PATH: '' }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toBe(true);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('accepts consecutive successful run history', async () => {
     const fetchMock = vi.fn(async () =>
       createMockResponse({
