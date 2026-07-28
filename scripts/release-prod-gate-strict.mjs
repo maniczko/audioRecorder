@@ -20,6 +20,10 @@ export const productionGateRequiredEnv = [
   'GITHUB_REPOSITORY',
 ];
 
+function resolveGithubToken(env) {
+  return String(env.GITHUB_TOKEN || env.GH_TOKEN || env.GH_PAT || '').trim();
+}
+
 export const productionGateCommands = [
   ['pnpm', ['run', 'test:e2e:production-actions']],
   ['pnpm', ['run', 'test:e2e:production-persistence']],
@@ -79,6 +83,20 @@ function resolveWorkflowFile(env) {
   return fallback.includes('.yml') || fallback.includes('.yaml') ? fallback : `${fallback}.yml`;
 }
 
+function buildGitHubApiHeaders(token) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'voicelog-release-prod-gate',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 export async function verifyConsecutiveProductionGateRuns({
   env = process.env,
   fetchImpl = fetch,
@@ -93,10 +111,7 @@ export async function verifyConsecutiveProductionGateRuns({
     return true;
   }
 
-  const token = String(env.GITHUB_TOKEN || '').trim();
-  if (!token) {
-    throw new Error('release:prod-gate:strict missing required env: GITHUB_TOKEN');
-  }
+  const token = resolveGithubToken(env);
 
   const repository = resolveRepository(env);
   const workflow = resolveWorkflowFile(env);
@@ -108,15 +123,16 @@ export async function verifyConsecutiveProductionGateRuns({
   url.searchParams.set('per_page', String(Math.max(requiredHistory, 1)));
 
   const response = await fetchImpl(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${token}`,
-      'User-Agent': 'voicelog-release-prod-gate',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+    headers: buildGitHubApiHeaders(token),
   });
 
   if (!response.ok) {
+    if (!token && response.status === 404) {
+      throw new Error(
+        'release:prod-gate:strict missing required env: GITHUB_TOKEN (public workflow run history lookup is unauthorized for private repositories without token)'
+      );
+    }
+
     throw new Error(
       `GitHub API ${response.status} for workflow runs for ${workflow}: ${await response.text()}`
     );
@@ -149,9 +165,21 @@ export async function verifyConsecutiveProductionGateRuns({
 }
 
 export function validateProductionGateEnv(env = process.env) {
-  const missing = productionGateRequiredEnv.filter((key) => !String(env[key] || '').trim());
+  const token = resolveGithubToken(env);
+  const missing = productionGateRequiredEnv.filter((key) => {
+    if (key === 'GITHUB_TOKEN') {
+      return false;
+    }
+    return !String(env[key] || '').trim();
+  });
   if (missing.length > 0) {
     throw new Error(`release:prod-gate:strict missing required env: ${missing.join(', ')}`);
+  }
+
+  if (!token) {
+    console.log(
+      '[release:prod-gate:strict] Optional GitHub token not found; using anonymous API requests for workflow run history.'
+    );
   }
 }
 

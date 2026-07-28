@@ -79,6 +79,43 @@ describe('release:prod-gate:strict consecutive run guard', () => {
     ).rejects.toThrow('consecutive successful');
   });
 
+  it('falls back to anonymous workflow run lookup when token is not configured', async () => {
+    const fetchMock = vi.fn(async () =>
+      createMockResponse({
+        workflow_runs: [
+          { id: '201', conclusion: 'success' },
+          { id: '200', conclusion: 'success' },
+        ],
+      })
+    );
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv({
+          GITHUB_TOKEN: '',
+          GH_TOKEN: '',
+          GH_PAT: '',
+        }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toBe(true);
+  });
+
+  it('throws explicit token guidance when anonymous lookup is rejected (private workflow history)', async () => {
+    const fetchMock = vi.fn(async () => createMockResponse({ message: 'Not Found' }, 404));
+
+    await expect(
+      verifyConsecutiveProductionGateRuns({
+        env: createStrictEnv({
+          GITHUB_TOKEN: '',
+          GH_TOKEN: '',
+          GH_PAT: '',
+        }),
+        fetchImpl: fetchMock as unknown as typeof fetch,
+      })
+    ).rejects.toThrow('release:prod-gate:strict missing required env: GITHUB_TOKEN');
+  });
+
   it('rejects when consecutive history is too short', async () => {
     const fetchMock = vi.fn(async () =>
       createMockResponse({
