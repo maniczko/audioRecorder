@@ -22,7 +22,8 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     env:
       PRODUCTION_FRONTEND_URL: https://voicelog-audiorecorder.vercel.app
-      PRODUCTION_API_BASE_URL: https://voicelog-audiorecorder.vercel.app
+      PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
+      PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
       PLAYWRIGHT_BASE_URL: https://voicelog-audiorecorder.vercel.app
       PLAYWRIGHT_SKIP_WEB_SERVER: 'true'
       PRODUCTION_SYSTEM_AUDIT_REQUIRED: 'true'

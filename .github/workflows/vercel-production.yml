@@ -22,6 +22,7 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+      PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
       PNPM_HOME: /home/runner/.local/share/pnpm
     # Skip if triggered by a failed CI run (workflow_dispatch always runs)
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
@@ -76,7 +77,8 @@ jobs:
       - name: Production smoke
         env:
           PRODUCTION_FRONTEND_URL: ${{ steps.vercel_deploy.outputs.production_url }}
-          PRODUCTION_API_BASE_URL: ${{ steps.vercel_deploy.outputs.production_url }}
+          PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
+          PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}
           PRODUCTION_REQUIRE_SUPABASE_REMOTE: 'true'
           PRODUCTION_REQUIRE_KNOWN_GIT_SHA: 'true'
           PRODUCTION_EXPECTED_GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}

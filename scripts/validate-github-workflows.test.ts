@@ -539,6 +539,23 @@ describe('GitHub workflows validation', () => {
     expect(vercelWorkflow).toContain('VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}');
   });
 
+  it('forces production smoke to use PRODUCTION_SMOKE_BASE_URL for backend calls', () => {
+    const vercelWorkflow = readFileSync(path.join(workflowDir, 'vercel-production.yml'), 'utf8');
+    const productionSystemAudit = readFileSync(
+      path.join(workflowDir, 'production-system-audit.yml'),
+      'utf8'
+    );
+
+    expect(vercelWorkflow).toContain('PRODUCTION_SMOKE_BASE_URL');
+    expect(vercelWorkflow).toContain(
+      "PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}"
+    );
+    expect(productionSystemAudit).toContain('PRODUCTION_SMOKE_BASE_URL');
+    expect(productionSystemAudit).toContain(
+      "PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}"
+    );
+  });
+
   it('retries Railway metadata variable writes before failing the release gate', () => {
     const railwayWorkflow = readFileSync(
       path.join(workflowDir, 'railway-build-metadata.yml'),

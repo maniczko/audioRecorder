@@ -65,8 +65,12 @@ describe('audio production smoke', () => {
       if (pathName === '/ready') {
         return jsonResponse({
           ok: true,
-          status: 'ok',
+          status: 'ready',
           supabaseRemote: true,
+          readiness: {
+            ok: true,
+            status: 'ready',
+          },
           supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
         });
       }
@@ -247,6 +251,14 @@ describe('audio production smoke', () => {
         workspaceId: 'workspace_1',
       },
     });
+    expect(persisted.backendGitSha).toBe('abc123');
+    expect(persisted.steps.find((step: any) => step.name === '/ready')).toMatchObject({
+      ok: true,
+      details: {
+        readinessStatus: 'ready',
+        readinessOk: true,
+      },
+    });
   });
 
   it('loads the deterministic seeded short WAV fixture', async () => {
@@ -366,6 +378,76 @@ describe('audio production smoke', () => {
       'https://api.example.com/media/recordings/smoke_1780000000000_single',
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('fails the smoke preflight when /ready is not available', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'audio-prod-smoke-ready-failed-'));
+    const reportPath = path.join(tempDir, 'report.json');
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const pathName = new URL(url).pathname;
+      const method = (init?.method || 'GET').toUpperCase();
+
+      if (pathName === '/health/live') {
+        return jsonResponse({ ok: true, check: 'liveness', gitSha: 'abc123' });
+      }
+
+      if (pathName === '/health') {
+        return jsonResponse({
+          ok: true,
+          gitSha: 'abc123',
+          supabaseRemote: true,
+          supabaseStorage: { ready: true, status: 'ready', bucket: 'recordings' },
+        });
+      }
+
+      if (pathName === '/ready') {
+        return jsonResponse(
+          {
+            ok: false,
+            status: 'degraded',
+            readiness: {
+              ok: false,
+              status: 'degraded',
+            },
+            supabaseRemote: true,
+            supabaseStorage: { ready: false, status: 'warming', bucket: 'recordings' },
+          },
+          503
+        );
+      }
+
+      if (method === 'PUT' || method === 'POST' || method === 'GET' || method === 'DELETE') {
+        throw new Error(`Unexpected smoke request: ${method} ${pathName}`);
+      }
+
+      return jsonResponse({ ok: true });
+    });
+
+    const report = await runAudioProdSmoke({
+      baseUrl: 'https://api.example.com',
+      token: 'smoke-token',
+      workspaceId: 'workspace_1',
+      reportPath,
+      uploadModes: ['single'],
+      fetchImpl: fetchMock as any,
+      now: () => 1780000000000,
+      sleepMs: async () => {},
+      maxPollAttempts: 1,
+    });
+
+    const readyStep = report.steps.find((step: any) => step.name === '/ready');
+    expect(readyStep).toMatchObject({
+      ok: false,
+      details: {
+        readinessStatus: 'degraded',
+        readinessOk: false,
+      },
+    });
+    expect(report.steps.every((step) => step.ok)).toBe(false);
+    expect(report.steps).toContainEqual(
+      expect.objectContaining({ name: 'start transcribe (single)' })
+    );
+    expect(report.backendGitSha).toBe('abc123');
   });
 
   it('reads cleanup and staging smoke credentials from environment', () => {

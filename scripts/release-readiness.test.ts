@@ -1119,6 +1119,26 @@ describe('release readiness gates', () => {
     expect(spec).toContain('Nazwa nowego mowcy');
   });
 
+  it('uses PRODUCTION_SMOKE_BASE_URL for backend API checks in production deployment workflows', () => {
+    const vercelWorkflow = read('.github/workflows/vercel-production.yml');
+    const productionSystemAudit = read('.github/workflows/production-system-audit.yml');
+
+    expect(vercelWorkflow).toContain('PRODUCTION_SMOKE_BASE_URL');
+    expect(productionSystemAudit).toContain('PRODUCTION_SMOKE_BASE_URL');
+    expect(vercelWorkflow).toContain(
+      "PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}"
+    );
+    expect(productionSystemAudit).toContain(
+      "PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL || 'https://audiorecorder-production.up.railway.app' }}"
+    );
+    expect(vercelWorkflow).toContain(
+      'PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL'
+    );
+    expect(productionSystemAudit).toContain(
+      'PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL'
+    );
+  });
+
   it('prevents production Playwright audits from starting a local web server', () => {
     const playwrightConfig = read('playwright.config.js');
     const workflow = read('.github/workflows/production-system-audit.yml');

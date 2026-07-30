@@ -28,6 +28,22 @@ export type AudioProdSmokeOptions = {
   pollIntervalMs?: number;
 };
 
+type AudioProdSmokeReport = {
+  baseUrl: string;
+  startedAt: string;
+  finishedAt?: string;
+  backendGitSha?: string;
+  recordingId?: string;
+  smokeData: {
+    prefix: string;
+    cleanupRequested: boolean;
+    identifiable: boolean;
+    recordingIds: string[];
+    uploadModes: AudioUploadMode[];
+  };
+  steps: SmokeStep[];
+};
+
 type AudioUploadMode = 'chunked' | 'single';
 
 type JsonObject = Record<string, unknown>;
@@ -383,24 +399,13 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
   const baseUrl = input.baseUrl.replace(/\/$/, '');
   const workspaceId = input.workspaceId;
   const now = input.now || Date.now;
+  let backendGitSha: string | undefined;
 
   const requestOptions = { baseUrl, fetchImpl };
-  const report: {
-    baseUrl: string;
-    startedAt: string;
-    finishedAt?: string;
-    recordingId?: string;
-    smokeData: {
-      prefix: string;
-      cleanupRequested: boolean;
-      identifiable: boolean;
-      recordingIds: string[];
-      uploadModes: AudioUploadMode[];
-    };
-    steps: SmokeStep[];
-  } = {
+  const report: AudioProdSmokeReport = {
     baseUrl,
     startedAt: new Date(now()).toISOString(),
+    backendGitSha: undefined,
     smokeData: {
       prefix: SMOKE_RECORDING_PREFIX,
       cleanupRequested: Boolean(input.cleanup),
@@ -440,6 +445,10 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
       const res = await smokeRequest(requestOptions, '/health');
       const body = await readJson(res);
       const healthShaCheck = compareExpectedGitSha(body, expectedGitSha);
+      backendGitSha = String(body?.gitSha || '').trim();
+      if (!report.backendGitSha && backendGitSha) {
+        report.backendGitSha = backendGitSha;
+      }
       return {
         ok: res.ok && healthShaCheck.ok,
         status: res.status,
@@ -485,11 +494,20 @@ export async function runAudioProdSmoke(input: AudioProdSmokeOptions) {
     await step('/ready', async () => {
       const res = await smokeRequest(requestOptions, '/ready');
       const body = await readJson(res);
+      const readiness = asObject(body.readiness);
+      const readinessStatus = String(readiness.status || body.status || '').toLowerCase();
+      const readinessOk = body.ok === true || readiness.ok === true;
+      const isReady =
+        body.ok === true && (!readinessStatus || ['ready', 'ok'].includes(readinessStatus));
       return {
-        ok: res.ok,
+        ok: isReady,
         status: res.status,
         requestId: headerValue(res.headers, 'x-request-id'),
-        details: sanitizeDetails(body),
+        details: {
+          ...sanitizeDetails(body),
+          readinessStatus,
+          readinessOk,
+        },
       };
     })
   );
